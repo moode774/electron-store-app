@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    "jsx": "react-native",
+    "baseUrl": ".",
+    "paths": {
+      "@marketplace/shared-types": ["./packages/shared-types/src/index.ts"],
+      "@marketplace/shared-types/*": ["./packages/shared-types/src/*"],
+      "@marketplace/shared-ui": ["./packages/shared-ui/src/index.ts"],
+      "@marketplace/shared-ui/*": ["./packages/shared-ui/src/*"],
+      "@marketplace/shared-hooks": ["./packages/shared-hooks/src/index.ts"],
+      "@marketplace/shared-hooks/*": ["./packages/shared-hooks/src/*"],
+      "@marketplace/shared-utils": ["./packages/shared-utils/src/index.ts"],
+      "@marketplace/shared-utils/*": ["./packages/shared-utils/src/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".expo",
+    "**/*.js"
+  ]
+}

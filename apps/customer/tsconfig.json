@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@marketplace/shared-types": [
+        "../../packages/shared-types/src/index.ts"
+      ],
+      "@marketplace/shared-ui": [
+        "../../packages/shared-ui/src/index.ts"
+      ],
+      "@marketplace/shared-hooks": [
+        "../../packages/shared-hooks/src/index.ts"
+      ],
+      "@marketplace/shared-utils": [
+        "../../packages/shared-utils/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "App.tsx",
+    "app.config.ts"
+  ]
+}
