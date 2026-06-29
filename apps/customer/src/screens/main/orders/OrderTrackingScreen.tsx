@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS, formatPrice } from '@marketplace/shared-utils';
-import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, CancellationReason, OrderDetail } from '@marketplace/shared-hooks';
+import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, createComplaint, CancellationReason, OrderDetail } from '@marketplace/shared-hooks';
 
 const TRACKING_STEPS = [
   { status: ORDER_STATUS.PENDING, label: 'بانتظار تأكيد المتجر', icon: '⏳' },
@@ -24,6 +24,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const [reasons, setReasons] = useState<CancellationReason[]>([]);
   const [showCancel, setShowCancel] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
+  const [showComplaint, setShowComplaint] = useState(false);
 
   const reload = () => getOrderById(orderId).then((data) => { setOrder(data); setLoading(false); });
 
@@ -56,6 +57,31 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     { value: 'wrong_item', label: 'منتج خاطئ' },
     { value: 'other', label: 'سبب آخر' },
   ];
+
+  const COMPLAINT_CATEGORIES = [
+    { value: 'late_delivery', label: 'تأخّر في التوصيل' },
+    { value: 'product_quality', label: 'جودة المنتج' },
+    { value: 'bad_service', label: 'سوء تعامل' },
+    { value: 'missing_items', label: 'نقص في الطلب' },
+    { value: 'other', label: 'أخرى' },
+  ];
+
+  const submitComplaint = async (category: string, label: string) => {
+    if (!user?.id) return;
+    setShowComplaint(false);
+    try {
+      await createComplaint({
+        complainant_id: user.id,
+        order_id: orderId,
+        against_id: order?.merchant_id,
+        against_type: 'merchant',
+        category,
+        title: `شكوى: ${label}`,
+        description: `شكوى بخصوص الطلب ${order?.order_number ?? orderId} — ${label}`,
+      });
+      Alert.alert('تم استلام شكواك', 'سنراجع شكواك ونعود إليك في أقرب وقت');
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال الشكوى'); }
+  };
 
   const submitReview = async () => {
     if (!user?.id || !order?.merchant_id || rating === 0) return;
@@ -160,6 +186,27 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </View>
         )}
 
+        {/* تقديم شكوى (متاح دائماً) */}
+        {!showComplaint && !showCancel && !showRefund && (
+          <TouchableOpacity style={styles.complaintBtn} onPress={() => setShowComplaint(true)} activeOpacity={0.8}>
+            <Text style={styles.complaintBtnText}>تقديم شكوى عن هذا الطلب</Text>
+          </TouchableOpacity>
+        )}
+        {showComplaint && (
+          <View style={styles.reasonsCard}>
+            <Text style={styles.reasonsTitle}>نوع الشكوى</Text>
+            {COMPLAINT_CATEGORIES.map((c) => (
+              <TouchableOpacity key={c.value} style={styles.reasonItem} onPress={() => submitComplaint(c.value, c.label)} activeOpacity={0.7}>
+                <Text style={styles.reasonText}>{c.label}</Text>
+                <Text style={styles.reasonArrow}>‹</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setShowComplaint(false)} style={{ paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ color: '#9CA3AF', fontWeight: '700' }}>تراجع</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Tracking Timeline */}
         <View style={styles.timelineContainer}>
           {TRACKING_STEPS.map((step, index) => {
@@ -254,6 +301,8 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: '#EF4444', fontWeight: '800', fontSize: 14 },
   refundBtn: { marginHorizontal: SPACING.md, marginTop: 12, paddingVertical: 14, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: '#D97706', alignItems: 'center' },
   refundBtnText: { color: '#D97706', fontWeight: '800', fontSize: 14 },
+  complaintBtn: { marginHorizontal: SPACING.md, marginTop: 12, paddingVertical: 14, borderRadius: RADIUS.md, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center' },
+  complaintBtnText: { color: COLORS.textSecondary, fontWeight: '800', fontSize: 14 },
   reasonsCard: { backgroundColor: COLORS.surface, margin: SPACING.md, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: COLORS.border },
   reasonsTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
   reasonItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },

@@ -53,7 +53,7 @@ export interface ProductDetail {
   created_at: string;
   merchant_profiles?: { store_name: string; id: string; store_logo_url: string | null } | null;
   product_images?: { id: string; url: string; is_primary: boolean; sort_order: number }[];
-  product_variants?: { id: string; name: string; price_modifier: number; stock_quantity: number; is_active: boolean }[];
+  product_variants?: { id: string; size: string | null; color: string | null; color_hex: string | null; additional_price: number; stock_qty: number; is_active: boolean }[];
 }
 
 export interface StoreSummary {
@@ -175,7 +175,7 @@ export async function getProductById(id: string): Promise<ProductDetail | null> 
       *,
       merchant_profiles(id, store_name, store_logo_url),
       product_images(id, url:image_url, is_primary, sort_order),
-      product_variants(id, name, price_modifier, stock_quantity, is_active)
+      product_variants(id, size, color, color_hex, additional_price, stock_qty, is_active)
     `)
     .eq('id', id)
     .single();
@@ -209,10 +209,10 @@ export async function searchProducts(query?: string, categoryId?: string, limit 
 // ============================================================
 // MERCHANT PRODUCTS (for merchant screens)
 // ============================================================
-export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { product_variants?: { stock_quantity: number }[] })[]> {
+export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { stock_quantity?: number })[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, product_variants(stock_quantity)')
+    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, stock_quantity')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -635,6 +635,56 @@ export async function createSupportTicket(data: {
   await supabase.from('support_messages').insert({
     ticket_id: (ticket as { id: string }).id, sender_id: data.user_id, message: data.message, is_internal: false,
   });
+}
+
+// ============================================================
+// COMPLAINTS (الشكاوى — ضد متجر أو مندوب، مرتبطة بطلب)
+// ============================================================
+export interface Complaint {
+  id: string;
+  order_id: string | null;
+  against_type: string | null;
+  category: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string | null;
+  resolution: string | null;
+  created_at: string;
+  orders?: { order_number: string } | null;
+}
+
+export async function createComplaint(data: {
+  complainant_id: string;
+  order_id?: string;
+  against_id?: string;
+  against_type?: string; // 'merchant' | 'delivery'
+  category: string;
+  title: string;
+  description: string;
+}): Promise<void> {
+  const { error } = await supabase.from(TABLES.COMPLAINTS).insert({
+    complainant_id: data.complainant_id,
+    order_id: data.order_id ?? null,
+    against_id: data.against_id ?? null,
+    against_type: data.against_type ?? null,
+    category: data.category,
+    title: data.title,
+    description: data.description,
+    status: 'open',
+    priority: 'medium',
+  });
+  if (error) throw error;
+}
+
+export async function getMyComplaints(userId: string): Promise<Complaint[]> {
+  const { data, error } = await supabase
+    .from(TABLES.COMPLAINTS)
+    .select('id, order_id, against_type, category, title, description, status, priority, resolution, created_at, orders(order_number)')
+    .eq('complainant_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data as unknown as Complaint[];
 }
 
 // ============================================================
@@ -1076,21 +1126,20 @@ export interface Advertisement {
   id: string;
   title: string;
   image_url: string;
-  link_url: string | null;
-  target_type: string | null;
-  target_id: string | null;
-  sort_order: number;
+  link_type: string | null;
+  link_value: string | null;
+  priority: number;
 }
 
 export async function getActiveAds(): Promise<Advertisement[]> {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from(TABLES.ADVERTISEMENTS)
-    .select('id, title, image_url, link_url, target_type, target_id, sort_order')
-    .eq('is_active', true)
-    .or(`starts_at.is.null,starts_at.lte.${now}`)
-    .or(`ends_at.is.null,ends_at.gte.${now}`)
-    .order('sort_order');
+    .select('id, title, image_url, link_type, link_value, priority')
+    .eq('status', 'active')
+    .or(`start_date.is.null,start_date.lte.${now}`)
+    .or(`end_date.is.null,end_date.gte.${now}`)
+    .order('priority', { ascending: false });
   if (error) return [];
   return data as Advertisement[];
 }
