@@ -89,8 +89,8 @@ export interface OrderSummary {
   created_at: string;
   delivery_fee?: number;
   customer_profiles?: { full_name: string | null; phone: string | null } | null;
-  merchant_profiles?: { store_name: string; address?: string | null; city?: string | null } | null;
-  addresses?: { full_address: string; city: string | null } | null;
+  merchant_profiles?: { store_name: string; address?: string | null; city?: string | null; latitude?: number | null; longitude?: number | null } | null;
+  addresses?: { full_address: string; city: string | null; latitude?: number | null; longitude?: number | null } | null;
   payment_method?: string | null;
   payment_status?: string;
 }
@@ -460,7 +460,7 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
 export async function getAvailableDeliveryOrders(): Promise<OrderSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)')
+    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city, latitude, longitude), addresses(full_address, city, latitude, longitude)')
     .eq('status', 'ready')
     .is('delivery_id', null)
     .order('created_at', { ascending: false });
@@ -489,11 +489,64 @@ export async function getDeliveryOrders(deliveryUserId: string): Promise<OrderSu
 
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)')
+    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city, latitude, longitude), addresses(full_address, city, latitude, longitude)')
     .eq('delivery_id', (profile as { id: string }).id)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data as unknown as OrderSummary[];
+}
+
+// ============================================================
+// DELIVERY ASSIGNMENT (إعدادات الإسناد ومحاولات العرض)
+// ============================================================
+export interface AssignmentSettings {
+  max_radius_km: number;
+  offer_timeout_seconds: number;
+  max_attempts: number;
+  algorithm: string | null;
+}
+
+export async function getAssignmentSettings(): Promise<AssignmentSettings | null> {
+  const { data } = await supabase
+    .from('assignment_settings')
+    .select('max_radius_km, offer_timeout_seconds, max_attempts, algorithm')
+    .limit(1)
+    .maybeSingle();
+  return (data as AssignmentSettings) ?? null;
+}
+
+// تسجيل محاولة عرض/رفض طلب على مندوب (لتتبّع توزيع الطلبات)
+export async function recordAssignmentAttempt(
+  orderId: string,
+  deliveryUserId: string,
+  status: 'offered' | 'accepted' | 'rejected' | 'expired',
+  rejectionReason?: string,
+): Promise<void> {
+  const { data: profile } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .select('id')
+    .eq('user_id', deliveryUserId)
+    .maybeSingle();
+  if (!profile) return;
+  await supabase.from('order_assignment_attempts').insert({
+    order_id: orderId,
+    delivery_id: (profile as { id: string }).id,
+    status,
+    responded_at: status === 'offered' ? null : new Date().toISOString(),
+    rejection_reason: rejectionReason ?? null,
+  });
+}
+
+// تحديث موقع المندوب الحالي (يُستخدم لترتيب العروض حسب القرب)
+export async function updateDeliveryLocation(
+  deliveryUserId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ current_latitude: latitude, current_longitude: longitude })
+    .eq('user_id', deliveryUserId);
 }
 
 // ============================================================

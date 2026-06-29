@@ -5,3 +5,4 @@ export * from './geo';
 export * from './pricing';
 export * from './search';
 export * from './orderStatus';
+export * from './assignment';
