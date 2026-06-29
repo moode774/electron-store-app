@@ -228,6 +228,7 @@ export async function createProduct(data: {
   sale_price?: number;
   category_id?: string;
   is_active?: boolean;
+  stock_quantity?: number;
   tags?: string[];
 }): Promise<{ id: string } | null> {
   const { data: result, error } = await supabase
@@ -246,6 +247,8 @@ export async function updateProduct(id: string, updates: {
   sale_price?: number | null;
   is_active?: boolean;
   is_featured?: boolean;
+  stock_quantity?: number;
+  og_image_url?: string;
   tags?: string[];
 }): Promise<void> {
   const { error } = await supabase
@@ -253,6 +256,21 @@ export async function updateProduct(id: string, updates: {
     .update(updates)
     .eq('id', id);
   if (error) throw error;
+}
+
+// إضافة صور لمنتج (أول صورة = الأساسية + تُحدَّث og_image_url)
+export async function addProductImages(productId: string, urls: string[]): Promise<void> {
+  if (urls.length === 0) return;
+  const rows = urls.map((url, i) => ({
+    product_id: productId,
+    image_url: url,
+    is_primary: i === 0,
+    sort_order: i,
+  }));
+  const { error } = await supabase.from(TABLES.PRODUCT_IMAGES).insert(rows);
+  if (error) throw error;
+  // اجعل أول صورة هي صورة العرض الرئيسية
+  await supabase.from(TABLES.PRODUCTS).update({ og_image_url: urls[0] }).eq('id', productId);
 }
 
 export async function deleteProduct(id: string): Promise<void> {
