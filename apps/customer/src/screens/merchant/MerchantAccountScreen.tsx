@@ -17,6 +17,8 @@ const MENU_ITEMS = [
   { id: '1', title: 'بيانات المتجر', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
   { id: '2', title: 'التقارير والإحصائيات', icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
   { id: '3', title: 'المحفظة والمدفوعات', icon: 'wallet-outline', screen: 'Wallet', params: undefined },
+  { id: '6', title: 'العروض والكوبونات', icon: 'pricetags-outline', screen: 'Coupons', params: undefined },
+  { id: '7', title: 'محادثات العملاء', icon: 'chatbubbles-outline', screen: 'Conversations', params: { asMerchant: true } },
   { id: '4', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
   { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: null, params: undefined },
 ];

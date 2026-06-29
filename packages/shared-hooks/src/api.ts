@@ -1095,6 +1095,22 @@ export async function markConversationRead(conversationId: string, asMerchant: b
   await supabase.from('chat_conversations').update(field).eq('id', conversationId);
 }
 
+// اشتراك لحظي برسائل محادثة — يُعيد دالة لإلغاء الاشتراك
+export function subscribeToMessages(
+  conversationId: string,
+  onMessage: (msg: ChatMessage) => void,
+): () => void {
+  const channel = supabase
+    .channel(`chat_${conversationId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+      (payload: { new: ChatMessage }) => { if (payload?.new) onMessage(payload.new); },
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ============================================================
 // STORE FOLLOWS (متابعة المتاجر)
 // ============================================================

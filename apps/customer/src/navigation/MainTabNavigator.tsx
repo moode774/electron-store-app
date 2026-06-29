@@ -20,6 +20,7 @@ import ProductDetailsScreen from '../screens/main/home/ProductDetailsScreen';
 import SearchScreen from '../screens/main/home/SearchScreen';
 import OffersScreen from '../screens/main/home/OffersScreen';
 import ChatScreen from '../screens/main/chat/ChatScreen';
+import ConversationsListScreen from '../screens/main/chat/ConversationsListScreen';
 
 import CartScreen from '../screens/main/cart/CartScreen';
 import CheckoutScreen from '../screens/main/cart/CheckoutScreen';
@@ -86,6 +87,8 @@ function AccountNavigator() {
       <AccountStack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <AccountStack.Screen name="EditProfile" component={EditProfileScreen} />
       <AccountStack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+      <AccountStack.Screen name="Conversations" component={ConversationsListScreen} />
+      <AccountStack.Screen name="Chat" component={ChatScreen} />
       <AccountStack.Screen name="Legal" component={LegalScreen} />
     </AccountStack.Navigator>
   );

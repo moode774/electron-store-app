@@ -27,6 +27,7 @@ const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof Accoun
   { id: '3', title: 'طرق الدفع', icon: 'card-outline', route: 'PaymentMethods' },
   { id: '4', title: 'العناوين المحفوظة', icon: 'location-outline', route: 'AddressBook' },
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', route: 'Notifications' },
+  { id: '10', title: 'محادثاتي', icon: 'chatbubbles-outline', route: 'Conversations' },
   { id: '6', title: 'التقييمات والمراجعات', icon: 'star-outline', route: 'Reviews' },
   { id: '7', title: 'مركز المساعدة', icon: 'headset-outline', route: 'HelpCenter' },
   { id: '8', title: 'سياسة الخصوصية', icon: 'shield-checkmark-outline', route: 'Legal', params: { type: 'privacy' } },

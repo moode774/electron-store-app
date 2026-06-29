@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage } from '@marketplace/shared-hooks';
+import { useAuthStore, getMessages, sendMessage, markConversationRead, subscribeToMessages, ChatMessage } from '@marketplace/shared-hooks';
 
 export default function ChatScreen({ navigation, route }: any) {
   const conversationId: string = route?.params?.conversationId;
@@ -31,11 +31,20 @@ export default function ChatScreen({ navigation, route }: any) {
 
   useEffect(() => { load(); }, [load]);
 
-  // تحديث دوري بسيط (polling) لجلب الرسائل الجديدة
+  // استقبال لحظي للرسائل الجديدة عبر Realtime (مع دمج بلا تكرار)
   useEffect(() => {
-    const t = setInterval(load, 4000);
-    return () => clearInterval(t);
-  }, [load]);
+    if (!conversationId) return;
+    const unsub = subscribeToMessages(conversationId, (msg) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        // أزِل النسخة المتفائلة المؤقتة لنفس الرسالة إن وُجدت
+        const withoutTemp = prev.filter((m) => !(m.id.startsWith('tmp-') && m.sender_id === msg.sender_id && m.message === msg.message));
+        return [...withoutTemp, msg];
+      });
+      if (msg.sender_id !== user?.id) markConversationRead(conversationId, asMerchant).catch(() => {});
+    });
+    return unsub;
+  }, [conversationId, asMerchant, user?.id]);
 
   const handleSend = async () => {
     const msg = text.trim();
@@ -50,9 +59,12 @@ export default function ChatScreen({ navigation, route }: any) {
     setMessages((m) => [...m, optimistic]);
     try {
       await sendMessage(conversationId, user.id, msg);
-      await load();
-    } catch { /* ignore */ }
-    finally { setSending(false); }
+      // الرسالة الحقيقية ستصل عبر Realtime وتستبدل النسخة المؤقتة
+    } catch {
+      // أزِل المتفائلة عند الفشل وأعِد النص
+      setMessages((m) => m.filter((x) => x.id !== optimistic.id));
+      setText(msg);
+    } finally { setSending(false); }
   };
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
