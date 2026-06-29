@@ -52,6 +52,30 @@ if (!I18nManager.isRTL) {
   I18nManager.forceRTL(true);
 }
 
+// روابط عميقة: فتح منتج/متجر/تتبّع طلب من رابط خارجي أو إشعار
+const linking: any = {
+  prefixes: ['marketplace-customer://', 'https://metjar-alyemen.app'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Home: {
+            screens: {
+              ProductDetails: 'product/:productId',
+              StoreDetails: 'store/:storeId',
+            },
+          },
+          Orders: {
+            screens: {
+              OrderTracking: 'order/:orderId',
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 type AuthStackParamList = {
   Login: undefined;
   Otp: { phone: string };
@@ -193,7 +217,7 @@ export default function App(): React.JSX.Element | null {
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

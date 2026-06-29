@@ -37,7 +37,7 @@ export type AccountStackParamList = {
 
 export type MainTabParamList = {
   Categories: undefined;
-  Favorites: undefined;
+  Orders: NavigatorScreenParams<OrdersStackParamList>;
   Home: NavigatorScreenParams<HomeStackParamList>;
   Cart: NavigatorScreenParams<CartStackParamList>;
   More: NavigatorScreenParams<AccountStackParamList>;

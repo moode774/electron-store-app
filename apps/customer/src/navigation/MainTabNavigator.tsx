@@ -154,11 +154,11 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Favorites"
-        component={FavoritesScreen}
-        options={{ 
-          tabBarLabel: 'المفضلة',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'heart', 'heart-outline', color)
+        name="Orders"
+        component={OrdersNavigator}
+        options={{
+          tabBarLabel: 'طلباتي',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'receipt', 'receipt-outline', color)
         }}
       />
       <Tab.Screen
