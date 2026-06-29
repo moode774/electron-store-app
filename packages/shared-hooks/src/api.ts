@@ -851,6 +851,55 @@ export async function getMyComplaints(userId: string): Promise<Complaint[]> {
   return data as unknown as Complaint[];
 }
 
+// شكاوى موجَّهة لهذا الطرف (تاجر/مندوب) لمعالجتها
+export async function getComplaintsAgainstMe(userId: string): Promise<Complaint[]> {
+  const { data, error } = await supabase
+    .from(TABLES.COMPLAINTS)
+    .select('id, order_id, against_type, category, title, description, status, priority, resolution, created_at, orders(order_number)')
+    .eq('against_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data as unknown as Complaint[];
+}
+
+export async function resolveComplaint(id: string, resolution: string): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.COMPLAINTS)
+    .update({ status: 'resolved', resolution, resolved_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// طلبات الاسترجاع الخاصة بطلبات هذا التاجر
+export interface MerchantRefund {
+  id: string;
+  reason: string;
+  description: string | null;
+  refund_amount: number;
+  status: string;
+  merchant_response: string | null;
+  created_at: string;
+  orders?: { order_number: string } | null;
+}
+
+export async function getMerchantRefunds(merchantUserId: string): Promise<MerchantRefund[]> {
+  const { data, error } = await supabase
+    .from('refund_requests')
+    .select('id, reason, description, refund_amount, status, merchant_response, created_at, orders!inner(order_number, merchant_id)')
+    .eq('orders.merchant_id', merchantUserId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data as unknown as MerchantRefund[];
+}
+
+export async function respondToRefund(id: string, status: 'approved' | 'rejected', response?: string): Promise<void> {
+  const { error } = await supabase
+    .from('refund_requests')
+    .update({ status, merchant_response: response ?? null, processed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // ============================================================
 // LOYALTY & REFERRAL (الولاء والإحالة)
 // ============================================================
