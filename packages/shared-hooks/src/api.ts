@@ -576,6 +576,31 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 }
 
 // ============================================================
+// DEVICE TOKENS (الإشعارات الفورية)
+// ============================================================
+// تسجيل/تحديث رمز جهاز المستخدم لاستقبال الإشعارات الفورية
+export async function registerDeviceToken(
+  userId: string,
+  token: string,
+  deviceType: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.DEVICE_TOKENS)
+    .upsert(
+      { user_id: userId, token, device_type: deviceType, is_active: true },
+      { onConflict: 'token' },
+    );
+  if (error && error.code !== '23505') {
+    // لا نُفشل التطبيق بسبب الإشعارات
+    console.warn('[push] registerDeviceToken failed:', error.message);
+  }
+}
+
+export async function deactivateDeviceToken(token: string): Promise<void> {
+  await supabase.from(TABLES.DEVICE_TOKENS).update({ is_active: false }).eq('token', token);
+}
+
+// ============================================================
 // WISHLIST
 // ============================================================
 export async function getWishlist(userId: string): Promise<WishlistItem[]> {

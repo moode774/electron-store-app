@@ -13,6 +13,7 @@ import * as SplashScreenExpo from 'expo-splash-screen';
 
 import { useAuthStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
+import { registerForPushNotificationsAsync } from './src/services/notifications';
 
 import SplashScreen from './src/screens/auth/SplashScreen';
 import OnboardingScreen from './src/screens/auth/OnboardingScreen';
@@ -97,6 +98,8 @@ function RootNavigator(): React.JSX.Element {
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) { setProfileChecked(true); return; }
+    // تسجيل رمز الإشعارات الفورية (أفضل جهد، لا يعطّل التطبيق)
+    registerForPushNotificationsAsync(user.id).catch(() => {});
     const check = async () => {
       try {
         if (role === USER_ROLES.MERCHANT) {
