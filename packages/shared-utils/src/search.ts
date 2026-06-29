@@ -41,28 +41,30 @@ export function relevanceScore(product: RankableProduct, query: string): number 
 
   const name = normalizeArabic(product.name);
   const nameAr = normalizeArabic(product.name_ar ?? '');
-  let score = 0;
 
+  // درجة التطابق النصّي وحدها (تحدّد ما إذا كان المنتج مطابقاً فعلاً)
+  let textScore = 0;
   for (const field of [name, nameAr]) {
     if (!field) continue;
-    if (field === q) score += 100;
-    else if (field.startsWith(q)) score += 60;
-    else if (field.includes(q)) score += 35;
+    if (field === q) textScore += 100;
+    else if (field.startsWith(q)) textScore += 60;
+    else if (field.includes(q)) textScore += 35;
     else {
-      // مطابقة كلمات منفصلة
       const words = q.split(' ').filter(Boolean);
       const hits = words.filter((w) => field.includes(w)).length;
-      if (hits > 0) score += (hits / words.length) * 20;
+      if (hits > 0) textScore += (hits / words.length) * 20;
     }
   }
+  if (product.tags?.some((t) => normalizeArabic(t).includes(q))) textScore += 15;
 
-  if (product.tags?.some((t) => normalizeArabic(t).includes(q))) score += 15;
+  // بلا تطابق نصّي إطلاقاً = غير مطابق (لا تُنقذه معزّزات الجودة)
+  if (textScore === 0) return 0;
 
-  // معزّزات الجودة (وزن أقل من التطابق النصّي)
+  // معزّزات الجودة تُرجّح بين المتطابقات فقط
+  let score = textScore;
   score += Math.min(10, (product.rating ?? 0) * 2);
   score += Math.min(8, Math.log10((product.total_sold ?? 0) + 1) * 3);
   if (product.is_featured) score += 4;
-
   return score;
 }
 
@@ -71,7 +73,7 @@ export function rankProducts<T extends RankableProduct>(products: T[], query: st
   const q = normalizeArabic(query);
   const scored = products
     .map((p) => ({ p, s: relevanceScore(p, query) }))
-    .filter((x) => (q ? x.s > 8 : true)); // عتبة دنيا عند البحث لاستبعاد الضوضاء
+    .filter((x) => (q ? x.s > 0 : true)); // عند البحث: فقط المتطابقة نصّياً
   scored.sort((a, b) => b.s - a.s);
   return scored.map((x) => x.p);
 }
@@ -80,5 +82,5 @@ export function rankProducts<T extends RankableProduct>(products: T[], query: st
 export function matchesQuery(product: RankableProduct, query: string): boolean {
   const q = normalizeArabic(query);
   if (!q) return true;
-  return relevanceScore(product, query) > 8;
+  return relevanceScore(product, query) > 0;
 }

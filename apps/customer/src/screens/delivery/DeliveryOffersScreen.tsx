@@ -56,8 +56,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
         id: o.id,
         deliveryFee: o.delivery_fee ?? 0,
         createdAt: o.created_at,
-        pickup: o.merchant_profiles?.latitude != null
-          ? { latitude: o.merchant_profiles.latitude, longitude: o.merchant_profiles.longitude ?? 0 }
+        pickup: (o.merchant_profiles?.latitude != null && o.merchant_profiles?.longitude != null)
+          ? { latitude: o.merchant_profiles.latitude, longitude: o.merchant_profiles.longitude }
           : null,
         order: o,
       }));

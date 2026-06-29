@@ -1316,7 +1316,7 @@ export async function getMerchantReport(merchantId: string, days = 7): Promise<M
 
   if (stats && stats.length > 0) {
     (stats as { date: string; orders_count: number; revenue: number }[]).forEach((r) => {
-      const d = new Date(r.date);
+      const d = new Date(r.date + 'T00:00:00'); // تفسير كتوقيت محلّي ليطابق نافذة المقارنة
       if (d >= startCur) { revenue += r.revenue ?? 0; ordersCount += r.orders_count ?? 0; const i = bucketIndex(d); if (i >= 0 && i < days) chart[i] += r.revenue ?? 0; }
       else { prevRevenue += r.revenue ?? 0; }
     });
