@@ -1,23 +1,42 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, getWalletTransactions, getMerchantWalletBalance, WalletTransaction } from '@marketplace/shared-hooks';
+import { COLORS, formatPrice } from '@marketplace/shared-utils';
+import { useAuthStore, getWalletTransactions, getMerchantWalletBalance, requestMerchantPayout, WalletTransaction } from '@marketplace/shared-hooks';
 
 export default function MerchantWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState(false);
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
     if (!user?.id) { setLoading(false); return; }
     Promise.all([getMerchantWalletBalance(user.id), getWalletTransactions(user.id)])
       .then(([b, tx]) => { setBalance(b); setTransactions(tx); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.id]));
+  }, [user?.id]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const handleWithdraw = () => {
+    if (!user?.id) return;
+    if (balance <= 0) { Alert.alert('تنبيه', 'لا يوجد رصيد قابل للسحب'); return; }
+    Alert.alert('طلب سحب', `طلب سحب كامل الرصيد ${formatPrice(balance)}؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'تأكيد', onPress: async () => {
+        setRequesting(true);
+        try {
+          await requestMerchantPayout(user.id, balance);
+          Alert.alert('تم الإرسال', 'تم استلام طلب السحب وسيُحوَّل خلال أيام العمل.');
+          load();
+        } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال الطلب'); }
+        finally { setRequesting(false); }
+      } },
+    ]);
+  };
 
   const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
 
@@ -46,10 +65,14 @@ export default function MerchantWalletScreen({ navigation }: any) {
             {/* Balance Card */}
             <View style={styles.balanceCard}>
               <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
-              <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
-              <TouchableOpacity style={styles.withdrawBtn} activeOpacity={0.8}>
-                <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.withdrawBtnText}>طلب سحب</Text>
+              <Text style={styles.balanceValue}>{formatPrice(balance)}</Text>
+              <TouchableOpacity style={[styles.withdrawBtn, requesting && { opacity: 0.6 }]} activeOpacity={0.8} onPress={handleWithdraw} disabled={requesting}>
+                {requesting ? <ActivityIndicator size="small" color={COLORS.primary} /> : (
+                  <>
+                    <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
+                    <Text style={styles.withdrawBtnText}>طلب سحب</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
@@ -72,7 +95,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>
-              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.ي
+              {income ? '+' : ''}{formatPrice(item.amount ?? 0)}
             </Text>
           </View>
           );

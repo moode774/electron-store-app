@@ -1568,6 +1568,32 @@ export async function getWalletTransactions(userId: string): Promise<WalletTrans
   return data as WalletTransaction[];
 }
 
+// طلب سحب أرباح التاجر (يُنشئ سجل دفع بحالة pending)
+export async function requestMerchantPayout(merchantId: string, amount: number): Promise<void> {
+  const today = new Date().toISOString().split('T')[0];
+  const { error } = await supabase.from('merchant_payouts').insert({
+    merchant_id: merchantId,
+    period_start: today,
+    period_end: today,
+    gross_amount: amount,
+    net_amount: amount,
+    status: 'pending',
+  });
+  if (error) throw error;
+}
+
+// طلب سحب أرباح المندوب (يُسجَّل كحركة مدينة بانتظار التحويل)
+export async function requestDeliveryWithdrawal(userId: string, amount: number): Promise<void> {
+  const { error } = await supabase.from('wallet_transactions').insert({
+    user_id: userId,
+    type: 'debit',
+    amount,
+    source: 'withdrawal_request',
+    notes: 'طلب سحب الأرباح',
+  });
+  if (error) throw error;
+}
+
 // رصيد محفظة التاجر
 export async function getMerchantWalletBalance(userId: string): Promise<number> {
   const { data } = await supabase

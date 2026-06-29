@@ -1,23 +1,42 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
+import { COLORS, formatPrice } from '@marketplace/shared-utils';
+import { useAuthStore, getDeliveryEarnings, getWalletTransactions, requestDeliveryWithdrawal, WalletTransaction } from '@marketplace/shared-hooks';
 
 export default function DeliveryWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [earnings, setEarnings] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState(false);
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
     if (!user?.id) { setLoading(false); return; }
     Promise.all([getDeliveryEarnings(user.id), getWalletTransactions(user.id)])
       .then(([e, tx]) => { setEarnings(e.balance); setTransactions(tx); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.id]));
+  }, [user?.id]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const handleWithdraw = () => {
+    if (!user?.id) return;
+    if (earnings <= 0) { Alert.alert('تنبيه', 'لا توجد مستحقات قابلة للسحب'); return; }
+    Alert.alert('طلب سحب', `طلب سحب مستحقاتك ${formatPrice(earnings)}؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'تأكيد', onPress: async () => {
+        setRequesting(true);
+        try {
+          await requestDeliveryWithdrawal(user.id, earnings);
+          Alert.alert('تم الإرسال', 'تم استلام طلب سحب أرباحك وسيُحوَّل قريباً.');
+          load();
+        } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال الطلب'); }
+        finally { setRequesting(false); }
+      } },
+    ]);
+  };
 
   const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
 
@@ -46,7 +65,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
             <View style={styles.cardsRow}>
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
+                <Text style={styles.summaryValue}>{formatPrice(earnings, { withSymbol: false })}</Text>
                 <Text style={styles.summaryLabel}>مستحقاتك (ر.ي)</Text>
               </View>
               <View style={[styles.summaryCard, { backgroundColor: '#B45309' }]}>
@@ -55,6 +74,15 @@ export default function DeliveryWalletScreen({ navigation }: any) {
                 <Text style={styles.summaryLabel}>عدد المعاملات</Text>
               </View>
             </View>
+
+            <TouchableOpacity style={[styles.withdrawBtn, requesting && { opacity: 0.6 }]} activeOpacity={0.85} onPress={handleWithdraw} disabled={requesting}>
+              {requesting ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
+                <>
+                  <Ionicons name="arrow-down-circle-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.withdrawBtnText}>طلب سحب الأرباح</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
           </>
@@ -76,7 +104,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#B45309' }]}>
-              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()}
+              {income ? '+' : ''}{formatPrice(item.amount ?? 0, { withSymbol: false })}
             </Text>
           </View>
           );
@@ -100,6 +128,8 @@ const styles = StyleSheet.create({
   summaryCard: { flex: 1, borderRadius: 18, padding: 18, gap: 6 },
   summaryValue: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
   summaryLabel: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
+  withdrawBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.primary, height: 48, borderRadius: 14, marginTop: 12 },
+  withdrawBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
   noteBox: {
     flexDirection: 'row', gap: 8, backgroundColor: '#FEF3C7', borderRadius: 12,
     padding: 12, marginTop: 8,
