@@ -2,7 +2,7 @@
 // LiveTrackingMap — خريطة تتبّع حيّة (مندوب/وجهة/متجر)
 // آمنة على الويب: react-native-maps لا يعمل على الويب فنُرجع null هناك.
 // ============================================================
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 export interface MapPoint {
@@ -50,15 +50,38 @@ function regionFor(points: MapPoint[]) {
  * يُرجع null إذا تعذّرت الخريطة (ويب / غياب نقاط) ليعرض المُستدعي بديلاً نصّياً.
  */
 export default function LiveTrackingMap({ courier, destination, origin, height = 220, style }: Props): React.JSX.Element | null {
-  if (!MapView) return null;
+  const mapRef = useRef<any>(null);
+  const readyRef = useRef(false);
   const points = [courier, destination, origin].filter(Boolean) as MapPoint[];
+
+  // أعِد توسيط الخريطة كلما تغيّرت النقاط (الموقع المباشر للمندوب)
+  const fit = () => {
+    if (!readyRef.current || !mapRef.current || points.length === 0) return;
+    if (points.length >= 2) {
+      mapRef.current.fitToCoordinates(points, {
+        edgePadding: { top: 60, right: 60, bottom: 60, left: 60 },
+        animated: true,
+      });
+    } else {
+      mapRef.current.animateToRegion(regionFor(points), 500);
+    }
+  };
+
+  useEffect(() => {
+    fit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courier?.latitude, courier?.longitude, destination?.latitude, destination?.longitude, origin?.latitude, origin?.longitude]);
+
+  if (!MapView) return null;
   if (points.length === 0) return null;
 
   return (
     <View style={[styles.wrap, { height }, style]}>
       <MapView
+        ref={mapRef}
         style={StyleSheet.absoluteFillObject}
         initialRegion={regionFor(points)}
+        onMapReady={() => { readyRef.current = true; fit(); }}
         showsUserLocation={false}
         toolbarEnabled={false}
         loadingEnabled

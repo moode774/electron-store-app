@@ -134,9 +134,9 @@ export default function MerchantReportsScreen({ navigation }: any) {
               </View>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
                 <Text style={styles.productName}>{p.name}</Text>
-                <Text style={styles.productSold}>{p.total_sold} مبيعة</Text>
+                <Text style={styles.productSold}>{p.total_sold} عملية بيع</Text>
               </View>
-              <Text style={styles.productRevenue}>{formatPrice((p.sale_price ?? p.base_price) * p.total_sold)}</Text>
+              <Text style={styles.productRevenue}>{formatPrice(p.sale_price ?? p.base_price)}</Text>
             </View>
           ))}
         </View>

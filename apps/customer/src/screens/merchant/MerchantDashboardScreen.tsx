@@ -139,11 +139,11 @@ export default function MerchantDashboardScreen({ navigation }: any) {
         {/* ===== Sales Overview Card ===== */}
         <View style={[styles.salesCard, softShadow]}>
           <View style={styles.salesTopRow}>
-            <Text style={styles.salesLabel}>إجمالي المبيعات</Text>
-            <TouchableOpacity style={styles.periodPill} activeOpacity={0.7}>
+            <Text style={styles.salesLabel}>مبيعات اليوم</Text>
+            <TouchableOpacity style={styles.periodPill} activeOpacity={0.7} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })}>
               <Ionicons name="calendar-outline" size={15} color={UI.textGrey} />
-              <Text style={styles.periodText}>هذا الشهر</Text>
-              <Ionicons name="chevron-down" size={14} color={UI.textGrey} />
+              <Text style={styles.periodText}>اليوم</Text>
+              <Ionicons name="chevron-back" size={14} color={UI.textGrey} />
             </TouchableOpacity>
           </View>
 

@@ -10,6 +10,7 @@ const TRACKING_STEPS: { status: string; label: string; icon: keyof typeof Ionico
   { status: ORDER_STATUS.PREPARING, label: 'المتجر يجهّز الطلب', icon: 'cube-outline' },
   { status: ORDER_STATUS.READY, label: 'بانتظار المندوب', icon: 'bicycle-outline' },
   { status: ORDER_STATUS.ASSIGNED, label: 'تم قبول التوصيل', icon: 'checkmark-circle-outline' },
+  { status: ORDER_STATUS.PICKED_UP, label: 'استلم المندوب الطلب', icon: 'cube-outline' },
   { status: ORDER_STATUS.ON_THE_WAY, label: 'في الطريق إليك', icon: 'navigate-outline' },
   { status: ORDER_STATUS.DELIVERED, label: 'تم التسليم', icon: 'checkmark-done-outline' },
 ];
@@ -91,12 +92,14 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const submitComplaint = async (category: string, label: string) => {
     if (!user?.id) return;
     setShowComplaint(false);
+    // شكاوى التوصيل تُوجَّه للمندوب (إن وُجد)، والباقي للمتجر
+    const isDeliveryIssue = (category === 'late_delivery' || category === 'bad_service') && !!order?.delivery_id;
     try {
       await createComplaint({
         complainant_id: user.id,
         order_id: orderId,
-        against_id: order?.merchant_id,
-        against_type: 'merchant',
+        against_id: isDeliveryIssue ? (order?.delivery_id ?? undefined) : order?.merchant_id,
+        against_type: isDeliveryIssue ? 'delivery' : 'merchant',
         category,
         title: `شكوى: ${label}`,
         description: `شكوى بخصوص الطلب ${order?.order_number ?? orderId} — ${label}`,

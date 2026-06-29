@@ -6,11 +6,14 @@ import LiveTrackingMap from '../../components/LiveTrackingMap';
 import { COLORS, ORDER_STATUS, formatPrice, isTerminalStatus, hasValidCoords } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, recordDeliveryLocation, OrderDetail } from '@marketplace/shared-hooks';
 
-const STEPS = [
-  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر' },
-  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب' },
-  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل' },
-  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم' },
+// statusOnComplete = الحالة التي تُكتب عند إتمام إجراء هذه المرحلة:
+//  "استلمت الطلب" => on_the_way (المندوب استلم وبدأ التوصيل، فيرى العميل "في الطريق")
+//  "تم التسليم"   => delivered
+const STEPS: { key: string; label: string; action: string; statusOnComplete: string | null }[] = [
+  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر', statusOnComplete: null },
+  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب', statusOnComplete: ORDER_STATUS.ON_THE_WAY },
+  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل', statusOnComplete: null },
+  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم', statusOnComplete: ORDER_STATUS.DELIVERED },
 ];
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
@@ -30,14 +33,13 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         } else if (user?.id) {
           // تبويب "الطلبات": اجلب الطلب النشط الحالي للمندوب
           const mine = await getDeliveryOrders(user.id);
-          const active = mine.find((o) => o.status !== 'delivered' && o.status !== 'cancelled') ?? mine[0];
+          const active = mine.find((o) => !isTerminalStatus(o.status)) ?? mine[0];
           if (active) loaded = await getOrderById(active.id);
         }
         if (loaded) {
           setOrder(loaded);
-          // استئناف من المرحلة الصحيحة حسب حالة الطلب الفعلية
-          if (loaded.status === ORDER_STATUS.PICKED_UP) setStepIndex(2);
-          else if (loaded.status === ORDER_STATUS.ON_THE_WAY) setStepIndex(3);
+          // استئناف من مرحلة "في الطريق للعميل" إذا كان قد استلم الطلب فعلاً
+          if (loaded.status === ORDER_STATUS.PICKED_UP || loaded.status === ORDER_STATUS.ON_THE_WAY) setStepIndex(2);
         }
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -84,26 +86,22 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
   const advanceStep = async () => {
     if (updating) return;
-    if (stepIndex < STEPS.length - 1) {
-      const nextIndex = stepIndex + 1;
-      // مزامنة الحالة الفعلية في كل انتقال مهم:
-      //  استلمت الطلب (1→2) => picked_up | وصلت للعميل (2→3) => on_the_way
-      const statusForStep: Record<number, string> = {
-        2: ORDER_STATUS.PICKED_UP,
-        3: ORDER_STATUS.ON_THE_WAY,
-      };
-      const newStatus = statusForStep[nextIndex];
-      if (newStatus && orderId) {
-        setUpdating(true);
-        try { await updateOrderStatus(orderId, newStatus); }
-        catch { /* استمر محلياً حتى لو فشلت المزامنة */ }
-        finally { setUpdating(false); }
-      }
-      setStepIndex(nextIndex);
-    } else {
+    const step = STEPS[stepIndex];
+    // اكتب الحالة أولاً؛ لا نتقدّم محلياً إلا بعد نجاح الكتابة (تفادي تباين مع الخادم)
+    if (step.statusOnComplete && orderId) {
       setUpdating(true);
-      if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
+      try {
+        await updateOrderStatus(orderId, step.statusOnComplete);
+      } catch {
+        setUpdating(false);
+        Alert.alert('تعذّر التحديث', 'لم نتمكّن من تحديث حالة الطلب. تحقّق من اتصالك وحاول مرة أخرى.');
+        return;
+      }
       setUpdating(false);
+    }
+    if (stepIndex < STEPS.length - 1) {
+      setStepIndex(stepIndex + 1);
+    } else {
       Alert.alert('أحسنت!', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
         { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
       ]);

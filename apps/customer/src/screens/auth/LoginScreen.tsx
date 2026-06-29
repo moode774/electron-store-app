@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, normalizeYemenPhone, isValidYemenMobile } from '@marketplace/shared-utils';
 import CustomAlert from '../../components/CustomAlert';
 
 const { height } = Dimensions.get('window');
@@ -43,13 +43,12 @@ export default function LoginScreen({
   };
 
   const handleSendOtp = async (): Promise<void> => {
-    const cleaned = phone.trim().replace(/\s/g, '');
-    if (cleaned.length < 9) {
-      showAlert('تنبيه', 'الرجاء إدخال رقم جوال صحيح');
+    if (!isValidYemenMobile(phone)) {
+      showAlert('تنبيه', 'الرجاء إدخال رقم جوال يمني صحيح (7 يليها 8 أرقام)');
       return;
     }
 
-    const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
+    const formatted = normalizeYemenPhone(phone);
     setIsLoading(true);
 
     // يكمل تسجيل الدخول مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة

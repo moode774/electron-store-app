@@ -70,15 +70,23 @@ Deno.serve(async (req: Request) => {
       data: { type: row.type, ...(row.data ?? {}) },
     }));
 
+    // إرسال كل دفعة بمعزل: فشل دفعة لا يُفشل الويبهوك ولا يُعيد إرسال ما نجح
     const results: unknown[] = [];
     for (let i = 0; i < messages.length; i += 100) {
       const chunk = messages.slice(i, i + 100);
-      const res = await fetch(EXPO_PUSH_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(chunk),
-      });
-      results.push(await res.json());
+      try {
+        const res = await fetch(EXPO_PUSH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(chunk),
+          signal: AbortSignal.timeout(10_000),
+        });
+        const text = await res.text();
+        if (!res.ok) { results.push({ ok: false, status: res.status, body: text }); continue; }
+        results.push(JSON.parse(text));
+      } catch (err) {
+        results.push({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
     }
 
     return new Response(JSON.stringify({ sent: messages.length, results }), {

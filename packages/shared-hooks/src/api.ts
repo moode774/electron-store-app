@@ -99,6 +99,7 @@ export interface OrderDetail {
   id: string;
   order_number: string;
   merchant_id?: string;
+  delivery_id?: string | null;
   status: string;
   subtotal: number | null;
   delivery_fee: number;
@@ -357,7 +358,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select(`
-      id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
+      id, order_number, merchant_id, delivery_id, status, subtotal, delivery_fee, discount_amount,
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
       addresses(full_address, city, latitude, longitude),
       merchant_profiles(store_name, store_logo_url),
@@ -543,10 +544,11 @@ export async function updateDeliveryLocation(
   latitude: number,
   longitude: number,
 ): Promise<void> {
-  await supabase
+  const { error } = await supabase
     .from(TABLES.DELIVERY_PROFILES)
     .update({ current_latitude: latitude, current_longitude: longitude })
     .eq('user_id', deliveryUserId);
+  if (error) throw error;
 }
 
 // ============================================================
@@ -572,13 +574,15 @@ export async function recordDeliveryLocation(
     .maybeSingle();
   if (!profile) return;
   const deliveryId = (profile as { id: string }).id;
-  await supabase.from('delivery_location_history').insert({
+  const { error: insErr } = await supabase.from('delivery_location_history').insert({
     delivery_id: deliveryId, order_id: orderId, latitude, longitude,
   });
-  await supabase
+  if (insErr) throw insErr;
+  const { error: updErr } = await supabase
     .from(TABLES.DELIVERY_PROFILES)
     .update({ current_latitude: latitude, current_longitude: longitude })
     .eq('id', deliveryId);
+  if (updErr) throw updErr;
 }
 
 // آخر موقع مسجّل لطلب (احتياطي عند تعذّر البث اللحظي)

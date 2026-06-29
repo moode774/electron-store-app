@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
-import { COLORS, USER_ROLES, type UserRole } from '@marketplace/shared-utils';
+import { COLORS, USER_ROLES, normalizeYemenPhone, isValidYemenMobile, type UserRole } from '@marketplace/shared-utils';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -66,12 +66,11 @@ export default function RegisterScreen({
       Alert.alert('تنبيه', 'الرجاء إدخال اسمك الكامل');
       return;
     }
-    const cleaned = phone.trim().replace(/\s/g, '');
-    if (cleaned.length < 9) {
-      Alert.alert('تنبيه', 'الرجاء إدخال رقم جوال صحيح');
+    if (!isValidYemenMobile(phone)) {
+      Alert.alert('تنبيه', 'الرجاء إدخال رقم جوال يمني صحيح (7 يليها 8 أرقام)');
       return;
     }
-    const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
+    const formatted = normalizeYemenPhone(phone);
     setIsLoading(true);
 
     // ينشئ الحساب ويدخل مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
