@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface CartItem {
   id: string; // product id + variant string
   productId: string;
+  variantId?: string | null;
   name: string;
   price: number;
   emoji: string;

@@ -394,6 +394,7 @@ export async function createOrder(data: {
   notes?: string;
   items: {
     product_id: string;
+    variant_id?: string;
     quantity: number;
     unit_price: number;
     total_price: number;
@@ -427,6 +428,7 @@ export async function createOrder(data: {
   const orderItems = data.items.map((item) => ({
     order_id: order.id,
     product_id: item.product_id,
+    variant_id: item.variant_id ?? null,
     product_name: item.product_name ?? '',
     quantity: item.quantity,
     unit_price: item.unit_price,

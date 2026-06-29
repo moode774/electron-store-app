@@ -82,6 +82,7 @@ export default function CheckoutScreen({ navigation }: any) {
           payment_method: 'cash',
           items: storeItems.map((i) => ({
             product_id: i.productId,
+            variant_id: i.variantId ?? undefined,
             quantity: i.quantity,
             unit_price: i.price,
             total_price: i.price * i.quantity,

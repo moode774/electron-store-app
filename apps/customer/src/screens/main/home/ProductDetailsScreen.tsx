@@ -225,6 +225,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             addToCart({
               id: `${PRODUCT.id}-${selectedVariant?.id ?? 'default'}`,
               productId: PRODUCT.id,
+              variantId: selectedVariant?.id ?? null,
               name: selectedVariant ? `${PRODUCT.name} (${[selectedVariant.size, selectedVariant.color].filter(Boolean).join(' · ')})` : PRODUCT.name,
               price: PRODUCT.price,
               emoji: '🛍️',
