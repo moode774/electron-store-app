@@ -36,7 +36,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     { id: '1', title: 'إجمالي التوصيلات', value: `${info.totalDeliveries}`, icon: 'cube-outline' },
     { id: '2', title: 'توصيلات مسجّلة', value: `${info.count}`, icon: 'checkmark-done-outline' },
     { id: '3', title: 'الرصيد', value: `${info.balance}`, icon: 'wallet-outline' },
-    { id: '4', title: 'العملة', value: 'ر.س', icon: 'cash-outline' },
+    { id: '4', title: 'العملة', value: 'ر.ي', icon: 'cash-outline' },
   ];
 
   return (

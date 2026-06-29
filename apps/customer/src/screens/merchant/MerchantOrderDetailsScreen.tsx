@@ -118,7 +118,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                 <Text style={styles.itemName}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
                 <Text style={styles.itemQty}>الكمية: {item.quantity}</Text>
               </View>
-              <Text style={styles.itemPrice}>{item.total_price} ر.س</Text>
+              <Text style={styles.itemPrice}>{item.total_price} ر.ي</Text>
             </View>
           ))}
         </View>
@@ -127,16 +127,16 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>المجموع الفرعي</Text>
-            <Text style={styles.summaryValue}>{subtotal} ر.س</Text>
+            <Text style={styles.summaryValue}>{subtotal} ر.ي</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>رسوم التوصيل</Text>
-            <Text style={styles.summaryValue}>{deliveryFee} ر.س</Text>
+            <Text style={styles.summaryValue}>{deliveryFee} ر.ي</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>الإجمالي (COD)</Text>
-            <Text style={styles.totalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} ر.س</Text>
+            <Text style={styles.totalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} ر.ي</Text>
           </View>
         </View>
       </ScrollView>

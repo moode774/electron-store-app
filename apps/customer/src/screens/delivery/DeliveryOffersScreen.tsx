@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Dimensions, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, getDeliveryEarnings, OrderSummary } from '@marketplace/shared-hooks';
+import { formatPrice, calculateDeliveryEarning } from '@marketplace/shared-utils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,11 +12,22 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [todayEarnings, setTodayEarnings] = useState(0);
 
   const load = useCallback(async () => {
     try { setOrders(await getAvailableDeliveryOrders()); } catch { setOrders([]); }
     finally { setLoading(false); }
-  }, []);
+    if (user?.id) {
+      try {
+        const e = await getDeliveryEarnings(user.id);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const sum = e.earnings
+          .filter((x) => new Date(x.created_at) >= today)
+          .reduce((s, x) => s + (x.total_earning ?? 0), 0);
+        setTodayEarnings(sum);
+      } catch { /* ignore */ }
+    }
+  }, [user?.id]);
 
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
 
@@ -100,7 +112,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
             <View style={styles.earningsTexts}>
               <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.س</Text></Text>
+              <Text style={styles.earningsValue}>{formatPrice(todayEarnings, { withSymbol: false })} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
             </View>
           </View>
         </View>
@@ -170,7 +182,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="cash-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{formatPrice(current.total_amount ?? 0, { withSymbol: false })} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>قيمة الطلب</Text>
             </View>
@@ -180,7 +192,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="bicycle-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{formatPrice(calculateDeliveryEarning(current.delivery_fee ?? 0), { withSymbol: false })} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>أجر التوصيل</Text>
             </View>

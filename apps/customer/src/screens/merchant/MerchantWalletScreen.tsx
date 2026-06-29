@@ -46,7 +46,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
             {/* Balance Card */}
             <View style={styles.balanceCard}>
               <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
-              <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.س</Text>
+              <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
               <TouchableOpacity style={styles.withdrawBtn} activeOpacity={0.8}>
                 <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
                 <Text style={styles.withdrawBtnText}>طلب سحب</Text>
@@ -72,7 +72,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>
-              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.س
+              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.ي
             </Text>
           </View>
           );

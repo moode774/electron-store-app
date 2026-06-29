@@ -4,6 +4,14 @@
 
 export const APP_NAME = 'متجر اليمن' as const;
 
+// ---- Currency ----------------------------------------------
+// عملة موحّدة عبر كل التطبيق (الريال اليمني)
+export const CURRENCY = {
+  CODE: 'YER',
+  SYMBOL: 'ر.ي',
+  DECIMALS: 0, // الريال اليمني لا يُكسَّر عملياً في التعامل اليومي
+} as const;
+
 // ---- Colors ------------------------------------------------
 export const COLORS = {
   primary: '#1B2B4B',
@@ -129,6 +137,34 @@ export const SERVICE_AREAS = {
   TAIZ: 'taiz',
 } as const;
 
+
+// ---- Pricing & Delivery Defaults ---------------------------
+// قيم افتراضية للخوارزميات حين لا تتوفّر إعدادات المنصّة من قاعدة البيانات
+export const PRICING = {
+  // رسوم التوصيل
+  DEFAULT_BASE_DELIVERY_FEE: 1000, // أساس داخل المدينة
+  PER_KM_FEE: 120, // لكل كيلومتر بعد المسافة المجانية
+  FREE_KM_RADIUS: 2, // أول كيلومترين بلا رسوم إضافية
+  MIN_DELIVERY_FEE: 700,
+  MAX_DELIVERY_FEE: 5000,
+  FREE_DELIVERY_THRESHOLD: 30000, // توصيل مجاني فوق هذا المبلغ
+  // العمولة والولاء
+  DEFAULT_COMMISSION_RATE: 10, // % عمولة المنصّة من التاجر
+  TAX_RATE: 0, // لا ضريبة افتراضياً
+  LOYALTY_POINTS_PER_UNIT: 1, // نقطة لكل LOYALTY_UNIT
+  LOYALTY_UNIT: 100, // كل 100 ر.ي = نقطة
+  LOYALTY_POINT_VALUE: 1, // قيمة النقطة عند الاستبدال (ر.ي)
+  // المندوب
+  DELIVERY_BASE_EARNING_RATE: 0.8, // حصة المندوب من رسوم التوصيل
+} as const;
+
+// رسوم أساسية لكل مدينة (احتياطي حين لا تتوفّر إحداثيات لحساب المسافة)
+export const ZONE_BASE_FEE: Record<string, number> = {
+  sanaa: 1000,
+  aden: 1500,
+  ibb: 1200,
+  taiz: 1200,
+};
 
 // ---- Supabase Tables ---------------------------------------
 export const TABLES = {

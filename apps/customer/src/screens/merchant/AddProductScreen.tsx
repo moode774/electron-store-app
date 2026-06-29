@@ -60,7 +60,7 @@ export default function AddProductScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <Input label="اسم المنتج" placeholder="مثال: سماعات لاسلكية" value={name} onChangeText={setName} />
-        <Input label="السعر (ر.س)" placeholder="0" keyboardType="numeric" value={price} onChangeText={setPrice} />
+        <Input label="السعر (ر.ي)" placeholder="0" keyboardType="numeric" value={price} onChangeText={setPrice} />
         <Input label="الكمية المتوفرة" placeholder="0" keyboardType="numeric" value={stock} onChangeText={setStock} />
         <Input label="وصف المنتج" placeholder="اكتب وصفاً مختصراً..." value={description} onChangeText={setDescription} multiline />
 

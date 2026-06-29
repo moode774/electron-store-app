@@ -19,6 +19,11 @@ const STORE_CATEGORIES = [
 
 const CITIES = ['صنعاء', 'عدن', 'تعز', 'إب', 'الحديدة', 'مأرب', 'حضرموت', 'أخرى'];
 
+const DELIVERY_TYPES = [
+  { id: 'local', title: 'داخل المحافظة', desc: 'استقبال الطلبات من نفس محافظة المتجر فقط' },
+  { id: 'national', title: 'كل المحافظات', desc: 'استقبال الطلبات من جميع المحافظات (شحن بين المدن)' },
+];
+
 const TOTAL_STEPS = 9;
 
 interface Props {
@@ -634,4 +639,12 @@ const styles = StyleSheet.create({
   nextBtn: { height: 54, backgroundColor: COLORS.primary, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 5 },
   btnDisabled: { opacity: 0.6 },
   nextBtnText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  // بطاقات اختيار نطاق التوصيل
+  roleCard: { backgroundColor: '#F9FAFB', borderRadius: 16, padding: 18, borderWidth: 1.5, borderColor: '#E5E7EB' },
+  roleCardActive: { backgroundColor: `${COLORS.primary}0D`, borderColor: COLORS.primary },
+  checkBadge: { position: 'absolute', top: 14, left: 14, width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  roleTitle: { fontSize: 15.5, fontWeight: '800', color: '#111827', marginBottom: 6 },
+  roleTitleActive: { color: COLORS.primary },
+  roleDesc: { fontSize: 12.5, fontWeight: '600', color: '#6B7280', lineHeight: 19 },
+  roleDescActive: { color: COLORS.primaryLight },
 });

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, formatPrice, rankProducts } from '@marketplace/shared-utils';
 import { searchProducts, ProductSummary } from '@marketplace/shared-hooks';
 
 const CATEGORIES = ['الكل', 'إلكترونيات', 'أزياء', 'عطور', 'منزل'];
@@ -28,8 +28,10 @@ export default function SearchScreen({ navigation, route }: any) {
         const data = await searchProducts(query.trim() || undefined);
         let list = [...data];
         if (sort === 'priceAsc') list.sort((a, b) => (a.sale_price ?? a.base_price) - (b.sale_price ?? b.base_price));
-        if (sort === 'priceDesc') list.sort((a, b) => (b.sale_price ?? b.base_price) - (a.sale_price ?? a.base_price));
-        if (sort === 'rating') list.sort((a, b) => b.rating - a.rating);
+        else if (sort === 'priceDesc') list.sort((a, b) => (b.sale_price ?? b.base_price) - (a.sale_price ?? a.base_price));
+        else if (sort === 'rating') list.sort((a, b) => b.rating - a.rating);
+        // الافتراضي: ترتيب حسب الصلة بخوارزمية تطبيع عربي + جودة
+        else list = rankProducts(list, query.trim());
         setResults(list);
       } catch { setResults([]); }
       finally { setIsSearching(false); }
@@ -147,7 +149,7 @@ export default function SearchScreen({ navigation, route }: any) {
                   <Text style={styles.ratingText}>{item.rating}</Text>
                   <Text style={styles.categoryText}>· {item.merchant_profiles?.store_name ?? ''}</Text>
                 </View>
-                <Text style={styles.price}>{item.sale_price ?? item.base_price} ر.س</Text>
+                <Text style={styles.price}>{formatPrice(item.sale_price ?? item.base_price)}</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color="#D1D5DB" />
             </TouchableOpacity>

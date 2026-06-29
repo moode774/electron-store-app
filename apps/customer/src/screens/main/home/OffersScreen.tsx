@@ -22,7 +22,7 @@ export default function OffersScreen({ navigation }: any) {
 
   const offerTitle = (c: Coupon) =>
     c.type === 'percentage' ? `خصم ${c.value}%`
-    : c.type === 'fixed' ? `خصم ${c.value} ر.س`
+    : c.type === 'fixed' ? `خصم ${c.value} ر.ي`
     : `عرض ${c.value}`;
 
   return (

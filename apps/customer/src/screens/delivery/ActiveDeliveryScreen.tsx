@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, ORDER_STATUS, formatPrice } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
 
 const STEPS = [
@@ -21,13 +21,20 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   useEffect(() => {
     const loadOrder = async () => {
       try {
+        let loaded: OrderDetail | null = null;
         if (paramOrderId) {
-          setOrder(await getOrderById(paramOrderId));
+          loaded = await getOrderById(paramOrderId);
         } else if (user?.id) {
           // تبويب "الطلبات": اجلب الطلب النشط الحالي للمندوب
           const mine = await getDeliveryOrders(user.id);
           const active = mine.find((o) => o.status !== 'delivered' && o.status !== 'cancelled') ?? mine[0];
-          if (active) setOrder(await getOrderById(active.id));
+          if (active) loaded = await getOrderById(active.id);
+        }
+        if (loaded) {
+          setOrder(loaded);
+          // استئناف من المرحلة الصحيحة حسب حالة الطلب الفعلية
+          if (loaded.status === ORDER_STATUS.PICKED_UP) setStepIndex(2);
+          else if (loaded.status === ORDER_STATUS.ON_THE_WAY) setStepIndex(3);
         }
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -49,11 +56,30 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     fee: order?.delivery_fee ?? 0,
   };
 
+  const [updating, setUpdating] = useState(false);
+
   const advanceStep = async () => {
+    if (updating) return;
     if (stepIndex < STEPS.length - 1) {
-      setStepIndex(stepIndex + 1);
+      const nextIndex = stepIndex + 1;
+      // مزامنة الحالة الفعلية في كل انتقال مهم:
+      //  استلمت الطلب (1→2) => picked_up | وصلت للعميل (2→3) => on_the_way
+      const statusForStep: Record<number, string> = {
+        2: ORDER_STATUS.PICKED_UP,
+        3: ORDER_STATUS.ON_THE_WAY,
+      };
+      const newStatus = statusForStep[nextIndex];
+      if (newStatus && orderId) {
+        setUpdating(true);
+        try { await updateOrderStatus(orderId, newStatus); }
+        catch { /* استمر محلياً حتى لو فشلت المزامنة */ }
+        finally { setUpdating(false); }
+      }
+      setStepIndex(nextIndex);
     } else {
+      setUpdating(true);
       if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
+      setUpdating(false);
       Alert.alert('أحسنت! 🎉', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
         { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
       ]);
@@ -158,15 +184,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
           <View style={styles.codBox}>
             <Text style={styles.codLabel}>💵 المبلغ المطلوب تحصيله (COD)</Text>
-            <Text style={styles.codValue}>{ORDER.codAmount} ر.ي</Text>
+            <Text style={styles.codValue}>{formatPrice(ORDER.codAmount)}</Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Action Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.actionBtn} onPress={advanceStep} activeOpacity={0.8}>
-          <Text style={styles.actionBtnText}>{currentStep.action}</Text>
+        <TouchableOpacity style={[styles.actionBtn, updating && { opacity: 0.6 }]} onPress={advanceStep} activeOpacity={0.8} disabled={updating}>
+          {updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
         </TouchableOpacity>
       </View>
     </View>

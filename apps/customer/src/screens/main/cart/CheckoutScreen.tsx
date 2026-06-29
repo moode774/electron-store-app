@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, formatPrice, calculateDeliveryFee, calculateOrderTotals, loyaltyPointsEarned } from '@marketplace/shared-utils';
 import { useCartStore, useAuthStore, createOrder, createAddress, validateCoupon } from '@marketplace/shared-hooks';
 import { Card, Button, Input } from '@marketplace/shared-ui';
-
-// Mock Delivery Fees based on area
-const DELIVERY_FEES: Record<string, number> = {
-  [SERVICE_AREAS.SANAA]: 1000,
-  [SERVICE_AREAS.ADEN]: 1500,
-  [SERVICE_AREAS.IBB]: 1200,
-  [SERVICE_AREAS.TAIZ]: 1200,
-};
 
 export default function CheckoutScreen({ navigation }: any) {
   const { getTotalPrice, clearCart, items, getItemsByStore } = useCartStore();
@@ -30,8 +22,12 @@ export default function CheckoutScreen({ navigation }: any) {
   const [couponOk, setCouponOk] = useState(false);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
 
-  const deliveryFee = DELIVERY_FEES[selectedArea] || 1500;
-  const finalTotal = Math.max(0, cartTotal + deliveryFee - discount);
+  // رسوم التوصيل عبر خوارزمية التسعير (أساس المنطقة + توصيل مجاني فوق العتبة)
+  const deliveryInfo = calculateDeliveryFee({ subtotal: cartTotal, zone: selectedArea });
+  const deliveryFee = deliveryInfo.fee;
+  const totals = calculateOrderTotals({ subtotal: cartTotal, deliveryFee, discount });
+  const finalTotal = totals.total;
+  const pointsToEarn = loyaltyPointsEarned(finalTotal);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -64,20 +60,24 @@ export default function CheckoutScreen({ navigation }: any) {
       });
 
       // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر
+      // ملاحظة: رسوم التوصيل تُحتسب مرة واحدة على أول متجر حتى يطابق المبلغ المعروض
       const byStore = getItemsByStore();
+      let isFirstStore = true;
       for (const [storeId, storeItems] of Object.entries(byStore)) {
         const subtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
         // توزيع الخصم على المتاجر بنسبة قيمة كل متجر من الإجمالي
         const storeDiscount = cartTotal > 0 ? Math.round((discount * subtotal) / cartTotal) : 0;
+        const storeDeliveryFee = isFirstStore ? deliveryFee : 0;
+        isFirstStore = false;
         await createOrder({
           customer_id: user.id,
           merchant_id: storeId,
           address_id: savedAddress.id,
           subtotal,
-          delivery_fee: deliveryFee,
+          delivery_fee: storeDeliveryFee,
           discount_amount: storeDiscount,
           tax_amount: 0,
-          total_amount: subtotal + deliveryFee - storeDiscount,
+          total_amount: subtotal + storeDeliveryFee - storeDiscount,
           payment_method: 'cash',
           items: storeItems.map((i) => ({
             product_id: i.productId,
@@ -202,23 +202,32 @@ export default function CheckoutScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>🧾 ملخص الطلب</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>المجموع الفرعي</Text>
-            <Text style={styles.summaryValue}>{cartTotal} ر.س</Text>
+            <Text style={styles.summaryValue}>{formatPrice(cartTotal)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>رسوم التوصيل ({selectedArea})</Text>
-            <Text style={styles.summaryValue}>{deliveryFee} ر.س</Text>
+            <Text style={styles.summaryText}>رسوم التوصيل</Text>
+            {deliveryInfo.isFree ? (
+              <Text style={[styles.summaryValue, { color: '#059669' }]}>مجاني 🎉</Text>
+            ) : (
+              <Text style={styles.summaryValue}>{formatPrice(deliveryFee)}</Text>
+            )}
           </View>
           {discount > 0 && (
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryText, { color: '#059669' }]}>الخصم</Text>
-              <Text style={[styles.summaryValue, { color: '#059669' }]}>- {discount} ر.س</Text>
+              <Text style={[styles.summaryValue, { color: '#059669' }]}>- {formatPrice(discount)}</Text>
             </View>
           )}
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalText}>الإجمالي المطلوب</Text>
-            <Text style={styles.totalValue}>{finalTotal} ر.س</Text>
+            <Text style={styles.totalValue}>{formatPrice(finalTotal)}</Text>
           </View>
+          {pointsToEarn > 0 && (
+            <View style={styles.pointsHint}>
+              <Text style={styles.pointsHintText}>⭐ ستكسب {pointsToEarn} نقطة ولاء من هذا الطلب</Text>
+            </View>
+          )}
         </Card>
 
         <View style={{ height: 40 }} />
@@ -227,7 +236,7 @@ export default function CheckoutScreen({ navigation }: any) {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <Button
-          title={placing ? 'جاري الإرسال...' : `تأكيد الطلب (${finalTotal} ر.س)`}
+          title={placing ? 'جاري الإرسال...' : `تأكيد الطلب (${formatPrice(finalTotal)})`}
           onPress={handleConfirmOrder}
         />
       </View>
@@ -264,6 +273,8 @@ const styles = StyleSheet.create({
   summaryText: { fontSize: 13, color: COLORS.textSecondary },
   summaryValue: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
+  pointsHint: { marginTop: 12, backgroundColor: '#FEF9E7', borderRadius: RADIUS.md, padding: 12, alignItems: 'center' },
+  pointsHintText: { fontSize: 12.5, fontWeight: '700', color: '#B45309' },
   totalText: { fontSize: 16, fontWeight: '800', color: COLORS.primary },
   totalValue: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, padding: SPACING.md, paddingBottom: 30, borderTopWidth: 1, borderTopColor: COLORS.border, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 10 },
