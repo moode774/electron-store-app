@@ -1182,6 +1182,67 @@ export async function getActiveCoupons(): Promise<Coupon[]> {
   return data as unknown as Coupon[];
 }
 
+// ============================================================
+// MERCHANT COUPONS (إدارة كوبونات التاجر)
+// ============================================================
+export interface MerchantCoupon {
+  id: string;
+  code: string;
+  type: string; // 'percentage' | 'fixed'
+  value: number;
+  min_order_amount: number | null;
+  max_discount_amount: number | null;
+  usage_limit: number | null;
+  usage_count: number;
+  end_date: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export async function getMerchantCoupons(merchantId: string): Promise<MerchantCoupon[]> {
+  const { data, error } = await supabase
+    .from('coupons')
+    .select('id, code, type, value, min_order_amount, max_discount_amount, usage_limit, usage_count, end_date, is_active, created_at')
+    .eq('merchant_id', merchantId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data as MerchantCoupon[];
+}
+
+export async function createCoupon(data: {
+  merchant_id: string;
+  code: string;
+  type: string;
+  value: number;
+  min_order_amount?: number | null;
+  max_discount_amount?: number | null;
+  usage_limit?: number | null;
+  end_date?: string | null;
+}): Promise<void> {
+  const { error } = await supabase.from('coupons').insert({
+    merchant_id: data.merchant_id,
+    code: data.code.trim().toUpperCase(),
+    type: data.type,
+    value: data.value,
+    min_order_amount: data.min_order_amount ?? null,
+    max_discount_amount: data.max_discount_amount ?? null,
+    usage_limit: data.usage_limit ?? null,
+    end_date: data.end_date ?? null,
+    is_active: true,
+  });
+  if (error) throw error;
+}
+
+export async function setCouponActive(id: string, isActive: boolean): Promise<void> {
+  const { error } = await supabase.from('coupons').update({ is_active: isActive }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCoupon(id: string): Promise<void> {
+  const { error } = await supabase.from('coupons').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // أكثر منتجات التاجر مبيعاً
 export async function getMerchantTopProducts(merchantId: string, limit = 5): Promise<{
   id: string; name: string; total_sold: number; base_price: number; sale_price: number | null; og_image_url: string | null;

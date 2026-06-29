@@ -97,7 +97,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
 
   const goQuickAction = (id: string) => {
     if (id === '1') navigation.navigate('MerchantAccount', { screen: 'Wallet' });
-    else if (id === '2') Alert.alert('قريباً', 'إدارة العروض والخصومات ستتوفر في التحديث القادم');
+    else if (id === '2') navigation.navigate('MerchantAccount', { screen: 'Coupons' });
     else if (id === '3') navigation.navigate('MerchantProducts');
     else if (id === '4') navigation.navigate('MerchantAccount', { screen: 'Reports' });
   };

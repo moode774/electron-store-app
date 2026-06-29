@@ -13,6 +13,7 @@ import MerchantAccountScreen from '../screens/merchant/MerchantAccountScreen';
 import MerchantReportsScreen from '../screens/merchant/MerchantReportsScreen';
 import MerchantWalletScreen from '../screens/merchant/MerchantWalletScreen';
 import StoreSettingsScreen from '../screens/merchant/StoreSettingsScreen';
+import MerchantCouponsScreen from '../screens/merchant/MerchantCouponsScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 
 export type MerchantOrdersStackParamList = {
@@ -50,6 +51,7 @@ export type MerchantAccountStackParamList = {
   StoreSettings: undefined;
   Reports: undefined;
   Wallet: undefined;
+  Coupons: undefined;
   RoleNotifications: { role: 'merchant' };
 };
 
@@ -61,6 +63,7 @@ function AccountNavigator() {
       <AccountStack.Screen name="StoreSettings" component={StoreSettingsScreen} />
       <AccountStack.Screen name="Reports" component={MerchantReportsScreen} />
       <AccountStack.Screen name="Wallet" component={MerchantWalletScreen} />
+      <AccountStack.Screen name="Coupons" component={MerchantCouponsScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
     </AccountStack.Navigator>
   );
