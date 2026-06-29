@@ -1220,6 +1220,68 @@ export async function getMerchantSalesChart(merchantId: string, days = 8): Promi
 }
 
 // ============================================================
+// MERCHANT REPORT (تقرير التاجر لفترة: مبيعات/طلبات/متوسط/اتجاه)
+// ============================================================
+export interface MerchantReport {
+  revenue: number;
+  ordersCount: number;
+  avgOrderValue: number;
+  trendPct: number; // نسبة التغيّر مقارنة بالفترة السابقة
+  chart: number[]; // مبيعات يومية للفترة الحالية
+  labels: string[]; // تسميات الأيام/الفترات
+}
+
+// يقرأ من merchant_daily_stats (سريع ومُجمّع) إن توفّرت بيانات،
+// وإلا يحسب مباشرة من الطلبات (مصدر الحقيقة).
+export async function getMerchantReport(merchantId: string, days = 7): Promise<MerchantReport> {
+  const now = new Date();
+  const startCur = new Date(now); startCur.setDate(now.getDate() - (days - 1)); startCur.setHours(0, 0, 0, 0);
+  const startPrev = new Date(startCur); startPrev.setDate(startCur.getDate() - days);
+
+  const bucketIndex = (d: Date): number => {
+    const day = new Date(d); day.setHours(0, 0, 0, 0);
+    return Math.floor((day.getTime() - startCur.getTime()) / 86400000);
+  };
+
+  const chart = new Array(days).fill(0);
+  let revenue = 0, ordersCount = 0, prevRevenue = 0;
+
+  // المسار السريع: جدول الإحصائيات اليومية المُجمّع
+  const { data: stats } = await supabase
+    .from('merchant_daily_stats')
+    .select('date, orders_count, revenue')
+    .eq('merchant_id', merchantId)
+    .gte('date', startPrev.toISOString().split('T')[0]);
+
+  if (stats && stats.length > 0) {
+    (stats as { date: string; orders_count: number; revenue: number }[]).forEach((r) => {
+      const d = new Date(r.date);
+      if (d >= startCur) { revenue += r.revenue ?? 0; ordersCount += r.orders_count ?? 0; const i = bucketIndex(d); if (i >= 0 && i < days) chart[i] += r.revenue ?? 0; }
+      else { prevRevenue += r.revenue ?? 0; }
+    });
+  } else {
+    // الاحتساب من الطلبات
+    const { data: orders } = await supabase
+      .from(TABLES.ORDERS)
+      .select('total_amount, created_at, status')
+      .eq('merchant_id', merchantId)
+      .gte('created_at', startPrev.toISOString());
+    (orders ?? []).forEach((o: { total_amount: number | null; created_at: string; status: string }) => {
+      if (o.status === 'cancelled') return;
+      const d = new Date(o.created_at);
+      const amt = o.total_amount ?? 0;
+      if (d >= startCur) { revenue += amt; ordersCount += 1; const i = bucketIndex(d); if (i >= 0 && i < days) chart[i] += amt; }
+      else { prevRevenue += amt; }
+    });
+  }
+
+  const trendPct = prevRevenue > 0 ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100) : (revenue > 0 ? 100 : 0);
+  const avgOrderValue = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
+
+  return { revenue, ordersCount, avgOrderValue, trendPct, chart, labels: [] };
+}
+
+// ============================================================
 // MERCHANT STATS
 // ============================================================
 export async function getMerchantStats(merchantId: string): Promise<{

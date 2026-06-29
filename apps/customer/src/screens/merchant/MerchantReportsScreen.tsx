@@ -2,10 +2,14 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, getMerchantSalesChart, getMerchantTopProducts, getMerchantStats } from '@marketplace/shared-hooks';
+import { COLORS, formatPrice, formatCompactNumber } from '@marketplace/shared-utils';
+import { useAuthStore, getMerchantSalesChart, getMerchantTopProducts, getMerchantReport, MerchantReport } from '@marketplace/shared-hooks';
 
-const PERIODS = ['اليوم', 'الأسبوع', 'الشهر'];
+const PERIODS: { label: string; days: number }[] = [
+  { label: 'اليوم', days: 1 },
+  { label: 'الأسبوع', days: 7 },
+  { label: 'الشهر', days: 30 },
+];
 const DAY_LABELS = ['سبت', 'أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'];
 
 export default function MerchantReportsScreen({ navigation }: any) {
@@ -13,24 +17,29 @@ export default function MerchantReportsScreen({ navigation }: any) {
   const [period, setPeriod] = useState('الأسبوع');
   const [weekSales, setWeekSales] = useState<{ day: string; value: number }[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [ordersCount, setOrdersCount] = useState(0);
+  const [report, setReport] = useState<MerchantReport | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const days = PERIODS.find((p) => p.label === period)?.days ?? 7;
 
   useFocusEffect(useCallback(() => {
     if (!user?.id) { setLoading(false); return; }
+    let active = true;
+    setLoading(true);
     Promise.all([
       getMerchantSalesChart(user.id, 7),
       getMerchantTopProducts(user.id, 5),
-      getMerchantStats(user.id),
-    ]).then(([chart, top, stats]) => {
+      getMerchantReport(user.id, days),
+    ]).then(([chart, top, rep]) => {
+      if (!active) return;
       setWeekSales(chart.map((value, i) => ({ day: DAY_LABELS[i] ?? `${i + 1}`, value })));
       setTopProducts(top);
-      setOrdersCount(stats.todayOrders);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, [user?.id]));
+      setReport(rep);
+    }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [user?.id, days]));
 
   const maxVal = Math.max(...weekSales.map((d) => d.value), 1);
-  const total = weekSales.reduce((s, d) => s + d.value, 0);
 
   return (
     <View style={styles.container}>
@@ -48,35 +57,49 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={styles.periodRow}>
           {PERIODS.map((p) => (
             <TouchableOpacity
-              key={p}
-              style={[styles.periodChip, period === p && styles.periodChipActive]}
-              onPress={() => setPeriod(p)}
+              key={p.label}
+              style={[styles.periodChip, period === p.label && styles.periodChipActive]}
+              onPress={() => setPeriod(p.label)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.periodText, period === p && styles.periodTextActive]}>{p}</Text>
+              <Text style={[styles.periodText, period === p.label && styles.periodTextActive]}>{p.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* KPI Cards */}
-        <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
-            <Text style={styles.kpiValue}>{total.toLocaleString()}</Text>
-            <Text style={styles.kpiLabel}>المبيعات (ر.ي)</Text>
-            <View style={styles.kpiTrend}>
-              <Ionicons name="trending-up" size={12} color="#059669" />
-              <Text style={styles.kpiTrendText}>+12%</Text>
+        {(() => {
+          const trend = report?.trendPct ?? 0;
+          const up = trend >= 0;
+          return (
+            <View style={styles.kpiRow}>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiValue}>{formatCompactNumber(report?.revenue ?? 0)}</Text>
+                <Text style={styles.kpiLabel}>المبيعات (ر.ي)</Text>
+                <View style={[styles.kpiTrend, !up && styles.kpiTrendDown]}>
+                  <Ionicons name={up ? 'trending-up' : 'trending-down'} size={12} color={up ? '#059669' : '#DC2626'} />
+                  <Text style={[styles.kpiTrendText, !up && { color: '#DC2626' }]}>{up ? '+' : ''}{trend}%</Text>
+                </View>
+              </View>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiValue}>{report?.ordersCount ?? 0}</Text>
+                <Text style={styles.kpiLabel}>عدد الطلبات</Text>
+                <View style={styles.kpiTrend}>
+                  <Ionicons name="receipt-outline" size={12} color="#059669" />
+                  <Text style={styles.kpiTrendText}>{period}</Text>
+                </View>
+              </View>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiValue}>{formatCompactNumber(report?.avgOrderValue ?? 0)}</Text>
+                <Text style={styles.kpiLabel}>متوسط الطلب</Text>
+                <View style={styles.kpiTrend}>
+                  <Ionicons name="cart-outline" size={12} color="#059669" />
+                  <Text style={styles.kpiTrendText}>ر.ي</Text>
+                </View>
+              </View>
             </View>
-          </View>
-          <View style={styles.kpiCard}>
-            <Text style={styles.kpiValue}>{ordersCount}</Text>
-            <Text style={styles.kpiLabel}>طلبات اليوم</Text>
-            <View style={styles.kpiTrend}>
-              <Ionicons name="receipt-outline" size={12} color="#059669" />
-              <Text style={styles.kpiTrendText}>اليوم</Text>
-            </View>
-          </View>
-        </View>
+          );
+        })()}
 
         {/* Sales Chart (bars) */}
         <View style={styles.card}>
@@ -113,7 +136,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 <Text style={styles.productName}>{p.name}</Text>
                 <Text style={styles.productSold}>{p.total_sold} مبيعة</Text>
               </View>
-              <Text style={styles.productRevenue}>{((p.sale_price ?? p.base_price) * p.total_sold).toLocaleString()} ر.ي</Text>
+              <Text style={styles.productRevenue}>{formatPrice((p.sale_price ?? p.base_price) * p.total_sold)}</Text>
             </View>
           ))}
         </View>
@@ -138,11 +161,12 @@ const styles = StyleSheet.create({
   periodChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   periodText: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
   periodTextActive: { color: '#FFFFFF' },
-  kpiRow: { flexDirection: 'row', gap: 12 },
-  kpiCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: '#F3F4F6' },
-  kpiValue: { fontSize: 20, fontWeight: '800', color: '#111827' },
-  kpiLabel: { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
+  kpiRow: { flexDirection: 'row', gap: 10 },
+  kpiCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 13, borderWidth: 1.5, borderColor: '#F3F4F6' },
+  kpiValue: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  kpiLabel: { fontSize: 11, color: '#9CA3AF', marginTop: 4 },
   kpiTrend: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10, backgroundColor: '#DCFCE7', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  kpiTrendDown: { backgroundColor: '#FEE2E2' },
   kpiTrendText: { fontSize: 11, fontWeight: '700', color: '#059669' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: '#F3F4F6' },
   sectionTitle: { fontSize: 14.5, fontWeight: '800', color: '#111827', marginBottom: 16 },
