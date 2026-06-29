@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, ORDER_STATUS, formatPrice } from '@marketplace/shared-utils';
-import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
+import * as Location from 'expo-location';
+import { COLORS, ORDER_STATUS, formatPrice, isTerminalStatus } from '@marketplace/shared-utils';
+import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, recordDeliveryLocation, OrderDetail } from '@marketplace/shared-hooks';
 
 const STEPS = [
   { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر' },
@@ -43,6 +44,26 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   }, [paramOrderId, user?.id]);
 
   const orderId = order?.id ?? paramOrderId;
+
+  // بثّ موقع المندوب المباشر أثناء التوصيل (يتوقف عند انتهاء الطلب أو مغادرة الشاشة)
+  useEffect(() => {
+    if (!orderId || !user?.id || !order || isTerminalStatus(order.status)) return;
+    let sub: Location.LocationSubscription | null = null;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted' || cancelled) return;
+        sub = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, timeInterval: 15000, distanceInterval: 50 },
+          (pos) => {
+            recordDeliveryLocation(user.id, orderId, pos.coords.latitude, pos.coords.longitude).catch(() => {});
+          },
+        );
+      } catch { /* تتبّع تحسيني — يُتجاهل عند الفشل */ }
+    })();
+    return () => { cancelled = true; sub?.remove(); };
+  }, [orderId, user?.id, order?.status]);
 
   const currentStep = STEPS[stepIndex];
 

@@ -111,7 +111,7 @@ export interface OrderDetail {
   created_at: string;
   updated_at: string;
   delivery_fee_amount?: number;
-  addresses?: { full_address: string; city: string | null } | null;
+  addresses?: { full_address: string; city: string | null; latitude?: number | null; longitude?: number | null } | null;
   merchant_profiles?: { store_name: string; store_logo_url: string | null } | null;
   customer?: { full_name: string | null; phone: string | null } | null;
   order_items?: {
@@ -359,7 +359,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
     .select(`
       id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
-      addresses(full_address, city),
+      addresses(full_address, city, latitude, longitude),
       merchant_profiles(store_name, store_logo_url),
       customer:users(full_name, phone),
       order_items(id, quantity, unit_price, total_price, product_name, products(name))
@@ -547,6 +547,68 @@ export async function updateDeliveryLocation(
     .from(TABLES.DELIVERY_PROFILES)
     .update({ current_latitude: latitude, current_longitude: longitude })
     .eq('user_id', deliveryUserId);
+}
+
+// ============================================================
+// LIVE DELIVERY TRACKING (تتبّع موقع المندوب المباشر)
+// ============================================================
+export interface DeliveryLocation {
+  latitude: number;
+  longitude: number;
+  recorded_at: string;
+}
+
+// المندوب يكتب موقعه أثناء توصيل طلب (+ تحديث موقعه الحالي في ملفه)
+export async function recordDeliveryLocation(
+  deliveryUserId: string,
+  orderId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  const { data: profile } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .select('id')
+    .eq('user_id', deliveryUserId)
+    .maybeSingle();
+  if (!profile) return;
+  const deliveryId = (profile as { id: string }).id;
+  await supabase.from('delivery_location_history').insert({
+    delivery_id: deliveryId, order_id: orderId, latitude, longitude,
+  });
+  await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ current_latitude: latitude, current_longitude: longitude })
+    .eq('id', deliveryId);
+}
+
+// آخر موقع مسجّل لطلب (احتياطي عند تعذّر البث اللحظي)
+export async function getLatestDeliveryLocation(orderId: string): Promise<DeliveryLocation | null> {
+  const { data } = await supabase
+    .from('delivery_location_history')
+    .select('latitude, longitude, recorded_at')
+    .eq('order_id', orderId)
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as DeliveryLocation) ?? null;
+}
+
+// اشتراك لحظي بموقع المندوب لطلب معيّن — يُعيد دالة لإلغاء الاشتراك
+export function subscribeToDeliveryLocation(
+  orderId: string,
+  onLocation: (loc: DeliveryLocation) => void,
+): () => void {
+  const channel = supabase
+    .channel(`delivery_loc_${orderId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'delivery_location_history', filter: `order_id=eq.${orderId}` },
+      (payload: { new: DeliveryLocation }) => {
+        if (payload?.new) onLocation(payload.new);
+      },
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
 }
 
 // ============================================================

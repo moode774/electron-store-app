@@ -52,7 +52,9 @@ export function formatEtaRange(minutes: number): string {
 }
 
 /** هل تتوفّر إحداثيات صالحة (غير صفرية وغير فارغة)؟ */
-export function hasValidCoords(p: Partial<LatLng> | null | undefined): p is LatLng {
+export function hasValidCoords(
+  p: { latitude?: number | null; longitude?: number | null } | null | undefined,
+): p is LatLng {
   return (
     !!p &&
     typeof p.latitude === 'number' &&
