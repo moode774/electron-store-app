@@ -51,7 +51,7 @@ export default function HelpCenterScreen({ navigation }: any) {
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم وسيتم الرد قريباً');
+      Alert.alert('تم الإرسال', 'تم فتح تذكرة دعم وسيتم الرد قريباً');
       loadTickets();
     } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
     finally { setSending(false); }

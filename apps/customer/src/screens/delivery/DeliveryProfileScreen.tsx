@@ -40,7 +40,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
       await updateUserProfile(user.id, { full_name: name.trim() });
       await updateDeliveryProfileByUser(user.id, { vehicle_type: vehicle, vehicle_plate: plateNumber.trim() || undefined });
       await refreshUser();
-      Alert.alert('تم الحفظ ✅', 'تم تحديث بياناتك بنجاح', [
+      Alert.alert('تم الحفظ', 'تم تحديث بياناتك بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
@@ -92,7 +92,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
           </View>
           <View style={{ flex: 1, marginHorizontal: 12 }}>
             <Text style={styles.docTitle}>البطاقة الشخصية</Text>
-            <Text style={styles.docStatus}>✅ تم التحقق</Text>
+            <Text style={styles.docStatus}>تم التحقق</Text>
           </View>
           <Ionicons name="chevron-back" size={18} color="#D1D5DB" />
         </TouchableOpacity>

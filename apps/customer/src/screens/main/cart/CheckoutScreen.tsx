@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, formatPrice, calculateDeliveryFee, calculateOrderTotals, loyaltyPointsEarned } from '@marketplace/shared-utils';
 import { useCartStore, useAuthStore, createOrder, createAddress, validateCoupon } from '@marketplace/shared-hooks';
 import { Card, Button, Input } from '@marketplace/shared-ui';
@@ -90,7 +91,7 @@ export default function CheckoutScreen({ navigation }: any) {
       }
 
       clearCart();
-      Alert.alert('تم الطلب ✅', 'تم إرسال طلبك بنجاح', [
+      Alert.alert('تم الطلب', 'تم إرسال طلبك بنجاح', [
         { text: 'متابعة', onPress: () => navigation.navigate('Orders', { screen: 'OrdersList' }) },
       ]);
     } catch (e: any) {
@@ -107,7 +108,7 @@ export default function CheckoutScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>تأكيد الطلب</Text>
         <View style={{ width: 40 }} />
@@ -117,7 +118,7 @@ export default function CheckoutScreen({ navigation }: any) {
         
         {/* Address Selection */}
         <Card style={styles.card} variant="elevated">
-          <Text style={styles.sectionTitle}>📍 عنوان التوصيل</Text>
+          <View style={styles.sectionTitleRow}><Ionicons name="location-outline" size={18} color={COLORS.primary} /><Text style={styles.sectionTitle}>عنوان التوصيل</Text></View>
           
           <Text style={styles.label}>المنطقة / المدينة</Text>
           <View style={styles.areasRow}>
@@ -150,13 +151,13 @@ export default function CheckoutScreen({ navigation }: any) {
             onChangeText={setLandmark}
           />
           <TouchableOpacity style={styles.mapBtn}>
-            <Text style={styles.mapBtnText}>📌 تحديد الموقع على الخريطة</Text>
+            <Text style={styles.mapBtnText}>تحديد الموقع على الخريطة</Text>
           </TouchableOpacity>
         </Card>
 
         {/* Contact Info */}
         <Card style={styles.card} variant="elevated">
-          <Text style={styles.sectionTitle}>📞 معلومات التواصل</Text>
+          <View style={styles.sectionTitleRow}><Ionicons name="call-outline" size={18} color={COLORS.primary} /><Text style={styles.sectionTitle}>معلومات التواصل</Text></View>
           <Input
             label="رقم هاتف إضافي (اختياري)"
             placeholder="7xxxxxxxx"
@@ -168,17 +169,17 @@ export default function CheckoutScreen({ navigation }: any) {
 
         {/* Payment Method */}
         <Card style={styles.card} variant="elevated">
-          <Text style={styles.sectionTitle}>💳 طريقة الدفع</Text>
+          <View style={styles.sectionTitleRow}><Ionicons name="card-outline" size={18} color={COLORS.primary} /><Text style={styles.sectionTitle}>طريقة الدفع</Text></View>
           <View style={styles.paymentMethod}>
             <View style={styles.paymentRadioActive} />
             <Text style={styles.paymentMethodText}>الدفع نقداً عند الاستلام (COD)</Text>
-            <Text style={styles.paymentEmoji}>💵</Text>
+            <Ionicons name="cash-outline" size={22} color={COLORS.success} />
           </View>
         </Card>
 
         {/* Coupon */}
         <Card style={styles.card} variant="elevated">
-          <Text style={styles.sectionTitle}>🎟️ كود الخصم</Text>
+          <View style={styles.sectionTitleRow}><Ionicons name="pricetag-outline" size={18} color={COLORS.primary} /><Text style={styles.sectionTitle}>كود الخصم</Text></View>
           <View style={styles.couponRow}>
             <View style={{ flex: 1 }}>
               <Input
@@ -199,7 +200,7 @@ export default function CheckoutScreen({ navigation }: any) {
 
         {/* Summary */}
         <Card style={styles.card} variant="elevated">
-          <Text style={styles.sectionTitle}>🧾 ملخص الطلب</Text>
+          <View style={styles.sectionTitleRow}><Ionicons name="receipt-outline" size={18} color={COLORS.primary} /><Text style={styles.sectionTitle}>ملخص الطلب</Text></View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>المجموع الفرعي</Text>
             <Text style={styles.summaryValue}>{formatPrice(cartTotal)}</Text>
@@ -207,7 +208,7 @@ export default function CheckoutScreen({ navigation }: any) {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>رسوم التوصيل</Text>
             {deliveryInfo.isFree ? (
-              <Text style={[styles.summaryValue, { color: '#059669' }]}>مجاني 🎉</Text>
+              <Text style={[styles.summaryValue, { color: '#059669' }]}>مجاني</Text>
             ) : (
               <Text style={styles.summaryValue}>{formatPrice(deliveryFee)}</Text>
             )}
@@ -225,7 +226,7 @@ export default function CheckoutScreen({ navigation }: any) {
           </View>
           {pointsToEarn > 0 && (
             <View style={styles.pointsHint}>
-              <Text style={styles.pointsHintText}>⭐ ستكسب {pointsToEarn} نقطة ولاء من هذا الطلب</Text>
+              <Text style={styles.pointsHintText}>ستكسب {pointsToEarn} نقطة ولاء من هذا الطلب</Text>
             </View>
           )}
         </Card>
@@ -256,7 +257,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: COLORS.textPrimary, fontFamily: 'El Messiri' },
   scrollContent: { padding: SPACING.md, paddingBottom: 100 },
   card: { marginBottom: SPACING.md },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.primary, marginBottom: 16, fontFamily: 'El Messiri' },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.primary, fontFamily: 'El Messiri' },
   label: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, marginBottom: 8, fontWeight: '500', fontFamily: 'IBM Plex Sans Arabic' },
   areasRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   areaChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },

@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import LiveTrackingMap from '../../../components/LiveTrackingMap';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS, formatPrice, haversineKm, estimateRoadKm, estimateEtaMinutes, formatEtaRange, formatRelativeTime, hasValidCoords } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, createComplaint, subscribeToDeliveryLocation, getLatestDeliveryLocation, CancellationReason, OrderDetail, DeliveryLocation } from '@marketplace/shared-hooks';
 
-const TRACKING_STEPS = [
-  { status: ORDER_STATUS.PENDING, label: 'بانتظار تأكيد المتجر', icon: '⏳' },
-  { status: ORDER_STATUS.PREPARING, label: 'المتجر يجهز الطلب', icon: '📦' },
-  { status: ORDER_STATUS.READY, label: 'بانتظار المندوب', icon: '🛵' },
-  { status: ORDER_STATUS.ASSIGNED, label: 'تم قبول التوصيل', icon: '✅' },
-  { status: ORDER_STATUS.ON_THE_WAY, label: 'في الطريق إليك', icon: '📍' },
-  { status: ORDER_STATUS.ON_THE_WAY, label: 'المندوب بالباب', icon: '🏠' },
-  { status: ORDER_STATUS.DELIVERED, label: 'تم التسليم', icon: '🎉' },
+const TRACKING_STEPS: { status: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { status: ORDER_STATUS.PENDING, label: 'بانتظار تأكيد المتجر', icon: 'hourglass-outline' },
+  { status: ORDER_STATUS.PREPARING, label: 'المتجر يجهّز الطلب', icon: 'cube-outline' },
+  { status: ORDER_STATUS.READY, label: 'بانتظار المندوب', icon: 'bicycle-outline' },
+  { status: ORDER_STATUS.ASSIGNED, label: 'تم قبول التوصيل', icon: 'checkmark-circle-outline' },
+  { status: ORDER_STATUS.ON_THE_WAY, label: 'في الطريق إليك', icon: 'navigate-outline' },
+  { status: ORDER_STATUS.DELIVERED, label: 'تم التسليم', icon: 'checkmark-done-outline' },
 ];
 
 export default function OrderTrackingScreen({ navigation, route }: any) {
@@ -45,6 +46,8 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
   // مسافة ووقت وصول المندوب للعميل (عند توفّر الإحداثيات)
   const dest = order?.addresses;
+  const destPoint = hasValidCoords(dest) ? { latitude: dest.latitude!, longitude: dest.longitude! } : null;
+  const courierPoint = courierLoc ? { latitude: courierLoc.latitude, longitude: courierLoc.longitude } : null;
   const liveTrack = (() => {
     if (!courierLoc || !hasValidCoords(dest)) return null;
     const km = haversineKm(courierLoc, { latitude: dest.latitude!, longitude: dest.longitude! });
@@ -114,7 +117,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         rating,
       });
       setReviewed(true);
-      Alert.alert('شكراً لك ⭐', 'تم إرسال تقييمك بنجاح');
+      Alert.alert('شكراً لك', 'تم إرسال تقييمك بنجاح');
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال التقييم');
     } finally {
@@ -140,7 +143,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>تتبع الطلب</Text>
         <View style={{ width: 40 }} />
@@ -150,22 +153,28 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         
         {/* Map / Live Tracking */}
         <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          {liveTrack ? (
+          {destPoint ? (
+            <LiveTrackingMap courier={courierPoint} destination={destPoint} height={250} style={styles.mapFill} />
+          ) : null}
+          {/* بديل أو طبقة معلومات فوق الخريطة */}
+          {!destPoint && (
+            <View style={styles.mapPlaceholder}>
+              <Ionicons name="map-outline" size={44} color="#9CA3AF" />
+              <Text style={styles.mapText}>
+                {inTransit ? 'بانتظار تحديد موقع المندوب…' : 'يظهر تتبّع المندوب المباشر هنا عند انطلاق التوصيل'}
+              </Text>
+            </View>
+          )}
+          {liveTrack && (
             <View style={styles.liveBox}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveTitle}>المندوب على بُعد {liveTrack.km.toFixed(1)} كم</Text>
-              <Text style={styles.liveEta}>الوصول المتوقّع خلال {formatEtaRange(liveTrack.eta)}</Text>
-              <Text style={styles.liveUpdated}>آخر تحديث {formatRelativeTime(liveTrack.updatedAt)}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.liveTitle}>المندوب على بُعد {liveTrack.km.toFixed(1)} كم</Text>
+                <Text style={styles.liveEta}>الوصول خلال {formatEtaRange(liveTrack.eta)} · حُدّث {formatRelativeTime(liveTrack.updatedAt)}</Text>
+              </View>
+              <Ionicons name="bicycle" size={22} color="#2563EB" />
             </View>
-          ) : inTransit ? (
-            <Text style={styles.mapText}>بانتظار تحديث موقع المندوب…</Text>
-          ) : (
-            <Text style={styles.mapText}>سيظهر تتبّع المندوب المباشر هنا عند انطلاق التوصيل</Text>
           )}
-          <View style={styles.driverPin}>
-            <Text>🛵</Text>
-          </View>
         </View>
 
         {/* Order Info Summary */}
@@ -250,7 +259,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                     styles.timelineIconWrap,
                     isDELIVERED ? styles.iconDELIVERED : isCurrent ? styles.iconCurrent : styles.iconPending
                   ]}>
-                    <Text style={styles.stepIcon}>{step.icon}</Text>
+                    <Ionicons name={step.icon} size={16} color={isDELIVERED ? '#FFFFFF' : isCurrent ? COLORS.primary : COLORS.textMuted} />
                   </View>
                   {index < TRACKING_STEPS.length - 1 && (
                     <View style={[
@@ -282,7 +291,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           <View style={styles.reviewCard}>
             <Text style={styles.reviewTitle}>قيّم تجربتك مع المتجر</Text>
             {reviewed ? (
-              <Text style={styles.reviewThanks}>✅ شكراً لتقييمك</Text>
+              <Text style={styles.reviewThanks}>شكراً لتقييمك</Text>
             ) : (
               <>
                 <View style={styles.starsRow}>
@@ -338,14 +347,14 @@ const styles = StyleSheet.create({
   reasonItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   reasonText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
   reasonArrow: { fontSize: 20, color: '#D1D5DB' },
-  mapContainer: { height: 250, backgroundColor: '#E3F2FD', alignItems: 'center', justifyContent: 'center' },
-  mapEmoji: { fontSize: 60, opacity: 0.5 },
-  mapText: { color: '#1976D2', marginTop: 10, fontWeight: '600', textAlign: 'center', paddingHorizontal: 24 },
-  liveBox: { alignItems: 'center', marginTop: 10, backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16 },
-  liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#059669', marginBottom: 8 },
-  liveTitle: { fontSize: 15, fontWeight: '800', color: '#111827' },
-  liveEta: { fontSize: 13, fontWeight: '700', color: '#059669', marginTop: 4 },
-  liveUpdated: { fontSize: 11, color: '#9CA3AF', marginTop: 4 },
+  mapContainer: { height: 250, backgroundColor: '#EEF2F6', alignItems: 'center', justifyContent: 'center' },
+  mapFill: { ...StyleSheet.absoluteFillObject, width: '100%', height: 250 },
+  mapPlaceholder: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  mapText: { color: COLORS.textSecondary, marginTop: 10, fontWeight: '600', textAlign: 'center' },
+  liveBox: { position: 'absolute', left: 12, right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,255,255,0.96)', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 5 },
+  liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#059669' },
+  liveTitle: { fontSize: 14.5, fontWeight: '800', color: '#111827' },
+  liveEta: { fontSize: 12, fontWeight: '600', color: '#059669', marginTop: 3 },
   driverPin: { position: 'absolute', top: 100, left: '40%', width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 5 },
   infoCard: { margin: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, marginTop: -30 },
   orderId: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4, fontFamily: 'El Messiri' },

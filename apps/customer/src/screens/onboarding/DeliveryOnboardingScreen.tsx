@@ -69,7 +69,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
       });
 
       Alert.alert(
-        'تم التسجيل ✅',
+        'تم التسجيل',
         'تم إرسال بياناتك بنجاح! سيتم مراجعة طلبك خلال 24 ساعة وستصلك رسالة بالقبول.',
         [{ text: 'ابدأ الآن', onPress: onComplete }],
       );
@@ -256,7 +256,7 @@ function DocPicker({ label, icon, picked, onPick }: { label: string; icon: strin
       </View>
       <View style={styles.docInfo}>
         <Text style={[styles.docLabel, picked && styles.docLabelPicked]}>{label}</Text>
-        <Text style={styles.docSub}>{picked ? 'تم الاختيار ✅ — اضغط للتغيير' : 'اضغط للاختيار من معرض الصور'}</Text>
+        <Text style={styles.docSub}>{picked ? 'تم الاختيار — اضغط للتغيير' : 'اضغط للاختيار من معرض الصور'}</Text>
       </View>
       <Ionicons name="camera-outline" size={20} color="#9CA3AF" />
     </TouchableOpacity>

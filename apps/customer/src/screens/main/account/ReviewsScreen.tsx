@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZE, RADIUS } from '@marketplace/shared-utils';
 import { Card } from '@marketplace/shared-ui';
 import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
@@ -24,7 +25,7 @@ export default function ReviewsScreen({ navigation }: any) {
     <Card style={styles.reviewCard} variant="outlined">
       <View style={styles.reviewHeader}>
         <View style={styles.reviewTitleRow}>
-          <Text style={styles.reviewIcon}>{isDriver(item.target_type) ? '🛵' : '🏪'}</Text>
+          <Ionicons name={isDriver(item.target_type) ? 'bicycle-outline' : 'storefront-outline'} size={18} color={COLORS.primary} />
           <Text style={styles.reviewTarget}>{isDriver(item.target_type) ? 'مندوب توصيل' : 'متجر'}</Text>
         </View>
         <Text style={styles.reviewDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
@@ -51,7 +52,7 @@ export default function ReviewsScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>التقييمات والمراجعات</Text>
         <View style={{ width: 40 }} />
@@ -85,7 +86,7 @@ export default function ReviewsScreen({ navigation }: any) {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyEmoji}>⭐</Text>
+              <Ionicons name="star-outline" size={56} color="#D1D5DB" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyText}>لا توجد تقييمات حالياً</Text>
             </View>
           }

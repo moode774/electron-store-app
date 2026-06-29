@@ -49,7 +49,7 @@ export default function LoginScreen({
       return;
     }
 
-    const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
+    const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
     // يكمل تسجيل الدخول مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
@@ -92,7 +92,7 @@ export default function LoginScreen({
           <View style={styles.formContainer}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.countryCodeBox} activeOpacity={0.7}>
-                <Text style={styles.countryCodeText}>+966</Text>
+                <Text style={styles.countryCodeText}>+967</Text>
                 <Ionicons name="chevron-down" size={16} color="#111827" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
 

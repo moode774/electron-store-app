@@ -31,7 +31,7 @@ export default function AddProductScreen({ navigation }: any) {
         base_price: parseFloat(price),
         is_active: true,
       });
-      Alert.alert('تم الحفظ ✅', 'تمت إضافة المنتج بنجاح', [
+      Alert.alert('تم الحفظ', 'تمت إضافة المنتج بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {

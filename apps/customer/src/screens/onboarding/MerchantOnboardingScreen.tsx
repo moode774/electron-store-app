@@ -218,7 +218,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       });
 
       Alert.alert(
-        'تم التسجيل ✅',
+        'تم التسجيل',
         'تم إرسال بيانات متجرك بنجاح! سيراجع فريقنا الطلب ويصلك إشعار بالقبول خلال 24 ساعة.',
         [{ text: 'ابدأ الآن', onPress: onComplete }],
       );

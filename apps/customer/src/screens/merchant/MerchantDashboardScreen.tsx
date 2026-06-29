@@ -97,7 +97,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
 
   const goQuickAction = (id: string) => {
     if (id === '1') navigation.navigate('MerchantAccount', { screen: 'Wallet' });
-    else if (id === '2') Alert.alert('قريباً 🎉', 'إدارة العروض والخصومات ستتوفر في التحديث القادم');
+    else if (id === '2') Alert.alert('قريباً', 'إدارة العروض والخصومات ستتوفر في التحديث القادم');
     else if (id === '3') navigation.navigate('MerchantProducts');
     else if (id === '4') navigation.navigate('MerchantAccount', { screen: 'Reports' });
   };
@@ -118,7 +118,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
             </View>
 
             <View style={styles.headerTexts}>
-              <Text style={styles.welcomeText}>مرحباً بعودتك 👋</Text>
+              <Text style={styles.welcomeText}>مرحباً بعودتك</Text>
               <View style={styles.storeNameRow}>
                 <Text style={styles.storeName}>{user?.full_name ?? 'متجر الأناقة'}</Text>
                 <Ionicons name="checkmark-circle" size={16} color={UI.blue} />

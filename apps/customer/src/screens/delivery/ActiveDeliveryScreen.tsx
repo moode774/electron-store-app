@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { COLORS, ORDER_STATUS, formatPrice, isTerminalStatus } from '@marketplace/shared-utils';
+import LiveTrackingMap from '../../components/LiveTrackingMap';
+import { COLORS, ORDER_STATUS, formatPrice, isTerminalStatus, hasValidCoords } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, recordDeliveryLocation, OrderDetail } from '@marketplace/shared-hooks';
 
 const STEPS = [
   { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر' },
   { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب' },
   { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل' },
-  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم ✅' },
+  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم' },
 ];
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
@@ -18,6 +19,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [stepIndex, setStepIndex] = useState(0);
+  const [myPos, setMyPos] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -57,6 +59,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         sub = await Location.watchPositionAsync(
           { accuracy: Location.Accuracy.Balanced, timeInterval: 15000, distanceInterval: 50 },
           (pos) => {
+            setMyPos({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
             recordDeliveryLocation(user.id, orderId, pos.coords.latitude, pos.coords.longitude).catch(() => {});
           },
         );
@@ -101,7 +104,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       setUpdating(true);
       if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
       setUpdating(false);
-      Alert.alert('أحسنت! 🎉', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
+      Alert.alert('أحسنت!', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
         { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
       ]);
     }
@@ -145,11 +148,20 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Map Placeholder */}
-        <View style={styles.mapPlaceholder}>
-          <Ionicons name="map-outline" size={48} color="#9CA3AF" />
-          <Text style={styles.mapText}>الخريطة (قريباً)</Text>
-        </View>
+        {/* Map */}
+        {hasValidCoords(order?.addresses) || myPos ? (
+          <LiveTrackingMap
+            courier={myPos}
+            destination={hasValidCoords(order?.addresses) ? { latitude: order!.addresses!.latitude!, longitude: order!.addresses!.longitude! } : null}
+            height={180}
+            style={{ marginBottom: 16 }}
+          />
+        ) : (
+          <View style={styles.mapPlaceholder}>
+            <Ionicons name="map-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.mapText}>جارٍ تحديد الموقع…</Text>
+          </View>
+        )}
 
         {/* Progress Steps */}
         <View style={styles.stepsCard}>
@@ -204,7 +216,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           </View>
 
           <View style={styles.codBox}>
-            <Text style={styles.codLabel}>💵 المبلغ المطلوب تحصيله (COD)</Text>
+            <Text style={styles.codLabel}>المبلغ المطلوب تحصيله (COD)</Text>
             <Text style={styles.codValue}>{formatPrice(ORDER.codAmount)}</Text>
           </View>
         </View>
