@@ -13,6 +13,7 @@ import * as SplashScreenExpo from 'expo-splash-screen';
 
 import { useAuthStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
+import { registerForPushNotificationsAsync } from './src/services/notifications';
 
 import SplashScreen from './src/screens/auth/SplashScreen';
 import OnboardingScreen from './src/screens/auth/OnboardingScreen';
@@ -50,6 +51,30 @@ if (!I18nManager.isRTL) {
   I18nManager.allowRTL(true);
   I18nManager.forceRTL(true);
 }
+
+// روابط عميقة: فتح منتج/متجر/تتبّع طلب من رابط خارجي أو إشعار
+const linking: any = {
+  prefixes: ['marketplace-customer://', 'https://metjar-alyemen.app'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Home: {
+            screens: {
+              ProductDetails: 'product/:productId',
+              StoreDetails: 'store/:storeId',
+            },
+          },
+          Orders: {
+            screens: {
+              OrderTracking: 'order/:orderId',
+            },
+          },
+        },
+      },
+    },
+  },
+};
 
 type AuthStackParamList = {
   Login: undefined;
@@ -97,6 +122,8 @@ function RootNavigator(): React.JSX.Element {
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) { setProfileChecked(true); return; }
+    // تسجيل رمز الإشعارات الفورية (أفضل جهد، لا يعطّل التطبيق)
+    registerForPushNotificationsAsync(user.id).catch(() => {});
     const check = async () => {
       try {
         if (role === USER_ROLES.MERCHANT) {
@@ -190,7 +217,7 @@ export default function App(): React.JSX.Element | null {
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

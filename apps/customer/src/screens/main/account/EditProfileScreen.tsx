@@ -25,7 +25,7 @@ export default function EditProfileScreen({ navigation }: any) {
         email: email.trim() || undefined,
       });
       await refreshUser();
-      Alert.alert('تم الحفظ ✅', 'تم تحديث بياناتك بنجاح', [
+      Alert.alert('تم الحفظ', 'تم تحديث بياناتك بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {

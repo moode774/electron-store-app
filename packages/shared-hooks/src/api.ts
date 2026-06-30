@@ -53,7 +53,7 @@ export interface ProductDetail {
   created_at: string;
   merchant_profiles?: { store_name: string; id: string; store_logo_url: string | null } | null;
   product_images?: { id: string; url: string; is_primary: boolean; sort_order: number }[];
-  product_variants?: { id: string; name: string; price_modifier: number; stock_quantity: number; is_active: boolean }[];
+  product_variants?: { id: string; size: string | null; color: string | null; color_hex: string | null; additional_price: number; stock_qty: number; is_active: boolean }[];
 }
 
 export interface StoreSummary {
@@ -89,8 +89,8 @@ export interface OrderSummary {
   created_at: string;
   delivery_fee?: number;
   customer_profiles?: { full_name: string | null; phone: string | null } | null;
-  merchant_profiles?: { store_name: string; address?: string | null; city?: string | null } | null;
-  addresses?: { full_address: string; city: string | null } | null;
+  merchant_profiles?: { store_name: string; address?: string | null; city?: string | null; latitude?: number | null; longitude?: number | null } | null;
+  addresses?: { full_address: string; city: string | null; latitude?: number | null; longitude?: number | null } | null;
   payment_method?: string | null;
   payment_status?: string;
 }
@@ -99,6 +99,7 @@ export interface OrderDetail {
   id: string;
   order_number: string;
   merchant_id?: string;
+  delivery_id?: string | null;
   status: string;
   subtotal: number | null;
   delivery_fee: number;
@@ -111,7 +112,7 @@ export interface OrderDetail {
   created_at: string;
   updated_at: string;
   delivery_fee_amount?: number;
-  addresses?: { full_address: string; city: string | null } | null;
+  addresses?: { full_address: string; city: string | null; latitude?: number | null; longitude?: number | null } | null;
   merchant_profiles?: { store_name: string; store_logo_url: string | null } | null;
   customer?: { full_name: string | null; phone: string | null } | null;
   order_items?: {
@@ -175,7 +176,7 @@ export async function getProductById(id: string): Promise<ProductDetail | null> 
       *,
       merchant_profiles(id, store_name, store_logo_url),
       product_images(id, url:image_url, is_primary, sort_order),
-      product_variants(id, name, price_modifier, stock_quantity, is_active)
+      product_variants(id, size, color, color_hex, additional_price, stock_qty, is_active)
     `)
     .eq('id', id)
     .single();
@@ -209,10 +210,10 @@ export async function searchProducts(query?: string, categoryId?: string, limit 
 // ============================================================
 // MERCHANT PRODUCTS (for merchant screens)
 // ============================================================
-export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { product_variants?: { stock_quantity: number }[] })[]> {
+export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { stock_quantity?: number })[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, product_variants(stock_quantity)')
+    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, stock_quantity')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -227,6 +228,7 @@ export async function createProduct(data: {
   sale_price?: number;
   category_id?: string;
   is_active?: boolean;
+  stock_quantity?: number;
   tags?: string[];
 }): Promise<{ id: string } | null> {
   const { data: result, error } = await supabase
@@ -245,6 +247,8 @@ export async function updateProduct(id: string, updates: {
   sale_price?: number | null;
   is_active?: boolean;
   is_featured?: boolean;
+  stock_quantity?: number;
+  og_image_url?: string;
   tags?: string[];
 }): Promise<void> {
   const { error } = await supabase
@@ -252,6 +256,25 @@ export async function updateProduct(id: string, updates: {
     .update(updates)
     .eq('id', id);
   if (error) throw error;
+}
+
+// إضافة صور لمنتج (أول صورة = الأساسية + تُحدَّث og_image_url)
+export async function addProductImages(productId: string, urls: string[]): Promise<void> {
+  if (urls.length === 0) return;
+  const rows = urls.map((url, i) => ({
+    product_id: productId,
+    image_url: url,
+    is_primary: i === 0,
+    sort_order: i,
+  }));
+  const { error } = await supabase.from(TABLES.PRODUCT_IMAGES).insert(rows);
+  if (error) throw error;
+  // اجعل أول صورة هي صورة العرض الرئيسية
+  const { error: productErr } = await supabase
+    .from(TABLES.PRODUCTS)
+    .update({ og_image_url: urls[0] })
+    .eq('id', productId);
+  if (productErr) throw productErr;
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -357,9 +380,9 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select(`
-      id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
+      id, order_number, merchant_id, delivery_id, status, subtotal, delivery_fee, discount_amount,
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
-      addresses(full_address, city),
+      addresses(full_address, city, latitude, longitude),
       merchant_profiles(store_name, store_logo_url),
       customer:users(full_name, phone),
       order_items(id, quantity, unit_price, total_price, product_name, products(name))
@@ -393,56 +416,39 @@ export async function createOrder(data: {
   notes?: string;
   items: {
     product_id: string;
+    variant_id?: string;
     quantity: number;
     unit_price: number;
     total_price: number;
     product_name?: string;
   }[];
 }): Promise<{ id: string; order_number: string }> {
-  const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
-
-  const { data: order, error: orderError } = await supabase
-    .from(TABLES.ORDERS)
-    .insert({
-      order_number: orderNumber,
-      customer_id: data.customer_id,
-      merchant_id: data.merchant_id,
-      address_id: data.address_id,
-      subtotal: data.subtotal,
-      delivery_fee: data.delivery_fee,
-      discount_amount: data.discount_amount,
-      tax_amount: data.tax_amount,
-      total_amount: data.total_amount,
-      payment_method: data.payment_method,
-      notes: data.notes,
-      status: 'pending',
-      payment_status: 'pending',
-    })
-    .select('id, order_number')
-    .single();
-
-  if (orderError) throw orderError;
-
-  const orderItems = data.items.map((item) => ({
-    order_id: order.id,
-    product_id: item.product_id,
-    product_name: item.product_name ?? '',
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.total_price,
-  }));
-
-  const { error: itemsError } = await supabase.from(TABLES.ORDER_ITEMS).insert(orderItems);
-  if (itemsError) throw itemsError;
-
-  // خصم المخزون وزيادة المبيعات لكل منتج (عبر دالة آمنة تتجاوز RLS)
-  await Promise.all(
-    data.items.map((item) =>
-      supabase.rpc('decrement_product_stock', { p_id: item.product_id, p_qty: item.quantity })
-    )
-  );
-
-  return order as { id: string; order_number: string };
+  // إنشاء الطلب + عناصره + خصم المخزون (واعٍ بالـ variants) في معاملة
+  // واحدة على الخادم؛ أي نقص مخزون يُلغي الطلب بالكامل بدل ترك مخزون قديم.
+  const { data: result, error } = await supabase.rpc('create_order_with_items', {
+    p_customer_id: data.customer_id,
+    p_merchant_id: data.merchant_id,
+    p_address_id: data.address_id,
+    p_subtotal: data.subtotal,
+    p_delivery_fee: data.delivery_fee,
+    p_discount_amount: data.discount_amount,
+    p_tax_amount: data.tax_amount,
+    p_total_amount: data.total_amount,
+    p_payment_method: data.payment_method,
+    p_notes: data.notes ?? null,
+    p_items: data.items.map((item) => ({
+      product_id: item.product_id,
+      variant_id: item.variant_id ?? null,
+      product_name: item.product_name ?? '',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+    })),
+  });
+  if (error) throw error;
+  const row = Array.isArray(result) ? result[0] : result;
+  if (!row?.id) throw new Error('تعذّر إنشاء الطلب');
+  return { id: row.id as string, order_number: row.order_number as string };
 }
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
@@ -460,7 +466,7 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
 export async function getAvailableDeliveryOrders(): Promise<OrderSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)')
+    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city, latitude, longitude), addresses(full_address, city, latitude, longitude)')
     .eq('status', 'ready')
     .is('delivery_id', null)
     .order('created_at', { ascending: false });
@@ -489,11 +495,129 @@ export async function getDeliveryOrders(deliveryUserId: string): Promise<OrderSu
 
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)')
+    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city, latitude, longitude), addresses(full_address, city, latitude, longitude)')
     .eq('delivery_id', (profile as { id: string }).id)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data as unknown as OrderSummary[];
+}
+
+// ============================================================
+// DELIVERY ASSIGNMENT (إعدادات الإسناد ومحاولات العرض)
+// ============================================================
+export interface AssignmentSettings {
+  max_radius_km: number;
+  offer_timeout_seconds: number;
+  max_attempts: number;
+  algorithm: string | null;
+}
+
+export async function getAssignmentSettings(): Promise<AssignmentSettings | null> {
+  const { data } = await supabase
+    .from('assignment_settings')
+    .select('max_radius_km, offer_timeout_seconds, max_attempts, algorithm')
+    .limit(1)
+    .maybeSingle();
+  return (data as AssignmentSettings) ?? null;
+}
+
+// تسجيل محاولة عرض/رفض طلب على مندوب (لتتبّع توزيع الطلبات)
+export async function recordAssignmentAttempt(
+  orderId: string,
+  deliveryUserId: string,
+  status: 'offered' | 'accepted' | 'rejected' | 'expired',
+  rejectionReason?: string,
+): Promise<void> {
+  const { data: profile } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .select('id')
+    .eq('user_id', deliveryUserId)
+    .maybeSingle();
+  if (!profile) return;
+  await supabase.from('order_assignment_attempts').insert({
+    order_id: orderId,
+    delivery_id: (profile as { id: string }).id,
+    status,
+    responded_at: status === 'offered' ? null : new Date().toISOString(),
+    rejection_reason: rejectionReason ?? null,
+  });
+}
+
+// تحديث موقع المندوب الحالي (يُستخدم لترتيب العروض حسب القرب)
+export async function updateDeliveryLocation(
+  deliveryUserId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ current_latitude: latitude, current_longitude: longitude })
+    .eq('user_id', deliveryUserId);
+  if (error) throw error;
+}
+
+// ============================================================
+// LIVE DELIVERY TRACKING (تتبّع موقع المندوب المباشر)
+// ============================================================
+export interface DeliveryLocation {
+  latitude: number;
+  longitude: number;
+  recorded_at: string;
+}
+
+// المندوب يكتب موقعه أثناء توصيل طلب (+ تحديث موقعه الحالي في ملفه)
+export async function recordDeliveryLocation(
+  deliveryUserId: string,
+  orderId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  const { data: profile } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .select('id')
+    .eq('user_id', deliveryUserId)
+    .maybeSingle();
+  if (!profile) return;
+  const deliveryId = (profile as { id: string }).id;
+  const { error: insErr } = await supabase.from('delivery_location_history').insert({
+    delivery_id: deliveryId, order_id: orderId, latitude, longitude,
+  });
+  if (insErr) throw insErr;
+  const { error: updErr } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ current_latitude: latitude, current_longitude: longitude })
+    .eq('id', deliveryId);
+  if (updErr) throw updErr;
+}
+
+// آخر موقع مسجّل لطلب (احتياطي عند تعذّر البث اللحظي)
+export async function getLatestDeliveryLocation(orderId: string): Promise<DeliveryLocation | null> {
+  const { data } = await supabase
+    .from('delivery_location_history')
+    .select('latitude, longitude, recorded_at')
+    .eq('order_id', orderId)
+    .order('recorded_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as DeliveryLocation) ?? null;
+}
+
+// اشتراك لحظي بموقع المندوب لطلب معيّن — يُعيد دالة لإلغاء الاشتراك
+export function subscribeToDeliveryLocation(
+  orderId: string,
+  onLocation: (loc: DeliveryLocation) => void,
+): () => void {
+  const channel = supabase
+    .channel(`delivery_loc_${orderId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'delivery_location_history', filter: `order_id=eq.${orderId}` },
+      (payload: { new: DeliveryLocation }) => {
+        if (payload?.new) onLocation(payload.new);
+      },
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
 }
 
 // ============================================================
@@ -520,6 +644,31 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
     .update({ is_read: true })
     .eq('user_id', userId)
     .eq('is_read', false);
+}
+
+// ============================================================
+// DEVICE TOKENS (الإشعارات الفورية)
+// ============================================================
+// تسجيل/تحديث رمز جهاز المستخدم لاستقبال الإشعارات الفورية
+export async function registerDeviceToken(
+  userId: string,
+  token: string,
+  deviceType: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.DEVICE_TOKENS)
+    .upsert(
+      { user_id: userId, token, device_type: deviceType, is_active: true },
+      { onConflict: 'token' },
+    );
+  if (error && error.code !== '23505') {
+    // لا نُفشل التطبيق بسبب الإشعارات
+    console.warn('[push] registerDeviceToken failed:', error.message);
+  }
+}
+
+export async function deactivateDeviceToken(token: string): Promise<void> {
+  await supabase.from(TABLES.DEVICE_TOKENS).update({ is_active: false }).eq('token', token);
 }
 
 // ============================================================
@@ -635,6 +784,105 @@ export async function createSupportTicket(data: {
   await supabase.from('support_messages').insert({
     ticket_id: (ticket as { id: string }).id, sender_id: data.user_id, message: data.message, is_internal: false,
   });
+}
+
+// ============================================================
+// COMPLAINTS (الشكاوى — ضد متجر أو مندوب، مرتبطة بطلب)
+// ============================================================
+export interface Complaint {
+  id: string;
+  order_id: string | null;
+  against_type: string | null;
+  category: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string | null;
+  resolution: string | null;
+  created_at: string;
+  orders?: { order_number: string } | null;
+}
+
+export async function createComplaint(data: {
+  complainant_id: string;
+  order_id?: string;
+  against_id?: string;
+  against_type?: string; // 'merchant' | 'delivery'
+  category: string;
+  title: string;
+  description: string;
+}): Promise<void> {
+  const { error } = await supabase.from(TABLES.COMPLAINTS).insert({
+    complainant_id: data.complainant_id,
+    order_id: data.order_id ?? null,
+    against_id: data.against_id ?? null,
+    against_type: data.against_type ?? null,
+    category: data.category,
+    title: data.title,
+    description: data.description,
+    status: 'open',
+    priority: 'medium',
+  });
+  if (error) throw error;
+}
+
+export async function getMyComplaints(userId: string): Promise<Complaint[]> {
+  const { data, error } = await supabase
+    .from(TABLES.COMPLAINTS)
+    .select('id, order_id, against_type, category, title, description, status, priority, resolution, created_at, orders(order_number)')
+    .eq('complainant_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as unknown as Complaint[];
+}
+
+// شكاوى موجَّهة لهذا الطرف (تاجر/مندوب) لمعالجتها
+export async function getComplaintsAgainstMe(userId: string): Promise<Complaint[]> {
+  const { data, error } = await supabase
+    .from(TABLES.COMPLAINTS)
+    .select('id, order_id, against_type, category, title, description, status, priority, resolution, created_at, orders(order_number)')
+    .eq('against_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as unknown as Complaint[];
+}
+
+export async function resolveComplaint(id: string, resolution: string): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.COMPLAINTS)
+    .update({ status: 'resolved', resolution, resolved_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// طلبات الاسترجاع الخاصة بطلبات هذا التاجر
+export interface MerchantRefund {
+  id: string;
+  reason: string;
+  description: string | null;
+  refund_amount: number;
+  status: string;
+  merchant_response: string | null;
+  created_at: string;
+  orders?: { order_number: string } | null;
+}
+
+export async function getMerchantRefunds(merchantUserId: string): Promise<MerchantRefund[]> {
+  const { data, error } = await supabase
+    .from('refund_requests')
+    .select('id, reason, description, refund_amount, status, merchant_response, created_at, orders!inner(order_number, merchant_id)')
+    .eq('orders.merchant_id', merchantUserId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as unknown as MerchantRefund[];
+}
+
+export async function respondToRefund(id: string, status: 'approved' | 'rejected', response?: string): Promise<void> {
+  const { error } = await supabase
+    .from('refund_requests')
+    .update({ status, merchant_response: response ?? null, processed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
 }
 
 // ============================================================
@@ -881,6 +1129,22 @@ export async function markConversationRead(conversationId: string, asMerchant: b
   await supabase.from('chat_conversations').update(field).eq('id', conversationId);
 }
 
+// اشتراك لحظي برسائل محادثة — يُعيد دالة لإلغاء الاشتراك
+export function subscribeToMessages(
+  conversationId: string,
+  onMessage: (msg: ChatMessage) => void,
+): () => void {
+  const channel = supabase
+    .channel(`chat_${conversationId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+      (payload: { new: ChatMessage }) => { if (payload?.new) onMessage(payload.new); },
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ============================================================
 // STORE FOLLOWS (متابعة المتاجر)
 // ============================================================
@@ -992,18 +1256,82 @@ export async function getActiveCoupons(): Promise<Coupon[]> {
   return data as unknown as Coupon[];
 }
 
-// أكثر منتجات التاجر مبيعاً
-export async function getMerchantTopProducts(merchantId: string, limit = 5): Promise<{
-  id: string; name: string; total_sold: number; base_price: number; sale_price: number | null; og_image_url: string | null;
-}[]> {
+// ============================================================
+// MERCHANT COUPONS (إدارة كوبونات التاجر)
+// ============================================================
+export interface MerchantCoupon {
+  id: string;
+  code: string;
+  type: string; // 'percentage' | 'fixed'
+  value: number;
+  min_order_amount: number | null;
+  max_discount_amount: number | null;
+  usage_limit: number | null;
+  usage_count: number;
+  end_date: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export async function getMerchantCoupons(merchantId: string): Promise<MerchantCoupon[]> {
   const { data, error } = await supabase
-    .from(TABLES.PRODUCTS)
-    .select('id, name, total_sold, base_price, sale_price, og_image_url')
+    .from('coupons')
+    .select('id, code, type, value, min_order_amount, max_discount_amount, usage_limit, usage_count, end_date, is_active, created_at')
     .eq('merchant_id', merchantId)
-    .order('total_sold', { ascending: false })
-    .limit(limit);
-  if (error) return [];
-  return data as any;
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as MerchantCoupon[];
+}
+
+export async function createCoupon(data: {
+  merchant_id: string;
+  code: string;
+  type: string;
+  value: number;
+  min_order_amount?: number | null;
+  max_discount_amount?: number | null;
+  usage_limit?: number | null;
+  end_date?: string | null;
+}): Promise<void> {
+  const { error } = await supabase.from('coupons').insert({
+    merchant_id: data.merchant_id,
+    code: data.code.trim().toUpperCase(),
+    type: data.type,
+    value: data.value,
+    min_order_amount: data.min_order_amount ?? null,
+    max_discount_amount: data.max_discount_amount ?? null,
+    usage_limit: data.usage_limit ?? null,
+    end_date: data.end_date ?? null,
+    is_active: true,
+  });
+  if (error) throw error;
+}
+
+export async function setCouponActive(id: string, isActive: boolean): Promise<void> {
+  const { error } = await supabase.from('coupons').update({ is_active: isActive }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCoupon(id: string): Promise<void> {
+  const { error } = await supabase.from('coupons').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// أكثر منتجات التاجر مبيعاً — بإيراد فعلي من عناصر الطلبات (سعر لحظة البيع)
+export async function getMerchantTopProducts(merchantId: string, limit = 5, days = 30): Promise<{
+  id: string; name: string; total_sold: number; revenue: number; og_image_url: string | null;
+}[]> {
+  const { data, error } = await supabase.rpc('merchant_top_products', {
+    p_merchant: merchantId, p_days: days, p_limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    total_sold: Number(r.total_sold ?? 0),
+    revenue: Number(r.revenue ?? 0),
+    og_image_url: r.og_image_url ?? null,
+  }));
 }
 
 // مبيعات التاجر اليومية لآخر N أيام (لرسم بياني حقيقي)
@@ -1027,6 +1355,68 @@ export async function getMerchantSalesChart(merchantId: string, days = 8): Promi
     if (idx >= 0 && idx < days) buckets[idx] += o.total_amount ?? 0;
   });
   return buckets;
+}
+
+// ============================================================
+// MERCHANT REPORT (تقرير التاجر لفترة: مبيعات/طلبات/متوسط/اتجاه)
+// ============================================================
+export interface MerchantReport {
+  revenue: number;
+  ordersCount: number;
+  avgOrderValue: number;
+  trendPct: number; // نسبة التغيّر مقارنة بالفترة السابقة
+  chart: number[]; // مبيعات يومية للفترة الحالية
+  labels: string[]; // تسميات الأيام/الفترات
+}
+
+// يقرأ من merchant_daily_stats (سريع ومُجمّع) إن توفّرت بيانات،
+// وإلا يحسب مباشرة من الطلبات (مصدر الحقيقة).
+export async function getMerchantReport(merchantId: string, days = 7): Promise<MerchantReport> {
+  const now = new Date();
+  const startCur = new Date(now); startCur.setDate(now.getDate() - (days - 1)); startCur.setHours(0, 0, 0, 0);
+  const startPrev = new Date(startCur); startPrev.setDate(startCur.getDate() - days);
+
+  const bucketIndex = (d: Date): number => {
+    const day = new Date(d); day.setHours(0, 0, 0, 0);
+    return Math.floor((day.getTime() - startCur.getTime()) / 86400000);
+  };
+
+  const chart = new Array(days).fill(0);
+  let revenue = 0, ordersCount = 0, prevRevenue = 0;
+
+  // المسار السريع: جدول الإحصائيات اليومية المُجمّع
+  const { data: stats } = await supabase
+    .from('merchant_daily_stats')
+    .select('date, orders_count, revenue')
+    .eq('merchant_id', merchantId)
+    .gte('date', startPrev.toISOString().split('T')[0]);
+
+  if (stats && stats.length > 0) {
+    (stats as { date: string; orders_count: number; revenue: number }[]).forEach((r) => {
+      const d = new Date(r.date + 'T00:00:00'); // تفسير كتوقيت محلّي ليطابق نافذة المقارنة
+      if (d >= startCur) { revenue += r.revenue ?? 0; ordersCount += r.orders_count ?? 0; const i = bucketIndex(d); if (i >= 0 && i < days) chart[i] += r.revenue ?? 0; }
+      else { prevRevenue += r.revenue ?? 0; }
+    });
+  } else {
+    // الاحتساب من الطلبات
+    const { data: orders } = await supabase
+      .from(TABLES.ORDERS)
+      .select('total_amount, created_at, status')
+      .eq('merchant_id', merchantId)
+      .gte('created_at', startPrev.toISOString());
+    (orders ?? []).forEach((o: { total_amount: number | null; created_at: string; status: string }) => {
+      if (o.status === 'cancelled') return;
+      const d = new Date(o.created_at);
+      const amt = o.total_amount ?? 0;
+      if (d >= startCur) { revenue += amt; ordersCount += 1; const i = bucketIndex(d); if (i >= 0 && i < days) chart[i] += amt; }
+      else { prevRevenue += amt; }
+    });
+  }
+
+  const trendPct = prevRevenue > 0 ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100) : (revenue > 0 ? 100 : 0);
+  const avgOrderValue = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
+
+  return { revenue, ordersCount, avgOrderValue, trendPct, chart, labels: [] };
 }
 
 // ============================================================
@@ -1076,21 +1466,20 @@ export interface Advertisement {
   id: string;
   title: string;
   image_url: string;
-  link_url: string | null;
-  target_type: string | null;
-  target_id: string | null;
-  sort_order: number;
+  link_type: string | null;
+  link_value: string | null;
+  priority: number;
 }
 
 export async function getActiveAds(): Promise<Advertisement[]> {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from(TABLES.ADVERTISEMENTS)
-    .select('id, title, image_url, link_url, target_type, target_id, sort_order')
-    .eq('is_active', true)
-    .or(`starts_at.is.null,starts_at.lte.${now}`)
-    .or(`ends_at.is.null,ends_at.gte.${now}`)
-    .order('sort_order');
+    .select('id, title, image_url, link_type, link_value, priority')
+    .eq('status', 'active')
+    .or(`start_date.is.null,start_date.lte.${now}`)
+    .or(`end_date.is.null,end_date.gte.${now}`)
+    .order('priority', { ascending: false });
   if (error) return [];
   return data as Advertisement[];
 }
@@ -1211,9 +1600,11 @@ export async function createDeliveryProfile(data: {
 // ============================================================
 // WALLET (محفظة التاجر/المندوب/العميل)
 // ============================================================
+export type WalletTransactionType = 'credit' | 'debit';
+
 export interface WalletTransaction {
   id: string;
-  type: string;
+  type: WalletTransactionType;
   amount: number;
   source: string | null;
   balance_after: number | null;
@@ -1230,6 +1621,58 @@ export async function getWalletTransactions(userId: string): Promise<WalletTrans
     .limit(50);
   if (error) throw error;
   return data as WalletTransaction[];
+}
+
+// طلب سحب أرباح التاجر (يُنشئ سجل دفع بحالة pending)
+export async function requestMerchantPayout(merchantId: string, amount: number): Promise<void> {
+  if (!(amount > 0)) throw new Error('المبلغ المطلوب سحبه غير صالح');
+  // منع الطلبات المكرّرة: لا يُسمح بطلب جديد ما دام هناك طلب قيد المعالجة
+  const { data: pending, error: pendingErr } = await supabase
+    .from('merchant_payouts')
+    .select('id')
+    .eq('merchant_id', merchantId)
+    .eq('status', 'pending')
+    .limit(1);
+  if (pendingErr) throw pendingErr;
+  if (pending && pending.length > 0) {
+    throw new Error('لديك طلب سحب قيد المعالجة بالفعل');
+  }
+  const today = new Date().toISOString().split('T')[0];
+  const { error } = await supabase.from('merchant_payouts').insert({
+    merchant_id: merchantId,
+    period_start: today,
+    period_end: today,
+    gross_amount: amount,
+    net_amount: amount,
+    status: 'pending',
+  });
+  if (error) throw error;
+}
+
+// طلب سحب أرباح المندوب (يُسجَّل كحركة مدينة بانتظار التحويل)
+export async function requestDeliveryWithdrawal(userId: string, amount: number): Promise<void> {
+  if (!(amount > 0)) throw new Error('المبلغ المطلوب سحبه غير صالح');
+  // منع التكرار: لا طلب سحب جديد إذا وُجد طلب حديث (آخر 24 ساعة) لم يُسوَّ بعد
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recent, error: recentErr } = await supabase
+    .from('wallet_transactions')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('source', 'withdrawal_request')
+    .gte('created_at', since)
+    .limit(1);
+  if (recentErr) throw recentErr;
+  if (recent && recent.length > 0) {
+    throw new Error('لديك طلب سحب حديث قيد المعالجة، يُرجى الانتظار');
+  }
+  const { error } = await supabase.from('wallet_transactions').insert({
+    user_id: userId,
+    type: 'debit',
+    amount,
+    source: 'withdrawal_request',
+    notes: 'طلب سحب الأرباح',
+  });
+  if (error) throw error;
 }
 
 // رصيد محفظة التاجر

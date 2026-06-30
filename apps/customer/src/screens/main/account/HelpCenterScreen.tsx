@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket } from '@marketplace/shared-hooks';
+import { useAuthStore, createSupportTicket, getSupportTickets, getMyComplaints, SupportTicket, Complaint } from '@marketplace/shared-hooks';
 
 const CATEGORIES = [
   { value: 'technical', label: 'مشكلة تقنية' },
@@ -13,6 +13,9 @@ const CATEGORIES = [
 ];
 const TICKET_STATUS: Record<string, string> = {
   open: 'مفتوحة', in_progress: 'قيد المعالجة', waiting_user: 'بانتظارك', resolved: 'محلولة', closed: 'مغلقة',
+};
+const COMPLAINT_STATUS: Record<string, string> = {
+  open: 'مفتوحة', in_review: 'قيد المراجعة', resolved: 'محلولة', closed: 'مغلقة',
 };
 
 const FAQS = [
@@ -31,9 +34,13 @@ export default function HelpCenterScreen({ navigation }: any) {
   const [category, setCategory] = useState('technical');
   const [sending, setSending] = useState(false);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
 
   const loadTickets = useCallback(() => {
-    if (user?.id) getSupportTickets(user.id).then(setTickets).catch(() => {});
+    if (user?.id) {
+      getSupportTickets(user.id).then(setTickets).catch(() => {});
+      getMyComplaints(user.id).then(setComplaints).catch(() => {});
+    }
   }, [user?.id]);
   useEffect(() => { loadTickets(); }, [loadTickets]);
 
@@ -44,7 +51,7 @@ export default function HelpCenterScreen({ navigation }: any) {
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم وسيتم الرد قريباً');
+      Alert.alert('تم الإرسال', 'تم فتح تذكرة دعم وسيتم الرد قريباً');
       loadTickets();
     } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
     finally { setSending(false); }
@@ -118,6 +125,25 @@ export default function HelpCenterScreen({ navigation }: any) {
                   </View>
                   <View style={styles.ticketStatusBadge}>
                     <Text style={styles.ticketStatusText}>{TICKET_STATUS[t.status] ?? t.status}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {complaints.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>شكاويي</Text>
+            <View style={styles.faqContainer}>
+              {complaints.map((c, i) => (
+                <View key={c.id} style={[styles.ticketRow, i === complaints.length - 1 && { borderBottomWidth: 0 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ticketSubject}>{c.title}</Text>
+                    <Text style={styles.ticketDate}>{new Date(c.created_at).toLocaleDateString('ar-SA')}</Text>
+                  </View>
+                  <View style={styles.ticketStatusBadge}>
+                    <Text style={styles.ticketStatusText}>{COMPLAINT_STATUS[c.status] ?? c.status}</Text>
                   </View>
                 </View>
               ))}

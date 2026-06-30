@@ -30,12 +30,14 @@ export type AccountStackParamList = {
   HelpCenter: undefined;
   EditProfile: undefined;
   PaymentMethods: undefined;
+  Conversations: { asMerchant?: boolean } | undefined;
+  Chat: { conversationId: string; title?: string; asMerchant?: boolean };
   Legal: { type: 'privacy' | 'terms' };
 };
 
 export type MainTabParamList = {
   Categories: undefined;
-  Favorites: undefined;
+  Orders: NavigatorScreenParams<OrdersStackParamList>;
   Home: NavigatorScreenParams<HomeStackParamList>;
   Cart: NavigatorScreenParams<CartStackParamList>;
   More: NavigatorScreenParams<AccountStackParamList>;

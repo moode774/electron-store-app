@@ -97,7 +97,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
 
   const goQuickAction = (id: string) => {
     if (id === '1') navigation.navigate('MerchantAccount', { screen: 'Wallet' });
-    else if (id === '2') Alert.alert('قريباً 🎉', 'إدارة العروض والخصومات ستتوفر في التحديث القادم');
+    else if (id === '2') navigation.navigate('MerchantAccount', { screen: 'Coupons' });
     else if (id === '3') navigation.navigate('MerchantProducts');
     else if (id === '4') navigation.navigate('MerchantAccount', { screen: 'Reports' });
   };
@@ -118,7 +118,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
             </View>
 
             <View style={styles.headerTexts}>
-              <Text style={styles.welcomeText}>مرحباً بعودتك 👋</Text>
+              <Text style={styles.welcomeText}>مرحباً بعودتك</Text>
               <View style={styles.storeNameRow}>
                 <Text style={styles.storeName}>{user?.full_name ?? 'متجر الأناقة'}</Text>
                 <Ionicons name="checkmark-circle" size={16} color={UI.blue} />
@@ -139,17 +139,17 @@ export default function MerchantDashboardScreen({ navigation }: any) {
         {/* ===== Sales Overview Card ===== */}
         <View style={[styles.salesCard, softShadow]}>
           <View style={styles.salesTopRow}>
-            <Text style={styles.salesLabel}>إجمالي المبيعات</Text>
-            <TouchableOpacity style={styles.periodPill} activeOpacity={0.7}>
+            <Text style={styles.salesLabel}>مبيعات اليوم</Text>
+            <TouchableOpacity style={styles.periodPill} activeOpacity={0.7} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })}>
               <Ionicons name="calendar-outline" size={15} color={UI.textGrey} />
-              <Text style={styles.periodText}>هذا الشهر</Text>
-              <Ionicons name="chevron-down" size={14} color={UI.textGrey} />
+              <Text style={styles.periodText}>اليوم</Text>
+              <Ionicons name="chevron-back" size={14} color={UI.textGrey} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.salesValueRow}>
             <Text style={styles.salesValue}>{stats.todayRevenue.toLocaleString()}</Text>
-            <Text style={styles.salesCurrency}>ر.س</Text>
+            <Text style={styles.salesCurrency}>ر.ي</Text>
           </View>
 
           <View style={styles.trendPill}>
@@ -242,7 +242,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
                 </View>
 
                 <View style={styles.orderMeta}>
-                  <Text style={styles.orderTotal}>{order.total_amount ?? 0} <Text style={styles.orderCurrency}>ر.س</Text></Text>
+                  <Text style={styles.orderTotal}>{order.total_amount ?? 0} <Text style={styles.orderCurrency}>ر.ي</Text></Text>
                   <View style={[styles.statusPill, { backgroundColor: st.bg }]}>
                     <Ionicons name={st.icon as any} size={12} color={st.color} />
                     <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>

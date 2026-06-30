@@ -20,6 +20,7 @@ import ProductDetailsScreen from '../screens/main/home/ProductDetailsScreen';
 import SearchScreen from '../screens/main/home/SearchScreen';
 import OffersScreen from '../screens/main/home/OffersScreen';
 import ChatScreen from '../screens/main/chat/ChatScreen';
+import ConversationsListScreen from '../screens/main/chat/ConversationsListScreen';
 
 import CartScreen from '../screens/main/cart/CartScreen';
 import CheckoutScreen from '../screens/main/cart/CheckoutScreen';
@@ -86,6 +87,8 @@ function AccountNavigator() {
       <AccountStack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <AccountStack.Screen name="EditProfile" component={EditProfileScreen} />
       <AccountStack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+      <AccountStack.Screen name="Conversations" component={ConversationsListScreen} />
+      <AccountStack.Screen name="Chat" component={ChatScreen} />
       <AccountStack.Screen name="Legal" component={LegalScreen} />
     </AccountStack.Navigator>
   );
@@ -151,11 +154,11 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Favorites"
-        component={FavoritesScreen}
-        options={{ 
-          tabBarLabel: 'المفضلة',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'heart', 'heart-outline', color)
+        name="Orders"
+        component={OrdersNavigator}
+        options={{
+          tabBarLabel: 'طلباتي',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'receipt', 'receipt-outline', color)
         }}
       />
       <Tab.Screen

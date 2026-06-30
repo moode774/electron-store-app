@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
+import * as Location from 'expo-location';
+import LiveTrackingMap from '../../components/LiveTrackingMap';
+import { COLORS, ORDER_STATUS, formatPrice, isTerminalStatus, hasValidCoords } from '@marketplace/shared-utils';
+import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, recordDeliveryLocation, OrderDetail } from '@marketplace/shared-hooks';
 
-const STEPS = [
-  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر' },
-  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب' },
-  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل' },
-  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم ✅' },
+// statusOnComplete = الحالة التي تُكتب عند إتمام إجراء هذه المرحلة:
+//  "استلمت الطلب" => on_the_way (المندوب استلم وبدأ التوصيل، فيرى العميل "في الطريق")
+//  "تم التسليم"   => delivered
+const STEPS: { key: string; label: string; action: string; statusOnComplete: string | null }[] = [
+  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر', statusOnComplete: null },
+  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب', statusOnComplete: ORDER_STATUS.ON_THE_WAY },
+  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل', statusOnComplete: null },
+  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم', statusOnComplete: ORDER_STATUS.DELIVERED },
 ];
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
@@ -17,17 +22,24 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [stepIndex, setStepIndex] = useState(0);
+  const [myPos, setMyPos] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     const loadOrder = async () => {
       try {
+        let loaded: OrderDetail | null = null;
         if (paramOrderId) {
-          setOrder(await getOrderById(paramOrderId));
+          loaded = await getOrderById(paramOrderId);
         } else if (user?.id) {
           // تبويب "الطلبات": اجلب الطلب النشط الحالي للمندوب
           const mine = await getDeliveryOrders(user.id);
-          const active = mine.find((o) => o.status !== 'delivered' && o.status !== 'cancelled') ?? mine[0];
-          if (active) setOrder(await getOrderById(active.id));
+          const active = mine.find((o) => !isTerminalStatus(o.status)) ?? mine[0];
+          if (active) loaded = await getOrderById(active.id);
+        }
+        if (loaded) {
+          setOrder(loaded);
+          // استئناف من مرحلة "في الطريق للعميل" إذا كان قد استلم الطلب فعلاً
+          if (loaded.status === ORDER_STATUS.PICKED_UP || loaded.status === ORDER_STATUS.ON_THE_WAY) setStepIndex(2);
         }
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -36,6 +48,27 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   }, [paramOrderId, user?.id]);
 
   const orderId = order?.id ?? paramOrderId;
+
+  // بثّ موقع المندوب المباشر أثناء التوصيل (يتوقف عند انتهاء الطلب أو مغادرة الشاشة)
+  useEffect(() => {
+    if (!orderId || !user?.id || !order || isTerminalStatus(order.status)) return;
+    let sub: Location.LocationSubscription | null = null;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted' || cancelled) return;
+        sub = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, timeInterval: 15000, distanceInterval: 50 },
+          (pos) => {
+            setMyPos({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+            recordDeliveryLocation(user.id, orderId, pos.coords.latitude, pos.coords.longitude).catch(() => {});
+          },
+        );
+      } catch { /* تتبّع تحسيني — يُتجاهل عند الفشل */ }
+    })();
+    return () => { cancelled = true; sub?.remove(); };
+  }, [orderId, user?.id, order?.status]);
 
   const currentStep = STEPS[stepIndex];
 
@@ -49,12 +82,27 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     fee: order?.delivery_fee ?? 0,
   };
 
+  const [updating, setUpdating] = useState(false);
+
   const advanceStep = async () => {
+    if (updating) return;
+    const step = STEPS[stepIndex];
+    // اكتب الحالة أولاً؛ لا نتقدّم محلياً إلا بعد نجاح الكتابة (تفادي تباين مع الخادم)
+    if (step.statusOnComplete && orderId) {
+      setUpdating(true);
+      try {
+        await updateOrderStatus(orderId, step.statusOnComplete);
+      } catch {
+        setUpdating(false);
+        Alert.alert('تعذّر التحديث', 'لم نتمكّن من تحديث حالة الطلب. تحقّق من اتصالك وحاول مرة أخرى.');
+        return;
+      }
+      setUpdating(false);
+    }
     if (stepIndex < STEPS.length - 1) {
       setStepIndex(stepIndex + 1);
     } else {
-      if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
-      Alert.alert('أحسنت! 🎉', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
+      Alert.alert('أحسنت!', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
         { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
       ]);
     }
@@ -98,11 +146,20 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Map Placeholder */}
-        <View style={styles.mapPlaceholder}>
-          <Ionicons name="map-outline" size={48} color="#9CA3AF" />
-          <Text style={styles.mapText}>الخريطة (قريباً)</Text>
-        </View>
+        {/* Map */}
+        {hasValidCoords(order?.addresses) || myPos ? (
+          <LiveTrackingMap
+            courier={myPos}
+            destination={hasValidCoords(order?.addresses) ? { latitude: order!.addresses!.latitude!, longitude: order!.addresses!.longitude! } : null}
+            height={180}
+            style={{ marginBottom: 16 }}
+          />
+        ) : (
+          <View style={styles.mapPlaceholder}>
+            <Ionicons name="map-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.mapText}>جارٍ تحديد الموقع…</Text>
+          </View>
+        )}
 
         {/* Progress Steps */}
         <View style={styles.stepsCard}>
@@ -157,16 +214,16 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           </View>
 
           <View style={styles.codBox}>
-            <Text style={styles.codLabel}>💵 المبلغ المطلوب تحصيله (COD)</Text>
-            <Text style={styles.codValue}>{ORDER.codAmount} ر.ي</Text>
+            <Text style={styles.codLabel}>المبلغ المطلوب تحصيله (COD)</Text>
+            <Text style={styles.codValue}>{formatPrice(ORDER.codAmount)}</Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Action Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.actionBtn} onPress={advanceStep} activeOpacity={0.8}>
-          <Text style={styles.actionBtnText}>{currentStep.action}</Text>
+        <TouchableOpacity style={[styles.actionBtn, updating && { opacity: 0.6 }]} onPress={advanceStep} activeOpacity={0.8} disabled={updating}>
+          {updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
         </TouchableOpacity>
       </View>
     </View>

@@ -13,6 +13,10 @@ import MerchantAccountScreen from '../screens/merchant/MerchantAccountScreen';
 import MerchantReportsScreen from '../screens/merchant/MerchantReportsScreen';
 import MerchantWalletScreen from '../screens/merchant/MerchantWalletScreen';
 import StoreSettingsScreen from '../screens/merchant/StoreSettingsScreen';
+import MerchantCouponsScreen from '../screens/merchant/MerchantCouponsScreen';
+import MerchantDisputesScreen from '../screens/merchant/MerchantDisputesScreen';
+import ConversationsListScreen from '../screens/main/chat/ConversationsListScreen';
+import ChatScreen from '../screens/main/chat/ChatScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 
 export type MerchantOrdersStackParamList = {
@@ -50,6 +54,10 @@ export type MerchantAccountStackParamList = {
   StoreSettings: undefined;
   Reports: undefined;
   Wallet: undefined;
+  Coupons: undefined;
+  Disputes: undefined;
+  Conversations: { asMerchant?: boolean } | undefined;
+  Chat: { conversationId: string; title?: string; asMerchant?: boolean };
   RoleNotifications: { role: 'merchant' };
 };
 
@@ -61,6 +69,10 @@ function AccountNavigator() {
       <AccountStack.Screen name="StoreSettings" component={StoreSettingsScreen} />
       <AccountStack.Screen name="Reports" component={MerchantReportsScreen} />
       <AccountStack.Screen name="Wallet" component={MerchantWalletScreen} />
+      <AccountStack.Screen name="Coupons" component={MerchantCouponsScreen} />
+      <AccountStack.Screen name="Disputes" component={MerchantDisputesScreen} />
+      <AccountStack.Screen name="Conversations" component={ConversationsListScreen} />
+      <AccountStack.Screen name="Chat" component={ChatScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
     </AccountStack.Navigator>
   );

@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Dimensions, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, OrderSummary } from '@marketplace/shared-hooks';
+import * as Location from 'expo-location';
+import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, getDeliveryEarnings, recordAssignmentAttempt, updateDeliveryLocation, OrderSummary } from '@marketplace/shared-hooks';
+import { formatPrice, calculateDeliveryEarning, rankDeliveryOffers, estimateRoadKm, estimateEtaMinutes, formatEtaRange, type LatLng } from '@marketplace/shared-utils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,15 +13,73 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [todayEarnings, setTodayEarnings] = useState(0);
+  const [courierLoc, setCourierLoc] = useState<LatLng | null>(null);
+  const [skipped, setSkipped] = useState<string[]>([]);
+
+  // تحديد موقع المندوب لترتيب العروض حسب القرب (أفضل جهد)
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const loc = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        setCourierLoc(loc);
+        if (user?.id) updateDeliveryLocation(user.id, loc.latitude, loc.longitude).catch(() => {});
+      } catch { /* تجاهل: نرتّب بلا موقع */ }
+    })();
+  }, [user?.id]);
 
   const load = useCallback(async () => {
     try { setOrders(await getAvailableDeliveryOrders()); } catch { setOrders([]); }
     finally { setLoading(false); }
-  }, []);
+    if (user?.id) {
+      try {
+        const e = await getDeliveryEarnings(user.id);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const sum = e.earnings
+          .filter((x) => new Date(x.created_at) >= today)
+          .reduce((s, x) => s + (x.total_earning ?? 0), 0);
+        setTodayEarnings(sum);
+      } catch { /* ignore */ }
+    }
+  }, [user?.id]);
 
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
 
-  const current = orders[0];
+  // ترتيب العروض حسب القرب + الأجر + الأقدمية، واستبعاد المتجاهَلة
+  const ranked = useMemo(() => {
+    const offers = orders
+      .filter((o) => !skipped.includes(o.id))
+      .map((o) => ({
+        id: o.id,
+        deliveryFee: o.delivery_fee ?? 0,
+        createdAt: o.created_at,
+        pickup: (o.merchant_profiles?.latitude != null && o.merchant_profiles?.longitude != null)
+          ? { latitude: o.merchant_profiles.latitude, longitude: o.merchant_profiles.longitude }
+          : null,
+        order: o,
+      }));
+    return rankDeliveryOffers(offers, courierLoc);
+  }, [orders, skipped, courierLoc]);
+
+  const top = ranked[0];
+  const current = top?.offer.order;
+
+  // مسافة ووقت مقدّر للعرض الحالي
+  const offerDistanceKm = top?.distanceKm ?? null;
+  const offerEta = useMemo(() => {
+    if (offerDistanceKm == null) return null;
+    const road = estimateRoadKm(courierLoc!, { latitude: current!.merchant_profiles!.latitude!, longitude: current!.merchant_profiles!.longitude! });
+    return estimateEtaMinutes(road);
+  }, [offerDistanceKm, courierLoc, current]);
+
+  const handleSkip = async () => {
+    if (!current || !user?.id) return;
+    recordAssignmentAttempt(current.id, user.id, 'rejected', 'skipped_by_courier').catch(() => {});
+    setSkipped((s) => [...s, current.id]);
+  };
 
   const handleAccept = async () => {
     if (!current || !user?.id) return;
@@ -28,6 +88,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       const ok = await claimDeliveryOrder(current.id, user.id);
       if (ok) {
         const acceptedId = current.id;
+        recordAssignmentAttempt(acceptedId, user.id, 'accepted').catch(() => {});
         load();
         navigation.navigate('ActiveDelivery', { orderId: acceptedId });
       } else {
@@ -100,7 +161,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
             <View style={styles.earningsTexts}>
               <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.س</Text></Text>
+              <Text style={styles.earningsValue}>{formatPrice(todayEarnings, { withSymbol: false })} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
             </View>
           </View>
         </View>
@@ -165,12 +226,31 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
           </View>
 
+          {/* شريط المسافة والوقت المقدّر للوصول للمتجر */}
+          {offerDistanceKm != null && (
+            <View style={styles.distanceStrip}>
+              <View style={styles.distanceItem}>
+                <Ionicons name="navigate-outline" size={15} color="#2563EB" />
+                <Text style={styles.distanceText}>{offerDistanceKm.toFixed(1)} كم للمتجر</Text>
+              </View>
+              {offerEta != null && (
+                <>
+                  <View style={styles.distanceDot} />
+                  <View style={styles.distanceItem}>
+                    <Ionicons name="time-outline" size={15} color="#2563EB" />
+                    <Text style={styles.distanceText}>{formatEtaRange(offerEta)}</Text>
+                  </View>
+                </>
+              )}
+            </View>
+          )}
+
           {/* 3-Column Metrics */}
           <View style={styles.metricsRow}>
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="cash-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{formatPrice(current.total_amount ?? 0, { withSymbol: false })} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>قيمة الطلب</Text>
             </View>
@@ -180,7 +260,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="bicycle-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{formatPrice(calculateDeliveryEarning(current.delivery_fee ?? 0), { withSymbol: false })} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>أجر التوصيل</Text>
             </View>
@@ -196,17 +276,22 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Action Button */}
-          <TouchableOpacity style={[styles.acceptBigBtn, claiming && { opacity: 0.6 }]} activeOpacity={0.9} onPress={handleAccept} disabled={claiming}>
-            {claiming ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.acceptBigBtnText}>قبول الطلب</Text>
-                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              </>
-            )}
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity style={styles.skipBtn} activeOpacity={0.8} onPress={handleSkip} disabled={claiming}>
+              <Text style={styles.skipBtnText}>تجاهل</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.acceptBigBtn, { flex: 1 }, claiming && { opacity: 0.6 }]} activeOpacity={0.9} onPress={handleAccept} disabled={claiming}>
+              {claiming ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.acceptBigBtnText}>قبول الطلب</Text>
+                  <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
 
         </View>
         )}
@@ -288,5 +373,14 @@ const styles = StyleSheet.create({
 
   acceptBigBtn: { width: '100%', height: 60, borderRadius: 20, backgroundColor: '#1D4ED8', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', shadowColor: '#2563EB', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8, gap: 12 },
   acceptBigBtnText: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
+
+  distanceStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#EFF6FF', borderRadius: 16, paddingVertical: 12, marginTop: 16 },
+  distanceItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  distanceText: { fontSize: 13, fontWeight: '800', color: '#1D4ED8' },
+  distanceDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#93C5FD' },
+
+  actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  skipBtn: { height: 60, paddingHorizontal: 22, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  skipBtnText: { fontSize: 15, fontWeight: '800', color: '#6B7280' },
 
 });

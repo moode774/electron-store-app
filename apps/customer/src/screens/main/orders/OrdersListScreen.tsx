@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS, getStatusMeta, formatPrice, formatRelativeTime } from '@marketplace/shared-utils';
+import { Ionicons } from '@expo/vector-icons';
 import { Card, Badge } from '@marketplace/shared-ui';
 import { useAuthStore, useCartStore, getOrders, getReorderItems, OrderSummary } from '@marketplace/shared-hooks';
 
@@ -31,21 +32,11 @@ export default function OrdersListScreen({ navigation }: any) {
   }, [user?.id]);
 
   useEffect(() => { loadOrders(); }, [loadOrders]);
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case ORDER_STATUS.PENDING: return { text: 'بانتظار تأكيد المتجر', color: 'warning' };
-      case ORDER_STATUS.PREPARING: return { text: 'جاري التجهيز', color: 'info' };
-      case ORDER_STATUS.ON_THE_WAY: return { text: 'في الطريق إليك', color: 'primary' };
-      case ORDER_STATUS.DELIVERED: return { text: 'مكتمل', color: 'success' };
-      case ORDER_STATUS.CANCELLED: return { text: 'ملغي', color: 'error' };
-      default: return { text: status, color: 'default' };
-    }
-  };
 
   const renderOrder = ({ item }: { item: OrderSummary }) => {
-    const statusData = getStatusLabel(item.status);
+    const status = getStatusMeta(item.status);
     const storeName = item.merchant_profiles?.store_name ?? 'المتجر';
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA');
+    const date = formatRelativeTime(item.created_at);
 
     return (
       <TouchableOpacity
@@ -55,18 +46,22 @@ export default function OrdersListScreen({ navigation }: any) {
         <Card style={styles.orderCard} variant="outlined">
           <View style={styles.orderHeader}>
             <View>
-              <Text style={styles.storeName}>🏪 {storeName}</Text>
+              <View style={styles.storeNameRow}>
+                <Ionicons name="storefront-outline" size={15} color={COLORS.textSecondary} />
+                <Text style={styles.storeName}>{storeName}</Text>
+              </View>
               <Text style={styles.orderId}>رقم الطلب: {item.order_number}</Text>
             </View>
-            <Badge label={statusData.text} variant={statusData.color as any} />
+            <Badge label={status.label} style={{ backgroundColor: status.bg }} textStyle={{ color: status.color }} />
           </View>
           <View style={styles.orderFooter}>
             <Text style={styles.orderDate}>{date}</Text>
-            <Text style={styles.orderTotal}>{item.total_amount ?? 0} ر.س</Text>
+            <Text style={styles.orderTotal}>{formatPrice(item.total_amount ?? 0)}</Text>
           </View>
           {item.status === ORDER_STATUS.DELIVERED && (
             <TouchableOpacity style={styles.reorderBtn} onPress={() => reorder(item.id, storeName)} activeOpacity={0.8}>
-              <Text style={styles.reorderBtnText}>🔁 أعد الطلب</Text>
+              <Ionicons name="refresh" size={15} color={COLORS.primary} />
+              <Text style={styles.reorderBtnText}>أعد الطلب</Text>
             </TouchableOpacity>
           )}
         </Card>
@@ -109,11 +104,12 @@ const styles = StyleSheet.create({
   listContent: { padding: SPACING.md, paddingBottom: 100 },
   orderCard: { marginBottom: SPACING.md },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  storeName: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 4 },
+  storeNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  storeName: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   orderId: { fontSize: 12, color: COLORS.textMuted },
   orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
   orderDate: { fontSize: 12, color: COLORS.textSecondary },
   orderTotal: { fontSize: 15, fontWeight: '800', color: COLORS.primary },
-  reorderBtn: { marginTop: 12, paddingVertical: 10, borderRadius: RADIUS.md, backgroundColor: `${COLORS.primary}12`, alignItems: 'center' },
+  reorderBtn: { marginTop: 12, paddingVertical: 10, borderRadius: RADIUS.md, backgroundColor: `${COLORS.primary}12`, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   reorderBtnText: { color: COLORS.primary, fontWeight: '800', fontSize: 13 },
 });

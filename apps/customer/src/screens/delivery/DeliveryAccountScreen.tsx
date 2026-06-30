@@ -17,6 +17,7 @@ const MENU_ITEMS = [
   { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
   { id: '2', title: 'المحفظة والتحصيلات', icon: 'wallet-outline', screen: 'DeliveryWallet', params: undefined },
   { id: '3', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
+  { id: '6', title: 'الشكاوى', icon: 'alert-circle-outline', screen: 'DeliveryComplaints', params: undefined },
   { id: '4', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
   { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: null, params: undefined },
 ];
@@ -36,7 +37,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     { id: '1', title: 'إجمالي التوصيلات', value: `${info.totalDeliveries}`, icon: 'cube-outline' },
     { id: '2', title: 'توصيلات مسجّلة', value: `${info.count}`, icon: 'checkmark-done-outline' },
     { id: '3', title: 'الرصيد', value: `${info.balance}`, icon: 'wallet-outline' },
-    { id: '4', title: 'العملة', value: 'ر.س', icon: 'cash-outline' },
+    { id: '4', title: 'العملة', value: 'ر.ي', icon: 'cash-outline' },
   ];
 
   return (

@@ -38,7 +38,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         store_description: description.trim() || undefined,
         address: address.trim() || undefined,
       });
-      Alert.alert('تم الحفظ ✅', 'تم تحديث بيانات المتجر بنجاح', [
+      Alert.alert('تم الحفظ', 'تم تحديث بيانات المتجر بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {

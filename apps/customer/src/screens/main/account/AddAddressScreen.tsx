@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
@@ -40,7 +41,7 @@ export default function AddAddressScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
+          <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>إضافة عنوان</Text>
         <View style={{ width: 40 }} />
@@ -50,7 +51,7 @@ export default function AddAddressScreen({ navigation }: any) {
         
         {/* Map Placeholder */}
         <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
+          <Ionicons name="map-outline" size={48} color="#9CA3AF" />
           <Text style={styles.mapText}>حدد موقعك على الخريطة</Text>
           <Button title="تحديد الموقع الحالي" style={{ marginTop: 12, width: 200, height: 40 }} />
         </View>
