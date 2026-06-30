@@ -48,9 +48,9 @@ describe('calculateOrderTotals', () => {
   });
 
   it('applies tax on the discounted subtotal', () => {
-    const t = calculateOrderTotals({ subtotal: 1000, deliveryFee: 0, discount: 0, taxRate: 10 });
-    expect(t.tax).toBe(100);
-    expect(t.total).toBe(1100);
+    const t = calculateOrderTotals({ subtotal: 1000, deliveryFee: 0, discount: 200, taxRate: 10 });
+    expect(t.tax).toBe(80); // 10% of (1000 - 200), not of the gross subtotal
+    expect(t.total).toBe(880); // 800 discounted + 80 tax + 0 delivery
   });
 });
 

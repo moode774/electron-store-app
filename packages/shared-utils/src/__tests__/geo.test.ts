@@ -31,7 +31,7 @@ describe('estimateRoadKm / ETA', () => {
   });
 
   it('formatEtaRange returns a sensible window', () => {
-    expect(formatEtaRange(30)).toMatch(/دقيقة/);
+    expect(formatEtaRange(30)).toBe('25–35 دقيقة');
   });
 });
 

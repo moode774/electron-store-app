@@ -22,7 +22,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const handleWithdraw = () => {
-    if (!user?.id) return;
+    if (!user?.id || requesting) return;
     if (balance <= 0) { Alert.alert('تنبيه', 'لا يوجد رصيد قابل للسحب'); return; }
     Alert.alert('طلب سحب', `طلب سحب كامل الرصيد ${formatPrice(balance)}؟`, [
       { text: 'إلغاء', style: 'cancel' },
@@ -38,7 +38,8 @@ export default function MerchantWalletScreen({ navigation }: any) {
     ]);
   };
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  // التصنيف يعتمد على نوع الحركة (credit/debit) لا على إشارة المبلغ
+  const isIncome = (t: WalletTransaction) => t.type !== 'debit';
 
   return (
     <View style={styles.container}>

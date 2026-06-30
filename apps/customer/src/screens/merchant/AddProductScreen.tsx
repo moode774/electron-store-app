@@ -35,6 +35,19 @@ export default function AddProductScreen({ navigation }: any) {
       Alert.alert('تنبيه', 'الرجاء إدخال اسم المنتج والسعر على الأقل');
       return;
     }
+    const priceNum = parseFloat(price);
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
+      Alert.alert('تنبيه', 'الرجاء إدخال سعر صالح أكبر من صفر');
+      return;
+    }
+    let stockNum = 0;
+    if (stock.trim()) {
+      stockNum = parseInt(stock, 10);
+      if (!Number.isInteger(stockNum) || stockNum < 0) {
+        Alert.alert('تنبيه', 'الرجاء إدخال كمية صالحة (رقم صحيح غير سالب)');
+        return;
+      }
+    }
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
     setSaving(true);
     try {
@@ -42,19 +55,26 @@ export default function AddProductScreen({ navigation }: any) {
         merchant_id: user.id,
         name: name.trim(),
         description: description.trim() || undefined,
-        base_price: parseFloat(price),
-        stock_quantity: stock ? parseInt(stock, 10) : 0,
+        base_price: priceNum,
+        stock_quantity: stockNum,
         is_active: true,
       });
       // رفع الصور وربطها بالمنتج (إن وُجدت)
+      let failedUploads = 0;
       if (created?.id && images.length > 0) {
         const urls: string[] = [];
         for (let i = 0; i < images.length; i++) {
           try {
             urls.push(await uploadImageToStorage(STORAGE_BUCKETS.PRODUCTS, `${created.id}/${i}`, images[i]));
-          } catch { /* تخطّى صورة فشل رفعها */ }
+          } catch { failedUploads++; /* تخطّى صورة فشل رفعها */ }
         }
         if (urls.length > 0) await addProductImages(created.id, urls);
+      }
+      if (failedUploads > 0) {
+        Alert.alert('تم الحفظ مع تنبيه', `تمت إضافة المنتج، لكن تعذّر رفع ${failedUploads} من الصور. يمكنك إعادة المحاولة لاحقاً.`, [
+          { text: 'حسناً', onPress: () => navigation.goBack() },
+        ]);
+        return;
       }
       Alert.alert('تم الحفظ', 'تمت إضافة المنتج بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },

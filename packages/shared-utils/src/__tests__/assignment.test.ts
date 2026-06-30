@@ -16,6 +16,8 @@ describe('rankDeliveryOffers', () => {
 
   it('excludes offers outside the radius', () => {
     const ranked = rankDeliveryOffers(offers, courier, 1); // 1km radius
+    expect(ranked).toHaveLength(1);
+    expect(ranked[0].offer.id).toBe('near');
     expect(ranked.every((o) => (o.distanceKm ?? 0) <= 1)).toBe(true);
   });
 

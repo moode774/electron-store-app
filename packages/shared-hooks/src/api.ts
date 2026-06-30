@@ -270,7 +270,11 @@ export async function addProductImages(productId: string, urls: string[]): Promi
   const { error } = await supabase.from(TABLES.PRODUCT_IMAGES).insert(rows);
   if (error) throw error;
   // اجعل أول صورة هي صورة العرض الرئيسية
-  await supabase.from(TABLES.PRODUCTS).update({ og_image_url: urls[0] }).eq('id', productId);
+  const { error: productErr } = await supabase
+    .from(TABLES.PRODUCTS)
+    .update({ og_image_url: urls[0] })
+    .eq('id', productId);
+  if (productErr) throw productErr;
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -1635,6 +1639,7 @@ export async function getWalletTransactions(userId: string): Promise<WalletTrans
 
 // طلب سحب أرباح التاجر (يُنشئ سجل دفع بحالة pending)
 export async function requestMerchantPayout(merchantId: string, amount: number): Promise<void> {
+  if (!(amount > 0)) throw new Error('المبلغ المطلوب سحبه غير صالح');
   const today = new Date().toISOString().split('T')[0];
   const { error } = await supabase.from('merchant_payouts').insert({
     merchant_id: merchantId,
@@ -1649,6 +1654,7 @@ export async function requestMerchantPayout(merchantId: string, amount: number):
 
 // طلب سحب أرباح المندوب (يُسجَّل كحركة مدينة بانتظار التحويل)
 export async function requestDeliveryWithdrawal(userId: string, amount: number): Promise<void> {
+  if (!(amount > 0)) throw new Error('المبلغ المطلوب سحبه غير صالح');
   const { error } = await supabase.from('wallet_transactions').insert({
     user_id: userId,
     type: 'debit',

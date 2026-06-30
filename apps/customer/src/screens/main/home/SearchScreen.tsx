@@ -26,21 +26,23 @@ export default function SearchScreen({ navigation, route }: any) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     setIsSearching(true);
     const t = setTimeout(async () => {
       try {
         const data = await searchProducts(query.trim() || undefined, categoryId ?? undefined);
+        if (cancelled) return;
         let list = [...data];
         if (sort === 'priceAsc') list.sort((a, b) => (a.sale_price ?? a.base_price) - (b.sale_price ?? b.base_price));
         else if (sort === 'priceDesc') list.sort((a, b) => (b.sale_price ?? b.base_price) - (a.sale_price ?? a.base_price));
         else if (sort === 'rating') list.sort((a, b) => b.rating - a.rating);
         // الافتراضي: ترتيب حسب الصلة بخوارزمية تطبيع عربي + جودة
         else list = rankProducts(list, query.trim());
-        setResults(list);
-      } catch { setResults([]); }
-      finally { setIsSearching(false); }
+        if (!cancelled) setResults(list);
+      } catch { if (!cancelled) setResults([]); }
+      finally { if (!cancelled) setIsSearching(false); }
     }, 350);
-    return () => clearTimeout(t);
+    return () => { cancelled = true; clearTimeout(t); };
   }, [query, categoryId, sort]);
 
   return (

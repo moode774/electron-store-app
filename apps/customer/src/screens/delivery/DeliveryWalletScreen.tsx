@@ -22,7 +22,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const handleWithdraw = () => {
-    if (!user?.id) return;
+    if (!user?.id || requesting) return;
     if (earnings <= 0) { Alert.alert('تنبيه', 'لا توجد مستحقات قابلة للسحب'); return; }
     Alert.alert('طلب سحب', `طلب سحب مستحقاتك ${formatPrice(earnings)}؟`, [
       { text: 'إلغاء', style: 'cancel' },
@@ -38,7 +38,8 @@ export default function DeliveryWalletScreen({ navigation }: any) {
     ]);
   };
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  // التصنيف يعتمد على نوع الحركة (credit/debit) لا على إشارة المبلغ
+  const isIncome = (t: WalletTransaction) => t.type !== 'debit';
 
   return (
     <View style={styles.container}>
