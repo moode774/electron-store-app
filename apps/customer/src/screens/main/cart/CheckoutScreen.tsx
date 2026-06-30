@@ -62,14 +62,20 @@ export default function CheckoutScreen({ navigation }: any) {
 
       // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر
       // ملاحظة: رسوم التوصيل تُحتسب مرة واحدة على أول متجر حتى يطابق المبلغ المعروض
-      const byStore = getItemsByStore();
-      let isFirstStore = true;
-      for (const [storeId, storeItems] of Object.entries(byStore)) {
+      const byStore = Object.entries(getItemsByStore());
+      // نوزّع الخصم المُطبَّع (المحدود بالمجموع) ونمنح المتجر الأخير الباقي
+      // حتى يساوي مجموع الخصومات الخصمَ المعروض تماماً دون فروق تقريب
+      const authoritativeDiscount = totals.discount;
+      let allocatedDiscount = 0;
+      for (let idx = 0; idx < byStore.length; idx++) {
+        const [storeId, storeItems] = byStore[idx];
         const subtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
-        // توزيع الخصم على المتاجر بنسبة قيمة كل متجر من الإجمالي
-        const storeDiscount = cartTotal > 0 ? Math.round((discount * subtotal) / cartTotal) : 0;
-        const storeDeliveryFee = isFirstStore ? deliveryFee : 0;
-        isFirstStore = false;
+        const isLastStore = idx === byStore.length - 1;
+        const storeDiscount = isLastStore
+          ? authoritativeDiscount - allocatedDiscount
+          : (cartTotal > 0 ? Math.round((authoritativeDiscount * subtotal) / cartTotal) : 0);
+        allocatedDiscount += storeDiscount;
+        const storeDeliveryFee = idx === 0 ? deliveryFee : 0;
         await createOrder({
           customer_id: user.id,
           merchant_id: storeId,

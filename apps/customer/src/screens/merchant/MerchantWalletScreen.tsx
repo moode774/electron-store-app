@@ -16,7 +16,11 @@ export default function MerchantWalletScreen({ navigation }: any) {
     if (!user?.id) { setLoading(false); return; }
     Promise.all([getMerchantWalletBalance(user.id), getWalletTransactions(user.id)])
       .then(([b, tx]) => { setBalance(b); setTransactions(tx); })
-      .catch(() => {})
+      .catch((e: any) => {
+        // عند فشل التحميل: لا نُبقي رصيداً قديماً يسمح بسحب على بيانات بائتة
+        setBalance(0); setTransactions([]);
+        Alert.alert('خطأ', e?.message ?? 'تعذّر تحميل بيانات المحفظة');
+      })
       .finally(() => setLoading(false));
   }, [user?.id]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -39,7 +43,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
   };
 
   // التصنيف يعتمد على نوع الحركة (credit/debit) لا على إشارة المبلغ
-  const isIncome = (t: WalletTransaction) => t.type !== 'debit';
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
 
   return (
     <View style={styles.container}>

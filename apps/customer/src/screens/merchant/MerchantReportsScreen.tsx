@@ -28,7 +28,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
     setLoading(true);
     Promise.all([
       getMerchantSalesChart(user.id, 7),
-      getMerchantTopProducts(user.id, 5),
+      getMerchantTopProducts(user.id, 5, days),
       getMerchantReport(user.id, days),
     ]).then(([chart, top, rep]) => {
       if (!active) return;
@@ -136,7 +136,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 <Text style={styles.productName}>{p.name}</Text>
                 <Text style={styles.productSold}>{p.total_sold} عملية بيع</Text>
               </View>
-              <Text style={styles.productRevenue}>{formatPrice(p.sale_price ?? p.base_price)}</Text>
+              <Text style={styles.productRevenue}>{formatPrice(p.revenue ?? 0)}</Text>
             </View>
           ))}
         </View>

@@ -423,51 +423,32 @@ export async function createOrder(data: {
     product_name?: string;
   }[];
 }): Promise<{ id: string; order_number: string }> {
-  const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
-
-  const { data: order, error: orderError } = await supabase
-    .from(TABLES.ORDERS)
-    .insert({
-      order_number: orderNumber,
-      customer_id: data.customer_id,
-      merchant_id: data.merchant_id,
-      address_id: data.address_id,
-      subtotal: data.subtotal,
-      delivery_fee: data.delivery_fee,
-      discount_amount: data.discount_amount,
-      tax_amount: data.tax_amount,
-      total_amount: data.total_amount,
-      payment_method: data.payment_method,
-      notes: data.notes,
-      status: 'pending',
-      payment_status: 'pending',
-    })
-    .select('id, order_number')
-    .single();
-
-  if (orderError) throw orderError;
-
-  const orderItems = data.items.map((item) => ({
-    order_id: order.id,
-    product_id: item.product_id,
-    variant_id: item.variant_id ?? null,
-    product_name: item.product_name ?? '',
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.total_price,
-  }));
-
-  const { error: itemsError } = await supabase.from(TABLES.ORDER_ITEMS).insert(orderItems);
-  if (itemsError) throw itemsError;
-
-  // خصم المخزون وزيادة المبيعات لكل منتج (عبر دالة آمنة تتجاوز RLS)
-  await Promise.all(
-    data.items.map((item) =>
-      supabase.rpc('decrement_product_stock', { p_id: item.product_id, p_qty: item.quantity })
-    )
-  );
-
-  return order as { id: string; order_number: string };
+  // إنشاء الطلب + عناصره + خصم المخزون (واعٍ بالـ variants) في معاملة
+  // واحدة على الخادم؛ أي نقص مخزون يُلغي الطلب بالكامل بدل ترك مخزون قديم.
+  const { data: result, error } = await supabase.rpc('create_order_with_items', {
+    p_customer_id: data.customer_id,
+    p_merchant_id: data.merchant_id,
+    p_address_id: data.address_id,
+    p_subtotal: data.subtotal,
+    p_delivery_fee: data.delivery_fee,
+    p_discount_amount: data.discount_amount,
+    p_tax_amount: data.tax_amount,
+    p_total_amount: data.total_amount,
+    p_payment_method: data.payment_method,
+    p_notes: data.notes ?? null,
+    p_items: data.items.map((item) => ({
+      product_id: item.product_id,
+      variant_id: item.variant_id ?? null,
+      product_name: item.product_name ?? '',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+    })),
+  });
+  if (error) throw error;
+  const row = Array.isArray(result) ? result[0] : result;
+  if (!row?.id) throw new Error('تعذّر إنشاء الطلب');
+  return { id: row.id as string, order_number: row.order_number as string };
 }
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
@@ -851,7 +832,7 @@ export async function getMyComplaints(userId: string): Promise<Complaint[]> {
     .select('id, order_id, against_type, category, title, description, status, priority, resolution, created_at, orders(order_number)')
     .eq('complainant_id', userId)
     .order('created_at', { ascending: false });
-  if (error) return [];
+  if (error) throw error;
   return data as unknown as Complaint[];
 }
 
@@ -862,7 +843,7 @@ export async function getComplaintsAgainstMe(userId: string): Promise<Complaint[
     .select('id, order_id, against_type, category, title, description, status, priority, resolution, created_at, orders(order_number)')
     .eq('against_id', userId)
     .order('created_at', { ascending: false });
-  if (error) return [];
+  if (error) throw error;
   return data as unknown as Complaint[];
 }
 
@@ -892,7 +873,7 @@ export async function getMerchantRefunds(merchantUserId: string): Promise<Mercha
     .select('id, reason, description, refund_amount, status, merchant_response, created_at, orders!inner(order_number, merchant_id)')
     .eq('orders.merchant_id', merchantUserId)
     .order('created_at', { ascending: false });
-  if (error) return [];
+  if (error) throw error;
   return data as unknown as MerchantRefund[];
 }
 
@@ -1298,7 +1279,7 @@ export async function getMerchantCoupons(merchantId: string): Promise<MerchantCo
     .select('id, code, type, value, min_order_amount, max_discount_amount, usage_limit, usage_count, end_date, is_active, created_at')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
-  if (error) return [];
+  if (error) throw error;
   return data as MerchantCoupon[];
 }
 
@@ -1336,18 +1317,21 @@ export async function deleteCoupon(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// أكثر منتجات التاجر مبيعاً
-export async function getMerchantTopProducts(merchantId: string, limit = 5): Promise<{
-  id: string; name: string; total_sold: number; base_price: number; sale_price: number | null; og_image_url: string | null;
+// أكثر منتجات التاجر مبيعاً — بإيراد فعلي من عناصر الطلبات (سعر لحظة البيع)
+export async function getMerchantTopProducts(merchantId: string, limit = 5, days = 30): Promise<{
+  id: string; name: string; total_sold: number; revenue: number; og_image_url: string | null;
 }[]> {
-  const { data, error } = await supabase
-    .from(TABLES.PRODUCTS)
-    .select('id, name, total_sold, base_price, sale_price, og_image_url')
-    .eq('merchant_id', merchantId)
-    .order('total_sold', { ascending: false })
-    .limit(limit);
-  if (error) return [];
-  return data as any;
+  const { data, error } = await supabase.rpc('merchant_top_products', {
+    p_merchant: merchantId, p_days: days, p_limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    total_sold: Number(r.total_sold ?? 0),
+    revenue: Number(r.revenue ?? 0),
+    og_image_url: r.og_image_url ?? null,
+  }));
 }
 
 // مبيعات التاجر اليومية لآخر N أيام (لرسم بياني حقيقي)
@@ -1616,9 +1600,11 @@ export async function createDeliveryProfile(data: {
 // ============================================================
 // WALLET (محفظة التاجر/المندوب/العميل)
 // ============================================================
+export type WalletTransactionType = 'credit' | 'debit';
+
 export interface WalletTransaction {
   id: string;
-  type: string;
+  type: WalletTransactionType;
   amount: number;
   source: string | null;
   balance_after: number | null;
@@ -1640,6 +1626,17 @@ export async function getWalletTransactions(userId: string): Promise<WalletTrans
 // طلب سحب أرباح التاجر (يُنشئ سجل دفع بحالة pending)
 export async function requestMerchantPayout(merchantId: string, amount: number): Promise<void> {
   if (!(amount > 0)) throw new Error('المبلغ المطلوب سحبه غير صالح');
+  // منع الطلبات المكرّرة: لا يُسمح بطلب جديد ما دام هناك طلب قيد المعالجة
+  const { data: pending, error: pendingErr } = await supabase
+    .from('merchant_payouts')
+    .select('id')
+    .eq('merchant_id', merchantId)
+    .eq('status', 'pending')
+    .limit(1);
+  if (pendingErr) throw pendingErr;
+  if (pending && pending.length > 0) {
+    throw new Error('لديك طلب سحب قيد المعالجة بالفعل');
+  }
   const today = new Date().toISOString().split('T')[0];
   const { error } = await supabase.from('merchant_payouts').insert({
     merchant_id: merchantId,
@@ -1655,6 +1652,19 @@ export async function requestMerchantPayout(merchantId: string, amount: number):
 // طلب سحب أرباح المندوب (يُسجَّل كحركة مدينة بانتظار التحويل)
 export async function requestDeliveryWithdrawal(userId: string, amount: number): Promise<void> {
   if (!(amount > 0)) throw new Error('المبلغ المطلوب سحبه غير صالح');
+  // منع التكرار: لا طلب سحب جديد إذا وُجد طلب حديث (آخر 24 ساعة) لم يُسوَّ بعد
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recent, error: recentErr } = await supabase
+    .from('wallet_transactions')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('source', 'withdrawal_request')
+    .gte('created_at', since)
+    .limit(1);
+  if (recentErr) throw recentErr;
+  if (recent && recent.length > 0) {
+    throw new Error('لديك طلب سحب حديث قيد المعالجة، يُرجى الانتظار');
+  }
   const { error } = await supabase.from('wallet_transactions').insert({
     user_id: userId,
     type: 'debit',

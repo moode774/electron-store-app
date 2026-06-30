@@ -9,6 +9,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [coupons, setCoupons] = useState<MerchantCoupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -21,7 +22,8 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
   const load = useCallback(() => {
     if (!user?.id) { setLoading(false); return; }
-    getMerchantCoupons(user.id).then(setCoupons).catch(() => {}).finally(() => setLoading(false));
+    setError(false);
+    getMerchantCoupons(user.id).then(setCoupons).catch(() => { setError(true); setCoupons([]); }).finally(() => setLoading(false));
   }, [user?.id]);
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
 
@@ -101,6 +103,14 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
+        ) : error ? (
+          <View style={styles.empty}>
+            <Ionicons name="cloud-offline-outline" size={56} color="#FCA5A5" />
+            <Text style={styles.emptyText}>تعذّر تحميل الكوبونات</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} activeOpacity={0.85}>
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
         ) : coupons.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="pricetags-outline" size={56} color="#D1D5DB" />
@@ -158,6 +168,8 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 8 },
   emptyText: { fontSize: 16, fontWeight: '800', color: '#111827', marginTop: 8 },
   emptySub: { fontSize: 13, color: '#9CA3AF' },
+  retryBtn: { marginTop: 8, backgroundColor: COLORS.primary, paddingHorizontal: 22, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  retryText: { fontSize: 13.5, fontWeight: '800', color: '#FFFFFF' },
   couponCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6', marginBottom: 12 },
   couponLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   couponIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#F0F4FF', alignItems: 'center', justifyContent: 'center' },

@@ -16,7 +16,11 @@ export default function DeliveryWalletScreen({ navigation }: any) {
     if (!user?.id) { setLoading(false); return; }
     Promise.all([getDeliveryEarnings(user.id), getWalletTransactions(user.id)])
       .then(([e, tx]) => { setEarnings(e.balance); setTransactions(tx); })
-      .catch(() => {})
+      .catch((err: any) => {
+        // عند فشل التحميل: تصفير العرض حتى لا يُتاح السحب على بيانات بائتة
+        setEarnings(0); setTransactions([]);
+        Alert.alert('خطأ', err?.message ?? 'تعذّر تحميل بيانات المحفظة');
+      })
       .finally(() => setLoading(false));
   }, [user?.id]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -39,7 +43,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
   };
 
   // التصنيف يعتمد على نوع الحركة (credit/debit) لا على إشارة المبلغ
-  const isIncome = (t: WalletTransaction) => t.type !== 'debit';
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
 
   return (
     <View style={styles.container}>

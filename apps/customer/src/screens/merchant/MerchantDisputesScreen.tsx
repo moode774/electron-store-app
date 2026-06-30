@@ -32,12 +32,14 @@ export default function MerchantDisputesScreen({ navigation }: any) {
   const [refunds, setRefunds] = useState<MerchantRefund[]>([]);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const load = useCallback(() => {
     if (!user?.id) { setLoading(false); return; }
+    setError(false);
     Promise.all([getMerchantRefunds(user.id), getComplaintsAgainstMe(user.id)])
       .then(([r, c]) => { setRefunds(r); setComplaints(c); })
-      .catch(() => {})
+      .catch(() => { setError(true); setRefunds([]); setComplaints([]); })
       .finally(() => setLoading(false));
   }, [user?.id]);
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
@@ -86,6 +88,14 @@ export default function MerchantDisputesScreen({ navigation }: any) {
 
       {loading ? (
         <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
+      ) : error ? (
+        <View style={styles.errorBox}>
+          <Ionicons name="cloud-offline-outline" size={52} color="#FCA5A5" />
+          <Text style={styles.errorText}>تعذّر تحميل البيانات</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} activeOpacity={0.85}>
+            <Text style={styles.retryText}>إعادة المحاولة</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {tab === 'refunds' ? (
@@ -180,4 +190,8 @@ const styles = StyleSheet.create({
   actText: { fontSize: 13.5, fontWeight: '800' },
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 10 },
   emptyText: { fontSize: 15, fontWeight: '700', color: '#9CA3AF' },
+  errorBox: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
+  errorText: { fontSize: 15, fontWeight: '700', color: '#9CA3AF' },
+  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 22, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  retryText: { fontSize: 13.5, fontWeight: '800', color: '#FFFFFF' },
 });

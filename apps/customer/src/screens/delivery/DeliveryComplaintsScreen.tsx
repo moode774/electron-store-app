@@ -16,10 +16,15 @@ export default function DeliveryComplaintsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [items, setItems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const load = useCallback(() => {
     if (!user?.id) { setLoading(false); return; }
-    getComplaintsAgainstMe(user.id).then(setItems).catch(() => {}).finally(() => setLoading(false));
+    setError(false);
+    getComplaintsAgainstMe(user.id)
+      .then((data) => { setItems(data); })
+      .catch(() => { setError(true); })
+      .finally(() => setLoading(false));
   }, [user?.id]);
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
 
@@ -48,7 +53,15 @@ export default function DeliveryComplaintsScreen({ navigation }: any) {
         <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          {items.length === 0 ? (
+          {error ? (
+            <View style={styles.empty}>
+              <Ionicons name="cloud-offline-outline" size={56} color="#FCA5A5" />
+              <Text style={styles.emptyText}>تعذّر تحميل الشكاوى</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} activeOpacity={0.85}>
+                <Text style={styles.retryText}>إعادة المحاولة</Text>
+              </TouchableOpacity>
+            </View>
+          ) : items.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="happy-outline" size={56} color="#D1D5DB" />
               <Text style={styles.emptyText}>لا توجد شكاوى — أداء ممتاز!</Text>
@@ -97,4 +110,6 @@ const styles = StyleSheet.create({
   resolveText: { fontSize: 13.5, fontWeight: '800', color: '#FFFFFF' },
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 10 },
   emptyText: { fontSize: 15, fontWeight: '700', color: '#9CA3AF' },
+  retryBtn: { marginTop: 6, backgroundColor: COLORS.primary, paddingHorizontal: 22, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  retryText: { fontSize: 13.5, fontWeight: '800', color: '#FFFFFF' },
 });
