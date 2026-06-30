@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
-import { useCartStore, useAuthStore, createOrder, createAddress, validateCoupon } from '@marketplace/shared-hooks';
+import { useCartStore, useAuthStore, createOrder, createAddress, getAddresses, validateCoupon } from '@marketplace/shared-hooks';
 import { Card, Button, Input } from '@marketplace/shared-ui';
 
 // Mock Delivery Fees based on area
@@ -25,6 +25,7 @@ export default function CheckoutScreen({ navigation }: any) {
 
   // الكوبون
   const [couponCode, setCouponCode] = useState('');
+  const [couponId, setCouponId] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState('');
   const [couponOk, setCouponOk] = useState(false);
@@ -41,8 +42,9 @@ export default function CheckoutScreen({ navigation }: any) {
       setDiscount(res.discount);
       setCouponOk(res.valid);
       setCouponMsg(res.message);
+      setCouponId(res.valid ? (res.coupon?.id ?? null) : null);
     } catch {
-      setDiscount(0); setCouponOk(false); setCouponMsg('تعذّر التحقق من الكود');
+      setDiscount(0); setCouponOk(false); setCouponMsg('تعذّر التحقق من الكود'); setCouponId(null);
     } finally {
       setCheckingCoupon(false);
     }
@@ -55,16 +57,33 @@ export default function CheckoutScreen({ navigation }: any) {
 
     setPlacing(true);
     try {
-      // حفظ العنوان أولاً
-      const savedAddress = await createAddress({
-        user_id: user.id,
-        label: 'home',
-        full_address: `${address}${landmark ? ' - ' + landmark : ''}`,
-        city: selectedArea,
-      });
+      const fullAddress = `${address}${landmark ? ' - ' + landmark : ''}`;
+
+      // إعادة استخدام عنوان محفوظ مطابق بدل إنشاء تكرارات في دفتر العناوين
+      let addressId: string;
+      const existing = await getAddresses(user.id).catch(() => []);
+      const match = existing.find(
+        (a) => a.full_address === fullAddress && (a.city ?? '') === selectedArea,
+      );
+      if (match) {
+        addressId = match.id;
+      } else {
+        const savedAddress = await createAddress({
+          user_id: user.id,
+          label: 'home',
+          full_address: fullAddress,
+          city: selectedArea,
+          is_default: existing.length === 0, // أول عنوان يصبح الافتراضي
+        });
+        addressId = savedAddress.id;
+      }
+
+      // الهاتف الإضافي يُحفظ في ملاحظات الطلب ليصل للتاجر والمندوب
+      const orderNotes = altPhone.trim() ? `هاتف إضافي للتواصل: ${altPhone.trim()}` : undefined;
 
       // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر
       const byStore = getItemsByStore();
+      let firstOrder = true;
       for (const [storeId, storeItems] of Object.entries(byStore)) {
         const subtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
         // توزيع الخصم على المتاجر بنسبة قيمة كل متجر من الإجمالي
@@ -72,13 +91,16 @@ export default function CheckoutScreen({ navigation }: any) {
         await createOrder({
           customer_id: user.id,
           merchant_id: storeId,
-          address_id: savedAddress.id,
+          address_id: addressId,
           subtotal,
           delivery_fee: deliveryFee,
           discount_amount: storeDiscount,
           tax_amount: 0,
           total_amount: subtotal + deliveryFee - storeDiscount,
           payment_method: 'cash',
+          notes: orderNotes,
+          // الكوبون يُسجَّل مرّة واحدة فقط (على طلب المتجر الأول) لتفادي تكرار العدّاد
+          coupon_id: firstOrder && couponOk ? (couponId ?? undefined) : undefined,
           items: storeItems.map((i) => ({
             product_id: i.productId,
             quantity: i.quantity,
@@ -87,6 +109,7 @@ export default function CheckoutScreen({ navigation }: any) {
             product_name: i.name,
           })),
         });
+        firstOrder = false;
       }
 
       clearCart();
@@ -184,7 +207,7 @@ export default function CheckoutScreen({ navigation }: any) {
               <Input
                 placeholder="أدخل كود الخصم"
                 value={couponCode}
-                onChangeText={(t) => { setCouponCode(t); setCouponOk(false); setDiscount(0); setCouponMsg(''); }}
+                onChangeText={(t) => { setCouponCode(t); setCouponOk(false); setDiscount(0); setCouponMsg(''); setCouponId(null); }}
                 autoCapitalize="characters"
               />
             </View>

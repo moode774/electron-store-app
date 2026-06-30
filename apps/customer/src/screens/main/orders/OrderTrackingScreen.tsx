@@ -1,17 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, CancellationReason, OrderDetail } from '@marketplace/shared-hooks';
+import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
 
 const TRACKING_STEPS = [
   { status: ORDER_STATUS.PENDING, label: 'بانتظار تأكيد المتجر', icon: '⏳' },
   { status: ORDER_STATUS.PREPARING, label: 'المتجر يجهز الطلب', icon: '📦' },
   { status: ORDER_STATUS.READY, label: 'بانتظار المندوب', icon: '🛵' },
-  { status: ORDER_STATUS.ASSIGNED, label: 'تم قبول التوصيل', icon: '✅' },
+  { status: ORDER_STATUS.ASSIGNED, label: 'المندوب في طريقه للمتجر', icon: '✅' },
   { status: ORDER_STATUS.ON_THE_WAY, label: 'في الطريق إليك', icon: '📍' },
-  { status: ORDER_STATUS.ON_THE_WAY, label: 'المندوب بالباب', icon: '🏠' },
   { status: ORDER_STATUS.DELIVERED, label: 'تم التسليم', icon: '🎉' },
 ];
+
+// تحويل أي حالة طلب إلى رقم الخطوة المقابلة في الخط الزمني أعلاه.
+// يعالج الحالات المرادفة (confirmed≈pending، picked_up≈on_the_way) حتى لا
+// يعود findIndex بـ -1 ويعرض حالة خاطئة للعميل.
+const STATUS_TO_STEP: Record<string, number> = {
+  [ORDER_STATUS.PENDING]: 0,
+  [ORDER_STATUS.CONFIRMED]: 0,
+  [ORDER_STATUS.PREPARING]: 1,
+  [ORDER_STATUS.READY]: 2,
+  [ORDER_STATUS.ASSIGNED]: 3,
+  [ORDER_STATUS.PICKED_UP]: 4,
+  [ORDER_STATUS.ON_THE_WAY]: 4,
+  [ORDER_STATUS.DELIVERED]: 5,
+};
 
 export default function OrderTrackingScreen({ navigation, route }: any) {
   const { orderId } = route.params;
@@ -30,6 +43,17 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   useEffect(() => {
     reload();
     getCancellationReasons('customer').then(setReasons).catch(() => {});
+
+    // تحديث فوري لحالة الطلب عند تغييرها من التاجر أو المندوب
+    const channel = supabase
+      .channel(`order-track-${orderId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+        () => reload(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [orderId]);
 
   const canCancel = order && ['pending', 'preparing'].includes(order.status);
@@ -77,8 +101,8 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     }
   };
 
-  const statusIndex = TRACKING_STEPS.findIndex((s) => s.status === (order?.status ?? ORDER_STATUS.PENDING));
-  const currentStatusIndex = statusIndex >= 0 ? statusIndex : 0;
+  const isCancelled = order?.status === ORDER_STATUS.CANCELLED;
+  const currentStatusIndex = STATUS_TO_STEP[order?.status ?? ORDER_STATUS.PENDING] ?? 0;
 
   if (loading) {
     return (
@@ -160,7 +184,15 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </View>
         )}
 
+        {/* لافتة الإلغاء */}
+        {isCancelled && (
+          <View style={styles.cancelledBanner}>
+            <Text style={styles.cancelledBannerText}>تم إلغاء هذا الطلب</Text>
+          </View>
+        )}
+
         {/* Tracking Timeline */}
+        {!isCancelled && (
         <View style={styles.timelineContainer}>
           {TRACKING_STEPS.map((step, index) => {
             const isDELIVERED = index < currentStatusIndex;
@@ -199,6 +231,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             );
           })}
         </View>
+        )}
 
         {/* تقييم الطلب عند التسليم */}
         {order?.status === ORDER_STATUS.DELIVERED && (
@@ -250,6 +283,8 @@ const styles = StyleSheet.create({
   reviewBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 32, height: 46, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', minWidth: 160 },
   reviewBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
   reviewThanks: { fontSize: 14, fontWeight: '700', color: '#059669' },
+  cancelledBanner: { marginHorizontal: SPACING.md, marginTop: 12, padding: 16, borderRadius: RADIUS.lg, backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FCA5A5', alignItems: 'center' },
+  cancelledBannerText: { color: '#B91C1C', fontWeight: '800', fontSize: 15 },
   cancelBtn: { marginHorizontal: SPACING.md, marginTop: 12, paddingVertical: 14, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: '#EF4444', alignItems: 'center' },
   cancelBtnText: { color: '#EF4444', fontWeight: '800', fontSize: 14 },
   refundBtn: { marginHorizontal: SPACING.md, marginTop: 12, paddingVertical: 14, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: '#D97706', alignItems: 'center' },

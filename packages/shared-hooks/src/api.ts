@@ -391,6 +391,7 @@ export async function createOrder(data: {
   total_amount: number;
   payment_method: string;
   notes?: string;
+  coupon_id?: string;
   items: {
     product_id: string;
     quantity: number;
@@ -400,6 +401,16 @@ export async function createOrder(data: {
   }[];
 }): Promise<{ id: string; order_number: string }> {
   const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+
+  // عمولة المنصة = نسبة التاجر × المجموع الفرعي (لتقرير أرباح المنصة v_developer_earnings)
+  let platformCommission = 0;
+  const { data: mp } = await supabase
+    .from(TABLES.MERCHANT_PROFILES)
+    .select('commission_rate')
+    .eq('id', data.merchant_id)
+    .maybeSingle();
+  const rate = (mp as { commission_rate?: number } | null)?.commission_rate ?? 0;
+  platformCommission = Math.round((data.subtotal * rate) / 100);
 
   const { data: order, error: orderError } = await supabase
     .from(TABLES.ORDERS)
@@ -413,7 +424,9 @@ export async function createOrder(data: {
       discount_amount: data.discount_amount,
       tax_amount: data.tax_amount,
       total_amount: data.total_amount,
+      platform_commission: platformCommission,
       payment_method: data.payment_method,
+      coupon_id: data.coupon_id ?? null,
       notes: data.notes,
       status: 'pending',
       payment_status: 'pending',
@@ -441,6 +454,15 @@ export async function createOrder(data: {
       supabase.rpc('decrement_product_stock', { p_id: item.product_id, p_qty: item.quantity })
     )
   );
+
+  // تسجيل استخدام الكوبون وزيادة عدّاد الاستخدام (أفضل-جهد: لا يُفشل الطلب إن تعذّر)
+  if (data.coupon_id) {
+    try {
+      await supabase.rpc('redeem_coupon', {
+        p_coupon: data.coupon_id, p_user: data.customer_id, p_order: order.id,
+      });
+    } catch { /* لا يؤثر على نجاح الطلب */ }
+  }
 
   return order as { id: string; order_number: string };
 }
@@ -591,7 +613,7 @@ export async function getAccountStats(userId: string): Promise<{
     supabase.from(TABLES.WISHLISTS).select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('coupons').select('id', { count: 'exact', head: true })
       .eq('is_active', true)
-      .or(`end_date.is.null,end_date.gte.${now}`),
+      .or(`expires_at.is.null,expires_at.gte.${now}`),
   ]);
 
   return {
@@ -730,14 +752,22 @@ export async function createRefundRequest(data: {
   description?: string;
   refund_amount?: number;
 }): Promise<void> {
-  const { error } = await supabase.from('refund_requests').insert({ ...data, status: 'pending' });
+  // المخطط: refund_requests.amount (لا refund_amount/description)
+  const reason = data.description ? `${data.reason} — ${data.description}` : data.reason;
+  const { error } = await supabase.from('refund_requests').insert({
+    order_id: data.order_id,
+    customer_id: data.customer_id,
+    reason,
+    amount: data.refund_amount ?? 0,
+    status: 'pending',
+  });
   if (error) throw error;
 }
 
 export async function getMyRefundRequests(customerId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('refund_requests')
-    .select('id, order_id, reason, status, refund_amount, created_at, orders(order_number)')
+    .select('id, order_id, reason, status, refund_amount:amount, created_at, orders(order_number)')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
   if (error) return [];
@@ -758,13 +788,22 @@ export interface ProductVariant {
 }
 
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
+  // المخطط: product_variants(name, price_modifier, stock_quantity) — نحوّلها لشكل الواجهة
   const { data, error } = await supabase
     .from('product_variants')
-    .select('id, size, color, color_hex, additional_price, stock_qty, is_active')
+    .select('id, name, price_modifier, stock_quantity, is_active')
     .eq('product_id', productId)
     .eq('is_active', true);
   if (error) return [];
-  return data as ProductVariant[];
+  return (data ?? []).map((v: any) => ({
+    id: v.id,
+    size: v.name ?? null,
+    color: null,
+    color_hex: null,
+    additional_price: v.price_modifier ?? 0,
+    stock_qty: v.stock_quantity ?? 0,
+    is_active: v.is_active,
+  })) as ProductVariant[];
 }
 
 // ============================================================
@@ -960,20 +999,22 @@ export async function validateCoupon(code: string, subtotal: number): Promise<{
   const now = new Date().toISOString();
   const { data } = await supabase
     .from('coupons')
-    .select('id, code, type, value, min_order_amount, max_discount_amount, end_date, is_active')
+    .select('id, code, type:discount_type, value:discount_value, min_order_amount, max_uses, used_count, expires_at, is_active')
     .eq('code', code.trim().toUpperCase())
     .eq('is_active', true)
     .maybeSingle();
 
   if (!data) return { valid: false, discount: 0, message: 'كود الخصم غير صحيح' };
   const c = data as any;
-  if (c.end_date && c.end_date < now) return { valid: false, discount: 0, message: 'انتهت صلاحية هذا الكود' };
+  if (c.expires_at && c.expires_at < now) return { valid: false, discount: 0, message: 'انتهت صلاحية هذا الكود' };
+  if (c.max_uses != null && (c.used_count ?? 0) >= c.max_uses) {
+    return { valid: false, discount: 0, message: 'انتهت الكمية المتاحة لهذا الكود' };
+  }
   if (c.min_order_amount && subtotal < c.min_order_amount) {
     return { valid: false, discount: 0, message: `الحد الأدنى للطلب ${c.min_order_amount} ر.س` };
   }
 
   let discount = c.type === 'percentage' ? Math.round((subtotal * c.value) / 100) : c.value;
-  if (c.max_discount_amount && discount > c.max_discount_amount) discount = c.max_discount_amount;
   if (discount > subtotal) discount = subtotal;
 
   return { valid: true, discount, message: `تم تطبيق خصم ${discount} ر.س`, coupon: c as Coupon };
@@ -983,9 +1024,9 @@ export async function getActiveCoupons(): Promise<Coupon[]> {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('coupons')
-    .select('id, code, type, value, min_order_amount, end_date, merchant_profiles:merchant_id(store_name)')
+    .select('id, code, type:discount_type, value:discount_value, min_order_amount, end_date:expires_at, merchant_profiles:merchant_id(store_name)')
     .eq('is_active', true)
-    .or(`end_date.is.null,end_date.gte.${now}`)
+    .or(`expires_at.is.null,expires_at.gte.${now}`)
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) return [];
@@ -1232,14 +1273,17 @@ export async function getWalletTransactions(userId: string): Promise<WalletTrans
   return data as WalletTransaction[];
 }
 
-// رصيد محفظة التاجر
+// رصيد محفظة التاجر — يُحسب من آخر رصيد في wallet_transactions
+// (لا يوجد عمود wallet_balance في merchant_profiles بالمخطط)
 export async function getMerchantWalletBalance(userId: string): Promise<number> {
   const { data } = await supabase
-    .from(TABLES.MERCHANT_PROFILES)
-    .select('wallet_balance')
+    .from('wallet_transactions')
+    .select('balance_after')
     .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
-  return (data as { wallet_balance?: number } | null)?.wallet_balance ?? 0;
+  return (data as { balance_after?: number } | null)?.balance_after ?? 0;
 }
 
 // ============================================================
@@ -1293,26 +1337,33 @@ export interface Review {
   reviewer?: { full_name: string } | null;
 }
 
+// تقييمات متجر معيّن (المخطط: reviews.merchant_id + customer_id)
 export async function getReviews(targetId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select('id, rating, comment, created_at, reviewer:reviewer_id(full_name)')
-    .eq('target_id', targetId)
+    .select('id, rating, comment, created_at, reviewer:customer_id(full_name)')
+    .eq('merchant_id', targetId)
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) throw error;
   return data as unknown as Review[];
 }
 
-// تقييمات كتبها المستخدم
+// تقييمات كتبها المستخدم — نشتقّ target_type من العمود غير الفارغ
 export async function getMyReviews(userId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select('id, rating, comment, created_at, target_type')
-    .eq('reviewer_id', userId)
+    .select('id, rating, comment, created_at, merchant_id, delivery_id, product_id')
+    .eq('customer_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as Review[];
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    rating: r.rating,
+    comment: r.comment,
+    created_at: r.created_at,
+    target_type: r.delivery_id ? 'delivery' : r.product_id ? 'product' : 'merchant',
+  })) as Review[];
 }
 
 export async function createReview(data: {
@@ -1323,7 +1374,17 @@ export async function createReview(data: {
   rating: number;
   comment?: string;
 }): Promise<void> {
-  const { error } = await supabase.from('reviews').insert(data);
+  // المخطط يستخدم أعمدة منفصلة (merchant_id/delivery_id/product_id) لا target_type/target_id
+  const row: Record<string, unknown> = {
+    customer_id: data.reviewer_id,
+    order_id: data.order_id ?? null,
+    rating: data.rating,
+    comment: data.comment ?? null,
+  };
+  if (data.target_type === 'delivery') row.delivery_id = data.target_id;
+  else if (data.target_type === 'product') row.product_id = data.target_id;
+  else row.merchant_id = data.target_id;
+  const { error } = await supabase.from('reviews').insert(row);
   if (error) throw error;
 }
 

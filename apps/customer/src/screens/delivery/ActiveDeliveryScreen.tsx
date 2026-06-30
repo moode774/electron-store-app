@@ -4,12 +4,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
 
+// كل خطوة مرتبطة بحالة الطلب التي يجب أن تُكتب في قاعدة البيانات عند الوصول إليها،
+// حتى يرى العميل التقدّم الحقيقي في شاشة التتبع (وليس مجرد قفزة من "جاهز" إلى "تم التسليم").
 const STEPS = [
-  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر' },
-  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب' },
-  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل' },
-  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم ✅' },
+  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر', status: ORDER_STATUS.ASSIGNED },
+  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب', status: ORDER_STATUS.PICKED_UP },
+  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل', status: ORDER_STATUS.ON_THE_WAY },
+  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم ✅', status: ORDER_STATUS.ON_THE_WAY },
 ];
+
+// تحديد الخطوة المبدئية من حالة الطلب الحالية (لاستئناف التوصيلة بعد إغلاق الشاشة).
+const statusToStep = (status?: string): number => {
+  switch (status) {
+    case ORDER_STATUS.PICKED_UP: return 1;
+    case ORDER_STATUS.ON_THE_WAY: return 2;
+    default: return 0; // assigned أو أي حالة سابقة
+  }
+};
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const paramOrderId: string | undefined = route?.params?.orderId;
@@ -21,13 +32,18 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   useEffect(() => {
     const loadOrder = async () => {
       try {
+        let loaded: OrderDetail | null = null;
         if (paramOrderId) {
-          setOrder(await getOrderById(paramOrderId));
+          loaded = await getOrderById(paramOrderId);
         } else if (user?.id) {
           // تبويب "الطلبات": اجلب الطلب النشط الحالي للمندوب
           const mine = await getDeliveryOrders(user.id);
           const active = mine.find((o) => o.status !== 'delivered' && o.status !== 'cancelled') ?? mine[0];
-          if (active) setOrder(await getOrderById(active.id));
+          if (active) loaded = await getOrderById(active.id);
+        }
+        if (loaded) {
+          setOrder(loaded);
+          setStepIndex(statusToStep(loaded.status)); // استئناف من الحالة الفعلية
         }
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -49,14 +65,25 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     fee: order?.delivery_fee ?? 0,
   };
 
+  const [advancing, setAdvancing] = useState(false);
+
   const advanceStep = async () => {
-    if (stepIndex < STEPS.length - 1) {
-      setStepIndex(stepIndex + 1);
-    } else {
-      if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
-      Alert.alert('أحسنت! 🎉', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
-        { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
-      ]);
+    if (advancing) return;
+    setAdvancing(true);
+    try {
+      if (stepIndex < STEPS.length - 1) {
+        const next = stepIndex + 1;
+        // اكتب حالة الخطوة الجديدة في قاعدة البيانات ليراها العميل مباشرة.
+        if (orderId) await updateOrderStatus(orderId, STEPS[next].status).catch(() => {});
+        setStepIndex(next);
+      } else {
+        if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
+        Alert.alert('أحسنت! 🎉', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
+          { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
+        ]);
+      }
+    } finally {
+      setAdvancing(false);
     }
   };
 
@@ -165,8 +192,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
       {/* Action Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.actionBtn} onPress={advanceStep} activeOpacity={0.8}>
-          <Text style={styles.actionBtnText}>{currentStep.action}</Text>
+        <TouchableOpacity style={[styles.actionBtn, advancing && { opacity: 0.6 }]} onPress={advanceStep} activeOpacity={0.8} disabled={advancing}>
+          {advancing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
         </TouchableOpacity>
       </View>
     </View>

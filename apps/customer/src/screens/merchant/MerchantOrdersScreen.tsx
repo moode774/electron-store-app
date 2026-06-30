@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getMerchantOrders, updateOrderStatus, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, getMerchantOrders, updateOrderStatus, OrderSummary, supabase } from '@marketplace/shared-hooks';
 
 const FILTERS = [
   { key: 'all', label: 'الكل' },
@@ -25,6 +25,20 @@ export default function MerchantOrdersScreen({ navigation }: any) {
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // تحديث فوري عند وصول طلب جديد أو تغيّر حالة طلب لهذا التاجر
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`merchant-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `merchant_id=eq.${user.id}` },
+        () => load(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, load]);
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
