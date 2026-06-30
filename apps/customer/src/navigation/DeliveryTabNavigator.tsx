@@ -12,6 +12,7 @@ import DeliveryAccountScreen from '../screens/delivery/DeliveryAccountScreen';
 import DeliveryWalletScreen from '../screens/delivery/DeliveryWalletScreen';
 import DeliveryProfileScreen from '../screens/delivery/DeliveryProfileScreen';
 import DeliveryZonesScreen from '../screens/delivery/DeliveryZonesScreen';
+import DeliveryComplaintsScreen from '../screens/delivery/DeliveryComplaintsScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 
 export type DeliveryAccountStackParamList = {
@@ -19,6 +20,7 @@ export type DeliveryAccountStackParamList = {
   DeliveryProfile: undefined;
   DeliveryZones: undefined;
   DeliveryWallet: undefined;
+  DeliveryComplaints: undefined;
   RoleNotifications: { role: 'delivery' };
 };
 
@@ -30,6 +32,7 @@ function AccountNavigator() {
       <AccountStack.Screen name="DeliveryProfile" component={DeliveryProfileScreen} />
       <AccountStack.Screen name="DeliveryZones" component={DeliveryZonesScreen} />
       <AccountStack.Screen name="DeliveryWallet" component={DeliveryWalletScreen} />
+      <AccountStack.Screen name="DeliveryComplaints" component={DeliveryComplaintsScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
     </AccountStack.Navigator>
   );
