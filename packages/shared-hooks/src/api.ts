@@ -362,7 +362,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
       addresses(full_address, city),
       merchant_profiles(store_name, store_logo_url),
-      customer:users(full_name, phone),
+      customer:users!customer_id(full_name, phone),
       order_items(id, quantity, unit_price, total_price, product_name, products(name))
     `)
     .eq('id', id)
@@ -374,7 +374,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
 export async function getMerchantOrders(merchantId: string): Promise<OrderSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, created_at, payment_method, payment_status, customer_profiles:users(full_name, phone)')
+    .select('id, order_number, status, total_amount, created_at, payment_method, payment_status, customer_profiles:users!customer_id(full_name, phone)')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
   if (error) throw error;
