@@ -226,6 +226,7 @@ export async function createProduct(data: {
   base_price: number;
   sale_price?: number;
   category_id?: string;
+  stock_quantity?: number;
   is_active?: boolean;
   tags?: string[];
 }): Promise<{ id: string } | null> {
@@ -1185,16 +1186,18 @@ export interface MerchantProfileData {
   // visual
   store_logo_url?: string;
   store_banner_url?: string;
+  // status
+  is_open?: boolean;
 }
 
 export async function getMerchantProfile(userId: string): Promise<{
-  id: string; store_name: string; is_approved: boolean;
+  id: string; store_name: string; is_approved: boolean; is_open?: boolean;
   store_description?: string | null; address?: string | null; city?: string | null;
   store_logo_url?: string | null;
 } | null> {
   const { data } = await supabase
     .from(TABLES.MERCHANT_PROFILES)
-    .select('id, store_name, is_approved, store_description, address, city, store_logo_url')
+    .select('id, store_name, is_approved, is_open, store_description, address, city, store_logo_url')
     .eq('user_id', userId)
     .maybeSingle();
   return data ?? null;

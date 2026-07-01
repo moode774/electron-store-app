@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Switch, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getMerchantProducts, updateProduct } from '@marketplace/shared-hooks';
 
@@ -15,7 +16,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
     finally { setLoading(false); }
   }, [user?.id]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const toggleActive = async (id: string, current: boolean) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: !current } : p)));

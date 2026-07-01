@@ -11,6 +11,10 @@
 ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS stock_quantity INTEGER NOT NULL DEFAULT 0;
 
+-- حالة المتجر مفتوح/مغلق (مفتاح إعدادات المتجر)
+ALTER TABLE public.merchant_profiles
+  ADD COLUMN IF NOT EXISTS is_open BOOLEAN NOT NULL DEFAULT true;
+
 -- توسعة جداول الدردشة لتطابق نموذج api.ts (عميل↔تاجر + عدّادات غير المقروء)
 ALTER TABLE public.chat_conversations
   ADD COLUMN IF NOT EXISTS customer_id      UUID REFERENCES public.users(id) ON DELETE CASCADE,
