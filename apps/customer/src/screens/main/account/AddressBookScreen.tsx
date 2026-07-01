@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS } from '@marketplace/shared-utils';
 import { Card, Button } from '@marketplace/shared-ui';
-import { useAuthStore, getAddresses, Address } from '@marketplace/shared-hooks';
+import { useAuthStore, getAddresses, deleteAddress, setDefaultAddress, Address } from '@marketplace/shared-hooks';
 
 export default function AddressBookScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -15,7 +17,28 @@ export default function AddressBookScreen({ navigation }: any) {
     finally { setLoading(false); }
   }, [user?.id]);
 
-  useEffect(() => { load(); }, [load]);
+  // تحديث عند العودة ليظهر العنوان المُضاف حديثاً
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const makeDefault = async (id: string) => {
+    if (!user?.id) return;
+    setAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === id })));
+    try { await setDefaultAddress(user.id, id); } catch { load(); }
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert('حذف العنوان', 'هل تريد حذف هذا العنوان؟', [
+      { text: 'تراجع', style: 'cancel' },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: async () => {
+          setAddresses((prev) => prev.filter((a) => a.id !== id));
+          try { await deleteAddress(id); } catch { load(); }
+        },
+      },
+    ]);
+  };
 
   const renderAddress = ({ item }: { item: Address }) => (
     <Card style={styles.addressCard} variant="outlined">
@@ -25,14 +48,20 @@ export default function AddressBookScreen({ navigation }: any) {
           <Text style={styles.labelText}>{item.label === 'home' ? 'المنزل' : item.label}</Text>
           {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>الافتراضي</Text></View>}
         </View>
-        <TouchableOpacity>
-          <Text style={styles.editIcon}>✏️</Text>
+        <TouchableOpacity onPress={() => confirmDelete(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
         </TouchableOpacity>
       </View>
       <View style={styles.addressBody}>
         <Text style={styles.areaText}>📍 {item.city ?? ''}</Text>
         <Text style={styles.streetText}>{item.full_address}</Text>
       </View>
+      {!item.is_default && (
+        <TouchableOpacity style={styles.defaultBtn} onPress={() => makeDefault(item.id)} activeOpacity={0.8}>
+          <Ionicons name="star-outline" size={15} color={COLORS.primary} />
+          <Text style={styles.defaultBtnText}>تعيين كافتراضي</Text>
+        </TouchableOpacity>
+      )}
     </Card>
   );
 
@@ -96,6 +125,8 @@ const styles = StyleSheet.create({
   addressBody: { gap: 6 },
   areaText: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   streetText: { fontSize: 13, color: COLORS.textSecondary, marginLeft: 22 },
+  defaultBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+  defaultBtnText: { fontSize: 12.5, fontWeight: '700', color: COLORS.primary },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
   emptyEmoji: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 16, color: COLORS.textMuted },
