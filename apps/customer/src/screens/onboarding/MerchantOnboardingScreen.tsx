@@ -19,6 +19,11 @@ const STORE_CATEGORIES = [
 
 const CITIES = ['صنعاء', 'عدن', 'تعز', 'إب', 'الحديدة', 'مأرب', 'حضرموت', 'أخرى'];
 
+const DELIVERY_TYPES = [
+  { id: 'local', title: 'داخل المحافظة', desc: 'استقبل الطلبات من عملاء محافظتك فقط' },
+  { id: 'national', title: 'كل المحافظات المدعومة', desc: 'استقبل الطلبات من جميع المناطق المتاحة' },
+];
+
 const TOTAL_STEPS = 9;
 
 interface Props {
@@ -182,17 +187,13 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       if (logoUri) logoUrl = await uploadImageToStorage('stores', `logos/${user.id}`, logoUri);
       if (bannerUri) bannerUrl = await uploadImageToStorage('stores', `banners/${user.id}`, bannerUri);
 
-      // Save delivery type encoded in store_description since we don't have a direct column
-      const encodedDesc = JSON.stringify({
-        desc: description.trim(),
-        deliveryType,
-      });
-
+      // نطاق التوصيل يُستنتَج من service_area_ids؛ نخزّن الوصف كنص عادي
+      // (كان يُخزَّن JSON فيظهر للعملاء كنص غير مقروء).
       await createMerchantProfile({
         user_id: user.id,
         store_name: storeName.trim(),
         store_slug: slug,
-        store_description: encodedDesc,
+        store_description: description.trim() || undefined,
         store_category: storeCategory,
         city,
         address: address.trim() || undefined,

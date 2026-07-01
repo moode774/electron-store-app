@@ -9,11 +9,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, createDeliveryProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
 
+// القيم يجب أن تطابق enum قاعدة البيانات: motorcycle | car | bicycle
 const VEHICLE_TYPES = [
   { key: 'motorcycle', label: 'دراجة نارية', icon: 'bicycle-outline' },
   { key: 'car', label: 'سيارة', icon: 'car-outline' },
   { key: 'bicycle', label: 'دراجة هوائية', icon: 'bicycle' },
-  { key: 'pickup', label: 'بيك أب', icon: 'car-sport-outline' },
 ];
 
 const CITIES = ['صنعاء', 'عدن', 'تعز', 'إب', 'الحديدة', 'مأرب', 'حضرموت', 'أخرى'];

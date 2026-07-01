@@ -43,6 +43,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       case ORDER_STATUS.PENDING: return { label: 'بانتظار القبول', color: '#D97706', bg: '#FEF3C7' };
       case ORDER_STATUS.PREPARING: return { label: 'قيد التجهيز', color: '#2563EB', bg: '#DBEAFE' };
       case ORDER_STATUS.READY: return { label: 'جاهز للتوصيل', color: '#7C3AED', bg: '#EDE9FE' };
+      case ORDER_STATUS.ASSIGNED:
+      case ORDER_STATUS.PICKED_UP:
+      case ORDER_STATUS.ON_THE_WAY: return { label: 'مع المندوب', color: '#0891B2', bg: '#CFFAFE' };
       case ORDER_STATUS.DELIVERED: return { label: 'مكتمل', color: '#059669', bg: '#DCFCE7' };
       case ORDER_STATUS.CANCELLED: return { label: 'ملغي', color: '#EF4444', bg: '#FEE2E2' };
       default: return { label: s, color: '#6B7280', bg: '#F3F4F6' };
