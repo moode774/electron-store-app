@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { COLORS } from '@marketplace/shared-utils';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
 
@@ -15,7 +16,8 @@ export default function OffersScreen({ navigation }: any) {
     getActiveCoupons().then(setOffers).catch(() => setOffers([])).finally(() => setLoading(false));
   }, []);
 
-  const handleCopy = (id: string) => {
+  const handleCopy = async (id: string, code: string) => {
+    await Clipboard.setStringAsync(code).catch(() => {});
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -65,7 +67,7 @@ export default function OffersScreen({ navigation }: any) {
                   </View>
                   <TouchableOpacity
                     style={[styles.copyBtn, isCopied && styles.copyBtnDone]}
-                    onPress={() => handleCopy(item.id)}
+                    onPress={() => handleCopy(item.id, item.code)}
                     activeOpacity={0.8}
                   >
                     <Ionicons name={isCopied ? 'checkmark' : 'copy-outline'} size={14} color={isCopied ? '#FFFFFF' : COLORS.primary} />
