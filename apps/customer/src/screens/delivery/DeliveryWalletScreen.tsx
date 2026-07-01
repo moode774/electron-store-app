@@ -47,7 +47,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
                 <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
-                <Text style={styles.summaryLabel}>مستحقاتك (ر.س)</Text>
+                <Text style={styles.summaryLabel}>مستحقاتك (ر.ي)</Text>
               </View>
               <View style={[styles.summaryCard, { backgroundColor: '#B45309' }]}>
                 <Ionicons name="cash-outline" size={20} color="rgba(255,255,255,0.7)" />

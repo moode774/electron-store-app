@@ -63,7 +63,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
               </View>
               <View style={styles.info}>
                 <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.price}>{item.sale_price ?? item.base_price} ر.س</Text>
+                <Text style={styles.price}>{item.sale_price ?? item.base_price} ر.ي</Text>
                 <View style={styles.stockRow}>
                   <View style={[styles.stockDot, { backgroundColor: item.is_active ? '#059669' : '#EF4444' }]} />
                   <Text style={[styles.stockText, !item.is_active && { color: '#EF4444' }]}>

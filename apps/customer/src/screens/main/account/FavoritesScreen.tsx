@@ -68,7 +68,7 @@ export default function FavoritesScreen({ navigation }: any) {
                 <Text style={styles.name} numberOfLines={2}>{item.products?.name ?? 'منتج'}</Text>
                 <Text style={styles.store}>{item.products?.merchant_profiles?.store_name ?? ''}</Text>
                 <View style={styles.priceRow}>
-                  <Text style={styles.price}>{item.products?.sale_price ?? item.products?.base_price ?? 0} ر.س</Text>
+                  <Text style={styles.price}>{item.products?.sale_price ?? item.products?.base_price ?? 0} ر.ي</Text>
                   {item.products?.sale_price && <Text style={styles.oldPrice}>{item.products.base_price}</Text>}
                 </View>
               </View>

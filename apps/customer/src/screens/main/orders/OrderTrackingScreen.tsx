@@ -139,7 +139,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Order Info Summary */}
         <View style={styles.infoCard}>
           <Text style={styles.orderId}>طلب رقم: {order?.order_number ?? orderId}</Text>
-          <Text style={styles.estimatedTime}>المبلغ الإجمالي: {order?.total_amount ?? 0} ر.س</Text>
+          <Text style={styles.estimatedTime}>المبلغ الإجمالي: {order?.total_amount ?? 0} ر.ي</Text>
         </View>
 
         {/* إلغاء الطلب */}

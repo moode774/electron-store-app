@@ -109,7 +109,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
             <View style={styles.earningsTexts}>
               <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.س</Text></Text>
+              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
             </View>
           </View>
         </View>
@@ -179,7 +179,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="cash-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>قيمة الطلب</Text>
             </View>
@@ -189,7 +189,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="bicycle-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>أجر التوصيل</Text>
             </View>

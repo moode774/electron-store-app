@@ -1012,13 +1012,13 @@ export async function validateCoupon(code: string, subtotal: number): Promise<{
     return { valid: false, discount: 0, message: 'انتهت الكمية المتاحة لهذا الكود' };
   }
   if (c.min_order_amount && subtotal < c.min_order_amount) {
-    return { valid: false, discount: 0, message: `الحد الأدنى للطلب ${c.min_order_amount} ر.س` };
+    return { valid: false, discount: 0, message: `الحد الأدنى للطلب ${c.min_order_amount} ر.ي` };
   }
 
   let discount = c.type === 'percentage' ? Math.round((subtotal * c.value) / 100) : c.value;
   if (discount > subtotal) discount = subtotal;
 
-  return { valid: true, discount, message: `تم تطبيق خصم ${discount} ر.س`, coupon: c as Coupon };
+  return { valid: true, discount, message: `تم تطبيق خصم ${discount} ر.ي`, coupon: c as Coupon };
 }
 
 export async function getActiveCoupons(): Promise<Coupon[]> {

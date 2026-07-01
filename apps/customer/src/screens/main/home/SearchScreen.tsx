@@ -156,7 +156,7 @@ export default function SearchScreen({ navigation, route }: any) {
                   <Text style={styles.ratingText}>{item.rating}</Text>
                   <Text style={styles.categoryText}>· {item.merchant_profiles?.store_name ?? ''}</Text>
                 </View>
-                <Text style={styles.price}>{item.sale_price ?? item.base_price} ر.س</Text>
+                <Text style={styles.price}>{item.sale_price ?? item.base_price} ر.ي</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color="#D1D5DB" />
             </TouchableOpacity>

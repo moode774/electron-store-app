@@ -41,7 +41,7 @@ export default function EarningsScreen() {
             {/* Summary Card */}
             <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>رصيد المحفظة</Text>
-              <Text style={styles.summaryValue}>{balance} ر.س</Text>
+              <Text style={styles.summaryValue}>{balance} ر.ي</Text>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryItemValue}>{history.length}</Text>
@@ -72,7 +72,7 @@ export default function EarningsScreen() {
               <Text style={styles.route}>توصيلة مكتملة</Text>
               <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
-            <Text style={styles.fee}>+{item.total_earning} ر.س</Text>
+            <Text style={styles.fee}>+{item.total_earning} ر.ي</Text>
           </View>
         )}
       />

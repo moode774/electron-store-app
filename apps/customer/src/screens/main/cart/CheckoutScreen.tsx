@@ -225,22 +225,22 @@ export default function CheckoutScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>🧾 ملخص الطلب</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>المجموع الفرعي</Text>
-            <Text style={styles.summaryValue}>{cartTotal} ر.س</Text>
+            <Text style={styles.summaryValue}>{cartTotal} ر.ي</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>رسوم التوصيل ({selectedArea})</Text>
-            <Text style={styles.summaryValue}>{deliveryFee} ر.س</Text>
+            <Text style={styles.summaryValue}>{deliveryFee} ر.ي</Text>
           </View>
           {discount > 0 && (
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryText, { color: '#059669' }]}>الخصم</Text>
-              <Text style={[styles.summaryValue, { color: '#059669' }]}>- {discount} ر.س</Text>
+              <Text style={[styles.summaryValue, { color: '#059669' }]}>- {discount} ر.ي</Text>
             </View>
           )}
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalText}>الإجمالي المطلوب</Text>
-            <Text style={styles.totalValue}>{finalTotal} ر.س</Text>
+            <Text style={styles.totalValue}>{finalTotal} ر.ي</Text>
           </View>
         </Card>
 
@@ -250,7 +250,7 @@ export default function CheckoutScreen({ navigation }: any) {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <Button
-          title={placing ? 'جاري الإرسال...' : `تأكيد الطلب (${finalTotal} ر.س)`}
+          title={placing ? 'جاري الإرسال...' : `تأكيد الطلب (${finalTotal} ر.ي)`}
           onPress={handleConfirmOrder}
         />
       </View>

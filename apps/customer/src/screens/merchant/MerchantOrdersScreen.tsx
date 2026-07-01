@@ -95,7 +95,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.total}>{item.total_amount ?? 0} ر.س</Text>
+          <Text style={styles.total}>{item.total_amount ?? 0} ر.ي</Text>
           <View style={styles.actionsRow}>
             {item.status === ORDER_STATUS.PENDING && (
               <TouchableOpacity

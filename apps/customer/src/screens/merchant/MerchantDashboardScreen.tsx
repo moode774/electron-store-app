@@ -149,7 +149,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
 
           <View style={styles.salesValueRow}>
             <Text style={styles.salesValue}>{stats.todayRevenue.toLocaleString()}</Text>
-            <Text style={styles.salesCurrency}>ر.س</Text>
+            <Text style={styles.salesCurrency}>ر.ي</Text>
           </View>
 
           <View style={styles.trendPill}>
@@ -242,7 +242,7 @@ export default function MerchantDashboardScreen({ navigation }: any) {
                 </View>
 
                 <View style={styles.orderMeta}>
-                  <Text style={styles.orderTotal}>{order.total_amount ?? 0} <Text style={styles.orderCurrency}>ر.س</Text></Text>
+                  <Text style={styles.orderTotal}>{order.total_amount ?? 0} <Text style={styles.orderCurrency}>ر.ي</Text></Text>
                   <View style={[styles.statusPill, { backgroundColor: st.bg }]}>
                     <Ionicons name={st.icon as any} size={12} color={st.color} />
                     <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
