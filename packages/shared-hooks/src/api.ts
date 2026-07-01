@@ -1247,9 +1247,41 @@ export async function createDeliveryProfile(data: {
   national_id?: string;
   vehicle_type?: string;
   vehicle_plate?: string;
+  id_image_url?: string;
+  license_image_url?: string;
 }): Promise<void> {
   const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).insert(data);
   if (error) throw error;
+}
+
+// ---- مناطق عمل المندوب (تفضيل يُحفظ لكل مندوب) ----
+export async function getDeliveryServiceAreaIds(deliveryUserId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('delivery_service_areas')
+    .select('service_area_id')
+    .eq('delivery_id', deliveryUserId);
+  if (error) return [];
+  return (data ?? []).map((r: any) => r.service_area_id);
+}
+
+export async function setDeliveryServiceArea(
+  deliveryUserId: string,
+  serviceAreaId: string,
+  active: boolean,
+): Promise<void> {
+  if (active) {
+    const { error } = await supabase
+      .from('delivery_service_areas')
+      .insert({ delivery_id: deliveryUserId, service_area_id: serviceAreaId });
+    if (error && error.code !== '23505') throw error; // تجاهل التكرار
+  } else {
+    const { error } = await supabase
+      .from('delivery_service_areas')
+      .delete()
+      .eq('delivery_id', deliveryUserId)
+      .eq('service_area_id', serviceAreaId);
+    if (error) throw error;
+  }
 }
 
 // ============================================================

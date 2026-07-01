@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import * as Location from 'expo-location';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
@@ -11,8 +12,29 @@ export default function AddAddressScreen({ navigation }: any) {
   const [street, setStreet] = useState('');
   const [landmark, setLandmark] = useState('');
   const [saving, setSaving] = useState(false);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
 
   const LABELS = ['المنزل', 'العمل', 'أخرى'];
+
+  const captureLocation = async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('تنبيه', 'يجب السماح بالوصول إلى الموقع لتحديد عنوانك');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setLat(Number(pos.coords.latitude.toFixed(6)));
+      setLng(Number(pos.coords.longitude.toFixed(6)));
+    } catch {
+      Alert.alert('خطأ', 'تعذّر تحديد الموقع، حاول مرة أخرى أو أدخل العنوان يدوياً');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
@@ -24,6 +46,8 @@ export default function AddAddressScreen({ navigation }: any) {
         label: label === 'المنزل' ? 'home' : label === 'العمل' ? 'work' : label,
         full_address: `${street.trim()}${landmark.trim() ? ' - ' + landmark.trim() : ''}`,
         city: selectedArea,
+        latitude: lat ?? undefined,
+        longitude: lng ?? undefined,
       });
       navigation.goBack();
     } catch (e: any) {
@@ -48,11 +72,18 @@ export default function AddAddressScreen({ navigation }: any) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* Map Placeholder */}
+        {/* Map / Location */}
         <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text style={styles.mapText}>حدد موقعك على الخريطة</Text>
-          <Button title="تحديد الموقع الحالي" style={{ marginTop: 12, width: 200, height: 40 }} />
+          <Text style={styles.mapEmoji}>{lat != null ? '📍' : '🗺️'}</Text>
+          <Text style={styles.mapText}>
+            {lat != null ? `تم تحديد الموقع (${lat}, ${lng})` : 'حدد موقعك على الخريطة'}
+          </Text>
+          <Button
+            title={locating ? 'جاري التحديد...' : lat != null ? 'إعادة تحديد الموقع' : 'تحديد الموقع الحالي'}
+            onPress={captureLocation}
+            disabled={locating}
+            style={{ marginTop: 12, width: 220, height: 40 }}
+          />
         </View>
 
         <Card style={styles.formCard} variant="elevated">

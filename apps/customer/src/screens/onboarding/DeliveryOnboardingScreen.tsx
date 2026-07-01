@@ -61,11 +61,19 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
 
     setSaving(true);
     try {
+      // رفع صور الوثائق (اختياري) إلى سلة خاصة داخل مجلد المستخدم
+      let idUrl: string | undefined;
+      let licenseUrl: string | undefined;
+      if (idImageUri) idUrl = await uploadImageToStorage('documents', `${user.id}/id-card`, idImageUri);
+      if (licenseImageUri) licenseUrl = await uploadImageToStorage('documents', `${user.id}/license`, licenseImageUri);
+
       await createDeliveryProfile({
         user_id: user.id,
         national_id: nationalId.trim(),
         vehicle_type: vehicleType,
         vehicle_plate: vehiclePlate.trim().toUpperCase(),
+        id_image_url: idUrl,
+        license_image_url: licenseUrl,
       });
 
       Alert.alert(

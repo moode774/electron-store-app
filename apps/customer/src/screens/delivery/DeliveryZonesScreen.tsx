@@ -1,29 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Switch, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
-import { getServiceAreas } from '@marketplace/shared-hooks';
+import { useAuthStore, getServiceAreas, getDeliveryServiceAreaIds, setDeliveryServiceArea } from '@marketplace/shared-hooks';
 
 type Zone = { id: string; name: string; orders: string; active: boolean };
 
 export default function DeliveryZonesScreen({ navigation }: any) {
+  const user = useAuthStore((s) => s.user);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getServiceAreas()
-      .then((areas) => setZones(areas.map((a) => ({
-        id: a.id,
-        name: a.city,
-        orders: a.delivery_available ? 'متاح للتوصيل' : 'غير متاح',
-        active: a.delivery_available,
-      }))))
+    if (!user?.id) { setLoading(false); return; }
+    Promise.all([getServiceAreas(), getDeliveryServiceAreaIds(user.id)])
+      .then(([areas, activeIds]) => {
+        const set = new Set(activeIds);
+        setZones(areas.map((a) => ({
+          id: a.id,
+          name: a.city,
+          orders: set.has(a.id) ? 'نشط — تستقبل الطلبات' : 'غير مُفعّل',
+          active: set.has(a.id),
+        })));
+      })
       .catch(() => setZones([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user?.id]);
 
-  const toggleZone = (id: string) => {
-    setZones((prev) => prev.map((z) => (z.id === id ? { ...z, active: !z.active } : z)));
+  const toggleZone = async (id: string) => {
+    if (!user?.id) return;
+    const zone = zones.find((z) => z.id === id);
+    if (!zone) return;
+    const next = !zone.active;
+    // تحديث تفاؤلي
+    setZones((prev) => prev.map((z) => (z.id === id
+      ? { ...z, active: next, orders: next ? 'نشط — تستقبل الطلبات' : 'غير مُفعّل' }
+      : z)));
+    try {
+      await setDeliveryServiceArea(user.id, id, next);
+    } catch {
+      // تراجع عند الفشل
+      setZones((prev) => prev.map((z) => (z.id === id
+        ? { ...z, active: !next, orders: !next ? 'نشط — تستقبل الطلبات' : 'غير مُفعّل' }
+        : z)));
+      Alert.alert('خطأ', 'تعذّر حفظ التغيير، حاول مرة أخرى');
+    }
   };
 
   const activeCount = zones.filter((z) => z.active).length;

@@ -179,7 +179,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 key={cat.id}
                 style={styles.catItem}
                 activeOpacity={0.7}
-                onPress={() => navigation.navigate('StoresList', { categoryId: cat.id })}
+                onPress={() => navigation.navigate('Search', { initialCategoryId: cat.id })}
               >
                 <View style={styles.catIconCircle}>
                   <Ionicons name={CAT_ICON_FALLBACK[idx % CAT_ICON_FALLBACK.length] as any} size={24} color="#111827" />
