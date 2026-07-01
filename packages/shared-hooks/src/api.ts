@@ -1255,6 +1255,40 @@ export async function createDeliveryProfile(data: {
   if (error) throw error;
 }
 
+// ---- طلبات سحب الرصيد (تاجر/مندوب) ----
+export interface WithdrawalRequest {
+  id: string;
+  amount: number;
+  method: string | null;
+  status: string; // pending | approved | rejected | paid
+  admin_note: string | null;
+  created_at: string;
+}
+
+export async function getWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]> {
+  const { data, error } = await supabase
+    .from('withdrawal_requests')
+    .select('id, amount, method, status, admin_note, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) return [];
+  return data as WithdrawalRequest[];
+}
+
+export async function createWithdrawalRequest(data: {
+  user_id: string;
+  role: 'merchant' | 'delivery';
+  amount: number;
+  method: string;
+  account_info: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('withdrawal_requests')
+    .insert({ ...data, status: 'pending' });
+  if (error) throw error;
+}
+
 // ---- موقع المندوب المباشر (للتتبع الحي على الخريطة) ----
 // المندوب يبثّ موقعه أثناء التوصيلة النشطة، والعميل يقرؤه في شاشة التتبع.
 export async function updateDeliveryLocation(userId: string, latitude: number, longitude: number): Promise<void> {

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getWalletTransactions, getMerchantWalletBalance, WalletTransaction } from '@marketplace/shared-hooks';
+import WithdrawalSection from '../../components/WithdrawalSection';
 
 export default function MerchantWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -47,11 +48,11 @@ export default function MerchantWalletScreen({ navigation }: any) {
             <View style={styles.balanceCard}>
               <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
               <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
-              <TouchableOpacity style={styles.withdrawBtn} activeOpacity={0.8}>
-                <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.withdrawBtnText}>طلب سحب</Text>
-              </TouchableOpacity>
             </View>
+
+            {/* طلب سحب الرصيد */}
+            <WithdrawalSection balance={balance} role="merchant" />
+
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
           </>
         }

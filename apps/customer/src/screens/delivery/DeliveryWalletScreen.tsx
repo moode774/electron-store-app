@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
+import WithdrawalSection from '../../components/WithdrawalSection';
 
 export default function DeliveryWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -55,6 +56,9 @@ export default function DeliveryWalletScreen({ navigation }: any) {
                 <Text style={styles.summaryLabel}>عدد المعاملات</Text>
               </View>
             </View>
+
+            {/* طلب سحب المستحقات */}
+            <WithdrawalSection balance={earnings} role="delivery" />
 
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
           </>
