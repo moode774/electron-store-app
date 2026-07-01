@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
+import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, updateDeliveryLocation, OrderDetail } from '@marketplace/shared-hooks';
+import AppMap from '../../components/AppMap';
 
 // كل خطوة مرتبطة بحالة الطلب التي يجب أن تُكتب في قاعدة البيانات عند الوصول إليها،
 // حتى يرى العميل التقدّم الحقيقي في شاشة التتبع (وليس مجرد قفزة من "جاهز" إلى "تم التسليم").
@@ -54,6 +56,35 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const orderId = order?.id ?? paramOrderId;
 
   const currentStep = STEPS[stepIndex];
+
+  // بثّ موقع المندوب دورياً أثناء التوصيلة النشطة ليراه العميل مباشرة على الخريطة
+  const [myLoc, setMyLoc] = useState<{ latitude: number; longitude: number } | null>(null);
+  const deliveryDone = order?.status === ORDER_STATUS.DELIVERED || order?.status === ORDER_STATUS.CANCELLED;
+
+  useEffect(() => {
+    if (!user?.id || !order || deliveryDone) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted' || cancelled) return;
+      const send = async () => {
+        try {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          if (cancelled) return;
+          setMyLoc({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+          await updateDeliveryLocation(user.id, pos.coords.latitude, pos.coords.longitude);
+        } catch { /* ignore */ }
+      };
+      send();
+      timer = setInterval(send, 20000);
+    })();
+    return () => { cancelled = true; if (timer) clearInterval(timer); };
+  }, [user?.id, order?.id, deliveryDone]);
+
+  const dest = order?.addresses?.latitude != null && order?.addresses?.longitude != null
+    ? { latitude: order.addresses.latitude, longitude: order.addresses.longitude }
+    : null;
 
   const ORDER = {
     store: order?.merchant_profiles?.store_name ?? 'المتجر',
@@ -125,11 +156,23 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Map Placeholder */}
-        <View style={styles.mapPlaceholder}>
-          <Ionicons name="map-outline" size={48} color="#9CA3AF" />
-          <Text style={styles.mapText}>الخريطة (قريباً)</Text>
-        </View>
+        {/* الخريطة: موقعي + عنوان العميل */}
+        {(myLoc || dest) ? (
+          <AppMap
+            style={{ ...styles.mapPlaceholder, overflow: 'hidden' }}
+            latitude={(myLoc ?? dest)!.latitude}
+            longitude={(myLoc ?? dest)!.longitude}
+            markers={[
+              ...(dest ? [{ id: 'dest', latitude: dest.latitude, longitude: dest.longitude, title: 'العميل' }] : []),
+              ...(myLoc ? [{ id: 'me', latitude: myLoc.latitude, longitude: myLoc.longitude, title: 'موقعي', color: 'green' }] : []),
+            ]}
+          />
+        ) : (
+          <View style={styles.mapPlaceholder}>
+            <Ionicons name="map-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.mapText}>بانتظار تحديد الموقع...</Text>
+          </View>
+        )}
 
         {/* Progress Steps */}
         <View style={styles.stepsCard}>

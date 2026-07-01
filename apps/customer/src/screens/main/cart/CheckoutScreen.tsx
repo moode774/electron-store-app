@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
+import * as Location from 'expo-location';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
 import { useCartStore, useAuthStore, createOrder, createAddress, getAddresses, validateCoupon } from '@marketplace/shared-hooks';
 import { Card, Button, Input } from '@marketplace/shared-ui';
@@ -22,6 +23,27 @@ export default function CheckoutScreen({ navigation }: any) {
   const [altPhone, setAltPhone] = useState('');
   const [selectedArea, setSelectedArea] = useState<string>(SERVICE_AREAS.SANAA);
   const [placing, setPlacing] = useState(false);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  const captureLocation = async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('تنبيه', 'يجب السماح بالوصول إلى الموقع لتحديد عنوانك');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setLat(Number(pos.coords.latitude.toFixed(6)));
+      setLng(Number(pos.coords.longitude.toFixed(6)));
+    } catch {
+      Alert.alert('خطأ', 'تعذّر تحديد الموقع، حاول مرة أخرى');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   // الكوبون
   const [couponCode, setCouponCode] = useState('');
@@ -73,6 +95,8 @@ export default function CheckoutScreen({ navigation }: any) {
           label: 'home',
           full_address: fullAddress,
           city: selectedArea,
+          latitude: lat ?? undefined,
+          longitude: lng ?? undefined,
           is_default: existing.length === 0, // أول عنوان يصبح الافتراضي
         });
         addressId = savedAddress.id;
@@ -172,8 +196,14 @@ export default function CheckoutScreen({ navigation }: any) {
             value={landmark}
             onChangeText={setLandmark}
           />
-          <TouchableOpacity style={styles.mapBtn}>
-            <Text style={styles.mapBtnText}>📌 تحديد الموقع على الخريطة</Text>
+          <TouchableOpacity style={styles.mapBtn} onPress={captureLocation} disabled={locating} activeOpacity={0.8}>
+            {locating ? (
+              <ActivityIndicator size="small" color={COLORS.info} />
+            ) : (
+              <Text style={styles.mapBtnText}>
+                {lat != null ? `✅ تم تحديد موقعك (${lat}, ${lng})` : '📌 تحديد موقعي الحالي'}
+              </Text>
+            )}
           </TouchableOpacity>
         </Card>
 

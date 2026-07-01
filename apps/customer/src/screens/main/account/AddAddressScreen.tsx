@@ -4,6 +4,7 @@ import * as Location from 'expo-location';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
+import AppMap from '../../../components/AppMap';
 
 export default function AddAddressScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -72,19 +73,37 @@ export default function AddAddressScreen({ navigation }: any) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* Map / Location */}
-        <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>{lat != null ? '📍' : '🗺️'}</Text>
-          <Text style={styles.mapText}>
-            {lat != null ? `تم تحديد الموقع (${lat}, ${lng})` : 'حدد موقعك على الخريطة'}
-          </Text>
-          <Button
-            title={locating ? 'جاري التحديد...' : lat != null ? 'إعادة تحديد الموقع' : 'تحديد الموقع الحالي'}
-            onPress={captureLocation}
-            disabled={locating}
-            style={{ marginTop: 12, width: 220, height: 40 }}
-          />
-        </View>
+        {/* الخريطة: تحديد الموقع الحالي ثم تعديل الدبّوس بالضغط */}
+        {lat != null && lng != null ? (
+          <View>
+            <AppMap
+              style={styles.mapContainer}
+              latitude={lat}
+              longitude={lng}
+              markers={[{ id: 'addr', latitude: lat, longitude: lng, title: 'موقع التوصيل' }]}
+              onPress={(la, ln) => { setLat(Number(la.toFixed(6))); setLng(Number(ln.toFixed(6))); }}
+            />
+            <Text style={styles.mapHint}>اضغط على الخريطة لتعديل موقع الدبّوس</Text>
+            <Button
+              title={locating ? 'جاري التحديد...' : 'إعادة تحديد موقعي الحالي'}
+              onPress={captureLocation}
+              disabled={locating}
+              variant="outline"
+              style={{ marginHorizontal: SPACING.md, marginTop: 8, height: 40 }}
+            />
+          </View>
+        ) : (
+          <View style={styles.mapContainer}>
+            <Text style={styles.mapEmoji}>🗺️</Text>
+            <Text style={styles.mapText}>حدد موقعك على الخريطة</Text>
+            <Button
+              title={locating ? 'جاري التحديد...' : 'تحديد الموقع الحالي'}
+              onPress={captureLocation}
+              disabled={locating}
+              style={{ marginTop: 12, width: 220, height: 40 }}
+            />
+          </View>
+        )}
 
         <Card style={styles.formCard} variant="elevated">
           <Text style={styles.sectionTitle}>تفاصيل العنوان</Text>
@@ -163,6 +182,7 @@ const styles = StyleSheet.create({
   mapContainer: { height: 200, backgroundColor: '#E3F2FD', alignItems: 'center', justifyContent: 'center' },
   mapEmoji: { fontSize: 40, opacity: 0.5 },
   mapText: { color: '#1976D2', marginTop: 10, fontWeight: '600' },
+  mapHint: { fontSize: 11.5, color: COLORS.textMuted, textAlign: 'center', marginTop: 8, fontWeight: '600' },
   formCard: { margin: SPACING.md, padding: SPACING.md, marginTop: -20 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.primary, marginBottom: 16, fontFamily: 'El Messiri' },
   inputLabel: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, marginBottom: 8, fontWeight: '500', fontFamily: 'IBM Plex Sans Arabic' },

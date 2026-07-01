@@ -99,6 +99,7 @@ export interface OrderDetail {
   id: string;
   order_number: string;
   merchant_id?: string;
+  delivery_id?: string | null;
   status: string;
   subtotal: number | null;
   delivery_fee: number;
@@ -111,7 +112,7 @@ export interface OrderDetail {
   created_at: string;
   updated_at: string;
   delivery_fee_amount?: number;
-  addresses?: { full_address: string; city: string | null } | null;
+  addresses?: { full_address: string; city: string | null; latitude?: number | null; longitude?: number | null } | null;
   merchant_profiles?: { store_name: string; store_logo_url: string | null } | null;
   customer?: { full_name: string | null; phone: string | null } | null;
   order_items?: {
@@ -358,9 +359,9 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select(`
-      id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
+      id, order_number, merchant_id, delivery_id, status, subtotal, delivery_fee, discount_amount,
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
-      addresses(full_address, city),
+      addresses(full_address, city, latitude, longitude),
       merchant_profiles(store_name, store_logo_url),
       customer:users!customer_id(full_name, phone),
       order_items(id, quantity, unit_price, total_price, product_name, products(name))
@@ -1252,6 +1253,26 @@ export async function createDeliveryProfile(data: {
 }): Promise<void> {
   const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).insert(data);
   if (error) throw error;
+}
+
+// ---- موقع المندوب المباشر (للتتبع الحي على الخريطة) ----
+// المندوب يبثّ موقعه أثناء التوصيلة النشطة، والعميل يقرؤه في شاشة التتبع.
+export async function updateDeliveryLocation(userId: string, latitude: number, longitude: number): Promise<void> {
+  await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ current_latitude: latitude, current_longitude: longitude })
+    .eq('user_id', userId);
+}
+
+export async function getDeliveryLocation(deliveryId: string): Promise<{ latitude: number; longitude: number } | null> {
+  const { data } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .select('current_latitude, current_longitude')
+    .eq('id', deliveryId)
+    .maybeSingle();
+  const d = data as { current_latitude: number | null; current_longitude: number | null } | null;
+  if (!d || d.current_latitude == null || d.current_longitude == null) return null;
+  return { latitude: d.current_latitude, longitude: d.current_longitude };
 }
 
 // ---- مناطق عمل المندوب (تفضيل يُحفظ لكل مندوب) ----

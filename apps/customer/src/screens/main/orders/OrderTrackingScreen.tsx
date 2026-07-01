@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
+import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, getDeliveryLocation, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
+import AppMap from '../../../components/AppMap';
 
 const TRACKING_STEPS = [
   { status: ORDER_STATUS.PENDING, label: 'بانتظار تأكيد المتجر', icon: '⏳' },
@@ -37,6 +38,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const [reasons, setReasons] = useState<CancellationReason[]>([]);
   const [showCancel, setShowCancel] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
+  const [driverLoc, setDriverLoc] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const reload = () => getOrderById(orderId).then((data) => { setOrder(data); setLoading(false); });
 
@@ -55,6 +57,30 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [orderId]);
+
+  // موقع المندوب المباشر أثناء التوصيل (قراءة أولية + Realtime على ملفه)
+  const deliveryActive = !!order?.delivery_id &&
+    [ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKED_UP, ORDER_STATUS.ON_THE_WAY].includes(order.status as any);
+
+  useEffect(() => {
+    if (!order?.delivery_id || !deliveryActive) { setDriverLoc(null); return; }
+    const did = order.delivery_id;
+    getDeliveryLocation(did).then(setDriverLoc).catch(() => {});
+    const ch = supabase
+      .channel(`driver-loc-${did}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'delivery_profiles', filter: `id=eq.${did}` },
+        (payload: any) => {
+          const n = payload?.new;
+          if (n?.current_latitude != null && n?.current_longitude != null) {
+            setDriverLoc({ latitude: n.current_latitude, longitude: n.current_longitude });
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [order?.delivery_id, deliveryActive]);
 
   const canCancel = order && ['pending', 'preparing'].includes(order.status);
 
@@ -127,14 +153,23 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         
-        {/* Map Placeholder */}
-        <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text style={styles.mapText}>خريطة التتبع المباشر ستظهر هنا</Text>
-          <View style={styles.driverPin}>
-            <Text>🛵</Text>
+        {/* خريطة التتبع: عنوان التوصيل + موقع المندوب المباشر */}
+        {order?.addresses?.latitude != null && order?.addresses?.longitude != null ? (
+          <AppMap
+            style={styles.mapContainer}
+            latitude={driverLoc?.latitude ?? order.addresses.latitude}
+            longitude={driverLoc?.longitude ?? order.addresses.longitude}
+            markers={[
+              { id: 'dest', latitude: order.addresses.latitude, longitude: order.addresses.longitude, title: 'عنوان التوصيل' },
+              ...(driverLoc ? [{ id: 'driver', latitude: driverLoc.latitude, longitude: driverLoc.longitude, title: 'المندوب', color: 'green' }] : []),
+            ]}
+          />
+        ) : (
+          <View style={styles.mapContainer}>
+            <Text style={styles.mapEmoji}>🗺️</Text>
+            <Text style={styles.mapText}>لم يُحدَّد موقع هذا العنوان على الخريطة</Text>
           </View>
-        </View>
+        )}
 
         {/* Order Info Summary */}
         <View style={styles.infoCard}>
