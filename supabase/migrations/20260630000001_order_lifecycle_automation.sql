@@ -109,6 +109,41 @@ BEGIN
   END IF;
 END $$;
 
+-- ---- 3.5) تحديث ملخص المحادثة عند وصول رسالة (fresh-build فقط) ----
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'on_chat_message'
+  ) THEN
+    EXECUTE $fn$
+      CREATE FUNCTION public.on_chat_message()
+      RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $body$
+      DECLARE v_customer UUID; v_merchant UUID;
+      BEGIN
+        SELECT customer_id, merchant_id INTO v_customer, v_merchant
+        FROM public.chat_conversations WHERE id = NEW.conversation_id;
+
+        UPDATE public.chat_conversations
+           SET last_message    = NEW.message,
+               last_message_at = NEW.created_at,
+               customer_unread = customer_unread + (CASE WHEN NEW.sender_id = v_customer THEN 0 ELSE 1 END),
+               merchant_unread = merchant_unread + (CASE WHEN NEW.sender_id = v_merchant THEN 0 ELSE 1 END)
+         WHERE id = NEW.conversation_id;
+        RETURN NEW;
+      END;
+      $body$;
+    $fn$;
+
+    EXECUTE 'REVOKE EXECUTE ON FUNCTION public.on_chat_message() FROM anon, authenticated, public;';
+
+    DROP TRIGGER IF EXISTS trg_on_chat_message ON public.chat_messages;
+    CREATE TRIGGER trg_on_chat_message
+      AFTER INSERT ON public.chat_messages
+      FOR EACH ROW EXECUTE FUNCTION public.on_chat_message();
+  END IF;
+END $$;
+
 -- ---- 4) نقاط ولاء العميل عند التسليم (fresh-build فقط) --------
 DO $$
 BEGIN
