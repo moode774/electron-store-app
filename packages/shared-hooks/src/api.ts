@@ -1266,14 +1266,23 @@ export interface WalletTransaction {
 }
 
 export async function getWalletTransactions(userId: string): Promise<WalletTransaction[]> {
+  // المخطط: wallet_transactions(type, amount, balance_after, description) — لا source/notes
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('id, type, amount, source, balance_after, notes, created_at')
+    .select('id, type, amount, balance_after, description, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) throw error;
-  return data as WalletTransaction[];
+  return (data ?? []).map((t: any) => ({
+    id: t.id,
+    type: t.type,
+    amount: t.amount,
+    source: null,
+    balance_after: t.balance_after,
+    notes: t.description,
+    created_at: t.created_at,
+  })) as WalletTransaction[];
 }
 
 // رصيد محفظة التاجر — يُحسب من آخر رصيد في wallet_transactions

@@ -49,6 +49,14 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
 
   useFocusEffect(useCallback(() => { loadStats(); }, [loadStats]));
 
+  // فتح شاشة مقابلة لكل إحصائية (كانت الإحصائيات بلا وظيفة)
+  const openStat = (id: string) => {
+    if (id === '1') navigation.navigate('Orders' as any, { screen: 'OrdersList' });
+    else if (id === '2') navigation.navigate('Home' as any, { screen: 'Offers' });
+    else if (id === '3') navigation.navigate('AddressBook');
+    else if (id === '4') navigation.navigate('Favorites');
+  };
+
   const STATS = [
     { id: '1', title: 'الطلبات', value: String(counts.orders), icon: 'bag-handle-outline' },
     { id: '2', title: 'الكوبونات', value: String(counts.coupons), icon: 'ticket-outline' },
@@ -102,7 +110,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
         <View style={styles.statsCardContainer}>
           {STATS.map((stat, index) => (
             <View key={stat.id} style={styles.statWrapper}>
-              <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.statItem} activeOpacity={0.7} onPress={() => openStat(stat.id)}>
                 <View style={styles.statIconCircle}>
                   <Ionicons name={stat.icon as any} size={18} color="#111827" />
                 </View>

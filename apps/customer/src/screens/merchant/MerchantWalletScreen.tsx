@@ -19,7 +19,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
       .finally(() => setLoading(false));
   }, [user?.id]));
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
 
   return (
     <View style={styles.container}>

@@ -38,6 +38,7 @@ export type MainTabParamList = {
   Favorites: undefined;
   Home: NavigatorScreenParams<HomeStackParamList>;
   Cart: NavigatorScreenParams<CartStackParamList>;
+  Orders: NavigatorScreenParams<OrdersStackParamList>;
   More: NavigatorScreenParams<AccountStackParamList>;
 };
 
