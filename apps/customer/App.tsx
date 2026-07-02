@@ -11,7 +11,7 @@ enableScreens(false);
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreenExpo from 'expo-splash-screen';
 
-import { useAuthStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
+import { useAuthStore, useSettingsStore, usePushNotifications, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
 
 import SplashScreen from './src/screens/auth/SplashScreen';
@@ -22,6 +22,7 @@ import RegisterScreen from './src/screens/auth/RegisterScreen';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import MerchantTabNavigator from './src/navigation/MerchantTabNavigator';
 import DeliveryTabNavigator from './src/navigation/DeliveryTabNavigator';
+import AdminTabNavigator from './src/navigation/AdminTabNavigator';
 import MerchantOnboardingScreen from './src/screens/onboarding/MerchantOnboardingScreen';
 import DeliveryOnboardingScreen from './src/screens/onboarding/DeliveryOnboardingScreen';
 
@@ -95,6 +96,9 @@ function RootNavigator(): React.JSX.Element {
   const [profileChecked, setProfileChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
+  // تسجيل جهاز المستخدم للإشعارات الفورية (يتخطّى بهدوء إن لم تُثبَّت الحزمة)
+  usePushNotifications(isAuthenticated ? user?.id : null);
+
   useEffect(() => {
     if (!isAuthenticated || !user?.id) { setProfileChecked(true); return; }
     const check = async () => {
@@ -131,6 +135,7 @@ function RootNavigator(): React.JSX.Element {
     }
   }
 
+  if (role === USER_ROLES.ADMIN) return <AdminTabNavigator />;
   if (role === USER_ROLES.MERCHANT) return <MerchantTabNavigator />;
   if (role === USER_ROLES.DELIVERY) return <DeliveryTabNavigator />;
   return <MainTabNavigator />;
@@ -145,7 +150,7 @@ export default function App(): React.JSX.Element | null {
   useEffect(() => {
     const prepare = async () => {
       try {
-        await initialize();
+        await Promise.all([initialize(), useSettingsStore.getState().hydrate()]);
         const done = await storage.get(ONBOARDING_KEY);
         setShowOnboarding(done !== '1');
       } catch (e) {

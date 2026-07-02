@@ -80,7 +80,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
         <Image

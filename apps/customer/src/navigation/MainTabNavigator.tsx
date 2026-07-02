@@ -37,6 +37,7 @@ import HelpCenterScreen from '../screens/main/account/HelpCenterScreen';
 import EditProfileScreen from '../screens/main/account/EditProfileScreen';
 import PaymentMethodsScreen from '../screens/main/account/PaymentMethodsScreen';
 import LegalScreen from '../screens/main/account/LegalScreen';
+import SettingsScreen from '../screens/shared/SettingsScreen';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 function HomeNavigator() {
@@ -87,6 +88,7 @@ function AccountNavigator() {
       <AccountStack.Screen name="EditProfile" component={EditProfileScreen} />
       <AccountStack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
       <AccountStack.Screen name="Legal" component={LegalScreen} />
+      <AccountStack.Screen name="Settings" component={SettingsScreen} />
     </AccountStack.Navigator>
   );
 }

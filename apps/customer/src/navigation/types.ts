@@ -31,6 +31,7 @@ export type AccountStackParamList = {
   EditProfile: undefined;
   PaymentMethods: undefined;
   Legal: { type: 'privacy' | 'terms' };
+  Settings: undefined;
 };
 
 export type MainTabParamList = {
