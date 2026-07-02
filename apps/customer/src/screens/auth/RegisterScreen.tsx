@@ -28,12 +28,19 @@ interface RegisterScreenProps {
 
 interface RoleOption {
   role: UserRole;
-  image: any;
+  image?: any;
+  icon?: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
 }
 
 const ROLE_OPTIONS: RoleOption[] = [
+  {
+    role: USER_ROLES.CUSTOMER,
+    icon: 'bag-handle',
+    title: 'عميل',
+    description: 'تسوّق واطلب منتجاتك',
+  },
   {
     role: USER_ROLES.DELIVERY,
     image: require('../../../assets/images/delivery-role.png'),
@@ -55,7 +62,7 @@ export default function RegisterScreen({
 }: RegisterScreenProps): React.JSX.Element {
   const [fullName, setFullName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>(USER_ROLES.MERCHANT);
+  const [selectedRole, setSelectedRole] = useState<UserRole>(USER_ROLES.CUSTOMER);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -159,7 +166,15 @@ export default function RegisterScreen({
                           </View>
                         )}
                         <View style={styles.roleImageCircle}>
-                          <Image source={opt.image} style={styles.roleImage} />
+                          {opt.image ? (
+                            <Image source={opt.image} style={styles.roleImage} />
+                          ) : (
+                            <Ionicons
+                              name={opt.icon ?? 'person'}
+                              size={30}
+                              color={isActive ? '#111827' : '#4B5563'}
+                            />
+                          )}
                         </View>
                         <Text style={[styles.roleTitle, isActive && styles.roleTitleActive]}>
                           {opt.title}
@@ -212,23 +227,33 @@ export default function RegisterScreen({
             ) : (
               <View style={styles.stepContainer}>
                 <View style={styles.roleHeaderContainer}>
-                  {selectedRole === USER_ROLES.DELIVERY ? (
-                    <View style={styles.roleHeaderIconBox}>
-                      <Ionicons name="bicycle" size={32} color="#111827" />
-                    </View>
-                  ) : (
-                    <Image 
+                  {selectedRole === USER_ROLES.MERCHANT ? (
+                    <Image
                       source={require('../../../assets/images/merchant_header.png')}
                       style={styles.merchantHeaderImage}
                     />
+                  ) : (
+                    <View style={styles.roleHeaderIconBox}>
+                      <Ionicons
+                        name={selectedRole === USER_ROLES.DELIVERY ? 'bicycle' : 'bag-handle'}
+                        size={32}
+                        color="#111827"
+                      />
+                    </View>
                   )}
                   <Text style={styles.roleHeaderTitle}>
-                    {selectedRole === USER_ROLES.DELIVERY ? 'انضم لفريق التوصيل' : 'انضم كشريك تجاري'}
+                    {selectedRole === USER_ROLES.DELIVERY
+                      ? 'انضم لفريق التوصيل'
+                      : selectedRole === USER_ROLES.MERCHANT
+                        ? 'انضم كشريك تجاري'
+                        : 'أنشئ حسابك'}
                   </Text>
                   <Text style={styles.roleHeaderSub}>
-                    {selectedRole === USER_ROLES.DELIVERY 
-                      ? 'سجل بياناتك كـ(مندوب) للبدء في استقبال الطلبات وزيادة دخلك اليومي' 
-                      : 'سجل بيانات متجرك للبدء في عرض منتجاتك والوصول لملايين العملاء'}
+                    {selectedRole === USER_ROLES.DELIVERY
+                      ? 'سجل بياناتك كـ(مندوب) للبدء في استقبال الطلبات وزيادة دخلك اليومي'
+                      : selectedRole === USER_ROLES.MERCHANT
+                        ? 'سجل بيانات متجرك للبدء في عرض منتجاتك والوصول لملايين العملاء'
+                        : 'أدخل بياناتك للبدء في التسوّق وتتبّع طلباتك بسهولة'}
                   </Text>
                 </View>
 

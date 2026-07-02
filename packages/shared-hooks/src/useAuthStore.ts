@@ -140,14 +140,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
 
-    const { data, error } = await supabase
+    // 1) قراءة سجل المستخدم. عادةً يكون موجوداً لأن trigger `handle_new_user`
+    //    ينشئه لحظة التسجيل. نعيد المحاولة قليلاً تحسّباً لتأخّر الـ trigger.
+    const fetchRow = async () => supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', authUser.id)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      // Create user record if first login
+    let { data, error } = await fetchRow();
+    if (!data && !error) {
+      await new Promise((r) => setTimeout(r, 400));
+      ({ data, error } = await fetchRow());
+    }
+
+    // 2) إن غاب السجل رغم ذلك، ننشئه بأنفسنا (سياسة users_insert_self تسمح
+    //    بإدراج سجل يملك نفس auth.uid()). ثم نقرأه مجدداً.
+    if (!data) {
       const meta = authUser.user_metadata as { full_name?: string; role?: string; phone?: string };
       const { error: insertError } = await supabase.from(TABLES.USERS).insert({
         id: authUser.id,
@@ -156,13 +165,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         full_name: meta.full_name ?? 'مستخدم جديد',
         role: (meta.role as UserRole) ?? USER_ROLES.CUSTOMER,
       });
-      if (insertError) {
+      // نتجاهل تعارض المفتاح (23505) لأنه يعني أن السجل أُنشئ بالتوازي عبر الـ trigger
+      if (insertError && (insertError as { code?: string }).code !== '23505') {
         console.error('Failed to create user record:', insertError);
-        set({ isAuthenticated: false, isLoading: false, session: null });
+        // لا نُتلف الجلسة الصالحة: نُبقيها ليتمكّن المستخدم من إعادة المحاولة
+        set({ isLoading: false });
         return;
       }
-      await get().refreshUser();
-      return;
+      ({ data } = await fetchRow());
+      if (!data) {
+        set({ isLoading: false });
+        return;
+      }
     }
 
     const dbUser = data as User;
@@ -170,6 +184,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: dbUser,
       role: dbUser.role,
       isAuthenticated: true,
+      isLoading: false,
     });
   },
 }));
