@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
+import WithdrawalSection from '../../components/WithdrawalSection';
 
 export default function DeliveryWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -19,7 +20,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
       .finally(() => setLoading(false));
   }, [user?.id]));
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
 
   return (
     <View style={styles.container}>
@@ -47,7 +48,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
                 <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
-                <Text style={styles.summaryLabel}>مستحقاتك (ر.س)</Text>
+                <Text style={styles.summaryLabel}>مستحقاتك (ر.ي)</Text>
               </View>
               <View style={[styles.summaryCard, { backgroundColor: '#B45309' }]}>
                 <Ionicons name="cash-outline" size={20} color="rgba(255,255,255,0.7)" />
@@ -55,6 +56,9 @@ export default function DeliveryWalletScreen({ navigation }: any) {
                 <Text style={styles.summaryLabel}>عدد المعاملات</Text>
               </View>
             </View>
+
+            {/* طلب سحب المستحقات */}
+            <WithdrawalSection balance={earnings} role="delivery" />
 
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
           </>

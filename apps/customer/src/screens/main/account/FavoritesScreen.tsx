@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getWishlist, removeFromWishlist, WishlistItem } from '@marketplace/shared-hooks';
 
@@ -15,7 +16,7 @@ export default function FavoritesScreen({ navigation }: any) {
     finally { setLoading(false); }
   }, [user?.id]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const removeFavorite = async (productId: string) => {
     if (!user?.id) return;
@@ -68,7 +69,7 @@ export default function FavoritesScreen({ navigation }: any) {
                 <Text style={styles.name} numberOfLines={2}>{item.products?.name ?? 'منتج'}</Text>
                 <Text style={styles.store}>{item.products?.merchant_profiles?.store_name ?? ''}</Text>
                 <View style={styles.priceRow}>
-                  <Text style={styles.price}>{item.products?.sale_price ?? item.products?.base_price ?? 0} ر.س</Text>
+                  <Text style={styles.price}>{item.products?.sale_price ?? item.products?.base_price ?? 0} ر.ي</Text>
                   {item.products?.sale_price && <Text style={styles.oldPrice}>{item.products.base_price}</Text>}
                 </View>
               </View>

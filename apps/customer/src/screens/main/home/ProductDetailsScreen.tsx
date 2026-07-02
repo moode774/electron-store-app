@@ -135,7 +135,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           <Text style={styles.productName}>{PRODUCT.name}</Text>
           
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.س</Text></Text>
+            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.ي</Text></Text>
             {PRODUCT.oldPrice ? (
               <>
                 <Text style={styles.oldPrice}>{PRODUCT.oldPrice}</Text>
@@ -237,7 +237,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         >
           <Text style={styles.addToCartText}>{PRODUCT.hasStock ? 'إضافة للسلة' : 'نفد المخزون'}</Text>
           <View style={styles.addToCartPriceBox}>
-            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.س</Text>
+            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.ي</Text>
           </View>
         </TouchableOpacity>
       </View>

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getWalletTransactions, getMerchantWalletBalance, WalletTransaction } from '@marketplace/shared-hooks';
+import WithdrawalSection from '../../components/WithdrawalSection';
 
 export default function MerchantWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -19,7 +20,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
       .finally(() => setLoading(false));
   }, [user?.id]));
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
 
   return (
     <View style={styles.container}>
@@ -46,12 +47,12 @@ export default function MerchantWalletScreen({ navigation }: any) {
             {/* Balance Card */}
             <View style={styles.balanceCard}>
               <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
-              <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.س</Text>
-              <TouchableOpacity style={styles.withdrawBtn} activeOpacity={0.8}>
-                <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.withdrawBtnText}>طلب سحب</Text>
-              </TouchableOpacity>
+              <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
             </View>
+
+            {/* طلب سحب الرصيد */}
+            <WithdrawalSection balance={balance} role="merchant" />
+
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
           </>
         }
@@ -72,7 +73,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>
-              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.س
+              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.ي
             </Text>
           </View>
           );

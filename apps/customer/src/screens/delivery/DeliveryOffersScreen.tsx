@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Dimensions, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, OrderSummary, supabase } from '@marketplace/shared-hooks';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,6 +18,15 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   }, []);
 
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
+
+  // تحديث فوري: ظهور طلب جاهز جديد أو إسناده لمندوب آخر
+  useEffect(() => {
+    const channel = supabase
+      .channel('delivery-available-orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
 
   const current = orders[0];
 
@@ -100,7 +109,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
             <View style={styles.earningsTexts}>
               <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.س</Text></Text>
+              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
             </View>
           </View>
         </View>
@@ -170,7 +179,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="cash-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>قيمة الطلب</Text>
             </View>
@@ -180,7 +189,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.metricCol}>
               <View style={styles.metricValRow}>
                 <View style={styles.metricIconWrap}><Ionicons name="bicycle-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
+                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.ي</Text></Text>
               </View>
               <Text style={styles.metricLabel}>أجر التوصيل</Text>
             </View>

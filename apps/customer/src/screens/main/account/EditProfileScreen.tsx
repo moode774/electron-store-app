@@ -63,7 +63,7 @@ export default function EditProfileScreen({ navigation }: any) {
         {/* Phone (read-only) */}
         <Text style={styles.label}>رقم الجوال</Text>
         <View style={styles.phoneBox}>
-          <Text style={styles.phoneText}>{user?.phone ?? '+966xxxxxxxxx'}</Text>
+          <Text style={styles.phoneText}>{user?.phone ?? '+967xxxxxxxxx'}</Text>
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={14} color="#059669" />
             <Text style={styles.verifiedText}>موثّق</Text>

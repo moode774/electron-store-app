@@ -175,9 +175,17 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
+        name="Orders"
+        component={OrdersNavigator}
+        options={{
+          tabBarLabel: 'طلباتي',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'receipt', 'receipt-outline', color)
+        }}
+      />
+      <Tab.Screen
         name="More"
         component={AccountNavigator}
-        options={{ 
+        options={{
           tabBarLabel: 'المزيد',
           tabBarIcon: ({ color, focused }) => renderIcon(focused, 'ellipsis-horizontal', 'ellipsis-horizontal-outline', color)
         }}

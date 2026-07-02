@@ -43,6 +43,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       case ORDER_STATUS.PENDING: return { label: 'بانتظار القبول', color: '#D97706', bg: '#FEF3C7' };
       case ORDER_STATUS.PREPARING: return { label: 'قيد التجهيز', color: '#2563EB', bg: '#DBEAFE' };
       case ORDER_STATUS.READY: return { label: 'جاهز للتوصيل', color: '#7C3AED', bg: '#EDE9FE' };
+      case ORDER_STATUS.ASSIGNED:
+      case ORDER_STATUS.PICKED_UP:
+      case ORDER_STATUS.ON_THE_WAY: return { label: 'مع المندوب', color: '#0891B2', bg: '#CFFAFE' };
       case ORDER_STATUS.DELIVERED: return { label: 'مكتمل', color: '#059669', bg: '#DCFCE7' };
       case ORDER_STATUS.CANCELLED: return { label: 'ملغي', color: '#EF4444', bg: '#FEE2E2' };
       default: return { label: s, color: '#6B7280', bg: '#F3F4F6' };
@@ -118,7 +121,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                 <Text style={styles.itemName}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
                 <Text style={styles.itemQty}>الكمية: {item.quantity}</Text>
               </View>
-              <Text style={styles.itemPrice}>{item.total_price} ر.س</Text>
+              <Text style={styles.itemPrice}>{item.total_price} ر.ي</Text>
             </View>
           ))}
         </View>
@@ -127,16 +130,16 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>المجموع الفرعي</Text>
-            <Text style={styles.summaryValue}>{subtotal} ر.س</Text>
+            <Text style={styles.summaryValue}>{subtotal} ر.ي</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>رسوم التوصيل</Text>
-            <Text style={styles.summaryValue}>{deliveryFee} ر.س</Text>
+            <Text style={styles.summaryValue}>{deliveryFee} ر.ي</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>الإجمالي (COD)</Text>
-            <Text style={styles.totalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} ر.س</Text>
+            <Text style={styles.totalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} ر.ي</Text>
           </View>
         </View>
       </ScrollView>

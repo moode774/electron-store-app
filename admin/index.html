@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>لوحة الإدارة — متجر اليمن</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* حبر النص وألوان الحالة وفق منهجية التصميم: الأرقام بحبر أساسي،
+     ألوان الحالة لا تُستخدم وحدها أبداً — دائماً مع تسمية نصية. */
+  :root {
+    --surface: #fcfcfb; --card: #ffffff; --border: #e8e8e6;
+    --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a8985;
+    --brand: #1B2B4B;
+    --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+  body { background: var(--surface); color: var(--ink); min-height: 100vh; }
+
+  /* ---- الدخول والإعداد ---- */
+  .auth-wrap { max-width: 420px; margin: 8vh auto; padding: 24px; }
+  .auth-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+  .auth-card h1 { font-size: 20px; margin-bottom: 4px; }
+  .auth-card p { font-size: 13px; color: var(--ink-2); margin-bottom: 20px; }
+  label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 12px 0 6px; }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 14px; background: #fafaf9; color: var(--ink);
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand); background: #fff; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: none; border-radius: 10px; padding: 10px 18px; font-size: 13.5px; font-weight: 700;
+    cursor: pointer; background: var(--brand); color: #fff;
+  }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.full { width: 100%; margin-top: 18px; }
+  .btn.ghost { background: #f1f1ef; color: var(--ink-2); }
+  .btn.sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btn.good { background: var(--good); }
+  .btn.danger { background: var(--critical); }
+  .err { color: var(--critical); font-size: 12.5px; margin-top: 10px; font-weight: 600; }
+
+  /* ---- الهيكل ---- */
+  .layout { display: flex; min-height: 100vh; }
+  aside {
+    width: 220px; background: var(--brand); color: #fff; padding: 20px 12px; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  aside .logo { font-size: 16px; font-weight: 800; padding: 8px 12px 20px; }
+  aside button {
+    background: transparent; border: none; color: rgba(255,255,255,.75); text-align: right;
+    padding: 11px 12px; border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  }
+  aside button.active, aside button:hover { background: rgba(255,255,255,.12); color: #fff; }
+  aside .logout { margin-top: auto; color: rgba(255,255,255,.55); }
+  main { flex: 1; padding: 28px; max-width: 1080px; }
+  main h2 { font-size: 18px; margin-bottom: 18px; }
+
+  /* ---- بطاقات الإحصاء (stat tiles): رقم بحبر أساسي + تسمية ثانوية ---- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .tile { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .tile .num { font-size: 24px; font-weight: 800; color: var(--ink); }
+  .tile .lbl { font-size: 12px; color: var(--ink-2); margin-top: 4px; font-weight: 600; }
+  .tile.alert { border-color: var(--warn); }
+
+  /* ---- الجداول والبطاقات ---- */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: right; color: var(--ink-3); font-size: 11.5px; padding: 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 8px; border-bottom: 1px solid #f4f4f2; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .muted { color: var(--ink-2); font-size: 12px; }
+  .empty { color: var(--ink-3); text-align: center; padding: 24px; font-size: 13px; }
+
+  /* شارة حالة: لون + نص دائماً */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+  .b-pending  { background: #fdf3d7; color: #8a5d00; }
+  .b-good     { background: #e2f6e2; color: #0a7a0a; }
+  .b-info     { background: #e3ecf8; color: #1d4f8f; }
+  .b-critical { background: #fae0e0; color: #a32020; }
+  .b-muted    { background: #f1f1ef; color: var(--ink-2); }
+
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+  .msg { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
+  .msg.admin { background: #eef3fb; }
+  .hidden { display: none !important; }
+  @media (max-width: 720px) { .layout { flex-direction: column; } aside { width: 100%; flex-direction: row; flex-wrap: wrap; } aside .logout { margin: 0; } main { padding: 16px; } }
+</style>
+</head>
+<body>
+
+<!-- ======== الإعداد الأول (رابط ومفتاح Supabase) ======== -->
+<div id="setup" class="auth-wrap hidden">
+  <div class="auth-card">
+    <h1>إعداد الاتصال</h1>
+    <p>أدخل بيانات مشروع Supabase (تُحفظ في متصفحك فقط).</p>
+    <label>Supabase URL</label>
+    <input id="cfg-url" placeholder="https://xxxx.supabase.co" dir="ltr" />
+    <label>Anon Key</label>
+    <input id="cfg-key" placeholder="eyJ..." dir="ltr" />
+    <button class="btn full" onclick="saveConfig()">حفظ ومتابعة</button>
+  </div>
+</div>
+
+<!-- ======== تسجيل الدخول ======== -->
+<div id="login" class="auth-wrap hidden">
+  <div class="auth-card">
+    <h1>لوحة الإدارة 🛡️</h1>
+    <p>الدخول لحساب بدور «أدمن» فقط.</p>
+    <label>البريد الإلكتروني</label>
+    <input id="login-email" type="email" dir="ltr" placeholder="admin@example.com" />
+    <label>كلمة المرور</label>
+    <input id="login-pass" type="password" dir="ltr" />
+    <button id="login-btn" class="btn full" onclick="doLogin()">دخول</button>
+    <div id="login-err" class="err"></div>
+    <p style="margin-top:16px; font-size:11.5px; color:var(--ink-3);">
+      طريقة إنشاء حساب الأدمن موضّحة في ملف admin/README.md
+    </p>
+  </div>
+</div>
+
+<!-- ======== اللوحة ======== -->
+<div id="app" class="layout hidden">
+  <aside>
+    <div class="logo">🛡️ لوحة الإدارة</div>
+    <button data-tab="overview" class="active" onclick="go('overview')">📊 نظرة عامة</button>
+    <button data-tab="merchants" onclick="go('merchants')">🏪 التجّار</button>
+    <button data-tab="couriers" onclick="go('couriers')">🛵 المندوبون</button>
+    <button data-tab="withdrawals" onclick="go('withdrawals')">💸 طلبات السحب</button>
+    <button data-tab="refunds" onclick="go('refunds')">↩️ الاسترجاعات</button>
+    <button data-tab="tickets" onclick="go('tickets')">🎧 تذاكر الدعم</button>
+    <button data-tab="coupons" onclick="go('coupons')">🎟️ الكوبونات</button>
+    <button class="logout" onclick="doLogout()">تسجيل الخروج</button>
+  </aside>
+  <main id="content"></main>
+</div>
+
+<script>
+/* ================= الإعداد والاتصال ================= */
+let sb = null;
+const cfg = {
+  url: localStorage.getItem('admin_sb_url') || '',
+  key: localStorage.getItem('admin_sb_key') || '',
+};
+
+function saveConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) return;
+  localStorage.setItem('admin_sb_url', url);
+  localStorage.setItem('admin_sb_key', key);
+  location.reload();
+}
+
+function show(id) {
+  for (const s of ['setup', 'login', 'app']) document.getElementById(s).classList.add('hidden');
+  document.getElementById(id).classList.remove('hidden');
+}
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const fmtN = (n) => Number(n ?? 0).toLocaleString('ar');
+const fmtD = (d) => d ? new Date(d).toLocaleString('ar', { dateStyle: 'short', timeStyle: 'short' }) : '';
+
+/* ================= الدخول ================= */
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-err');
+  err.textContent = ''; btn.disabled = true;
+  try {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-pass').value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw new Error('بيانات الدخول غير صحيحة');
+    const { data: isAdmin } = await sb.rpc('is_admin');
+    if (!isAdmin) { await sb.auth.signOut(); throw new Error('هذا الحساب ليس أدمن'); }
+    show('app'); go('overview');
+  } catch (e) { err.textContent = e.message; }
+  finally { btn.disabled = false; }
+}
+async function doLogout() { await sb.auth.signOut(); show('login'); }
+
+/* ================= التنقّل ================= */
+const C = () => document.getElementById('content');
+function go(tab) {
+  document.querySelectorAll('aside button[data-tab]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.tab === tab));
+  ({ overview, merchants, couriers, withdrawals, refunds, tickets, coupons }[tab])();
+}
+const count = async (table, mod) => {
+  let q = sb.from(table).select('id', { count: 'exact', head: true });
+  if (mod) q = mod(q);
+  const { count: c } = await q;
+  return c ?? 0;
+};
+
+/* ================= نظرة عامة ================= */
+async function overview() {
+  C().innerHTML = '<h2>نظرة عامة</h2><div class="empty">جارٍ التحميل…</div>';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const iso = today.toISOString();
+  const [users, ordersAll, ordersToday, mPend, dPend, wPend, rPend, tOpen, rev, comm] = await Promise.all([
+    count('users'),
+    count('orders'),
+    count('orders', (q) => q.gte('created_at', iso)),
+    count('merchant_profiles', (q) => q.eq('is_approved', false)),
+    count('delivery_profiles', (q) => q.eq('is_approved', false)),
+    count('withdrawal_requests', (q) => q.eq('status', 'pending')),
+    count('refund_requests', (q) => q.eq('status', 'pending')),
+    count('support_tickets', (q) => q.eq('status', 'open')),
+    sb.from('orders').select('total_amount').gte('created_at', iso),
+    sb.from('orders').select('platform_commission').eq('status', 'delivered'),
+  ]);
+  const revToday = (rev.data ?? []).reduce((s, o) => s + (o.total_amount ?? 0), 0);
+  const commTotal = (comm.data ?? []).reduce((s, o) => s + (o.platform_commission ?? 0), 0);
+  const tile = (num, lbl, alert) =>
+    `<div class="tile${alert && num > 0 ? ' alert' : ''}"><div class="num">${fmtN(num)}</div><div class="lbl">${lbl}</div></div>`;
+  C().innerHTML = `<h2>نظرة عامة</h2><div class="tiles">
+    ${tile(ordersToday, 'طلبات اليوم')}
+    ${tile(revToday, 'مبيعات اليوم (ر.ي)')}
+    ${tile(commTotal, 'عمولة المنصة المتراكمة (ر.ي)')}
+    ${tile(ordersAll, 'إجمالي الطلبات')}
+    ${tile(users, 'المستخدمون')}
+    ${tile(mPend, 'تجّار بانتظار الاعتماد', true)}
+    ${tile(dPend, 'مندوبون بانتظار الاعتماد', true)}
+    ${tile(wPend, 'طلبات سحب معلّقة', true)}
+    ${tile(rPend, 'استرجاعات معلّقة', true)}
+    ${tile(tOpen, 'تذاكر دعم مفتوحة', true)}
+  </div>`;
+}
+
+/* ================= التجّار ================= */
+async function merchants() {
+  C().innerHTML = '<h2>التجّار</h2><div class="empty">جارٍ التحميل…</div>';
+  const { data, error } = await sb.from('merchant_profiles')
+    .select('id, store_name, store_category, city, is_approved, created_at, users!user_id(full_name, phone)')
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) return C().innerHTML = `<h2>التجّار</h2><div class="err">${esc(error.message)}</div>`;
+  const rows = (data ?? []).map((m) => `<tr>
+    <td><b>${esc(m.store_name)}</b><div class="muted">${esc(m.store_category ?? '')} · ${esc(m.city ?? '')}</div></td>
+    <td>${esc(m.users?.full_name ?? '')}<div class="muted" dir="ltr">${esc(m.users?.phone ?? '')}</div></td>
+    <td class="muted">${fmtD(m.created_at)}</td>
+    <td>${m.is_approved ? '<span class="badge b-good">✔ معتمد</span>' : '<span class="badge b-pending">⏳ بانتظار الاعتماد</span>'}</td>
+    <td class="row-actions">${m.is_approved
+      ? `<button class="btn sm ghost" onclick="setApproval('merchant_profiles','${m.id}',false)">تعليق</button>`
+      : `<button class="btn sm good" onclick="setApproval('merchant_profiles','${m.id}',true)">اعتماد</button>`}</td>
+  </tr>`).join('');
+  C().innerHTML = `<h2>التجّار (${(data ?? []).length})</h2><div class="card"><table>
+    <tr><th>المتجر</th><th>المالك</th><th>التسجيل</th><th>الحالة</th><th></th></tr>
+    ${rows || '<tr><td colspan="5" class="empty">لا يوجد تجّار</td></tr>'}</table></div>`;
+}
+
+/* ================= المندوبون ================= */
+async function couriers() {
+  C().innerHTML = '<h2>المندوبون</h2><div class="empty">جارٍ التحميل…</div>';
+  const { data, error } = await sb.from('delivery_profiles')
+    .select('id, vehicle_type, vehicle_plate, national_id, is_approved, wallet_balance, id_image_url, license_image_url, created_at, users!user_id(full_name, phone)')
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) return C().innerHTML = `<h2>المندوبون</h2><div class="err">${esc(error.message)}</div>`;
+  const VEH = { motorcycle: 'دراجة نارية', car: 'سيارة', bicycle: 'دراجة هوائية' };
+  const rows = (data ?? []).map((d) => `<tr>
+    <td><b>${esc(d.users?.full_name ?? '')}</b><div class="muted" dir="ltr">${esc(d.users?.phone ?? '')}</div></td>
+    <td>${esc(VEH[d.vehicle_type] ?? d.vehicle_type ?? '—')}<div class="muted">${esc(d.vehicle_plate ?? '')}</div></td>
+    <td class="muted">هوية: ${esc(d.national_id ?? '—')}<div class="row-actions" style="margin-top:4px">
+      ${d.id_image_url ? `<button class="btn sm ghost" onclick="openDoc('${esc(d.id_image_url)}')">📄 الهوية</button>` : ''}
+      ${d.license_image_url ? `<button class="btn sm ghost" onclick="openDoc('${esc(d.license_image_url)}')">📄 الرخصة</button>` : ''}
+    </div></td>
+    <td>${fmtN(d.wallet_balance)} ر.ي</td>
+    <td>${d.is_approved ? '<span class="badge b-good">✔ معتمد</span>' : '<span class="badge b-pending">⏳ بانتظار الاعتماد</span>'}</td>
+    <td class="row-actions">${d.is_approved
+      ? `<button class="btn sm ghost" onclick="setApproval('delivery_profiles','${d.id}',false)">تعليق</button>`
+      : `<button class="btn sm good" onclick="setApproval('delivery_profiles','${d.id}',true)">اعتماد</button>`}</td>
+  </tr>`).join('');
+  C().innerHTML = `<h2>المندوبون (${(data ?? []).length})</h2><div class="card"><table>
+    <tr><th>المندوب</th><th>المركبة</th><th>الوثائق</th><th>الرصيد</th><th>الحالة</th><th></th></tr>
+    ${rows || '<tr><td colspan="6" class="empty">لا يوجد مندوبون</td></tr>'}</table></div>`;
+}
+
+async function setApproval(table, id, approved) {
+  const { error } = await sb.from(table).update({ is_approved: approved }).eq('id', id);
+  if (error) alert('خطأ: ' + error.message);
+  go(table === 'merchant_profiles' ? 'merchants' : 'couriers');
+}
+
+// فتح وثيقة من السلة الخاصة عبر رابط موقّت
+async function openDoc(url) {
+  const path = String(url).split('/documents/')[1];
+  if (!path) return alert('مسار الوثيقة غير صالح');
+  const { data, error } = await sb.storage.from('documents').createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) return alert('تعذّر فتح الوثيقة');
+  window.open(data.signedUrl, '_blank');
+}
+
+/* ================= طلبات السحب ================= */
+async function withdrawals() {
+  C().innerHTML = '<h2>طلبات السحب</h2><div class="empty">جارٍ التحميل…</div>';
+  const { data, error } = await sb.from('withdrawal_requests')
+    .select('id, amount, method, account_info, role, status, admin_note, created_at, users!user_id(full_name, phone)')
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) return C().innerHTML = `<h2>طلبات السحب</h2><div class="err">${esc(error.message)}</div>`;
+  const B = { pending: '<span class="badge b-pending">⏳ قيد المراجعة</span>', approved: '<span class="badge b-info">👍 موافَق عليه</span>', paid: '<span class="badge b-good">✔ تم التحويل</span>', rejected: '<span class="badge b-critical">✖ مرفوض</span>' };
+  const rows = (data ?? []).map((w) => `<tr>
+    <td><b>${esc(w.users?.full_name ?? '')}</b><div class="muted">${w.role === 'delivery' ? 'مندوب' : 'تاجر'} · <span dir="ltr">${esc(w.users?.phone ?? '')}</span></div></td>
+    <td><b>${fmtN(w.amount)} ر.ي</b></td>
+    <td>${esc(w.method ?? '')}<div class="muted" dir="ltr">${esc(w.account_info ?? '')}</div></td>
+    <td class="muted">${fmtD(w.created_at)}</td>
+    <td>${B[w.status] ?? esc(w.status)}${w.admin_note ? `<div class="muted">${esc(w.admin_note)}</div>` : ''}</td>
+    <td class="row-actions">${['pending', 'approved'].includes(w.status) ? `
+      ${w.status === 'pending' ? `<button class="btn sm" onclick="settle('${w.id}','approved')">موافقة</button>` : ''}
+      <button class="btn sm good" onclick="settle('${w.id}','paid')">تم التحويل</button>
+      <button class="btn sm danger" onclick="settle('${w.id}','rejected')">رفض</button>` : ''}</td>
+  </tr>`).join('');
+  C().innerHTML = `<h2>طلبات السحب</h2><div class="card"><table>
+    <tr><th>مقدّم الطلب</th><th>المبلغ</th><th>الاستلام</th><th>التاريخ</th><th>الحالة</th><th></th></tr>
+    ${rows || '<tr><td colspan="6" class="empty">لا توجد طلبات</td></tr>'}</table></div>`;
+}
+
+async function settle(id, status) {
+  let note = null;
+  if (status === 'rejected') { note = prompt('سبب الرفض (يظهر لصاحب الطلب):'); if (note === null) return; }
+  if (status === 'paid' && !confirm('تأكيد أنك حوّلت المبلغ فعلياً؟ سيُخصم من رصيده ويُشعَر بذلك.')) return;
+  const { error } = await sb.rpc('admin_settle_withdrawal', { p_id: id, p_status: status, p_note: note });
+  if (error) alert('خطأ: ' + error.message);
+  go('withdrawals');
+}
+
+/* ================= الاسترجاعات ================= */
+async function refunds() {
+  C().innerHTML = '<h2>الاسترجاعات</h2><div class="empty">جارٍ التحميل…</div>';
+  const { data, error } = await sb.from('refund_requests')
+    .select('id, reason, amount, status, created_at, orders(order_number), users!customer_id(full_name, phone)')
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) return C().innerHTML = `<h2>الاسترجاعات</h2><div class="err">${esc(error.message)}</div>`;
+  const B = { pending: '<span class="badge b-pending">⏳ معلّق</span>', approved: '<span class="badge b-good">✔ موافَق</span>', rejected: '<span class="badge b-critical">✖ مرفوض</span>', processed: '<span class="badge b-good">✔ منفَّذ</span>' };
+  const rows = (data ?? []).map((r) => `<tr>
+    <td><b>${esc(r.orders?.order_number ?? '')}</b><div class="muted">${esc(r.users?.full_name ?? '')} · <span dir="ltr">${esc(r.users?.phone ?? '')}</span></div></td>
+    <td>${esc(r.reason)}</td>
+    <td>${fmtN(r.amount)} ر.ي</td>
+    <td class="muted">${fmtD(r.created_at)}</td>
+    <td>${B[r.status] ?? esc(r.status)}</td>
+    <td class="row-actions">${r.status === 'pending' ? `
+      <button class="btn sm good" onclick="setRefund('${r.id}','approved')">موافقة</button>
+      <button class="btn sm danger" onclick="setRefund('${r.id}','rejected')">رفض</button>` : ''}</td>
+  </tr>`).join('');
+  C().innerHTML = `<h2>الاسترجاعات</h2><div class="card"><table>
+    <tr><th>الطلب</th><th>السبب</th><th>المبلغ</th><th>التاريخ</th><th>الحالة</th><th></th></tr>
+    ${rows || '<tr><td colspan="6" class="empty">لا توجد طلبات استرجاع</td></tr>'}</table></div>`;
+}
+async function setRefund(id, status) {
+  const { error } = await sb.from('refund_requests')
+    .update({ status, reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) alert('خطأ: ' + error.message);
+  go('refunds');
+}
+
+/* ================= تذاكر الدعم ================= */
+async function tickets() {
+  C().innerHTML = '<h2>تذاكر الدعم</h2><div class="empty">جارٍ التحميل…</div>';
+  const { data, error } = await sb.from('support_tickets')
+    .select('id, subject, category, status, created_at, users!user_id(full_name, phone)')
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) return C().innerHTML = `<h2>تذاكر الدعم</h2><div class="err">${esc(error.message)}</div>`;
+  const B = { open: '<span class="badge b-pending">⏳ مفتوحة</span>', in_progress: '<span class="badge b-info">قيد المعالجة</span>', resolved: '<span class="badge b-good">✔ محلولة</span>', closed: '<span class="badge b-muted">مغلقة</span>' };
+  const rows = (data ?? []).map((t) => `<tr style="cursor:pointer" onclick="openTicket('${t.id}','${esc(t.subject).replace(/'/g, '')}')">
+    <td><b>${esc(t.subject)}</b><div class="muted">${esc(t.category ?? '')}</div></td>
+    <td>${esc(t.users?.full_name ?? '')}<div class="muted" dir="ltr">${esc(t.users?.phone ?? '')}</div></td>
+    <td class="muted">${fmtD(t.created_at)}</td>
+    <td>${B[t.status] ?? esc(t.status)}</td>
+  </tr>`).join('');
+  C().innerHTML = `<h2>تذاكر الدعم</h2><div class="card"><table>
+    <tr><th>الموضوع</th><th>المستخدم</th><th>التاريخ</th><th>الحالة</th></tr>
+    ${rows || '<tr><td colspan="4" class="empty">لا توجد تذاكر</td></tr>'}</table></div>
+    <div id="ticket-view"></div>`;
+}
+
+async function openTicket(id, subject) {
+  const box = document.getElementById('ticket-view');
+  box.innerHTML = '<div class="card empty">جارٍ التحميل…</div>';
+  const { data: session } = await sb.auth.getUser();
+  const myId = session?.user?.id;
+  const { data } = await sb.from('support_messages')
+    .select('id, sender_id, message, created_at').eq('ticket_id', id).order('created_at');
+  const msgs = (data ?? []).map((m) => `
+    <div class="msg${m.sender_id === myId ? ' admin' : ''}">
+      <div class="muted">${m.sender_id === myId ? 'الإدارة' : 'المستخدم'} · ${fmtD(m.created_at)}</div>
+      ${esc(m.message)}
+    </div>`).join('');
+  box.innerHTML = `<div class="card">
+    <h2 style="font-size:15px">💬 ${esc(subject)}</h2>
+    <div style="margin:12px 0">${msgs || '<div class="empty">لا رسائل</div>'}</div>
+    <textarea id="reply" rows="3" placeholder="اكتب ردّك…"></textarea>
+    <div class="row-actions" style="margin-top:10px">
+      <button class="btn sm" onclick="replyTicket('${id}','${esc(subject).replace(/'/g, '')}')">إرسال الرد</button>
+      <button class="btn sm good" onclick="setTicket('${id}','resolved')">وضع «محلولة»</button>
+      <button class="btn sm ghost" onclick="setTicket('${id}','closed')">إغلاق</button>
+    </div></div>`;
+  box.scrollIntoView({ behavior: 'smooth' });
+}
+async function replyTicket(id, subject) {
+  const txt = document.getElementById('reply').value.trim();
+  if (!txt) return;
+  const { data: session } = await sb.auth.getUser();
+  const { error } = await sb.from('support_messages')
+    .insert({ ticket_id: id, sender_id: session.user.id, message: txt, is_internal: false });
+  if (error) return alert('خطأ: ' + error.message);
+  await sb.from('support_tickets').update({ status: 'in_progress' }).eq('id', id);
+  openTicket(id, subject);
+}
+async function setTicket(id, status) {
+  const { error } = await sb.from('support_tickets').update({ status }).eq('id', id);
+  if (error) alert('خطأ: ' + error.message);
+  go('tickets');
+}
+
+/* ================= الكوبونات ================= */
+async function coupons() {
+  C().innerHTML = '<h2>الكوبونات</h2><div class="empty">جارٍ التحميل…</div>';
+  const { data, error } = await sb.from('coupons')
+    .select('id, code, discount_type, discount_value, min_order_amount, max_uses, used_count, is_active, expires_at, created_at')
+    .order('created_at', { ascending: false }).limit(100);
+  if (error) return C().innerHTML = `<h2>الكوبونات</h2><div class="err">${esc(error.message)}</div>`;
+  const rows = (data ?? []).map((c) => `<tr>
+    <td><b dir="ltr">${esc(c.code)}</b></td>
+    <td>${c.discount_type === 'percentage' ? `${fmtN(c.discount_value)}٪` : `${fmtN(c.discount_value)} ر.ي`}</td>
+    <td class="muted">${c.min_order_amount ? `حد أدنى ${fmtN(c.min_order_amount)}` : '—'}</td>
+    <td class="muted">${fmtN(c.used_count)}${c.max_uses ? ' / ' + fmtN(c.max_uses) : ''}</td>
+    <td class="muted">${c.expires_at ? fmtD(c.expires_at) : 'بدون انتهاء'}</td>
+    <td>${c.is_active ? '<span class="badge b-good">فعّال</span>' : '<span class="badge b-muted">موقوف</span>'}</td>
+    <td><button class="btn sm ghost" onclick="toggleCoupon('${c.id}',${!c.is_active})">${c.is_active ? 'إيقاف' : 'تفعيل'}</button></td>
+  </tr>`).join('');
+  C().innerHTML = `<h2>الكوبونات</h2>
+  <div class="card"><div class="form-grid">
+    <div><label>الكود</label><input id="cp-code" dir="ltr" placeholder="WELCOME" /></div>
+    <div><label>النوع</label><select id="cp-type"><option value="percentage">نسبة ٪</option><option value="fixed">مبلغ ثابت</option></select></div>
+    <div><label>القيمة</label><input id="cp-value" type="number" placeholder="10" /></div>
+    <div><label>الحد الأدنى للطلب (اختياري)</label><input id="cp-min" type="number" /></div>
+    <div><label>أقصى استخدامات (اختياري)</label><input id="cp-max" type="number" /></div>
+    <div><label>تاريخ الانتهاء (اختياري)</label><input id="cp-exp" type="date" dir="ltr" /></div>
+    <div><button class="btn" onclick="createCoupon()">➕ إنشاء كوبون</button></div>
+  </div></div>
+  <div class="card"><table>
+    <tr><th>الكود</th><th>الخصم</th><th>الشرط</th><th>الاستخدام</th><th>الانتهاء</th><th>الحالة</th><th></th></tr>
+    ${rows || '<tr><td colspan="7" class="empty">لا توجد كوبونات</td></tr>'}</table></div>`;
+}
+async function createCoupon() {
+  const code = document.getElementById('cp-code').value.trim().toUpperCase();
+  const value = parseFloat(document.getElementById('cp-value').value);
+  if (!code || isNaN(value) || value <= 0) return alert('أدخل الكود والقيمة');
+  const min = parseFloat(document.getElementById('cp-min').value);
+  const max = parseInt(document.getElementById('cp-max').value, 10);
+  const exp = document.getElementById('cp-exp').value;
+  const { error } = await sb.from('coupons').insert({
+    code,
+    discount_type: document.getElementById('cp-type').value,
+    discount_value: value,
+    min_order_amount: isNaN(min) ? null : min,
+    max_uses: isNaN(max) ? null : max,
+    expires_at: exp ? new Date(exp + 'T23:59:59').toISOString() : null,
+    is_active: true,
+  });
+  if (error) return alert(error.code === '23505' ? 'هذا الكود موجود مسبقاً' : 'خطأ: ' + error.message);
+  go('coupons');
+}
+async function toggleCoupon(id, active) {
+  const { error } = await sb.from('coupons').update({ is_active: active }).eq('id', id);
+  if (error) alert('خطأ: ' + error.message);
+  go('coupons');
+}
+
+/* ================= الإقلاع ================= */
+(async function boot() {
+  if (!cfg.url || !cfg.key) return show('setup');
+  sb = window.supabase.createClient(cfg.url, cfg.key);
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const { data: isAdmin } = await sb.rpc('is_admin');
+    if (isAdmin) { show('app'); go('overview'); return; }
+    await sb.auth.signOut();
+  }
+  show('login');
+})();
+</script>
+</body>
+</html>

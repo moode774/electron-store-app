@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { Card, Badge } from '@marketplace/shared-ui';
 import { useAuthStore, useCartStore, getOrders, getReorderItems, OrderSummary } from '@marketplace/shared-hooks';
@@ -30,11 +31,15 @@ export default function OrdersListScreen({ navigation }: any) {
     finally { setLoading(false); }
   }, [user?.id]);
 
-  useEffect(() => { loadOrders(); }, [loadOrders]);
+  useFocusEffect(useCallback(() => { loadOrders(); }, [loadOrders]));
   const getStatusLabel = (status: string) => {
     switch (status) {
       case ORDER_STATUS.PENDING: return { text: 'بانتظار تأكيد المتجر', color: 'warning' };
+      case ORDER_STATUS.CONFIRMED: return { text: 'تم التأكيد', color: 'info' };
       case ORDER_STATUS.PREPARING: return { text: 'جاري التجهيز', color: 'info' };
+      case ORDER_STATUS.READY: return { text: 'جاهز — بانتظار المندوب', color: 'info' };
+      case ORDER_STATUS.ASSIGNED: return { text: 'المندوب في طريقه للاستلام', color: 'primary' };
+      case ORDER_STATUS.PICKED_UP: return { text: 'في الطريق إليك', color: 'primary' };
       case ORDER_STATUS.ON_THE_WAY: return { text: 'في الطريق إليك', color: 'primary' };
       case ORDER_STATUS.DELIVERED: return { text: 'مكتمل', color: 'success' };
       case ORDER_STATUS.CANCELLED: return { text: 'ملغي', color: 'error' };
@@ -62,7 +67,7 @@ export default function OrdersListScreen({ navigation }: any) {
           </View>
           <View style={styles.orderFooter}>
             <Text style={styles.orderDate}>{date}</Text>
-            <Text style={styles.orderTotal}>{item.total_amount ?? 0} ر.س</Text>
+            <Text style={styles.orderTotal}>{item.total_amount ?? 0} ر.ي</Text>
           </View>
           {item.status === ORDER_STATUS.DELIVERED && (
             <TouchableOpacity style={styles.reorderBtn} onPress={() => reorder(item.id, storeName)} activeOpacity={0.8}>

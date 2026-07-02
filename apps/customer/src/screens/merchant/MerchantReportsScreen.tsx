@@ -62,7 +62,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiValue}>{total.toLocaleString()}</Text>
-            <Text style={styles.kpiLabel}>المبيعات (ر.س)</Text>
+            <Text style={styles.kpiLabel}>المبيعات (ر.ي)</Text>
             <View style={styles.kpiTrend}>
               <Ionicons name="trending-up" size={12} color="#059669" />
               <Text style={styles.kpiTrendText}>+12%</Text>
@@ -113,7 +113,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 <Text style={styles.productName}>{p.name}</Text>
                 <Text style={styles.productSold}>{p.total_sold} مبيعة</Text>
               </View>
-              <Text style={styles.productRevenue}>{((p.sale_price ?? p.base_price) * p.total_sold).toLocaleString()} ر.س</Text>
+              <Text style={styles.productRevenue}>{((p.sale_price ?? p.base_price) * p.total_sold).toLocaleString()} ر.ي</Text>
             </View>
           ))}
         </View>

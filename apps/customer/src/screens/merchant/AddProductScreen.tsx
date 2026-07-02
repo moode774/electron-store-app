@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { Input, Button } from '@marketplace/shared-ui';
-import { useAuthStore, createProduct } from '@marketplace/shared-hooks';
-
-const CATEGORIES = ['إلكترونيات', 'أزياء', 'عطور', 'منزل ومطبخ', 'رياضة', 'أخرى'];
+import { useAuthStore, createProduct, getCategories, Category } from '@marketplace/shared-hooks';
 
 export default function AddProductScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -13,14 +11,25 @@ export default function AddProductScreen({ navigation }: any) {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getCategories()
+      .then((c) => { setCategories(c); if (c.length) setCategoryId(c[0].id); })
+      .catch(() => {});
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim() || !price.trim()) {
       Alert.alert('تنبيه', 'الرجاء إدخال اسم المنتج والسعر على الأقل');
       return;
     }
+    const priceNum = parseFloat(price);
+    if (isNaN(priceNum) || priceNum < 0) { Alert.alert('تنبيه', 'السعر غير صحيح'); return; }
+    const stockNum = stock.trim() ? parseInt(stock, 10) : 0;
+    if (isNaN(stockNum) || stockNum < 0) { Alert.alert('تنبيه', 'الكمية غير صحيحة'); return; }
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
     setSaving(true);
     try {
@@ -28,7 +37,9 @@ export default function AddProductScreen({ navigation }: any) {
         merchant_id: user.id,
         name: name.trim(),
         description: description.trim() || undefined,
-        base_price: parseFloat(price),
+        base_price: priceNum,
+        stock_quantity: stockNum,
+        category_id: categoryId ?? undefined,
         is_active: true,
       });
       Alert.alert('تم الحفظ ✅', 'تمت إضافة المنتج بنجاح', [
@@ -60,23 +71,29 @@ export default function AddProductScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <Input label="اسم المنتج" placeholder="مثال: سماعات لاسلكية" value={name} onChangeText={setName} />
-        <Input label="السعر (ر.س)" placeholder="0" keyboardType="numeric" value={price} onChangeText={setPrice} />
+        <Input label="السعر (ر.ي)" placeholder="0" keyboardType="numeric" value={price} onChangeText={setPrice} />
         <Input label="الكمية المتوفرة" placeholder="0" keyboardType="numeric" value={stock} onChangeText={setStock} />
         <Input label="وصف المنتج" placeholder="اكتب وصفاً مختصراً..." value={description} onChangeText={setDescription} multiline />
 
-        <Text style={styles.label}>التصنيف</Text>
-        <View style={styles.categoriesRow}>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.catChip, category === cat && styles.catChipActive]}
-              onPress={() => setCategory(cat)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.catChipText, category === cat && styles.catChipTextActive]}>{cat}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {categories.length > 0 && (
+          <>
+            <Text style={styles.label}>التصنيف</Text>
+            <View style={styles.categoriesRow}>
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[styles.catChip, categoryId === cat.id && styles.catChipActive]}
+                  onPress={() => setCategoryId(cat.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.catChipText, categoryId === cat.id && styles.catChipTextActive]}>
+                    {cat.name_ar ?? cat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         <View style={{ height: 24 }} />
         <Button title={saving ? 'جاري الحفظ...' : 'حفظ المنتج'} onPress={handleSave} />

@@ -9,9 +9,11 @@
   ],
   "scripts": {
     "customer": "yarn workspace @marketplace/customer start",
-    "merchant": "yarn workspace @marketplace/merchant start",
-    "delivery": "yarn workspace @marketplace/delivery start",
-    "dev": "yarn customer"
+    "merchant": "yarn workspace @marketplace/customer start",
+    "delivery": "yarn workspace @marketplace/customer start",
+    "start": "yarn workspace @marketplace/customer start",
+    "dev": "yarn customer",
+    "typecheck": "tsc --noEmit -p apps/customer/tsconfig.json"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",

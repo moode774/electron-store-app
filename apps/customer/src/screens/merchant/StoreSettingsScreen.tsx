@@ -21,6 +21,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         setStoreName(p.store_name ?? '');
         setDescription(p.store_description ?? '');
         setAddress(p.address ?? '');
+        setIsOpen(p.is_open ?? true);
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [user?.id]);
@@ -37,6 +38,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         store_name: storeName.trim(),
         store_description: description.trim() || undefined,
         address: address.trim() || undefined,
+        is_open: isOpen,
       });
       Alert.alert('تم الحفظ ✅', 'تم تحديث بيانات المتجر بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },

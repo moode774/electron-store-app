@@ -35,6 +35,11 @@ const phoneDigits = (phone: string): string => phone.replace(/\D/g, '');
 const phoneToEmail = (phone: string): string => `u${phoneDigits(phone)}@levi-phone.app`;
 const phoneToPassword = (phone: string): string => `Levi-${phoneDigits(phone)}-auth`;
 
+// تسجيل دخول خام بالبريد/كلمة المرور المشتقّين من الهاتف (بدون set/refresh)
+// يُستخدم لكسر التكرار المتبادل بين signInWithPhone و signUp
+const rawPhoneSignIn = (phone: string) =>
+  supabase.auth.signInWithPassword({ email: phoneToEmail(phone), password: phoneToPassword(phone) });
+
 // ---- Store -------------------------------------------------
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -67,12 +72,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // تسجيل دخول مستخدم موجود برقم هاتفه (يكمل المصادقة مباشرة بدون OTP)
   signInWithPhone: async (phone: string): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(phone),
-      password: phoneToPassword(phone),
-    });
+    const { data, error } = await rawPhoneSignIn(phone);
     if (error) {
-      return { error: 'لا يوجد حساب بهذا الرقم، أو الرقم غير صحيح. الرجاء إنشاء حساب جديد.' };
+      // لا يوجد حساب بهذا الرقم → أنشئ حساب عميل تلقائياً (تسجيل بالهاتف)
+      // التاجر/المندوب يُنشئان حسابهما عبر شاشة التسجيل باختيار الدور.
+      return get().signUp({ phone, fullName: 'مستخدم', role: USER_ROLES.CUSTOMER });
     }
     if (!data.session) return { error: 'فشل تسجيل الدخول' };
     set({ session: data.session });
@@ -113,15 +117,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (error) {
       if (error.message.toLowerCase().includes('already registered') ||
           error.message.toLowerCase().includes('already been registered')) {
-        // الحساب موجود مسبقاً → سجّل الدخول مباشرة
-        return get().signInWithPhone(phone);
+        // الحساب موجود مسبقاً → سجّل الدخول مباشرة (بدون المرور عبر signInWithPhone لتفادي التكرار)
+        const { data: d2, error: e2 } = await rawPhoneSignIn(phone);
+        if (e2 || !d2.session) return { error: 'هذا الرقم مسجّل مسبقاً. تعذّر تسجيل الدخول، حاول مجدداً.' };
+        set({ session: d2.session });
+        await get().refreshUser();
+        return { error: null };
       }
       return { error: error.message };
     }
 
     if (!data.session) {
       // GoTrue لم يُرجع الجلسة مباشرة، لكن الحساب مؤكّد عبر trigger → سجّل الدخول فوراً
-      return get().signInWithPhone(phone);
+      const { data: d3, error: e3 } = await rawPhoneSignIn(phone);
+      if (e3 || !d3.session) return { error: 'تم إنشاء الحساب. سجّل الدخول الآن.' };
+      set({ session: d3.session });
+      await get().refreshUser();
+      return { error: null };
     }
 
     set({ session: data.session });

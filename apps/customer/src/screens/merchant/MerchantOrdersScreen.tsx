@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getMerchantOrders, updateOrderStatus, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, getMerchantOrders, updateOrderStatus, OrderSummary, supabase } from '@marketplace/shared-hooks';
 
 const FILTERS = [
   { key: 'all', label: 'الكل' },
@@ -26,6 +26,20 @@ export default function MerchantOrdersScreen({ navigation }: any) {
 
   useEffect(() => { load(); }, [load]);
 
+  // تحديث فوري عند وصول طلب جديد أو تغيّر حالة طلب لهذا التاجر
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`merchant-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `merchant_id=eq.${user.id}` },
+        () => load(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, load]);
+
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -38,7 +52,11 @@ export default function MerchantOrdersScreen({ navigation }: any) {
       case ORDER_STATUS.PENDING: return { label: 'بانتظار القبول', color: '#D97706', bg: '#FEF3C7' };
       case ORDER_STATUS.PREPARING: return { label: 'قيد التجهيز', color: '#2563EB', bg: '#DBEAFE' };
       case ORDER_STATUS.READY: return { label: 'جاهز للتوصيل', color: '#7C3AED', bg: '#EDE9FE' };
+      case ORDER_STATUS.ASSIGNED:
+      case ORDER_STATUS.PICKED_UP:
+      case ORDER_STATUS.ON_THE_WAY: return { label: 'مع المندوب', color: '#0891B2', bg: '#CFFAFE' };
       case ORDER_STATUS.DELIVERED: return { label: 'مكتمل', color: '#059669', bg: '#DCFCE7' };
+      case ORDER_STATUS.CANCELLED: return { label: 'ملغي', color: '#EF4444', bg: '#FEE2E2' };
       default: return { label: status, color: '#6B7280', bg: '#F3F4F6' };
     }
   };
@@ -77,7 +95,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.total}>{item.total_amount ?? 0} ر.س</Text>
+          <Text style={styles.total}>{item.total_amount ?? 0} ر.ي</Text>
           <View style={styles.actionsRow}>
             {item.status === ORDER_STATUS.PENDING && (
               <TouchableOpacity

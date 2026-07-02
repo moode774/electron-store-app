@@ -5,7 +5,7 @@ export type HomeStackParamList = {
   StoresList: { categoryId?: string; filter?: string };
   StoreDetails: { storeId: string };
   ProductDetails: { productId: string };
-  Search: { initialQuery?: string } | undefined;
+  Search: { initialQuery?: string; initialCategoryId?: string } | undefined;
   Offers: undefined;
   Chat: { conversationId: string; title?: string; asMerchant?: boolean };
 };
@@ -38,6 +38,7 @@ export type MainTabParamList = {
   Favorites: undefined;
   Home: NavigatorScreenParams<HomeStackParamList>;
   Cart: NavigatorScreenParams<CartStackParamList>;
+  Orders: NavigatorScreenParams<OrdersStackParamList>;
   More: NavigatorScreenParams<AccountStackParamList>;
 };
 

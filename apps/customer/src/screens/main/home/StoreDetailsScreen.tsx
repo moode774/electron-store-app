@@ -213,7 +213,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                     <Text style={styles.soldText}>({product.total_sold})</Text>
                   </View>
                   <View style={styles.priceRow}>
-                    <Text style={styles.price}>{product.sale_price ?? product.base_price} <Text style={styles.currency}>ر.س</Text></Text>
+                    <Text style={styles.price}>{product.sale_price ?? product.base_price} <Text style={styles.currency}>ر.ي</Text></Text>
                     {product.sale_price && <Text style={styles.oldPrice}>{product.base_price}</Text>}
                   </View>
                 </View>

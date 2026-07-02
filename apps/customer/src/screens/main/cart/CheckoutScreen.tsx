@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
+import * as Location from 'expo-location';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
-import { useCartStore, useAuthStore, createOrder, createAddress, validateCoupon } from '@marketplace/shared-hooks';
+import { useCartStore, useAuthStore, createOrder, createAddress, getAddresses, validateCoupon } from '@marketplace/shared-hooks';
 import { Card, Button, Input } from '@marketplace/shared-ui';
 
 // Mock Delivery Fees based on area
@@ -22,9 +23,31 @@ export default function CheckoutScreen({ navigation }: any) {
   const [altPhone, setAltPhone] = useState('');
   const [selectedArea, setSelectedArea] = useState<string>(SERVICE_AREAS.SANAA);
   const [placing, setPlacing] = useState(false);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  const captureLocation = async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('تنبيه', 'يجب السماح بالوصول إلى الموقع لتحديد عنوانك');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setLat(Number(pos.coords.latitude.toFixed(6)));
+      setLng(Number(pos.coords.longitude.toFixed(6)));
+    } catch {
+      Alert.alert('خطأ', 'تعذّر تحديد الموقع، حاول مرة أخرى');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   // الكوبون
   const [couponCode, setCouponCode] = useState('');
+  const [couponId, setCouponId] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState('');
   const [couponOk, setCouponOk] = useState(false);
@@ -41,8 +64,9 @@ export default function CheckoutScreen({ navigation }: any) {
       setDiscount(res.discount);
       setCouponOk(res.valid);
       setCouponMsg(res.message);
+      setCouponId(res.valid ? (res.coupon?.id ?? null) : null);
     } catch {
-      setDiscount(0); setCouponOk(false); setCouponMsg('تعذّر التحقق من الكود');
+      setDiscount(0); setCouponOk(false); setCouponMsg('تعذّر التحقق من الكود'); setCouponId(null);
     } finally {
       setCheckingCoupon(false);
     }
@@ -55,16 +79,35 @@ export default function CheckoutScreen({ navigation }: any) {
 
     setPlacing(true);
     try {
-      // حفظ العنوان أولاً
-      const savedAddress = await createAddress({
-        user_id: user.id,
-        label: 'home',
-        full_address: `${address}${landmark ? ' - ' + landmark : ''}`,
-        city: selectedArea,
-      });
+      const fullAddress = `${address}${landmark ? ' - ' + landmark : ''}`;
+
+      // إعادة استخدام عنوان محفوظ مطابق بدل إنشاء تكرارات في دفتر العناوين
+      let addressId: string;
+      const existing = await getAddresses(user.id).catch(() => []);
+      const match = existing.find(
+        (a) => a.full_address === fullAddress && (a.city ?? '') === selectedArea,
+      );
+      if (match) {
+        addressId = match.id;
+      } else {
+        const savedAddress = await createAddress({
+          user_id: user.id,
+          label: 'home',
+          full_address: fullAddress,
+          city: selectedArea,
+          latitude: lat ?? undefined,
+          longitude: lng ?? undefined,
+          is_default: existing.length === 0, // أول عنوان يصبح الافتراضي
+        });
+        addressId = savedAddress.id;
+      }
+
+      // الهاتف الإضافي يُحفظ في ملاحظات الطلب ليصل للتاجر والمندوب
+      const orderNotes = altPhone.trim() ? `هاتف إضافي للتواصل: ${altPhone.trim()}` : undefined;
 
       // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر
       const byStore = getItemsByStore();
+      let firstOrder = true;
       for (const [storeId, storeItems] of Object.entries(byStore)) {
         const subtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
         // توزيع الخصم على المتاجر بنسبة قيمة كل متجر من الإجمالي
@@ -72,13 +115,16 @@ export default function CheckoutScreen({ navigation }: any) {
         await createOrder({
           customer_id: user.id,
           merchant_id: storeId,
-          address_id: savedAddress.id,
+          address_id: addressId,
           subtotal,
           delivery_fee: deliveryFee,
           discount_amount: storeDiscount,
           tax_amount: 0,
           total_amount: subtotal + deliveryFee - storeDiscount,
           payment_method: 'cash',
+          notes: orderNotes,
+          // الكوبون يُسجَّل مرّة واحدة فقط (على طلب المتجر الأول) لتفادي تكرار العدّاد
+          coupon_id: firstOrder && couponOk ? (couponId ?? undefined) : undefined,
           items: storeItems.map((i) => ({
             product_id: i.productId,
             quantity: i.quantity,
@@ -87,6 +133,7 @@ export default function CheckoutScreen({ navigation }: any) {
             product_name: i.name,
           })),
         });
+        firstOrder = false;
       }
 
       clearCart();
@@ -149,8 +196,14 @@ export default function CheckoutScreen({ navigation }: any) {
             value={landmark}
             onChangeText={setLandmark}
           />
-          <TouchableOpacity style={styles.mapBtn}>
-            <Text style={styles.mapBtnText}>📌 تحديد الموقع على الخريطة</Text>
+          <TouchableOpacity style={styles.mapBtn} onPress={captureLocation} disabled={locating} activeOpacity={0.8}>
+            {locating ? (
+              <ActivityIndicator size="small" color={COLORS.info} />
+            ) : (
+              <Text style={styles.mapBtnText}>
+                {lat != null ? `✅ تم تحديد موقعك (${lat}, ${lng})` : '📌 تحديد موقعي الحالي'}
+              </Text>
+            )}
           </TouchableOpacity>
         </Card>
 
@@ -184,7 +237,7 @@ export default function CheckoutScreen({ navigation }: any) {
               <Input
                 placeholder="أدخل كود الخصم"
                 value={couponCode}
-                onChangeText={(t) => { setCouponCode(t); setCouponOk(false); setDiscount(0); setCouponMsg(''); }}
+                onChangeText={(t) => { setCouponCode(t); setCouponOk(false); setDiscount(0); setCouponMsg(''); setCouponId(null); }}
                 autoCapitalize="characters"
               />
             </View>
@@ -202,22 +255,22 @@ export default function CheckoutScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>🧾 ملخص الطلب</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>المجموع الفرعي</Text>
-            <Text style={styles.summaryValue}>{cartTotal} ر.س</Text>
+            <Text style={styles.summaryValue}>{cartTotal} ر.ي</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryText}>رسوم التوصيل ({selectedArea})</Text>
-            <Text style={styles.summaryValue}>{deliveryFee} ر.س</Text>
+            <Text style={styles.summaryValue}>{deliveryFee} ر.ي</Text>
           </View>
           {discount > 0 && (
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryText, { color: '#059669' }]}>الخصم</Text>
-              <Text style={[styles.summaryValue, { color: '#059669' }]}>- {discount} ر.س</Text>
+              <Text style={[styles.summaryValue, { color: '#059669' }]}>- {discount} ر.ي</Text>
             </View>
           )}
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalText}>الإجمالي المطلوب</Text>
-            <Text style={styles.totalValue}>{finalTotal} ر.س</Text>
+            <Text style={styles.totalValue}>{finalTotal} ر.ي</Text>
           </View>
         </Card>
 
@@ -227,7 +280,7 @@ export default function CheckoutScreen({ navigation }: any) {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <Button
-          title={placing ? 'جاري الإرسال...' : `تأكيد الطلب (${finalTotal} ر.س)`}
+          title={placing ? 'جاري الإرسال...' : `تأكيد الطلب (${finalTotal} ر.ي)`}
           onPress={handleConfirmOrder}
         />
       </View>

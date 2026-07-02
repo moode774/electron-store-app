@@ -9,11 +9,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, createDeliveryProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
 
+// القيم يجب أن تطابق enum قاعدة البيانات: motorcycle | car | bicycle
 const VEHICLE_TYPES = [
   { key: 'motorcycle', label: 'دراجة نارية', icon: 'bicycle-outline' },
   { key: 'car', label: 'سيارة', icon: 'car-outline' },
   { key: 'bicycle', label: 'دراجة هوائية', icon: 'bicycle' },
-  { key: 'pickup', label: 'بيك أب', icon: 'car-sport-outline' },
 ];
 
 const CITIES = ['صنعاء', 'عدن', 'تعز', 'إب', 'الحديدة', 'مأرب', 'حضرموت', 'أخرى'];
@@ -61,11 +61,19 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
 
     setSaving(true);
     try {
+      // رفع صور الوثائق (اختياري) إلى سلة خاصة داخل مجلد المستخدم
+      let idUrl: string | undefined;
+      let licenseUrl: string | undefined;
+      if (idImageUri) idUrl = await uploadImageToStorage('documents', `${user.id}/id-card`, idImageUri);
+      if (licenseImageUri) licenseUrl = await uploadImageToStorage('documents', `${user.id}/license`, licenseImageUri);
+
       await createDeliveryProfile({
         user_id: user.id,
         national_id: nationalId.trim(),
         vehicle_type: vehicleType,
         vehicle_plate: vehiclePlate.trim().toUpperCase(),
+        id_image_url: idUrl,
+        license_image_url: licenseUrl,
       });
 
       Alert.alert(
