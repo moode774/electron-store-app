@@ -84,7 +84,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
                 style={styles.rejectBtn}
                 activeOpacity={0.7}
                 onPress={() =>
-                  Alert.alert('رفض الطلب', `هل أنت متأكد من رفض الطلب ${item.id}؟`, [
+                  Alert.alert('رفض الطلب', `هل أنت متأكد من رفض الطلب ${item.order_number}؟`, [
                     { text: 'تراجع', style: 'cancel' },
                     { text: 'رفض', style: 'destructive', onPress: () => updateStatus(item.id, ORDER_STATUS.CANCELLED) },
                   ])

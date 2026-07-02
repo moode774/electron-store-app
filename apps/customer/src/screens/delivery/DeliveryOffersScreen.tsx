@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Dimensions, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, getDeliveryEarnings, OrderSummary } from '@marketplace/shared-hooks';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,11 +11,24 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [todayEarnings, setTodayEarnings] = useState(0);
 
   const load = useCallback(async () => {
     try { setOrders(await getAvailableDeliveryOrders()); } catch { setOrders([]); }
     finally { setLoading(false); }
-  }, []);
+    // أرباح اليوم الحقيقية (كانت سابقاً قيمة ثابتة 320)
+    if (user?.id) {
+      try {
+        const { earnings } = await getDeliveryEarnings(user.id);
+        const todayStr = new Date().toDateString();
+        setTodayEarnings(
+          earnings
+            .filter((e) => new Date(e.created_at).toDateString() === todayStr)
+            .reduce((s, e) => s + (e.total_earning ?? 0), 0),
+        );
+      } catch { /* تبقى صفراً */ }
+    }
+  }, [user?.id]);
 
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
 
@@ -100,7 +113,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
             <View style={styles.earningsTexts}>
               <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-              <Text style={styles.earningsValue}>320 <Text style={styles.earningsCurrency}>ر.س</Text></Text>
+              <Text style={styles.earningsValue}>{todayEarnings} <Text style={styles.earningsCurrency}>ر.س</Text></Text>
             </View>
           </View>
         </View>

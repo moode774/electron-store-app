@@ -8,10 +8,11 @@ import {
   Platform,
   Image,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, getAccountStats, getLoyaltyPoints, getReferralCode } from '@marketplace/shared-hooks';
+import { useAuthStore, getAccountStats, getLoyaltyPoints, getReferralCode, deleteMyAccount } from '@marketplace/shared-hooks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AccountStackParamList } from '../../../navigation/types';
 
@@ -159,6 +160,36 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
         <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={24} color="#3B82F6" />
           <Text style={styles.logoutText}>تسجيل الخروج</Text>
+        </TouchableOpacity>
+
+        {/* Delete Account (متطلّب متاجر التطبيقات) */}
+        <TouchableOpacity
+          style={[styles.logoutCard, { marginTop: 12 }]}
+          activeOpacity={0.7}
+          onPress={() =>
+            Alert.alert(
+              'حذف الحساب نهائياً',
+              'سيتم حذف حسابك وكل بياناتك (الطلبات، العناوين، المفضلة...) ولا يمكن التراجع. هل أنت متأكد؟',
+              [
+                { text: 'تراجع', style: 'cancel' },
+                {
+                  text: 'حذف نهائي',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteMyAccount();
+                      await signOut();
+                    } catch (e: any) {
+                      Alert.alert('خطأ', e?.message ?? 'تعذّر حذف الحساب، حاول لاحقاً');
+                    }
+                  },
+                },
+              ],
+            )
+          }
+        >
+          <Ionicons name="trash-outline" size={22} color="#EF4444" />
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>حذف الحساب نهائياً</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}

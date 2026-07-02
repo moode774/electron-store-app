@@ -108,6 +108,7 @@ export interface OrderDetail {
   payment_method: string | null;
   payment_status: string;
   notes: string | null;
+  cancel_reason?: string | null;
   created_at: string;
   updated_at: string;
   delivery_fee_amount?: number;
@@ -226,6 +227,7 @@ export async function createProduct(data: {
   base_price: number;
   sale_price?: number;
   category_id?: string;
+  stock_quantity?: number;
   is_active?: boolean;
   tags?: string[];
 }): Promise<{ id: string } | null> {
@@ -358,7 +360,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
     .from(TABLES.ORDERS)
     .select(`
       id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
-      tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
+      tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason, created_at, updated_at,
       addresses(full_address, city),
       merchant_profiles(store_name, store_logo_url),
       customer:users(full_name, phone),
@@ -561,6 +563,16 @@ export async function isInWishlist(userId: string, productId: string): Promise<b
 }
 
 // ============================================================
+// ACCOUNT DELETION (متطلّب متاجر التطبيقات)
+// يحذف حساب auth بالكامل عبر RPC آمنة؛ users وكل ما يتبعها
+// يُحذف تلقائياً بالتسلسل (ON DELETE CASCADE)
+// ============================================================
+export async function deleteMyAccount(): Promise<void> {
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) throw error;
+}
+
+// ============================================================
 // USER PROFILE
 // ============================================================
 export async function updateUserProfile(userId: string, updates: {
@@ -746,21 +758,22 @@ export async function getMyRefundRequests(customerId: string): Promise<any[]> {
 
 // ============================================================
 // PRODUCT VARIANTS (خيارات المنتج)
+// ملاحظة: الأعمدة موحّدة مع schema الجدول (name, price_modifier,
+// stock_quantity) — نفس الشكل الذي يرجعه getProductById
 // ============================================================
 export interface ProductVariant {
   id: string;
-  size: string | null;
-  color: string | null;
-  color_hex: string | null;
-  additional_price: number;
-  stock_qty: number;
+  name: string;
+  name_ar: string | null;
+  price_modifier: number;
+  stock_quantity: number;
   is_active: boolean;
 }
 
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
   const { data, error } = await supabase
     .from('product_variants')
-    .select('id, size, color, color_hex, additional_price, stock_qty, is_active')
+    .select('id, name, name_ar, price_modifier, stock_quantity, is_active')
     .eq('product_id', productId)
     .eq('is_active', true);
   if (error) return [];
@@ -960,7 +973,7 @@ export async function validateCoupon(code: string, subtotal: number): Promise<{
   const now = new Date().toISOString();
   const { data } = await supabase
     .from('coupons')
-    .select('id, code, type, value, min_order_amount, max_discount_amount, end_date, is_active')
+    .select('id, code, type, value, min_order_amount, max_discount_amount, end_date, is_active, max_uses, used_count')
     .eq('code', code.trim().toUpperCase())
     .eq('is_active', true)
     .maybeSingle();
@@ -968,6 +981,9 @@ export async function validateCoupon(code: string, subtotal: number): Promise<{
   if (!data) return { valid: false, discount: 0, message: 'كود الخصم غير صحيح' };
   const c = data as any;
   if (c.end_date && c.end_date < now) return { valid: false, discount: 0, message: 'انتهت صلاحية هذا الكود' };
+  if (c.max_uses != null && (c.used_count ?? 0) >= c.max_uses) {
+    return { valid: false, discount: 0, message: 'تم استنفاد هذا الكود' };
+  }
   if (c.min_order_amount && subtotal < c.min_order_amount) {
     return { valid: false, discount: 0, message: `الحد الأدنى للطلب ${c.min_order_amount} ر.س` };
   }

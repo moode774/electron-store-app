@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
-import { searchProducts, ProductSummary } from '@marketplace/shared-hooks';
+import { searchProducts, getCategories, ProductSummary, Category } from '@marketplace/shared-hooks';
 
-const CATEGORIES = ['الكل', 'إلكترونيات', 'أزياء', 'عطور', 'منزل'];
+// خيار "الكل" الثابت — التصنيفات الحقيقية تُجلب من قاعدة البيانات
+const ALL_CATEGORY = { id: '', name: 'الكل' };
 const SORTS = [
   { key: 'default', label: 'الأكثر صلة' },
   { key: 'priceAsc', label: 'السعر: الأقل أولاً' },
@@ -14,7 +15,8 @@ const SORTS = [
 
 export default function SearchScreen({ navigation, route }: any) {
   const [query, setQuery] = useState<string>(route?.params?.initialQuery ?? '');
-  const [category, setCategory] = useState('الكل');
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([ALL_CATEGORY]);
   const [sort, setSort] = useState('default');
   const [showSort, setShowSort] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -22,10 +24,19 @@ export default function SearchScreen({ navigation, route }: any) {
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
+    getCategories()
+      .then((cats: Category[]) => setCategories([
+        ALL_CATEGORY,
+        ...cats.map((c) => ({ id: c.id, name: c.name_ar ?? c.name })),
+      ]))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     setIsSearching(true);
     const t = setTimeout(async () => {
       try {
-        const data = await searchProducts(query.trim() || undefined);
+        const data = await searchProducts(query.trim() || undefined, category || undefined);
         let list = [...data];
         if (sort === 'priceAsc') list.sort((a, b) => (a.sale_price ?? a.base_price) - (b.sale_price ?? b.base_price));
         if (sort === 'priceDesc') list.sort((a, b) => (b.sale_price ?? b.base_price) - (a.sale_price ?? a.base_price));
@@ -71,16 +82,16 @@ export default function SearchScreen({ navigation, route }: any) {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={CATEGORIES}
-          keyExtractor={(c) => c}
+          data={categories}
+          keyExtractor={(c) => c.id || 'all'}
           contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.chip, category === item && styles.chipActive]}
-              onPress={() => setCategory(item)}
+              style={[styles.chip, category === item.id && styles.chipActive]}
+              onPress={() => setCategory(item.id)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.chipText, category === item && styles.chipTextActive]}>{item}</Text>
+              <Text style={[styles.chipText, category === item.id && styles.chipTextActive]}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />

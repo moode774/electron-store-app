@@ -9,9 +9,27 @@ const TRACKING_STEPS = [
   { status: ORDER_STATUS.READY, label: 'بانتظار المندوب', icon: '🛵' },
   { status: ORDER_STATUS.ASSIGNED, label: 'تم قبول التوصيل', icon: '✅' },
   { status: ORDER_STATUS.ON_THE_WAY, label: 'في الطريق إليك', icon: '📍' },
-  { status: ORDER_STATUS.ON_THE_WAY, label: 'المندوب بالباب', icon: '🏠' },
   { status: ORDER_STATUS.DELIVERED, label: 'تم التسليم', icon: '🎉' },
 ];
+
+// كل حالات الطلب مُسندة لخطوة في الخط الزمني — الحالات الوسيطة
+// (confirmed, picked_up...) كانت سابقاً تسقط للخطوة 0 وتضلّل العميل
+const STATUS_STEP_INDEX: Record<string, number> = {
+  [ORDER_STATUS.PENDING]: 0,
+  [ORDER_STATUS.CONFIRMED]: 1,
+  [ORDER_STATUS.PREPARING]: 1,
+  [ORDER_STATUS.READY]: 2,
+  [ORDER_STATUS.ASSIGNED]: 3,
+  [ORDER_STATUS.PICKED_UP]: 4,
+  [ORDER_STATUS.ON_THE_WAY]: 4,
+  [ORDER_STATUS.DELIVERED]: 5,
+};
+
+const TERMINAL_LABELS: Record<string, string> = {
+  [ORDER_STATUS.CANCELLED]: 'تم إلغاء هذا الطلب',
+  [ORDER_STATUS.RETURNED]: 'تم إرجاع هذا الطلب',
+  [ORDER_STATUS.FAILED_DELIVERY]: 'تعذّر توصيل هذا الطلب',
+};
 
 export default function OrderTrackingScreen({ navigation, route }: any) {
   const { orderId } = route.params;
@@ -77,8 +95,9 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     }
   };
 
-  const statusIndex = TRACKING_STEPS.findIndex((s) => s.status === (order?.status ?? ORDER_STATUS.PENDING));
-  const currentStatusIndex = statusIndex >= 0 ? statusIndex : 0;
+  const currentStatus = order?.status ?? ORDER_STATUS.PENDING;
+  const currentStatusIndex = STATUS_STEP_INDEX[currentStatus] ?? 0;
+  const terminalLabel = TERMINAL_LABELS[currentStatus];
 
   if (loading) {
     return (
@@ -160,14 +179,23 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </View>
         )}
 
-        {/* Tracking Timeline */}
+        {/* حالة نهائية (إلغاء/إرجاع/فشل توصيل) بدل الخط الزمني */}
+        {terminalLabel ? (
+          <View style={[styles.infoCard, { borderColor: '#FECACA', backgroundColor: '#FEF2F2' }]}>
+            <Text style={[styles.orderId, { color: '#DC2626' }]}>✕ {terminalLabel}</Text>
+            {order?.cancel_reason ? (
+              <Text style={styles.estimatedTime}>السبب: {order.cancel_reason}</Text>
+            ) : null}
+          </View>
+        ) : (
+        /* Tracking Timeline */
         <View style={styles.timelineContainer}>
           {TRACKING_STEPS.map((step, index) => {
             const isDELIVERED = index < currentStatusIndex;
             const isCurrent = index === currentStatusIndex;
-            
+
             return (
-              <View key={step.status} style={styles.timelineStep}>
+              <View key={`${step.status}-${index}`} style={styles.timelineStep}>
                 <View style={styles.timelineIconContainer}>
                   <View style={[
                     styles.timelineIconWrap,
@@ -182,7 +210,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                     ]} />
                   )}
                 </View>
-                
+
                 <View style={styles.timelineContent}>
                   <Text style={[
                     styles.stepLabel,
@@ -191,7 +219,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   ]}>
                     {step.label}
                   </Text>
-                  {isCurrent && (
+                  {isCurrent && step.status === ORDER_STATUS.ON_THE_WAY && (
                     <Text style={styles.stepDesc}>المندوب في طريقه إليك، يرجى التواجد في الموقع.</Text>
                   )}
                 </View>
@@ -199,6 +227,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             );
           })}
         </View>
+        )}
 
         {/* تقييم الطلب عند التسليم */}
         {order?.status === ORDER_STATUS.DELIVERED && (

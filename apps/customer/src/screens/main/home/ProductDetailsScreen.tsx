@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
-import { useCartStore, useAuthStore, getProductById, getProductVariants, isInWishlist, addToWishlist, removeFromWishlist, ProductDetail, ProductVariant } from '@marketplace/shared-hooks';
+import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, ProductDetail } from '@marketplace/shared-hooks';
+
+type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
 type NavigationProp = any;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'ProductDetails'>;
@@ -27,17 +29,19 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const [selectedColor, setSelectedColor] = useState(FALLBACK_COLORS[0]);
   const [quantity, setQuantity] = useState(1);
   const [wished, setWished] = useState(false);
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const addToCart = useCartStore((s) => s.addToCart);
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     getProductById(productId).then((data) => {
       setProduct(data);
+      const v = (data?.product_variants ?? []).filter((x) => x.is_active);
+      setVariants(v);
+      if (v.length) setSelectedVariant(v[0]);
       setLoading(false);
     });
-    getProductVariants(productId).then((v) => { setVariants(v); if (v.length) setSelectedVariant(v[0]); }).catch(() => {});
     if (user?.id) isInWishlist(user.id, productId).then(setWished).catch(() => {});
   }, [productId, user?.id]);
 
@@ -61,7 +65,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
 
   // إذا فشل التحميل استخدم القيم الافتراضية
   const basePrice = product?.sale_price ?? product?.base_price ?? 0;
-  const variantAdd = selectedVariant?.additional_price ?? 0;
+  const variantAdd = selectedVariant?.price_modifier ?? 0;
   const PRODUCT = {
     id: product?.id ?? productId,
     name: product?.name ?? 'منتج',
@@ -75,9 +79,10 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     rating: product?.rating ?? 0,
     reviews: 0,
     sold: product?.total_sold ?? 0,
-    stock: product?.stock_quantity ?? 0,
+    // عند اختيار خيار (variant) يُعتمد مخزونه هو، وإلا مخزون المنتج
+    stock: selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0),
     colors: FALLBACK_COLORS,
-    hasStock: (product?.stock_quantity ?? 0) > 0,
+    hasStock: (selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0)) > 0,
     image: product?.product_images?.find((i) => i.is_primary)?.url
       ?? product?.product_images?.[0]?.url
       ?? product?.og_image_url
@@ -170,17 +175,15 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
               <View style={styles.variantsRow}>
                 {variants.map((v) => {
                   const isActive = selectedVariant?.id === v.id;
-                  const label = [v.size, v.color].filter(Boolean).join(' · ');
                   return (
                     <TouchableOpacity
                       key={v.id}
                       style={[styles.variantChip, isActive && styles.variantChipActive]}
-                      onPress={() => setSelectedVariant(v)}
+                      onPress={() => { setSelectedVariant(v); setQuantity(1); }}
                       activeOpacity={0.8}
                     >
-                      {v.color_hex && <View style={[styles.variantDot, { backgroundColor: v.color_hex }]} />}
                       <Text style={[styles.variantLabel, isActive && styles.variantLabelActive]}>
-                        {label}{v.additional_price > 0 ? ` (+${v.additional_price})` : ''}
+                        {v.name}{v.price_modifier > 0 ? ` (+${v.price_modifier})` : ''}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -208,9 +211,9 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <Ionicons name="remove" size={20} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.qtyText}>{quantity}</Text>
-          <TouchableOpacity 
-            style={styles.qtyBtn} 
-            onPress={() => setQuantity(quantity + 1)}
+          <TouchableOpacity
+            style={styles.qtyBtn}
+            onPress={() => setQuantity(Math.min(PRODUCT.stock > 0 ? PRODUCT.stock : 1, quantity + 1))}
             activeOpacity={0.7}
           >
             <Ionicons name="add" size={20} color="#111827" />
@@ -222,10 +225,15 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           activeOpacity={0.9}
           disabled={!PRODUCT.hasStock}
           onPress={() => {
+            if (!PRODUCT.store.id) {
+              // بدون معرّف متجر صحيح سيفشل إنشاء الطلب لاحقاً في الدفع
+              Alert.alert('عذراً', 'تعذّر تحميل بيانات المتجر، أعد فتح المنتج');
+              return;
+            }
             addToCart({
               id: `${PRODUCT.id}-${selectedVariant?.id ?? 'default'}`,
               productId: PRODUCT.id,
-              name: selectedVariant ? `${PRODUCT.name} (${[selectedVariant.size, selectedVariant.color].filter(Boolean).join(' · ')})` : PRODUCT.name,
+              name: selectedVariant ? `${PRODUCT.name} (${selectedVariant.name})` : PRODUCT.name,
               price: PRODUCT.price,
               emoji: '🛍️',
               quantity,

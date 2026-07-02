@@ -13,7 +13,7 @@ const DELIVERY_FEES: Record<string, number> = {
 };
 
 export default function CheckoutScreen({ navigation }: any) {
-  const { getTotalPrice, clearCart, items, getItemsByStore } = useCartStore();
+  const { getTotalPrice, items, getItemsByStore, removeFromCart } = useCartStore();
   const user = useAuthStore((s) => s.user);
   const cartTotal = getTotalPrice();
 
@@ -30,8 +30,12 @@ export default function CheckoutScreen({ navigation }: any) {
   const [couponOk, setCouponOk] = useState(false);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
 
+  // كل متجر يُنشأ له طلب مستقل برسوم توصيل خاصة به،
+  // لذا يجب أن يعكس الملخص الرسوم × عدد المتاجر (لا رسوماً واحدة)
+  const storeCount = Math.max(1, Object.keys(getItemsByStore()).length);
   const deliveryFee = DELIVERY_FEES[selectedArea] || 1500;
-  const finalTotal = Math.max(0, cartTotal + deliveryFee - discount);
+  const totalDeliveryFees = deliveryFee * storeCount;
+  const finalTotal = Math.max(0, cartTotal + totalDeliveryFees - discount);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -63,7 +67,9 @@ export default function CheckoutScreen({ navigation }: any) {
         city: selectedArea,
       });
 
-      // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر
+      // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر.
+      // بعد نجاح طلب متجرٍ ما تُزال عناصره من السلة فوراً، حتى لو فشل
+      // متجر لاحق لا يتكرّر طلب المتجر الناجح عند إعادة المحاولة.
       const byStore = getItemsByStore();
       for (const [storeId, storeItems] of Object.entries(byStore)) {
         const subtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -79,6 +85,7 @@ export default function CheckoutScreen({ navigation }: any) {
           tax_amount: 0,
           total_amount: subtotal + deliveryFee - storeDiscount,
           payment_method: 'cash',
+          notes: altPhone.trim() ? `رقم تواصل إضافي: ${altPhone.trim()}` : undefined,
           items: storeItems.map((i) => ({
             product_id: i.productId,
             quantity: i.quantity,
@@ -87,14 +94,14 @@ export default function CheckoutScreen({ navigation }: any) {
             product_name: i.name,
           })),
         });
+        storeItems.forEach((i) => removeFromCart(i.id));
       }
 
-      clearCart();
       Alert.alert('تم الطلب ✅', 'تم إرسال طلبك بنجاح', [
         { text: 'متابعة', onPress: () => navigation.navigate('Orders', { screen: 'OrdersList' }) },
       ]);
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'فشل إرسال الطلب، حاول مرة أخرى');
+      Alert.alert('خطأ', e?.message ?? 'فشل إرسال جزء من الطلب — ما تبقى في السلة لم يُرسَل، حاول مرة أخرى');
     } finally {
       setPlacing(false);
     }
@@ -205,8 +212,10 @@ export default function CheckoutScreen({ navigation }: any) {
             <Text style={styles.summaryValue}>{cartTotal} ر.س</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>رسوم التوصيل ({selectedArea})</Text>
-            <Text style={styles.summaryValue}>{deliveryFee} ر.س</Text>
+            <Text style={styles.summaryText}>
+              رسوم التوصيل{storeCount > 1 ? ` (${storeCount} متاجر × ${deliveryFee})` : ''}
+            </Text>
+            <Text style={styles.summaryValue}>{totalDeliveryFees} ر.س</Text>
           </View>
           {discount > 0 && (
             <View style={styles.summaryRow}>

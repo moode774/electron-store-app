@@ -4,12 +4,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
 
+// كل خطوة تكتب حالتها في قاعدة البيانات (statusOnEnter) حتى يرى العميل
+// التقدّم في شاشة التتبع، وحتى لا يضيع التقدّم عند إعادة فتح التطبيق
 const STEPS = [
-  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر' },
-  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب' },
-  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل' },
-  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم ✅' },
+  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر', statusOnEnter: null as string | null },
+  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب', statusOnEnter: null as string | null },
+  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل', statusOnEnter: ORDER_STATUS.PICKED_UP as string | null },
+  { key: 'at_dropoff', label: 'عند العميل', action: 'تم التسليم ✅', statusOnEnter: ORDER_STATUS.ON_THE_WAY as string | null },
 ];
+
+// استرجاع الخطوة الحالية من حالة الطلب المحفوظة
+const stepFromStatus = (status?: string): number => {
+  switch (status) {
+    case ORDER_STATUS.PICKED_UP: return 2;
+    case ORDER_STATUS.ON_THE_WAY: return 3;
+    default: return 0;
+  }
+};
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const paramOrderId: string | undefined = route?.params?.orderId;
@@ -21,13 +32,18 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   useEffect(() => {
     const loadOrder = async () => {
       try {
+        let loaded: OrderDetail | null = null;
         if (paramOrderId) {
-          setOrder(await getOrderById(paramOrderId));
+          loaded = await getOrderById(paramOrderId);
         } else if (user?.id) {
           // تبويب "الطلبات": اجلب الطلب النشط الحالي للمندوب
           const mine = await getDeliveryOrders(user.id);
           const active = mine.find((o) => o.status !== 'delivered' && o.status !== 'cancelled') ?? mine[0];
-          if (active) setOrder(await getOrderById(active.id));
+          if (active) loaded = await getOrderById(active.id);
+        }
+        if (loaded) {
+          setOrder(loaded);
+          setStepIndex(stepFromStatus(loaded.status));
         }
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -51,9 +67,27 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
   const advanceStep = async () => {
     if (stepIndex < STEPS.length - 1) {
-      setStepIndex(stepIndex + 1);
+      const next = stepIndex + 1;
+      setStepIndex(next);
+      const nextStatus = STEPS[next].statusOnEnter;
+      if (nextStatus && orderId) {
+        try {
+          await updateOrderStatus(orderId, nextStatus);
+        } catch {
+          // فشل الحفظ → تراجع حتى لا تتضارب الشاشة مع الحالة الحقيقية
+          setStepIndex(stepIndex);
+          Alert.alert('خطأ', 'تعذّر تحديث حالة الطلب، تحقق من الاتصال وحاول مجدداً');
+        }
+      }
     } else {
-      if (orderId) await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED).catch(() => {});
+      if (orderId) {
+        try {
+          await updateOrderStatus(orderId, ORDER_STATUS.DELIVERED);
+        } catch {
+          Alert.alert('خطأ', 'تعذّر تسجيل التسليم، تحقق من الاتصال وحاول مجدداً');
+          return;
+        }
+      }
       Alert.alert('أحسنت! 🎉', `تم تسليم الطلب ${order?.order_number ?? ''} بنجاح.`, [
         { text: 'العودة للطلبات', onPress: () => navigation.goBack() },
       ]);
