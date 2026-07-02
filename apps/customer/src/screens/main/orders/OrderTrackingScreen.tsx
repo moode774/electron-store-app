@@ -21,6 +21,9 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const [rating, setRating] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewed, setReviewed] = useState(false);
+  const [dRating, setDRating] = useState(0);
+  const [submittingDReview, setSubmittingDReview] = useState(false);
+  const [dReviewed, setDReviewed] = useState(false);
   const [reasons, setReasons] = useState<CancellationReason[]>([]);
   const [showCancel, setShowCancel] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
@@ -74,6 +77,26 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال التقييم');
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const submitDeliveryReview = async () => {
+    if (!user?.id || !order?.delivery_id || dRating === 0) return;
+    setSubmittingDReview(true);
+    try {
+      await createReview({
+        reviewer_id: user.id,
+        order_id: order.id,
+        target_type: 'delivery',
+        target_id: order.delivery_id,
+        rating: dRating,
+      });
+      setDReviewed(true);
+      Alert.alert('شكراً لك ⭐', 'تم إرسال تقييم المندوب');
+    } catch (e: any) {
+      Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال التقييم');
+    } finally {
+      setSubmittingDReview(false);
     }
   };
 
@@ -224,6 +247,36 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   {submittingReview
                     ? <ActivityIndicator color="#FFFFFF" size="small" />
                     : <Text style={styles.reviewBtnText}>إرسال التقييم</Text>}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* تقييم المندوب عند التسليم */}
+        {order?.status === ORDER_STATUS.DELIVERED && !!order?.delivery_id && (
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewTitle}>قيّم المندوب</Text>
+            {dReviewed ? (
+              <Text style={styles.reviewThanks}>✅ شكراً لتقييمك</Text>
+            ) : (
+              <>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <TouchableOpacity key={s} onPress={() => setDRating(s)} activeOpacity={0.7}>
+                      <Text style={[styles.star, s <= dRating && styles.starActive]}>★</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity
+                  style={[styles.reviewBtn, (dRating === 0 || submittingDReview) && { opacity: 0.5 }]}
+                  onPress={submitDeliveryReview}
+                  disabled={dRating === 0 || submittingDReview}
+                  activeOpacity={0.8}
+                >
+                  {submittingDReview
+                    ? <ActivityIndicator color="#FFFFFF" size="small" />
+                    : <Text style={styles.reviewBtnText}>إرسال تقييم المندوب</Text>}
                 </TouchableOpacity>
               </>
             )}

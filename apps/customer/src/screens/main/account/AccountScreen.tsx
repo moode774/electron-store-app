@@ -25,6 +25,7 @@ interface Props {
 const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof AccountStackParamList | null; params?: object }[] = [
   { id: '1', title: 'معلومات الحساب', icon: 'person-outline', route: 'EditProfile' },
   { id: '2', title: 'المفضلة', icon: 'heart-outline', route: 'Favorites' },
+  { id: '10', title: 'المحادثات', icon: 'chatbubbles-outline', route: 'Conversations' },
   { id: '3', title: 'طرق الدفع', icon: 'card-outline', route: 'PaymentMethods' },
   { id: '4', title: 'العناوين المحفوظة', icon: 'location-outline', route: 'AddressBook' },
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', route: 'Notifications' },

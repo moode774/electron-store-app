@@ -99,6 +99,7 @@ export interface OrderDetail {
   id: string;
   order_number: string;
   merchant_id?: string;
+  delivery_id?: string;
   status: string;
   subtotal: number | null;
   delivery_fee: number;
@@ -227,10 +228,10 @@ export async function searchProducts(query?: string, categoryId?: string, limit 
 // ============================================================
 // MERCHANT PRODUCTS (for merchant screens)
 // ============================================================
-export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { product_variants?: { stock_quantity: number }[] })[]> {
+export async function getMerchantProducts(merchantId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, product_variants(stock_quantity)')
+    .select('id, merchant_id, name, description, category_id, base_price, sale_price, stock_quantity, rating, total_sold, is_active, is_featured, og_image_url')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -244,6 +245,8 @@ export async function createProduct(data: {
   base_price: number;
   sale_price?: number;
   category_id?: string;
+  stock_quantity?: number;
+  og_image_url?: string;
   is_active?: boolean;
   tags?: string[];
 }): Promise<{ id: string } | null> {
@@ -261,6 +264,9 @@ export async function updateProduct(id: string, updates: {
   description?: string;
   base_price?: number;
   sale_price?: number | null;
+  category_id?: string;
+  stock_quantity?: number;
+  og_image_url?: string;
   is_active?: boolean;
   is_featured?: boolean;
   tags?: string[];
@@ -269,6 +275,25 @@ export async function updateProduct(id: string, updates: {
     .from(TABLES.PRODUCTS)
     .update(updates)
     .eq('id', id);
+  if (error) throw error;
+}
+
+// إضافة صورة لمنتج في معرض الصور (product_images.image_url)
+export async function addProductImage(
+  productId: string, imageUrl: string, isPrimary = false, sortOrder = 0,
+): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.PRODUCT_IMAGES)
+    .insert({ product_id: productId, image_url: imageUrl, is_primary: isPrimary, sort_order: sortOrder });
+  if (error) throw error;
+}
+
+// تحديث حالة اتصال المندوب (استقبال العروض)
+export async function setDeliveryOnline(userId: string, isOnline: boolean): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ is_online: isOnline })
+    .eq('user_id', userId);
   if (error) throw error;
 }
 
@@ -375,7 +400,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select(`
-      id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
+      id, order_number, merchant_id, delivery_id, status, subtotal, delivery_fee, discount_amount,
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
       addresses(full_address, city),
       merchant_profiles(store_name, store_logo_url),

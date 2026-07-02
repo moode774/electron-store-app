@@ -32,6 +32,8 @@ export type AccountStackParamList = {
   PaymentMethods: undefined;
   Legal: { type: 'privacy' | 'terms' };
   Settings: undefined;
+  Conversations: undefined;
+  Chat: { conversationId: string; title?: string; asMerchant?: boolean };
 };
 
 export type MainTabParamList = {
