@@ -8,6 +8,7 @@ import {
   Platform,
   Image,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +37,25 @@ const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof Accoun
 export default function AccountScreen({ navigation }: Props): React.JSX.Element {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'حذف الحساب نهائياً',
+      'سيتم حذف حسابك وكل بياناتك (الطلبات، العناوين، المفضلة) بشكل دائم ولا يمكن التراجع. هل أنت متأكد؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'حذف نهائياً',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await deleteAccount();
+            if (error) Alert.alert('خطأ', error);
+          },
+        },
+      ],
+    );
+  }, [deleteAccount]);
   const [counts, setCounts] = useState({ orders: 0, coupons: 0, addresses: 0, favorites: 0 });
   const [points, setPoints] = useState(0);
   const [referral, setReferral] = useState('');
@@ -159,6 +179,12 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
         <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={24} color="#3B82F6" />
           <Text style={styles.logoutText}>تسجيل الخروج</Text>
+        </TouchableOpacity>
+
+        {/* Delete Account (مطلب متاجر التطبيقات) */}
+        <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+          <Text style={styles.deleteAccountText}>حذف الحساب نهائياً</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}
@@ -419,5 +445,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#111827',
+  },
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    marginTop: 12,
+  },
+  deleteAccountText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#EF4444',
+    marginStart: 8,
   },
 });

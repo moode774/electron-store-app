@@ -52,13 +52,15 @@ export default function LoginScreen({
     const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
-    // يكمل تسجيل الدخول مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
+    // يرسل رمز التحقق عبر SMS ثم ينتقل لشاشة إدخال الرمز
     const { error } = await signInWithPhone(formatted);
     setIsLoading(false);
 
     if (error) {
       showAlert('خطأ', error);
+      return;
     }
+    onNavigateToOtp(formatted);
   };
 
   return (
