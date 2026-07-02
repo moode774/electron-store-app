@@ -74,7 +74,7 @@ export default function RegisterScreen({
     const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
-    // ينشئ الحساب ويدخل مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
+    // يرسل رمز التحقق مع بيانات الحساب ثم ينتقل لشاشة إدخال الرمز
     const { error } = await signUp({
       phone: formatted,
       fullName: fullName.trim(),
@@ -85,7 +85,9 @@ export default function RegisterScreen({
 
     if (error) {
       Alert.alert('خطأ', error);
+      return;
     }
+    onNavigateToOtp(formatted);
   };
 
   return (

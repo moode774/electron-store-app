@@ -14,6 +14,8 @@ import MerchantReportsScreen from '../screens/merchant/MerchantReportsScreen';
 import MerchantWalletScreen from '../screens/merchant/MerchantWalletScreen';
 import StoreSettingsScreen from '../screens/merchant/StoreSettingsScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
+import ConversationsListScreen from '../screens/shared/ConversationsListScreen';
+import ChatScreen from '../screens/main/chat/ChatScreen';
 
 export type MerchantOrdersStackParamList = {
   OrdersList: undefined;
@@ -66,10 +68,26 @@ function AccountNavigator() {
   );
 }
 
+export type MerchantMessagesStackParamList = {
+  Conversations: undefined;
+  Chat: { conversationId: string; title?: string; asMerchant?: boolean };
+};
+
+const MessagesStack = createNativeStackNavigator<MerchantMessagesStackParamList>();
+function MessagesNavigator() {
+  return (
+    <MessagesStack.Navigator screenOptions={{ headerShown: false }}>
+      <MessagesStack.Screen name="Conversations" component={ConversationsListScreen} />
+      <MessagesStack.Screen name="Chat" component={ChatScreen} />
+    </MessagesStack.Navigator>
+  );
+}
+
 export type MerchantTabParamList = {
   MerchantDashboard: undefined;
   MerchantOrders: undefined;
   MerchantProducts: undefined;
+  MerchantMessages: undefined;
   MerchantAccount: undefined;
 };
 
@@ -122,6 +140,14 @@ export default function MerchantTabNavigator() {
         options={{
           tabBarLabel: 'منتجاتي',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'cube' : 'cube-outline'} size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="MerchantMessages"
+        component={MessagesNavigator}
+        options={{
+          tabBarLabel: 'المحادثات',
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size} color={color} />,
         }}
       />
       <Tab.Screen

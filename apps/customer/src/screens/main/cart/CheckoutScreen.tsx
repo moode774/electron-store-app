@@ -63,30 +63,23 @@ export default function CheckoutScreen({ navigation }: any) {
         city: selectedArea,
       });
 
-      // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر
+      // تجميع العناصر لكل متجر وإنشاء طلب لكل متجر.
+      // الأسعار والإجماليات والخصم تُحسب في الخادم — لا نرسل أي مبالغ من العميل.
+      // يُطبَّق كود الخصم على أول طلب فقط (منع تكراره عبر عدة متاجر).
       const byStore = getItemsByStore();
+      let couponUsed = false;
       for (const [storeId, storeItems] of Object.entries(byStore)) {
-        const subtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
-        // توزيع الخصم على المتاجر بنسبة قيمة كل متجر من الإجمالي
-        const storeDiscount = cartTotal > 0 ? Math.round((discount * subtotal) / cartTotal) : 0;
         await createOrder({
-          customer_id: user.id,
           merchant_id: storeId,
           address_id: savedAddress.id,
-          subtotal,
-          delivery_fee: deliveryFee,
-          discount_amount: storeDiscount,
-          tax_amount: 0,
-          total_amount: subtotal + deliveryFee - storeDiscount,
           payment_method: 'cash',
+          coupon_code: !couponUsed && couponOk ? couponCode.trim() : undefined,
           items: storeItems.map((i) => ({
             product_id: i.productId,
             quantity: i.quantity,
-            unit_price: i.price,
-            total_price: i.price * i.quantity,
-            product_name: i.name,
           })),
         });
+        if (couponOk) couponUsed = true;
       }
 
       clearCart();

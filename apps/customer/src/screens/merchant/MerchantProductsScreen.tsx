@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Switch, ActivityIndicator, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getMerchantProducts, updateProduct } from '@marketplace/shared-hooks';
@@ -15,7 +16,8 @@ export default function MerchantProductsScreen({ navigation }: any) {
     finally { setLoading(false); }
   }, [user?.id]);
 
-  useEffect(() => { load(); }, [load]);
+  // يعيد التحميل عند العودة من شاشة التعديل/الإضافة
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const toggleActive = async (id: string, current: boolean) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_active: !current } : p)));
@@ -52,7 +54,11 @@ export default function MerchantProductsScreen({ navigation }: any) {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={[styles.card, !item.is_active && styles.cardInactive]}>
+            <TouchableOpacity
+              style={[styles.card, !item.is_active && styles.cardInactive]}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('AddProduct', { product: item })}
+            >
               <View style={styles.imageWrap}>
                 {item.og_image_url ? (
                   <Image source={{ uri: item.og_image_url }} style={styles.thumbImg} resizeMode="cover" />
@@ -64,10 +70,11 @@ export default function MerchantProductsScreen({ navigation }: any) {
                 <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.price}>{item.sale_price ?? item.base_price} ر.س</Text>
                 <View style={styles.stockRow}>
-                  <View style={[styles.stockDot, { backgroundColor: item.is_active ? '#059669' : '#EF4444' }]} />
-                  <Text style={[styles.stockText, !item.is_active && { color: '#EF4444' }]}>
-                    {item.is_active ? 'معروض' : 'مخفي'}
+                  <View style={[styles.stockDot, { backgroundColor: (item.stock_quantity ?? 0) > 0 ? '#059669' : '#EF4444' }]} />
+                  <Text style={[styles.stockText, (item.stock_quantity ?? 0) === 0 && { color: '#EF4444' }]}>
+                    {(item.stock_quantity ?? 0) > 0 ? `المخزون: ${item.stock_quantity}` : 'نفد المخزون'}
                   </Text>
+                  <Ionicons name="create-outline" size={13} color="#9CA3AF" style={{ marginStart: 6 }} />
                 </View>
               </View>
               <View style={styles.actions}>
@@ -79,7 +86,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
                 />
                 <Text style={styles.activeLabel}>{item.is_active ? 'معروض' : 'مخفي'}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}

@@ -99,6 +99,7 @@ export interface OrderDetail {
   id: string;
   order_number: string;
   merchant_id?: string;
+  delivery_id?: string;
   status: string;
   subtotal: number | null;
   delivery_fee: number;
@@ -143,14 +144,28 @@ export interface WishlistItem {
 // ============================================================
 // CATEGORIES
 // ============================================================
-export async function getCategories(): Promise<Category[]> {
+// topLevelOnly=true يجلب التصنيفات الرئيسية فقط؛ false يجلب كل التصنيفات
+// (بما فيها الفرعية) لبناء تنقّل شجري.
+export async function getCategories(topLevelOnly = true): Promise<Category[]> {
+  let q = supabase
+    .from(TABLES.CATEGORIES)
+    .select('id, name, name_ar, icon_url, parent_id, sort_order, is_active')
+    .eq('is_active', true);
+  if (topLevelOnly) q = q.is('parent_id', null);
+  const { data, error } = await q.order('sort_order').order('name');
+  if (error) throw error;
+  return data as Category[];
+}
+
+// التصنيفات الفرعية لتصنيف رئيسي معيّن
+export async function getSubcategories(parentId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from(TABLES.CATEGORIES)
-    .select('id, name, name_ar, icon_url, parent_id, is_active')
+    .select('id, name, name_ar, icon_url, parent_id, sort_order, is_active')
     .eq('is_active', true)
-    .is('parent_id', null)
-    .order('name');
-  if (error) throw error;
+    .eq('parent_id', parentId)
+    .order('sort_order');
+  if (error) return [];
   return data as Category[];
 }
 
@@ -199,7 +214,11 @@ export async function searchProducts(query?: string, categoryId?: string, limit 
     .from(TABLES.PRODUCTS)
     .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles(store_name)')
     .eq('is_active', true);
-  if (query && query.trim()) q = q.ilike('name', `%${query.trim()}%`);
+  if (query && query.trim()) {
+    const term = query.trim();
+    // البحث في الاسم الإنجليزي والعربي معاً
+    q = q.or(`name.ilike.%${term}%,name_ar.ilike.%${term}%`);
+  }
   if (categoryId) q = q.eq('category_id', categoryId);
   const { data, error } = await q.order('total_sold', { ascending: false }).limit(limit);
   if (error) throw error;
@@ -209,10 +228,10 @@ export async function searchProducts(query?: string, categoryId?: string, limit 
 // ============================================================
 // MERCHANT PRODUCTS (for merchant screens)
 // ============================================================
-export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { product_variants?: { stock_quantity: number }[] })[]> {
+export async function getMerchantProducts(merchantId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, product_variants(stock_quantity)')
+    .select('id, merchant_id, name, description, category_id, base_price, sale_price, stock_quantity, rating, total_sold, is_active, is_featured, og_image_url')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -226,6 +245,8 @@ export async function createProduct(data: {
   base_price: number;
   sale_price?: number;
   category_id?: string;
+  stock_quantity?: number;
+  og_image_url?: string;
   is_active?: boolean;
   tags?: string[];
 }): Promise<{ id: string } | null> {
@@ -243,6 +264,9 @@ export async function updateProduct(id: string, updates: {
   description?: string;
   base_price?: number;
   sale_price?: number | null;
+  category_id?: string;
+  stock_quantity?: number;
+  og_image_url?: string;
   is_active?: boolean;
   is_featured?: boolean;
   tags?: string[];
@@ -251,6 +275,25 @@ export async function updateProduct(id: string, updates: {
     .from(TABLES.PRODUCTS)
     .update(updates)
     .eq('id', id);
+  if (error) throw error;
+}
+
+// إضافة صورة لمنتج في معرض الصور (product_images.image_url)
+export async function addProductImage(
+  productId: string, imageUrl: string, isPrimary = false, sortOrder = 0,
+): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.PRODUCT_IMAGES)
+    .insert({ product_id: productId, image_url: imageUrl, is_primary: isPrimary, sort_order: sortOrder });
+  if (error) throw error;
+}
+
+// تحديث حالة اتصال المندوب (استقبال العروض)
+export async function setDeliveryOnline(userId: string, isOnline: boolean): Promise<void> {
+  const { error } = await supabase
+    .from(TABLES.DELIVERY_PROFILES)
+    .update({ is_online: isOnline })
+    .eq('user_id', userId);
   if (error) throw error;
 }
 
@@ -357,7 +400,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select(`
-      id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
+      id, order_number, merchant_id, delivery_id, status, subtotal, delivery_fee, discount_amount,
       tax_amount, total_amount, payment_method, payment_status, notes, created_at, updated_at,
       addresses(full_address, city),
       merchant_profiles(store_name, store_logo_url),
@@ -380,76 +423,31 @@ export async function getMerchantOrders(merchantId: string): Promise<OrderSummar
   return data as unknown as OrderSummary[];
 }
 
+// إنشاء الطلب عبر دالة آمنة في الخادم: الأسعار والإجماليات والمخزون والكوبون
+// تُحسب كلها في الخادم — العميل لا يرسل أي مبالغ (منع التلاعب بالأسعار).
 export async function createOrder(data: {
-  customer_id: string;
   merchant_id: string;
   address_id: string;
-  subtotal: number;
-  delivery_fee: number;
-  discount_amount: number;
-  tax_amount: number;
-  total_amount: number;
   payment_method: string;
   notes?: string;
-  items: {
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-    product_name?: string;
-  }[];
-}): Promise<{ id: string; order_number: string }> {
-  const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
-
-  const { data: order, error: orderError } = await supabase
-    .from(TABLES.ORDERS)
-    .insert({
-      order_number: orderNumber,
-      customer_id: data.customer_id,
-      merchant_id: data.merchant_id,
-      address_id: data.address_id,
-      subtotal: data.subtotal,
-      delivery_fee: data.delivery_fee,
-      discount_amount: data.discount_amount,
-      tax_amount: data.tax_amount,
-      total_amount: data.total_amount,
-      payment_method: data.payment_method,
-      notes: data.notes,
-      status: 'pending',
-      payment_status: 'pending',
-    })
-    .select('id, order_number')
-    .single();
-
-  if (orderError) throw orderError;
-
-  const orderItems = data.items.map((item) => ({
-    order_id: order.id,
-    product_id: item.product_id,
-    product_name: item.product_name ?? '',
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.total_price,
-  }));
-
-  const { error: itemsError } = await supabase.from(TABLES.ORDER_ITEMS).insert(orderItems);
-  if (itemsError) throw itemsError;
-
-  // خصم المخزون وزيادة المبيعات لكل منتج (عبر دالة آمنة تتجاوز RLS)
-  await Promise.all(
-    data.items.map((item) =>
-      supabase.rpc('decrement_product_stock', { p_id: item.product_id, p_qty: item.quantity })
-    )
-  );
-
-  return order as { id: string; order_number: string };
+  coupon_code?: string;
+  items: { product_id: string; quantity: number }[];
+}): Promise<{ id: string; order_number: string; total: number }> {
+  const { data: result, error } = await supabase.rpc('place_order', {
+    p_merchant_id: data.merchant_id,
+    p_address_id: data.address_id,
+    p_payment_method: data.payment_method,
+    p_items: data.items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+    p_coupon_code: data.coupon_code ?? null,
+    p_notes: data.notes ?? null,
+  });
+  if (error) throw error;
+  return result as { id: string; order_number: string; total: number };
 }
 
+// تحديث حالة الطلب عبر دالة آمنة تفرض ضوابط الدور والانتقالات المسموحة.
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
-  const { error } = await supabase
-    .from(TABLES.ORDERS)
-    .update({ status })
-    .eq('id', orderId);
+  const { error } = await supabase.rpc('set_order_status', { p_order_id: orderId, p_status: status });
   if (error) throw error;
 }
 
@@ -715,11 +713,9 @@ export async function getCancellationReasons(applicableTo = 'customer'): Promise
   return data as CancellationReason[];
 }
 
-export async function cancelOrder(orderId: string, reason: string): Promise<void> {
-  const { error } = await supabase
-    .from(TABLES.ORDERS)
-    .update({ status: 'cancelled', cancel_reason: reason, cancelled_at: new Date().toISOString() })
-    .eq('id', orderId);
+export async function cancelOrder(orderId: string, _reason: string): Promise<void> {
+  // الإلغاء عبر الدالة الآمنة التي تتحقق من الدور وحالة الطلب
+  const { error } = await supabase.rpc('set_order_status', { p_order_id: orderId, p_status: 'cancelled' });
   if (error) throw error;
 }
 
@@ -957,26 +953,14 @@ export async function validateCoupon(code: string, subtotal: number): Promise<{
   message: string;
   coupon?: Coupon;
 }> {
-  const now = new Date().toISOString();
-  const { data } = await supabase
-    .from('coupons')
-    .select('id, code, type, value, min_order_amount, max_discount_amount, end_date, is_active')
-    .eq('code', code.trim().toUpperCase())
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (!data) return { valid: false, discount: 0, message: 'كود الخصم غير صحيح' };
-  const c = data as any;
-  if (c.end_date && c.end_date < now) return { valid: false, discount: 0, message: 'انتهت صلاحية هذا الكود' };
-  if (c.min_order_amount && subtotal < c.min_order_amount) {
-    return { valid: false, discount: 0, message: `الحد الأدنى للطلب ${c.min_order_amount} ر.س` };
-  }
-
-  let discount = c.type === 'percentage' ? Math.round((subtotal * c.value) / 100) : c.value;
-  if (c.max_discount_amount && discount > c.max_discount_amount) discount = c.max_discount_amount;
-  if (discount > subtotal) discount = subtotal;
-
-  return { valid: true, discount, message: `تم تطبيق خصم ${discount} ر.س`, coupon: c as Coupon };
+  // التحقق يتم في الخادم عبر دالة آمنة (جدول الكوبونات غير مكشوف للعميل)
+  const { data, error } = await supabase.rpc('preview_coupon', {
+    p_code: code.trim(),
+    p_subtotal: subtotal,
+  });
+  if (error || !data) return { valid: false, discount: 0, message: 'تعذّر التحقق من الكود' };
+  const r = data as { valid: boolean; discount: number; message: string };
+  return { valid: r.valid, discount: r.discount ?? 0, message: r.message };
 }
 
 export async function getActiveCoupons(): Promise<Coupon[]> {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Dimensions, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, getDeliveryProfile, setDeliveryOnline, OrderSummary } from '@marketplace/shared-hooks';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,13 +11,50 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [togglingOnline, setTogglingOnline] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isOnline: boolean) => {
+    if (!isOnline) { setOrders([]); setLoading(false); return; }
     try { setOrders(await getAvailableDeliveryOrders()); } catch { setOrders([]); }
     finally { setLoading(false); }
   }, []);
 
-  useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
+  // حمّل حالة الاتصال الحقيقية عند الدخول ثم اجلب الطلبات وفقها
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoading(true);
+    (async () => {
+      let isOnline = online;
+      if (user?.id) {
+        try {
+          const p = await getDeliveryProfile(user.id);
+          isOnline = (p as any)?.is_online ?? true;
+        } catch { /* ignore */ }
+      }
+      if (!active) return;
+      setOnline(isOnline);
+      load(isOnline);
+    })();
+    return () => { active = false; };
+  }, [user?.id, load]));
+
+  const toggleOnline = async () => {
+    if (!user?.id || togglingOnline) return;
+    const next = !online;
+    setTogglingOnline(true);
+    setOnline(next);
+    try {
+      await setDeliveryOnline(user.id, next);
+      setLoading(true);
+      await load(next);
+    } catch {
+      setOnline(!next); // تراجع عند الفشل
+      Alert.alert('خطأ', 'تعذّر تغيير حالة الاتصال');
+    } finally {
+      setTogglingOnline(false);
+    }
+  };
 
   const current = orders[0];
 
@@ -28,11 +65,11 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       const ok = await claimDeliveryOrder(current.id, user.id);
       if (ok) {
         const acceptedId = current.id;
-        load();
+        load(online);
         navigation.navigate('ActiveDelivery', { orderId: acceptedId });
       } else {
         Alert.alert('تنبيه', 'هذا الطلب لم يعد متاحاً (قبله مندوب آخر)');
-        load();
+        load(online);
       }
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر قبول الطلب');
@@ -81,8 +118,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </TouchableOpacity>
 
             <View style={styles.centerStatus}>
-              <Text style={styles.statusTextTop}>متصل الآن</Text>
-              <View style={styles.statusDotTop} />
+              <Text style={styles.statusTextTop}>{online ? 'متصل الآن' : 'غير متصل'}</Text>
+              <View style={[styles.statusDotTop, { backgroundColor: online ? '#10B981' : '#9CA3AF' }]} />
             </View>
 
             <View style={styles.avatarWrap}>
@@ -105,13 +142,15 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Connected Status Dropdown Pill */}
+        {/* Online/Offline Toggle Pill (فعّال) */}
         <View style={styles.connectionDropdownWrap}>
-          <View style={styles.connectionDropdown}>
-            <View style={styles.connectionDotLarge} />
-            <Text style={styles.connectionText}>متصل بالطلبات</Text>
-            <Ionicons name="chevron-down" size={16} color="#6B7280" />
-          </View>
+          <TouchableOpacity style={styles.connectionDropdown} activeOpacity={0.8} onPress={toggleOnline} disabled={togglingOnline}>
+            <View style={[styles.connectionDotLarge, { backgroundColor: online ? '#10B981' : '#9CA3AF' }]} />
+            <Text style={styles.connectionText}>{online ? 'متصل بالطلبات' : 'غير متصل — اضغط للاتصال'}</Text>
+            {togglingOnline
+              ? <ActivityIndicator size="small" color="#6B7280" />
+              : <Ionicons name={online ? 'toggle' : 'toggle-outline'} size={22} color={online ? '#10B981' : '#9CA3AF'} />}
+          </TouchableOpacity>
         </View>
 
       </View>
@@ -122,12 +161,18 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           <View style={[styles.orderCard, { alignItems: 'center', paddingVertical: 40 }]}>
             <ActivityIndicator size="large" color="#2563EB" />
           </View>
+        ) : !online ? (
+          <View style={[styles.orderCard, { alignItems: 'center', paddingVertical: 40 }]}>
+            <Ionicons name="power-outline" size={40} color="#D1D5DB" />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 12 }}>أنت غير متصل</Text>
+            <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>فعّل الاتصال بالأعلى لاستقبال الطلبات</Text>
+          </View>
         ) : !current ? (
           <View style={[styles.orderCard, { alignItems: 'center', paddingVertical: 40 }]}>
             <Ionicons name="cube-outline" size={40} color="#D1D5DB" />
             <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 12 }}>لا توجد طلبات متاحة حالياً</Text>
             <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>ستظهر الطلبات الجاهزة هنا تلقائياً</Text>
-            <TouchableOpacity onPress={() => { setLoading(true); load(); }} style={{ marginTop: 16 }}>
+            <TouchableOpacity onPress={() => { setLoading(true); load(online); }} style={{ marginTop: 16 }}>
               <Text style={{ color: '#2563EB', fontWeight: '700' }}>تحديث</Text>
             </TouchableOpacity>
           </View>
