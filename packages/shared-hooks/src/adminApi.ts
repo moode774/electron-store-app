@@ -104,14 +104,14 @@ export interface AdminRefund {
   order_id: string;
   reason: string;
   status: string;
-  amount: number;
+  refund_amount: number;
   created_at: string;
 }
 
 export async function adminListRefunds(limit = 50): Promise<AdminRefund[]> {
   const { data, error } = await supabase
     .from('refund_requests')
-    .select('id, order_id, reason, status, amount, created_at')
+    .select('id, order_id, reason, status, refund_amount, created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) return [];
@@ -119,6 +119,9 @@ export async function adminListRefunds(limit = 50): Promise<AdminRefund[]> {
 }
 
 export async function adminSetRefundStatus(refundId: string, status: 'approved' | 'rejected' | 'processed'): Promise<void> {
-  const { error } = await supabase.from('refund_requests').update({ status, reviewed_at: new Date().toISOString() }).eq('id', refundId);
+  const { error } = await supabase
+    .from('refund_requests')
+    .update({ status, processed_at: new Date().toISOString() })
+    .eq('id', refundId);
   if (error) throw error;
 }
