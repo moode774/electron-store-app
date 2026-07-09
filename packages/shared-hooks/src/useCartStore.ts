@@ -9,6 +9,7 @@ export interface CartItem {
   quantity: number;
   storeId: string;
   storeName: string;
+  image?: string;
 }
 
 interface CartState {

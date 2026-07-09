@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Dimensions, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import IncomingOrderModal from '../../components/IncomingOrderModal';
+import * as Location from 'expo-location';
 import { useAuthStore, getAvailableDeliveryOrders, claimDeliveryOrder, getDeliveryEarnings, OrderSummary } from '@marketplace/shared-hooks';
-
-const { width, height } = Dimensions.get('window');
 
 export default function DeliveryOffersScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
   const [todayEarnings, setTodayEarnings] = useState(0);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [mapError, setMapError] = useState('');
+  const [showIncomingModal, setShowIncomingModal] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   const load = useCallback(async () => {
     try { setOrders(await getAvailableDeliveryOrders()); } catch { setOrders([]); }
@@ -30,13 +33,42 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    if (orders.length > 0 && !loading && !showIncomingModal) {
+      // Simulate real-time ringing by showing modal when a new order appears
+      setShowIncomingModal(true);
+    } else if (orders.length === 0) {
+      setShowIncomingModal(false);
+    }
+  }, [orders, loading]);
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === 'web') {
+        setMapError('الخرائط غير مدعومة بالكامل على الويب.');
+        return;
+      }
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setMapError('لم يتم منح إذن الوصول للموقع');
+        return;
+      }
+      try {
+        let loc = await Location.getCurrentPositionAsync({});
+        setLocation(loc);
+      } catch (e) {
+        setMapError('تعذر تحديد موقعك بدقة');
+      }
+    })();
+  }, []);
+
   useFocusEffect(useCallback(() => { setLoading(true); load(); }, [load]));
 
   const current = orders[0];
 
   const handleAccept = async () => {
     if (!current || !user?.id) return;
-    setClaiming(true);
+    setLoading(true);
     try {
       const ok = await claimDeliveryOrder(current.id, user.id);
       if (ok) {
@@ -50,7 +82,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر قبول الطلب');
     } finally {
-      setClaiming(false);
+      setLoading(false);
     }
   };
 
@@ -58,27 +90,25 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* 1. Map Background Simulation */}
+      {/* 1. Location Status UI (Instead of crashing MapView) */}
       <View style={StyleSheet.absoluteFillObject}>
-        <Image 
-          source={{ uri: 'https://www.transparenttextures.com/patterns/cubes.png' }} 
-          style={[StyleSheet.absoluteFillObject, { opacity: 0.1, tintColor: '#2563EB' }]} 
-        />
-        <View style={styles.mapGridLine1} />
-        <View style={styles.mapGridLine2} />
-        <View style={styles.mapGridLine3} />
-        <View style={styles.mapGridLine4} />
-      </View>
-
-      {/* 2. Map Pins (Simulated) */}
-      <View style={styles.centerPulseOuter}>
-        <View style={styles.centerPulseInner}>
-          <Ionicons name="navigate" size={16} color="#FFFFFF" style={{ transform: [{ rotate: '45deg' }] }} />
+        <View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0FDF4' }]}>
+          <View style={styles.centerPulseOuter}>
+            <View style={styles.centerPulseInner}>
+              <Ionicons name="navigate" size={32} color="#059669" />
+            </View>
+          </View>
+          <Text style={{ marginTop: 24, color: '#059669', fontWeight: '800', fontSize: 18 }}>
+            نظام التتبع مفعل
+          </Text>
+          <Text style={{ marginTop: 8, color: '#6B7280', fontWeight: '600', fontSize: 13, textAlign: 'center', paddingHorizontal: 40 }}>
+            {location ? `موقعك الحالي: ${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}` : 'جاري تحديد موقعك الجغرافي للبحث عن الطلبات...'}
+          </Text>
+          {mapError ? (
+            <Text style={{ marginTop: 12, color: '#DC2626', fontWeight: 'bold' }}>{mapError}</Text>
+          ) : null}
         </View>
       </View>
-
-      <View style={styles.randomPin1} />
-      <View style={styles.randomPin2} />
 
       {/* 3. Top Floating UI */}
       <View style={styles.topSafeArea}>
@@ -88,7 +118,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           {/* Menu Button (Left natively, so it's 2nd in RTL? No, we use flex-direction row-reverse if needed, or just let RTL place it. First item is Right. So Menu should be LAST in code if we want it Left. But if the app is RTL, first is Right. Wait! I will use absolute positioning for left/right to guarantee layout.) */}
           
           <View style={styles.headerAbsoluteWrap}>
-            <TouchableOpacity style={styles.menuBtn}>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => navigation.navigate('DeliveryAccount')}>
               <Ionicons name="menu" size={24} color="#111827" />
               <View style={styles.menuDot} />
             </TouchableOpacity>
@@ -120,111 +150,51 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 
         {/* Connected Status Dropdown Pill */}
         <View style={styles.connectionDropdownWrap}>
-          <View style={styles.connectionDropdown}>
-            <View style={styles.connectionDotLarge} />
-            <Text style={styles.connectionText}>متصل بالطلبات</Text>
+          <TouchableOpacity
+            style={[styles.connectionDropdown, !isOnline && { backgroundColor: '#FEE2E2' }]}
+            activeOpacity={0.7}
+            onPress={() => setIsOnline((v) => !v)}
+          >
+            <View style={[styles.connectionDotLarge, !isOnline && { backgroundColor: '#EF4444' }]} />
+            <Text style={styles.connectionText}>{isOnline ? 'متصل بالطلبات' : 'غير متصل'}</Text>
             <Ionicons name="chevron-down" size={16} color="#6B7280" />
-          </View>
-        </View>
-
-      </View>
-
-      {/* 4. Bottom Order Card Overlay */}
-      <View style={styles.bottomCardWrap}>
-        {loading ? (
-          <View style={[styles.orderCard, { alignItems: 'center', paddingVertical: 40 }]}>
-            <ActivityIndicator size="large" color="#2563EB" />
-          </View>
-        ) : !current ? (
-          <View style={[styles.orderCard, { alignItems: 'center', paddingVertical: 40 }]}>
-            <Ionicons name="cube-outline" size={40} color="#D1D5DB" />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 12 }}>لا توجد طلبات متاحة حالياً</Text>
-            <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>ستظهر الطلبات الجاهزة هنا تلقائياً</Text>
-            <TouchableOpacity onPress={() => { setLoading(true); load(); }} style={{ marginTop: 16 }}>
-              <Text style={{ color: '#2563EB', fontWeight: '700' }}>تحديث</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-        <View style={styles.orderCard}>
-
-          {/* Card Header: Store Info */}
-          <View style={styles.cardHeader}>
-            <View style={styles.newBadge}>
-              <Ionicons name="sparkles" size={12} color="#2563EB" />
-              <Text style={styles.newBadgeText}>جديد</Text>
-            </View>
-
-            <View style={styles.storeInfoWrap}>
-              <View style={styles.storeTexts}>
-                <Text style={styles.storeName}>{current.merchant_profiles?.store_name ?? 'المتجر'}</Text>
-                <View style={styles.storeLocRow}>
-                  <Ionicons name="location-outline" size={12} color="#2563EB" />
-                  <Text style={styles.storeLocText}>{current.merchant_profiles?.city ?? current.merchant_profiles?.address ?? 'غير محدد'}</Text>
-                </View>
-              </View>
-              <View style={styles.storeIconBox}>
-                <Ionicons name="bag-handle-outline" size={20} color="#2563EB" />
-              </View>
-            </View>
-          </View>
-
-          {/* العنوان وجهة التوصيل */}
-          <View style={styles.logoRow}>
-            <View style={[styles.storeLogoCircle, { width: '100%', borderRadius: 16, flexDirection: 'row', paddingHorizontal: 14, gap: 8, justifyContent: 'flex-start' }]}>
-              <Ionicons name="navigate-circle-outline" size={22} color="#2563EB" />
-              <Text style={{ flex: 1, fontSize: 12.5, color: '#4B5563', fontWeight: '600' }} numberOfLines={1}>
-                التوصيل إلى: {current.addresses?.full_address ?? 'عنوان العميل'}
-              </Text>
-            </View>
-          </View>
-
-          {/* 3-Column Metrics */}
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCol}>
-              <View style={styles.metricValRow}>
-                <View style={styles.metricIconWrap}><Ionicons name="cash-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.total_amount ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
-              </View>
-              <Text style={styles.metricLabel}>قيمة الطلب</Text>
-            </View>
-
-            <View style={styles.metricDivider} />
-
-            <View style={styles.metricCol}>
-              <View style={styles.metricValRow}>
-                <View style={styles.metricIconWrap}><Ionicons name="bicycle-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.delivery_fee ?? 0} <Text style={styles.metricUnit}>ر.س</Text></Text>
-              </View>
-              <Text style={styles.metricLabel}>أجر التوصيل</Text>
-            </View>
-
-            <View style={styles.metricDivider} />
-
-            <View style={styles.metricCol}>
-              <View style={styles.metricValRow}>
-                <View style={styles.metricIconWrap}><Ionicons name="receipt-outline" size={16} color="#111827" /></View>
-                <Text style={styles.metricVal}>{current.order_number?.slice(-4) ?? '----'}</Text>
-              </View>
-              <Text style={styles.metricLabel}>رقم الطلب</Text>
-            </View>
-          </View>
-
-          {/* Action Button */}
-          <TouchableOpacity style={[styles.acceptBigBtn, claiming && { opacity: 0.6 }]} activeOpacity={0.9} onPress={handleAccept} disabled={claiming}>
-            {claiming ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.acceptBigBtnText}>قبول الطلب</Text>
-                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-              </>
-            )}
           </TouchableOpacity>
-
         </View>
-        )}
+
       </View>
 
+      {/* 4. Bottom Order Card / Scanner Overlay */}
+      <View style={styles.bottomCardWrap}>
+        <View style={[styles.orderCard, { alignItems: 'center', paddingVertical: 30 }]}>
+           {loading ? (
+             <ActivityIndicator size="large" color="#2563EB" />
+           ) : (
+             <>
+               <Ionicons name="radio-outline" size={40} color="#2563EB" style={{ opacity: 0.8 }} />
+               <Text style={{ fontSize: 16, fontWeight: '800', color: '#111827', marginTop: 12 }}>
+                 جاري البحث عن طلبات قريبة...
+               </Text>
+               <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>
+                 تأكد من تواجدك في منطقة حيوية لزيادة فرصتك في استلام الطلبات.
+               </Text>
+               <TouchableOpacity onPress={() => { setLoading(true); load(); }} style={{ marginTop: 16, padding: 8 }}>
+                 <Text style={{ color: '#2563EB', fontWeight: '700' }}>تحديث يدوي</Text>
+               </TouchableOpacity>
+             </>
+           )}
+        </View>
+      </View>
+
+      <IncomingOrderModal
+        visible={showIncomingModal}
+        order={current}
+        onAccept={handleAccept}
+        onReject={() => {
+           setShowIncomingModal(false);
+           // In real scenario, we would dismiss this order or pass to another driver
+           setOrders((prev) => prev.slice(1));
+        }}
+      />
     </View>
   );
 }
@@ -232,17 +202,9 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F7FC' },
   
-  // Map Simulation
-  mapGridLine1: { position: 'absolute', top: '20%', left: 0, right: 0, height: 1, backgroundColor: '#FFFFFF', transform: [{ rotate: '-15deg' }] },
-  mapGridLine2: { position: 'absolute', top: '40%', left: 0, right: 0, height: 2, backgroundColor: '#FFFFFF', transform: [{ rotate: '10deg' }] },
-  mapGridLine3: { position: 'absolute', top: 0, bottom: 0, left: '30%', width: 1, backgroundColor: '#FFFFFF', transform: [{ rotate: '20deg' }] },
-  mapGridLine4: { position: 'absolute', top: 0, bottom: 0, left: '70%', width: 2, backgroundColor: '#FFFFFF', transform: [{ rotate: '-5deg' }] },
-
-  centerPulseOuter: { position: 'absolute', top: '45%', left: '45%', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(37, 99, 235, 0.15)', alignItems: 'center', justifyContent: 'center' },
-  centerPulseInner: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', shadowColor: '#2563EB', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 6, borderWidth: 3, borderColor: '#FFFFFF' },
-  
-  randomPin1: { position: 'absolute', top: '30%', left: '25%', width: 16, height: 16, borderRadius: 8, backgroundColor: '#2563EB', borderWidth: 3, borderColor: '#FFFFFF', shadowColor: '#2563EB', shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
-  randomPin2: { position: 'absolute', top: '40%', right: '20%', width: 16, height: 16, borderRadius: 8, backgroundColor: '#2563EB', borderWidth: 3, borderColor: '#FFFFFF', shadowColor: '#2563EB', shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
+  // Map Styles (Converted to Radar Styles)
+  centerPulseOuter: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(5, 150, 105, 0.15)', alignItems: 'center', justifyContent: 'center' },
+  centerPulseInner: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(5, 150, 105, 0.25)', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#059669' },
 
   // Top UI
   topSafeArea: { paddingTop: Platform.OS === 'ios' ? 60 : 40, width: '100%', position: 'absolute', top: 0, zIndex: 10 },

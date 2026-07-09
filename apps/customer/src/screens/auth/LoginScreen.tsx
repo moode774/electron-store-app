@@ -12,30 +12,29 @@ import {
   StatusBar,
   Dimensions,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
-import { COLORS } from '@marketplace/shared-utils';
+import { USER_ROLES, COLORS } from '@marketplace/shared-utils';
+import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
 
-interface LoginScreenProps {
-  onNavigateToRegister: () => void;
-  onNavigateToOtp: (phone: string) => void;
-}
+export default function LoginScreen(): React.JSX.Element {
+  const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
 
-export default function LoginScreen({
-  onNavigateToRegister,
-  onNavigateToOtp,
-}: LoginScreenProps): React.JSX.Element {
   const [phone, setPhone] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
 
   const signInWithPhone = useAuthStore((s) => s.signInWithPhone);
+  const signUp = useAuthStore((s) => s.signUp);
 
   const showAlert = (title: string, message: string) => {
     setAlertConfig({ title, message });
@@ -49,23 +48,53 @@ export default function LoginScreen({
       return;
     }
 
+    // Admin bypass — يسجّل دخولاً حقيقياً بحساب الأدمن حتى تعمل صلاحيات RLS
+    if (cleaned.replace(/\D/g, '') === '535353535') {
+      setIsLoading(true);
+      const { error: adminError } = await useAuthStore.getState().signInAsAdmin();
+      setIsLoading(false);
+      if (adminError) showAlert('خطأ', adminError);
+      return;
+    }
+
     const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
-    // يكمل تسجيل الدخول مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
+    // يكمل تسجيل الدخول مباشرة؛ وإن كان الرقم جديداً يُنشأ حساب عميل تلقائياً
     const { error } = await signInWithPhone(formatted);
-    setIsLoading(false);
-
     if (error) {
-      showAlert('خطأ', error);
+      const { error: signUpError } = await signUp({
+        phone: formatted,
+        fullName: 'عميل جديد',
+        role: USER_ROLES.CUSTOMER,
+      });
+      setIsLoading(false);
+      if (signUpError) showAlert('خطأ', signUpError);
+      return;
     }
+    setIsLoading(false);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={[styles.root, isDesktop && styles.rootDesktop]}>
+      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? '#F3F4F6' : '#FFFFFF'} />
+      
+      {isDesktop && (
+        <View style={styles.desktopCover}>
+          <Image
+            source={require('../../../assets/images/logo.png')}
+            style={styles.desktopCoverLogo}
+          />
+          <Text style={styles.desktopCoverTitle}>منصة متكاملة</Text>
+          <Text style={styles.desktopCoverSub}>الوجهة الأولى لتجارتك ومشترياتك.</Text>
+        </View>
+      )}
+
+      <View style={[styles.card, isDesktop && styles.cardDesktop]}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <ScrollView
@@ -114,14 +143,14 @@ export default function LoginScreen({
               <Ionicons name="call-outline" size={20} color="#111827" />
             </View>
 
-            {/* رابط سجل معنا */}
+            {/* رابط سجل معنا للتاجر والمندوب */}
             <TouchableOpacity
               style={styles.registerLink}
-              onPress={onNavigateToRegister}
+              onPress={() => navigation.navigate('Register')}
               activeOpacity={0.7}
             >
               <Text style={styles.registerLinkText}>
-                ليس لديك حساب؟ <Text style={styles.registerLinkBold}>سجل معنا</Text>
+                ترغب بالانضمام كشريك؟ <Text style={styles.registerLinkBold}>سجل كتاجر أو مندوب</Text>
               </Text>
             </TouchableOpacity>
 
@@ -154,7 +183,10 @@ export default function LoginScreen({
                 <Text style={styles.socialText}>تسجيل الدخول باستخدام Apple</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7} onPress={async () => {
+                const { error } = await useAuthStore.getState().signInWithGoogle();
+                if (error) showAlert('خطأ', error);
+              }}>
                 <Image
                   source={require('../../../assets/images/google.png')}
                   style={{ width: 20, height: 20, resizeMode: 'contain' }}
@@ -173,11 +205,60 @@ export default function LoginScreen({
         message={alertConfig.message}
         onClose={() => setAlertVisible(false)}
       />
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  rootDesktop: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+  },
+  card: {
+    flex: 1,
+  },
+  cardDesktop: {
+    flex: 0.4,
+    minWidth: 400,
+    maxWidth: 480,
+    backgroundColor: '#FFFFFF',
+    borderLeftWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  desktopCover: {
+    flex: 0.6,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  desktopCoverLogo: {
+    width: 160,
+    height: 160,
+    resizeMode: 'contain',
+    marginBottom: 24,
+  },
+  desktopCoverTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  desktopCoverSub: {
+    fontSize: 18,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -271,6 +352,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 12,
     marginBottom: 32,
     flexDirection: 'row',
   },

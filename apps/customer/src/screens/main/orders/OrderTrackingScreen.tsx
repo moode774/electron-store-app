@@ -122,13 +122,27 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         
-        {/* Map Placeholder */}
-        <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text style={styles.mapText}>خريطة التتبع المباشر ستظهر هنا</Text>
-          <View style={styles.driverPin}>
-            <Text>🛵</Text>
+        {/* Delivery Status Banner */}
+        <View style={[styles.mapContainer, terminalLabel ? styles.mapContainerTerminal : null]}>
+          <View style={styles.mapStatusIcon}>
+            <Text style={styles.mapStatusEmoji}>
+              {terminalLabel ? '✕' : TRACKING_STEPS[currentStatusIndex]?.icon ?? '⏳'}
+            </Text>
           </View>
+          <Text style={[styles.mapStatusLabel, terminalLabel ? { color: '#DC2626' } : null]}>
+            {terminalLabel ?? TRACKING_STEPS[currentStatusIndex]?.label ?? 'جاري التتبع...'}
+          </Text>
+          {order?.addresses?.full_address ? (
+            <View style={styles.mapAddressRow}>
+              <Text style={styles.mapAddressIcon}>📍</Text>
+              <Text style={styles.mapAddressTxt} numberOfLines={2}>{order.addresses.full_address}</Text>
+            </View>
+          ) : null}
+          {!terminalLabel && currentStatus === 'on_the_way' && (
+            <View style={styles.driverLive}>
+              <Text style={styles.driverLiveText}>🛵 المندوب في الطريق إليك</Text>
+            </View>
+          )}
         </View>
 
         {/* Order Info Summary */}
@@ -288,10 +302,16 @@ const styles = StyleSheet.create({
   reasonItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   reasonText: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
   reasonArrow: { fontSize: 20, color: '#D1D5DB' },
-  mapContainer: { height: 250, backgroundColor: '#E3F2FD', alignItems: 'center', justifyContent: 'center' },
-  mapEmoji: { fontSize: 60, opacity: 0.5 },
-  mapText: { color: '#1976D2', marginTop: 10, fontWeight: '600' },
-  driverPin: { position: 'absolute', top: 100, left: '40%', width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 5 },
+  mapContainer: { minHeight: 200, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', paddingVertical: 32, paddingHorizontal: 24, gap: 10 },
+  mapContainerTerminal: { backgroundColor: '#FEF2F2' },
+  mapStatusIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+  mapStatusEmoji: { fontSize: 32 },
+  mapStatusLabel: { fontSize: 16, fontWeight: '800', color: '#1D4ED8', textAlign: 'center' },
+  mapAddressRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 4 },
+  mapAddressIcon: { fontSize: 14, marginTop: 1 },
+  mapAddressTxt: { fontSize: 13, color: '#374151', fontWeight: '600', flex: 1, textAlign: 'right' },
+  driverLive: { backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginTop: 4 },
+  driverLiveText: { fontSize: 13, fontWeight: '700', color: '#1D4ED8' },
   infoCard: { margin: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, marginTop: -30 },
   orderId: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4, fontFamily: 'El Messiri' },
   estimatedTime: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },

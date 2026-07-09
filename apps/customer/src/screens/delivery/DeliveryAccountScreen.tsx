@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   Image,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,7 +19,7 @@ const MENU_ITEMS = [
   { id: '2', title: 'المحفظة والتحصيلات', icon: 'wallet-outline', screen: 'DeliveryWallet', params: undefined },
   { id: '3', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
   { id: '4', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
-  { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: null, params: undefined },
+  { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
 ];
 
 export default function DeliveryAccountScreen({ navigation }: any) {
@@ -43,11 +44,11 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')}>
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>حساب المندوب</Text>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })}>
           <Ionicons name="notifications-outline" size={24} color="#111827" />
           <View style={styles.badge} />
         </TouchableOpacity>
@@ -127,7 +128,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {/* Promo Banner */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper}>
+        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper} onPress={() => Alert.alert('عرض خاص', 'تفاصيل العرض الترويجي للمندوبين المميزين')}>
           <Image
             source={require('../../../assets/images/account_promo.png')}
             style={styles.promoBannerFullImage}

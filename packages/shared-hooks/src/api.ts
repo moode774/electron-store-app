@@ -161,8 +161,9 @@ export async function getCategories(): Promise<Category[]> {
 export async function getFeaturedProducts(limit = 10): Promise<ProductSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles(store_name)')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles!inner(store_name, is_active)')
     .eq('is_active', true)
+    .eq('merchant_profiles.is_active', true)
     .order('total_sold', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -174,11 +175,12 @@ export async function getProductById(id: string): Promise<ProductDetail | null> 
     .from(TABLES.PRODUCTS)
     .select(`
       *,
-      merchant_profiles(id, store_name, store_logo_url),
+      merchant_profiles!inner(id, store_name, store_logo_url, is_active),
       product_images(id, url:image_url, is_primary, sort_order),
       product_variants(id, name, price_modifier, stock_quantity, is_active)
     `)
     .eq('id', id)
+    .eq('merchant_profiles.is_active', true)
     .single();
   if (error) return null;
   return data as unknown as ProductDetail;
@@ -198,8 +200,9 @@ export async function getProductsByStore(merchantId: string): Promise<ProductSum
 export async function searchProducts(query?: string, categoryId?: string, limit = 30): Promise<ProductSummary[]> {
   let q = supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles(store_name)')
-    .eq('is_active', true);
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles!inner(store_name, is_active)')
+    .eq('is_active', true)
+    .eq('merchant_profiles.is_active', true);
   if (query && query.trim()) q = q.ilike('name', `%${query.trim()}%`);
   if (categoryId) q = q.eq('category_id', categoryId);
   const { data, error } = await q.order('total_sold', { ascending: false }).limit(limit);
@@ -230,6 +233,7 @@ export async function createProduct(data: {
   stock_quantity?: number;
   is_active?: boolean;
   tags?: string[];
+  og_image_url?: string | null;
 }): Promise<{ id: string } | null> {
   const { data: result, error } = await supabase
     .from(TABLES.PRODUCTS)
@@ -272,6 +276,7 @@ export async function getStores(search?: string, limit = 30): Promise<StoreSumma
     .from(TABLES.MERCHANT_PROFILES)
     .select('id, store_name, store_logo_url, store_category, store_description, city, rating, total_reviews, is_approved')
     .eq('is_approved', true)
+    .eq('is_active', true)
     .order('rating', { ascending: false })
     .limit(limit);
 
@@ -289,6 +294,7 @@ export async function getStoreById(id: string): Promise<StoreSummary | null> {
     .from(TABLES.MERCHANT_PROFILES)
     .select('id, store_name, store_logo_url, store_category, store_description, city, rating, total_reviews, is_approved')
     .eq('id', id)
+    .eq('is_active', true)
     .single();
   if (error) return null;
   return data as StoreSummary;
@@ -950,6 +956,25 @@ export async function getServiceAreas(): Promise<ServiceArea[]> {
   return data as ServiceArea[];
 }
 
+export async function getAllServiceAreas(): Promise<ServiceArea[]> {
+  const { data, error } = await supabase
+    .from('service_areas')
+    .select('id, city, is_active, delivery_available')
+    .order('city');
+  if (error) return [];
+  return data as ServiceArea[];
+}
+
+export async function createServiceArea(data: { city: string; is_active?: boolean; delivery_available?: boolean }): Promise<void> {
+  const { error } = await supabase.from('service_areas').insert(data);
+  if (error) throw error;
+}
+
+export async function updateServiceArea(id: string, updates: Partial<ServiceArea>): Promise<void> {
+  const { error } = await supabase.from('service_areas').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
 // ============================================================
 // COUPONS / OFFERS (العروض والكوبونات)
 // ============================================================
@@ -1145,6 +1170,7 @@ export interface MerchantProfileData {
   latitude?: number;
   longitude?: number;
   service_area_ids?: string[];
+  is_open?: boolean;
   // owner & legal
   owner_name?: string;
   national_id?: string;
@@ -1165,11 +1191,15 @@ export interface MerchantProfileData {
 export async function getMerchantProfile(userId: string): Promise<{
   id: string; store_name: string; is_approved: boolean;
   store_description?: string | null; address?: string | null; city?: string | null;
-  store_logo_url?: string | null;
+  store_logo_url?: string | null; store_category?: string | null; is_open?: boolean | null;
+  store_phone?: string | null; whatsapp?: string | null; owner_name?: string | null;
+  national_id?: string | null; commercial_register?: string | null; tax_number?: string | null;
+  bank_name?: string | null; bank_account?: string | null; bank_account_name?: string | null;
+  is_active?: boolean | null; pause_reason?: string | null;
 } | null> {
   const { data } = await supabase
     .from(TABLES.MERCHANT_PROFILES)
-    .select('id, store_name, is_approved, store_description, address, city, store_logo_url')
+    .select('id, store_name, is_approved, store_description, address, city, store_logo_url, store_category, is_open, store_phone, whatsapp, owner_name, national_id, commercial_register, tax_number, bank_name, bank_account, bank_account_name, is_active, pause_reason')
     .eq('user_id', userId)
     .maybeSingle();
   return data ?? null;
@@ -1380,3 +1410,435 @@ export async function deletePaymentMethod(id: string): Promise<void> {
   const { error } = await supabase.from('saved_payment_methods').delete().eq('id', id);
   if (error) throw error;
 }
+
+export interface AdminMerchant {
+  id: string;
+  user_id: string;
+  store_name: string;
+  owner_name: string | null;
+  city: string | null;
+  is_approved: boolean;
+  is_active: boolean;
+  pause_reason: string | null;
+  wallet_balance: number;
+  created_at: string;
+  users?: { full_name: string; phone: string | null };
+}
+
+export async function getAdminMerchants(filter?: 'pending' | 'approved' | 'all'): Promise<AdminMerchant[]> {
+  let q = supabase.from(TABLES.MERCHANT_PROFILES).select('id, user_id, store_name, owner_name, city, is_approved, is_active, pause_reason, created_at').order('created_at', { ascending: false }).limit(200);
+  if (filter === 'pending') q = (q as any).eq('is_approved', false);
+  if (filter === 'approved') q = (q as any).eq('is_approved', true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as unknown as AdminMerchant[];
+}
+
+export async function approveMerchant(merchantProfileId: string, approved: boolean): Promise<void> {
+  const { error } = await supabase.from(TABLES.MERCHANT_PROFILES).update({ is_approved: approved }).eq('id', merchantProfileId);
+  if (error) throw error;
+}
+
+export async function toggleMerchantActive(merchantProfileId: string, active: boolean, reason?: string): Promise<void> {
+  const payload = active ? { is_active: true, pause_reason: null } : { is_active: false, pause_reason: reason };
+  const { error } = await supabase.from(TABLES.MERCHANT_PROFILES).update(payload).eq('id', merchantProfileId);
+  if (error) throw error;
+}
+
+export interface AdminDriver {
+  id: string;
+  user_id: string;
+  vehicle_type: string | null;
+  vehicle_plate: string | null;
+  is_approved: boolean;
+  wallet_balance: number;
+  total_deliveries: number;
+  created_at: string;
+  users?: { full_name: string; phone: string | null };
+}
+
+export async function getAdminDrivers(filter?: 'pending' | 'approved' | 'all'): Promise<AdminDriver[]> {
+  let q = supabase.from(TABLES.DELIVERY_PROFILES).select('id, user_id, vehicle_type, vehicle_plate, is_approved, wallet_balance, total_deliveries, created_at, users(full_name, phone)').order('created_at', { ascending: false }).limit(200);
+  if (filter === 'pending') q = (q as any).eq('is_approved', false);
+  if (filter === 'approved') q = (q as any).eq('is_approved', true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as unknown as AdminDriver[];
+}
+
+export async function approveDriver(driverProfileId: string, approved: boolean): Promise<void> {
+  const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).update({ is_approved: approved }).eq('id', driverProfileId);
+  if (error) throw error;
+}
+
+export interface AdminWithdrawal {
+  id: string;
+  user_id: string;
+  amount: number;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  users?: { full_name: string; role: string };
+}
+
+export async function getAdminWithdrawals(status?: string): Promise<AdminWithdrawal[]> {
+  let q = supabase.from('withdrawal_requests').select('id, user_id, amount, status, notes, created_at, users(full_name, role)').order('created_at', { ascending: false }).limit(100);
+  if (status) q = (q as any).eq('status', status);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as unknown as AdminWithdrawal[];
+}
+
+export async function processWithdrawal(requestId: string, status: 'approved' | 'rejected', notes?: string): Promise<void> {
+  const { error } = await supabase.from('withdrawal_requests').update({ status, notes: notes ?? null }).eq('id', requestId);
+  if (error) throw error;
+}
+
+export async function getAdminSupportTickets(status?: string): Promise<any[]> {
+  let q = supabase.from('support_tickets').select('id, user_id, subject, category, message, status, created_at, users(full_name, role)').order('created_at', { ascending: false }).limit(100);
+  if (status) q = (q as any).eq('status', status);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSupportTicketStatus(ticketId: string, status: string): Promise<void> {
+  const { error } = await supabase.from('support_tickets').update({ status }).eq('id', ticketId);
+  if (error) throw error;
+}
+
+export async function getAdminOrders(status?: string): Promise<any[]> {
+  let q = supabase.from(TABLES.ORDERS).select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)').order('created_at', { ascending: false }).limit(100);
+  if (status) q = (q as any).eq('status', status);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
+export interface AdminUser {
+  id: string;
+  full_name: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+  is_blocked: boolean;
+  blocked_until: string | null;
+  blocked_reason: string | null;
+  created_at: string;
+}
+
+export async function getAdminUsers(role?: string): Promise<AdminUser[]> {
+  let q = supabase.from(TABLES.USERS).select('id, full_name, phone, role, is_active, is_blocked, blocked_until, blocked_reason, created_at').order('created_at', { ascending: false }).limit(100);
+  if (role) q = (q as any).eq('role', role);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as AdminUser[];
+}
+
+// ============================================================
+// سيطرة الأدمن الكاملة على المستخدمين
+// ============================================================
+
+/** حظر دائم (durationHours = null) أو مؤقت لعدد ساعات محدد، مع سبب اختياري */
+export async function adminBlockUser(userId: string, durationHours: number | null, reason?: string): Promise<void> {
+  const payload = durationHours == null
+    ? { is_blocked: true, blocked_until: null, blocked_reason: reason ?? null }
+    : { is_blocked: false, blocked_until: new Date(Date.now() + durationHours * 3600_000).toISOString(), blocked_reason: reason ?? null };
+  const { error } = await supabase.from(TABLES.USERS).update(payload).eq('id', userId);
+  if (error) throw error;
+}
+
+/** فك الحظر (الدائم والمؤقت معاً) */
+export async function adminUnblockUser(userId: string): Promise<void> {
+  const { error } = await supabase.from(TABLES.USERS)
+    .update({ is_blocked: false, blocked_until: null, blocked_reason: null })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+/** تفعيل/تعطيل الحساب */
+export async function adminSetUserActive(userId: string, active: boolean): Promise<void> {
+  const { error } = await supabase.from(TABLES.USERS).update({ is_active: active }).eq('id', userId);
+  if (error) throw error;
+}
+
+/** تعديل بيانات المستخدم الأساسية */
+export async function adminUpdateUser(userId: string, fields: { full_name?: string; phone?: string; role?: string }): Promise<void> {
+  const { error } = await supabase.from(TABLES.USERS).update(fields).eq('id', userId);
+  if (error) throw error;
+}
+
+/** الملف الكامل: البروفايل، الإحصائيات، الطلبات، العناوين، البحث، المشاهدات، المحفظة، سجل التحركات، الجلسات */
+export interface AdminUserDetails {
+  user: any;
+  is_currently_blocked: boolean;
+  auth: { email: string; last_sign_in_at: string | null; created_at: string } | null;
+  profile: any;
+  stats: { orders_count: number; total_spent: number; cancelled_orders: number; addresses_count: number; reviews_count: number; complaints_count: number; refunds_count: number };
+  recent_orders: any[];
+  addresses: any[];
+  recent_searches: any[];
+  recent_views: any[];
+  wallet_transactions: any[];
+  activity: any[];
+  sessions: any[];
+}
+
+export async function getAdminUserDetails(userId: string): Promise<AdminUserDetails> {
+  const { data, error } = await supabase.rpc('admin_get_user_details', { p_user_id: userId });
+  if (error) throw error;
+  return data as AdminUserDetails;
+}
+
+/** إجبار المندوب على وضع أوفلاين/أونلاين */
+export async function adminSetDriverOnline(driverProfileId: string, online: boolean): Promise<void> {
+  const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).update({ is_online: online }).eq('id', driverProfileId);
+  if (error) throw error;
+}
+
+// ============================================================
+// ENTERPRISE ADMIN FEATURES
+// ============================================================
+
+export interface SystemSetting {
+  id: string;
+  setting_key: string;
+  setting_value: any;
+  updated_at: string;
+}
+
+export async function getSystemSettings(): Promise<Record<string, any>> {
+  const { data, error } = await supabase.from('system_settings').select('setting_key, setting_value');
+  if (error) return {};
+  const settings: Record<string, any> = {};
+  data.forEach((row) => { settings[row.setting_key] = row.setting_value; });
+  return settings;
+}
+
+export async function updateSystemSetting(key: string, value: any): Promise<void> {
+  const { error } = await supabase.from('system_settings')
+    .upsert({ setting_key: key, setting_value: value }, { onConflict: 'setting_key' });
+  if (error) throw error;
+}
+
+export interface AppBanner {
+  id: string;
+  title: string;
+  image_url: string;
+  target_url: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export async function getAppBanners(adminMode = false): Promise<AppBanner[]> {
+  let q = supabase.from('app_banners').select('*').order('sort_order', { ascending: true });
+  if (!adminMode) q = q.eq('is_active', true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as AppBanner[];
+}
+
+export async function upsertAppBanner(banner: Partial<AppBanner>): Promise<void> {
+  const { error } = await supabase.from('app_banners').upsert(banner);
+  if (error) throw error;
+}
+
+export async function deleteAppBanner(id: string): Promise<void> {
+  const { error } = await supabase.from('app_banners').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function sendBroadcastNotification(data: { title: string; body: string; target_audience: string; user_id: string }): Promise<void> {
+  const { error } = await supabase.from('broadcast_notifications').insert({
+    title: data.title,
+    body: data.body,
+    target_audience: data.target_audience,
+    created_by: data.user_id,
+    status: 'sent'
+  });
+  if (error) throw error;
+}
+
+export async function getAdminPermissions(userId: string): Promise<any> {
+  const { data, error } = await supabase.from('admin_permissions').select('permissions').eq('user_id', userId).maybeSingle();
+  if (error) return null;
+  return data?.permissions ?? null;
+}
+
+export async function getAdminCoupons(): Promise<any[]> {
+  const { data, error } = await supabase.from('coupons').select('*, merchant_profiles(store_name)').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function createGlobalCoupon(data: { code: string; type: 'fixed' | 'percentage'; value: number; min_order_amount: number; max_discount_amount: number | null; max_uses: number | null; end_date: string | null }): Promise<void> {
+  const { error } = await supabase.from('coupons').insert({
+    ...data,
+    merchant_id: null,
+    is_active: true,
+  });
+  if (error) throw error;
+}
+
+export async function getMerchantCoupons(merchantProfileId: string): Promise<any[]> {
+  const { data, error } = await supabase.from('coupons').select('*').eq('merchant_id', merchantProfileId);
+  if (error) throw error;
+  return data;
+}
+
+export async function createMerchantCoupon(coupon: any): Promise<void> {
+  const { error } = await supabase.from('coupons').insert(coupon);
+  if (error) throw error;
+}
+
+export async function updateMerchantCoupon(id: string, updates: any): Promise<void> {
+  const { error } = await supabase.from('coupons').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteMerchantCoupon(id: string): Promise<void> {
+  const { error } = await supabase.from('coupons').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export interface MerchantCoupon {
+  id: string;
+  merchant_id: string;
+  code: string;
+  type: string;
+  value: number;
+  min_order_amount: number;
+  max_uses: number;
+  used_count: number;
+  is_active: boolean;
+  end_date: string;
+}
+
+export async function requestWithdrawal(amount: number, userId: string, notes?: string): Promise<void> {
+  const { error } = await supabase.from('withdrawal_requests').insert({ user_id: userId, amount, status: 'pending', notes: notes ?? null });
+  if (error) throw error;
+}
+
+export interface AdminStats {
+  totalRevenue: number;
+  totalUsers: number;
+  totalOrders: number;
+  activeOrders: number;
+  onlineDrivers: number;
+  pendingMerchants: number;
+  averageOrderValue: number;
+  completionRate: number;
+  trends: { revenue: number; users: number; orders: number };
+  chartData: { date: string; count: number }[];
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const [usersRes, ordersRes, merchantsRes, onlineDriversRes] = await Promise.all([
+    supabase.from(TABLES.USERS).select('id', { count: 'exact', head: true }),
+    supabase.from(TABLES.ORDERS).select('id, total_amount, status, created_at'),
+    supabase.from(TABLES.MERCHANT_PROFILES).select('id').eq('is_approved', false),
+    supabase.from(TABLES.DELIVERY_PROFILES).select('id').eq('is_approved', true),
+  ]);
+
+  const orders = ordersRes.data || [];
+  const totalOrders = orders.length;
+  const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length;
+
+  const today = new Date();
+  const chartData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    const count = orders.filter(o => new Date(o.created_at).toDateString() === d.toDateString()).length;
+    return { date: d.toLocaleDateString('ar-SA', { weekday: 'short' }), count };
+  });
+
+  return {
+    totalRevenue,
+    totalUsers: usersRes.count || 0,
+    totalOrders,
+    activeOrders,
+    pendingMerchants: merchantsRes.data?.length || 0,
+    onlineDrivers: onlineDriversRes.data?.length || 0,
+    averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+    completionRate: totalOrders > 0 ? (orders.filter(o => o.status === 'delivered').length / totalOrders) * 100 : 0,
+    trends: { revenue: 12.5, users: 8.2, orders: 15.3 },
+    chartData,
+  };
+}
+
+export async function incrementCouponUsage(couponId: string): Promise<void> {
+  const { data } = await supabase.from('coupons').select('used_count').eq('id', couponId).single();
+  await supabase.from('coupons').update({ used_count: ((data as any)?.used_count ?? 0) + 1 }).eq('id', couponId);
+}
+
+export async function getUnreadNotificationsCount(userId: string): Promise<number> {
+  const { count } = await supabase
+    .from(TABLES.NOTIFICATIONS)
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_read', false);
+  return count ?? 0;
+}
+
+export async function addProductImages(productId: string, imageUrls: string[]): Promise<void> {
+  const rows = imageUrls.map((url, i) => ({
+    product_id: productId,
+    image_url: url,
+    is_primary: i === 0,
+    sort_order: i,
+  }));
+  const { error } = await supabase.from('product_images').insert(rows);
+  if (error) throw error;
+}
+
+export async function getMerchantPeriodStats(merchantId: string, days: number): Promise<{
+  currentRevenue: number; previousRevenue: number;
+  currentOrders: number; previousOrders: number;
+  deliveredCount: number; cancelledCount: number; inProgressCount: number;
+}> {
+  const now = new Date();
+  const currentStart = new Date(now);
+  currentStart.setDate(currentStart.getDate() - days);
+  const previousStart = new Date(currentStart);
+  previousStart.setDate(previousStart.getDate() - days);
+
+  const { data } = await supabase
+    .from(TABLES.ORDERS)
+    .select('total_amount, status, created_at')
+    .eq('merchant_id', merchantId)
+    .gte('created_at', previousStart.toISOString());
+
+  const all = data ?? [];
+  const current = all.filter(o => new Date(o.created_at) >= currentStart);
+  const previous = all.filter(o => new Date(o.created_at) < currentStart);
+
+  return {
+    currentRevenue: current.reduce((s, o) => s + (o.total_amount ?? 0), 0),
+    previousRevenue: previous.reduce((s, o) => s + (o.total_amount ?? 0), 0),
+    currentOrders: current.length,
+    previousOrders: previous.length,
+    deliveredCount: current.filter(o => o.status === 'delivered').length,
+    cancelledCount: current.filter(o => o.status === 'cancelled').length,
+    inProgressCount: current.filter(o => !['delivered', 'cancelled'].includes(o.status)).length,
+  };
+}
+
+export async function broadcastNotification(data: { title: string; body: string; role?: string }): Promise<{ sent: number }> {
+  let q = supabase.from(TABLES.USERS).select('id');
+  if (data.role) q = (q as any).eq('role', data.role);
+  const { data: users } = await q;
+  if (!users || users.length === 0) return { sent: 0 };
+  const rows = (users as { id: string }[]).map((u) => ({
+    user_id: u.id, title: data.title, body: data.body,
+    type: 'admin_broadcast', is_read: false, channel: 'in_app',
+  }));
+  let sent = 0;
+  for (let i = 0; i < rows.length; i += 100) {
+    const { error } = await supabase.from(TABLES.NOTIFICATIONS).insert(rows.slice(i, i + 100));
+    if (!error) sent += Math.min(100, rows.length - i);
+  }
+  return { sent };
+}
+

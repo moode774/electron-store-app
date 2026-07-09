@@ -13,6 +13,7 @@ import {
   StatusBar,
   Dimensions,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
@@ -36,12 +37,6 @@ interface RoleOption {
 
 const ROLE_OPTIONS: RoleOption[] = [
   {
-    role: USER_ROLES.CUSTOMER,
-    icon: 'bag-handle',
-    title: 'عميل',
-    description: 'تسوّق واطلب منتجاتك',
-  },
-  {
     role: USER_ROLES.DELIVERY,
     image: require('../../../assets/images/delivery-role.png'),
     title: 'توصيل',
@@ -56,13 +51,13 @@ const ROLE_OPTIONS: RoleOption[] = [
 ];
 
 
-export default function RegisterScreen({
-  onBack,
-  onNavigateToOtp,
-}: RegisterScreenProps): React.JSX.Element {
+import { useNavigation } from '@react-navigation/native';
+
+export default function RegisterScreen(): React.JSX.Element {
+  const navigation = useNavigation<any>();
   const [fullName, setFullName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>(USER_ROLES.CUSTOMER);
+  const [selectedRole, setSelectedRole] = useState<UserRole>(USER_ROLES.MERCHANT);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -95,22 +90,39 @@ export default function RegisterScreen({
     }
   };
 
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.root, isDesktop && styles.rootDesktop]}>
+      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? '#F3F4F6' : '#FFFFFF'} />
+      
+      {isDesktop && (
+        <View style={styles.desktopCover}>
+          <Image
+            source={require('../../../assets/images/logo.png')}
+            style={styles.desktopCoverLogo}
+          />
+          <Text style={styles.desktopCoverTitle}>انضم إلينا كشريك نجاح</Text>
+          <Text style={styles.desktopCoverSub}>ابدأ رحلتك معنا اليوم وحقق أهدافك.</Text>
+        </View>
+      )}
+
+      <View style={[styles.card, isDesktop && styles.cardDesktop]}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
 
       {/* Static Header with Back Button */}
       <View style={styles.header}>
         {/* Step Progress Indicator (Centered) */}
-        <View style={styles.progressContainer}>
+        <View style={styles.progressContainer} pointerEvents="none">
           <View style={[styles.progressDot, step >= 1 ? styles.progressDotActive : {}]} />
           <View style={[styles.progressDot, step >= 2 ? styles.progressDotActive : {}]} />
         </View>
 
-        <TouchableOpacity style={styles.backBtn} onPress={step === 2 ? () => setStep(1) : onBack} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.backBtn, { zIndex: 10 }]} onPress={step === 2 ? () => setStep(1) : () => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
@@ -219,7 +231,7 @@ export default function RegisterScreen({
 
                 <View style={styles.loginHintRow}>
                   <Text style={styles.loginHintText}>لديك حساب بالفعل؟</Text>
-                  <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
+                  <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
                     <Text style={styles.loginHintLink}>تسجيل الدخول</Text>
                   </TouchableOpacity>
                 </View>
@@ -315,11 +327,60 @@ export default function RegisterScreen({
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  rootDesktop: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+  },
+  card: {
+    flex: 1,
+  },
+  cardDesktop: {
+    flex: 0.4,
+    minWidth: 400,
+    maxWidth: 480,
+    backgroundColor: '#FFFFFF',
+    borderLeftWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  desktopCover: {
+    flex: 0.6,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  desktopCoverLogo: {
+    width: 160,
+    height: 160,
+    resizeMode: 'contain',
+    marginBottom: 24,
+  },
+  desktopCoverTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  desktopCoverSub: {
+    fontSize: 18,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',

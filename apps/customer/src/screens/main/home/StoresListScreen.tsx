@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  StatusBar, TextInput, Platform, ActivityIndicator,
+  StatusBar, TextInput, Platform, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
-import { getStores, StoreSummary } from '@marketplace/shared-hooks';
+import { getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HomeStackParamList } from '../../../navigation/types';
 
@@ -16,10 +16,11 @@ export default function StoresListScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const loadStores = useCallback(async () => {
-    setLoading(true);
+  const loadStores = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
     try {
       const data = await getStores(search || undefined);
       setStores(data);
@@ -27,6 +28,7 @@ export default function StoresListScreen({ navigation }: Props) {
       setStores([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [search]);
 
@@ -34,6 +36,22 @@ export default function StoresListScreen({ navigation }: Props) {
     const timer = setTimeout(loadStores, 300);
     return () => clearTimeout(timer);
   }, [loadStores]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadStores(true);
+  };
+
+  /*
+  useEffect(() => {
+    const channel = supabase.channel('stores_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles' }, () => {
+        loadStores(true);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadStores]);
+  */
 
   const categories = Array.from(new Set(stores.map((s) => s.store_category).filter(Boolean))) as string[];
 
@@ -124,12 +142,13 @@ export default function StoresListScreen({ navigation }: Props) {
         )}
       </View>
 
-      {loading ? (
+      {loading && !refreshing ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
         <FlatList
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           data={filteredStores}
           keyExtractor={(item) => item.id}
           renderItem={renderStore}

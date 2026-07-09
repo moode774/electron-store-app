@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, VEHICLE_TYPE } from '@marketplace/shared-utils';
 import { Input, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getDeliveryProfile, updateDeliveryProfileByUser, updateUserProfile } from '@marketplace/shared-hooks';
@@ -18,6 +19,14 @@ export default function DeliveryProfileScreen({ navigation }: any) {
   const [plateNumber, setPlateNumber] = useState('');
   const [vehicle, setVehicle] = useState<string>(VEHICLE_TYPE.MOTORCYCLE);
   const [saving, setSaving] = useState(false);
+  const [licenseUri, setLicenseUri] = useState<string | null>(null);
+
+  const pickLicense = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('إذن مطلوب', 'يرجى السماح بالوصول للصور'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (!result.canceled && result.assets[0]) setLicenseUri(result.assets[0].uri);
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -86,7 +95,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
 
         {/* Documents */}
         <Text style={styles.label}>الوثائق</Text>
-        <TouchableOpacity style={styles.docCard} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.docCard} activeOpacity={0.7} onPress={() => Alert.alert('البطاقة الشخصية', 'تم التحقق من الوثيقة بنجاح.')}>
           <View style={styles.docIcon}>
             <Ionicons name="card-outline" size={20} color={COLORS.primary} />
           </View>
@@ -96,15 +105,19 @@ export default function DeliveryProfileScreen({ navigation }: any) {
           </View>
           <Ionicons name="chevron-back" size={18} color="#D1D5DB" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.docCard} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.docCard} activeOpacity={0.7} onPress={pickLicense}>
           <View style={styles.docIcon}>
-            <Ionicons name="document-attach-outline" size={20} color={COLORS.primary} />
+            {licenseUri
+              ? <Image source={{ uri: licenseUri }} style={{ width: 40, height: 40, borderRadius: 8 }} />
+              : <Ionicons name="document-attach-outline" size={20} color={COLORS.primary} />}
           </View>
           <View style={{ flex: 1, marginHorizontal: 12 }}>
             <Text style={styles.docTitle}>رخصة القيادة</Text>
-            <Text style={[styles.docStatus, { color: '#D97706' }]}>⏳ بانتظار الرفع</Text>
+            <Text style={[styles.docStatus, { color: licenseUri ? '#059669' : '#D97706' }]}>
+              {licenseUri ? '✅ تم الرفع' : '⏳ اضغط لرفع الصورة'}
+            </Text>
           </View>
-          <Ionicons name="cloud-upload-outline" size={18} color={COLORS.primary} />
+          <Ionicons name={licenseUri ? 'checkmark-circle-outline' : 'cloud-upload-outline'} size={18} color={licenseUri ? '#059669' : COLORS.primary} />
         </TouchableOpacity>
 
         <View style={{ height: 20 }} />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { I18nManager, Platform, View, ActivityIndicator } from 'react-native';
+import { I18nManager, Platform, View, ActivityIndicator, AppState } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { enableScreens } from 'react-native-screens';
 
@@ -24,10 +24,15 @@ import MerchantTabNavigator from './src/navigation/MerchantTabNavigator';
 import DeliveryTabNavigator from './src/navigation/DeliveryTabNavigator';
 import MerchantOnboardingScreen from './src/screens/onboarding/MerchantOnboardingScreen';
 import DeliveryOnboardingScreen from './src/screens/onboarding/DeliveryOnboardingScreen';
+import AdminTabNavigator from './src/navigation/AdminTabNavigator';
 
 SplashScreenExpo.preventAutoHideAsync();
 
 const ONBOARDING_KEY = 'marketplace_onboarding_done';
+
+// Screens that are hidden tabs — reset to home when app comes to foreground
+const HIDDEN_MERCHANT_TABS = ['MerchantStoreSettings', 'MerchantWallet', 'MerchantSupport'];
+const navRef = createNavigationContainerRef<any>();
 
 // تخزين بسيط متوافق مع الويب والجوال
 const storage = {
@@ -59,13 +64,6 @@ type AuthStackParamList = {
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 
-const LoginScreenWrapper = ({ navigation }: any) => (
-  <LoginScreen
-    onNavigateToRegister={() => navigation.navigate('Register')}
-    onNavigateToOtp={(phone: string) => navigation.navigate('Otp', { phone })}
-  />
-);
-
 const OtpScreenWrapper = ({ navigation, route }: any) => (
   <OtpScreen
     phone={route.params.phone}
@@ -73,19 +71,12 @@ const OtpScreenWrapper = ({ navigation, route }: any) => (
   />
 );
 
-const RegisterScreenWrapper = ({ navigation }: any) => (
-  <RegisterScreen
-    onBack={() => navigation.goBack()}
-    onNavigateToOtp={(phone: string) => navigation.navigate('Otp', { phone })}
-  />
-);
-
 function AuthNavigator(): React.JSX.Element {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-      <AuthStack.Screen name="Login" component={LoginScreenWrapper} />
+      <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Otp" component={OtpScreenWrapper} />
-      <AuthStack.Screen name="Register" component={RegisterScreenWrapper} />
+      <AuthStack.Screen name="Register" component={RegisterScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -131,6 +122,7 @@ function RootNavigator(): React.JSX.Element {
     }
   }
 
+  if (role === USER_ROLES.ADMIN) return <AdminTabNavigator />;
   if (role === USER_ROLES.MERCHANT) return <MerchantTabNavigator />;
   if (role === USER_ROLES.DELIVERY) return <DeliveryTabNavigator />;
   return <MainTabNavigator />;
@@ -141,6 +133,19 @@ export default function App(): React.JSX.Element | null {
   const [appReady, setAppReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const initialize = useAuthStore((s) => s.initialize);
+
+  // Reset to home screen when app comes to foreground from a hidden merchant tab
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' && navRef.isReady()) {
+        const current = navRef.getCurrentRoute()?.name ?? '';
+        if (HIDDEN_MERCHANT_TABS.includes(current)) {
+          navRef.navigate('MerchantDashboard');
+        }
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const prepare = async () => {
@@ -172,12 +177,7 @@ export default function App(): React.JSX.Element | null {
   // 🧪 وضع اختبار الكيبورد: غيّر إلى true لعرض شاشة الدخول بدون طبقة التنقل
   const KEYBOARD_DEBUG = false;
   if (KEYBOARD_DEBUG) {
-    return (
-      <LoginScreen
-        onNavigateToRegister={() => {}}
-        onNavigateToOtp={() => {}}
-      />
-    );
+    return <LoginScreen />;
   }
 
   if (showSplash) {
@@ -190,7 +190,7 @@ export default function App(): React.JSX.Element | null {
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <NavigationContainer>
+      <NavigationContainer ref={navRef}>
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

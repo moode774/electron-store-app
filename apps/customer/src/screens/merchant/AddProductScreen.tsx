@@ -1,23 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
+  Platform, Alert, TextInput, useWindowDimensions, KeyboardAvoidingView, Image, ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
-import { Input, Button } from '@marketplace/shared-ui';
-import { useAuthStore, createProduct, getCategories, Category } from '@marketplace/shared-hooks';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuthStore, createProduct, addProductImages, uploadImageToStorage, getCategories, Category } from '@marketplace/shared-hooks';
+
+const UI = {
+  primary: '#111827',
+  bg: '#F3F4F6',
+  bgMobile: '#FFFFFF',
+  textDark: '#111827',
+  textGrey: '#4B5563',
+  textMuted: '#9CA3AF',
+  border: '#E5E7EB',
+  error: '#EF4444',
+  green: '#10B981',
+};
+
+const softShadow = {
+  shadowColor: '#111827',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.04,
+  shadowRadius: 24,
+  elevation: 2,
+};
+
+function FormInput({ label, icon, multiline, ...props }: any) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.inputWrap}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <View style={[styles.inputBox, focused && styles.inputBoxFocused, multiline && { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
+        <TextInput
+          style={[styles.input, multiline && { height: 80, textAlignVertical: 'top' }]}
+          placeholderTextColor={UI.textMuted}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          multiline={multiline}
+          {...props}
+        />
+        {icon && <Ionicons name={icon} size={20} color={focused ? UI.primary : UI.textMuted} style={styles.inputIcon} />}
+      </View>
+    </View>
+  );
+}
 
 export default function AddProductScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string>('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
   }, []);
+
+  const pickImages = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('إذن مرفوض', 'يرجى السماح للتطبيق بالوصول إلى الصور من الإعدادات.');
+          return;
+        }
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'] as any,
+        allowsMultipleSelection: true,
+        quality: 0.85,
+        selectionLimit: 5,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const uris = result.assets.map((a) => a.uri);
+        setSelectedImages((prev) => [...prev, ...uris].slice(0, 5));
+      }
+    } catch {
+      Alert.alert('خطأ', 'تعذّر فتح مكتبة الصور');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSave = async () => {
     if (!name.trim() || !price.trim()) {
@@ -31,9 +106,24 @@ export default function AddProductScreen({ navigation }: any) {
     }
     const parsedStock = parseInt(stock, 10);
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
+
     setSaving(true);
     try {
-      await createProduct({
+      let og_image_url: string | undefined;
+      let uploadedUrls: string[] = [];
+
+      if (selectedImages.length > 0) {
+        setUploadingImages(true);
+        uploadedUrls = await Promise.all(
+          selectedImages.map((uri, i) =>
+            uploadImageToStorage('products', `${user.id}/${Date.now()}_${i}`, uri)
+          )
+        );
+        og_image_url = uploadedUrls[0];
+        setUploadingImages(false);
+      }
+
+      const product = await createProduct({
         merchant_id: user.id,
         name: name.trim(),
         description: description.trim() || undefined,
@@ -41,89 +131,308 @@ export default function AddProductScreen({ navigation }: any) {
         category_id: categoryId || undefined,
         stock_quantity: Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : 0,
         is_active: true,
+        og_image_url,
       });
+
+      if (product?.id && uploadedUrls.length > 0) {
+        await addProductImages(product.id, uploadedUrls).catch(() => {});
+      }
+
       Alert.alert('تم الحفظ ✅', 'تمت إضافة المنتج بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
+      if (Platform.OS === 'web') navigation.goBack();
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'فشل حفظ المنتج');
     } finally {
       setSaving(false);
+      setUploadingImages(false);
     }
   };
 
+  const isLoading = saving || uploadingImages;
+  const loadingText = uploadingImages ? 'جاري رفع الصور...' : 'جاري الحفظ...';
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>إضافة منتج جديد</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Image Picker Placeholder */}
-        <TouchableOpacity style={styles.imagePicker} activeOpacity={0.7}>
-          <Ionicons name="camera-outline" size={32} color="#9CA3AF" />
-          <Text style={styles.imagePickerText}>إضافة صور المنتج</Text>
-        </TouchableOpacity>
+      {!isDesktop && (
+        <View style={styles.headerMobile}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color={UI.textDark} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitleMobile}>إضافة منتج</Text>
+          <View style={{ width: 40 }} />
+        </View>
+      )}
 
-        <Input label="اسم المنتج" placeholder="مثال: سماعات لاسلكية" value={name} onChangeText={setName} />
-        <Input label="السعر (ر.س)" placeholder="0" keyboardType="numeric" value={price} onChangeText={setPrice} />
-        <Input label="الكمية المتوفرة" placeholder="0" keyboardType="numeric" value={stock} onChangeText={setStock} />
-        <Input label="وصف المنتج" placeholder="اكتب وصفاً مختصراً..." value={description} onChangeText={setDescription} multiline />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
 
-        {categories.length > 0 && (
-          <>
-            <Text style={styles.label}>التصنيف</Text>
-            <View style={styles.categoriesRow}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.catChip, categoryId === cat.id && styles.catChipActive]}
-                  onPress={() => setCategoryId(categoryId === cat.id ? '' : cat.id)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.catChipText, categoryId === cat.id && styles.catChipTextActive]}>
-                    {cat.name_ar ?? cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          {isDesktop && (
+            <View style={styles.pageHeaderRow}>
+              <View>
+                <Text style={styles.pageTitle}>إضافة منتج جديد</Text>
+                <Text style={styles.pageSubtitle}>أدخل بيانات منتجك بدقة لعرضه للعملاء</Text>
+              </View>
+              <TouchableOpacity style={styles.backBtnDesktop} onPress={() => navigation.goBack()}>
+                <Text style={styles.backBtnText}>عودة للمنتجات</Text>
+                <Ionicons name="arrow-back" size={16} color={UI.textDark} />
+              </TouchableOpacity>
             </View>
-          </>
-        )}
+          )}
 
-        <View style={{ height: 24 }} />
-        <Button title={saving ? 'جاري الحفظ...' : 'حفظ المنتج'} onPress={handleSave} />
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          <View style={[styles.formCard, isDesktop && styles.formCardDesktop]}>
+
+            {/* Image Uploader */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>صور المنتج</Text>
+
+              {selectedImages.length > 0 ? (
+                <View style={styles.imageGrid}>
+                  {selectedImages.map((uri, index) => (
+                    <View key={index} style={styles.imageThumbWrap}>
+                      <Image source={{ uri }} style={styles.imageThumb} />
+                      {index === 0 && (
+                        <View style={styles.primaryBadge}>
+                          <Text style={styles.primaryBadgeText}>رئيسية</Text>
+                        </View>
+                      )}
+                      <TouchableOpacity
+                        style={styles.removeImageBtn}
+                        onPress={() => removeImage(index)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="close" size={12} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {selectedImages.length < 5 && (
+                    <TouchableOpacity style={styles.addMoreBtn} onPress={pickImages} activeOpacity={0.8}>
+                      <Ionicons name="add" size={28} color={UI.textMuted} />
+                      <Text style={styles.addMoreText}>إضافة</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.imagePicker} onPress={pickImages} activeOpacity={0.8}>
+                  <View style={styles.imagePickerIconBox}>
+                    <Ionicons name="cloud-upload-outline" size={28} color={UI.textDark} />
+                  </View>
+                  <Text style={styles.imagePickerTitle}>اضغط هنا لرفع الصور</Text>
+                  <Text style={styles.imagePickerSub}>PNG, JPG أو WEBP — حتى 5 صور</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Basic Info */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>المعلومات الأساسية</Text>
+              <FormInput
+                label="اسم المنتج *"
+                placeholder="مثال: سماعات لاسلكية عازلة للضوضاء"
+                icon="cube-outline"
+                value={name}
+                onChangeText={setName}
+              />
+
+              <View style={[styles.row, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
+                <View style={{ flex: 1 }}>
+                  <FormInput
+                    label="السعر (ر.س) *"
+                    placeholder="0.00"
+                    icon="cash-outline"
+                    keyboardType="numeric"
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <FormInput
+                    label="الكمية المتاحة بالمخزون"
+                    placeholder="0"
+                    icon="layers-outline"
+                    keyboardType="numeric"
+                    value={stock}
+                    onChangeText={setStock}
+                  />
+                </View>
+              </View>
+
+              <FormInput
+                label="وصف المنتج"
+                placeholder="اكتب وصفاً مفصلاً يبرز مميزات منتجك..."
+                multiline
+                value={description}
+                onChangeText={setDescription}
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Categories */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>التصنيف</Text>
+              {categories.length > 0 ? (
+                <View style={styles.categoriesRow}>
+                  {categories.map((cat) => {
+                    const isActive = categoryId === cat.id;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[styles.catChip, isActive && styles.catChipActive]}
+                        onPress={() => setCategoryId(isActive ? '' : cat.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.catChipText, isActive && styles.catChipTextActive]}>
+                          {cat.name_ar ?? cat.name}
+                        </Text>
+                        {isActive && <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={{ textAlign: 'right', color: UI.textMuted, fontSize: 13 }}>جاري تحميل التصنيفات...</Text>
+              )}
+            </View>
+
+            {/* Actions */}
+            <View style={[styles.actionsRow, !isDesktop && { flexDirection: 'column' }]}>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnPrimary, isLoading && { opacity: 0.7 }]}
+                onPress={handleSave}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                {isLoading ? (
+                  <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.btnPrimaryText}>{loadingText}</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                    <Text style={styles.btnPrimaryText}>حفظ المنتج</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.btn, styles.btnSecondary]}
+                onPress={() => navigation.goBack()}
+                disabled={isLoading}
+              >
+                <Text style={styles.btnSecondaryText}>إلغاء</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  container: { flex: 1, backgroundColor: UI.bgMobile },
+
+  headerMobile: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    borderBottomWidth: 1, borderBottomColor: UI.border,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  scrollContent: { padding: 20 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitleMobile: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+
+  scrollContent: { padding: 24, paddingBottom: 100 },
+  scrollContentDesktop: { padding: 40, alignItems: 'center' },
+
+  pageHeaderRow: {
+    width: '100%', maxWidth: 800, flexDirection: 'row-reverse',
+    justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24,
+  },
+  pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
+  pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
+  backBtnDesktop: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow,
+  },
+  backBtnText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
+
+  formCard: { width: '100%', maxWidth: 800 },
+  formCardDesktop: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 40,
+    ...softShadow, borderWidth: 1, borderColor: '#F3F4F6',
+  },
+
+  section: { marginBottom: 32 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: UI.textDark, marginBottom: 16, textAlign: 'right' },
+  divider: { height: 1, backgroundColor: UI.border, marginVertical: 32 },
+  row: { gap: 16 },
+
+  inputWrap: { marginBottom: 20 },
+  inputLabel: { fontSize: 13, fontWeight: '700', color: UI.textDark, marginBottom: 8, textAlign: 'right' },
+  inputBox: {
+    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: UI.border, borderRadius: 12, paddingHorizontal: 16, height: 48,
+  },
+  inputBoxFocused: { borderColor: UI.primary, backgroundColor: '#F9FAFB' },
+  inputIcon: { marginLeft: 12 },
+  input: { flex: 1, height: '100%', textAlign: 'right', fontSize: 14, color: UI.textDark, outlineStyle: 'none' as any },
+
   imagePicker: {
-    height: 140, borderRadius: 16, borderWidth: 2, borderColor: '#E5E7EB', borderStyle: 'dashed',
-    backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20,
+    width: '100%', height: 160, borderRadius: 16, borderWidth: 2, borderColor: UI.border,
+    borderStyle: 'dashed', backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center', gap: 12,
   },
-  imagePickerText: { fontSize: 13, color: '#9CA3AF', fontWeight: '600' },
-  label: { fontSize: 13, color: '#111827', marginBottom: 10, fontWeight: '600' },
-  categoriesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  imagePickerIconBox: {
+    width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center', ...softShadow,
+  },
+  imagePickerTitle: { fontSize: 15, fontWeight: '700', color: UI.textDark },
+  imagePickerSub: { fontSize: 12, color: UI.textMuted },
+
+  imageGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10 },
+  imageThumbWrap: { width: 90, height: 90, borderRadius: 12, overflow: 'hidden', position: 'relative' },
+  imageThumb: { width: '100%', height: '100%' },
+  primaryBadge: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: 'rgba(17,24,39,0.7)', paddingVertical: 3, alignItems: 'center',
+  },
+  primaryBadgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
+  removeImageBtn: {
+    position: 'absolute', top: 4, right: 4,
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: 'rgba(239,68,68,0.9)', alignItems: 'center', justifyContent: 'center',
+  },
+  addMoreBtn: {
+    width: 90, height: 90, borderRadius: 12, borderWidth: 2, borderColor: UI.border,
+    borderStyle: 'dashed', backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center', gap: 4,
+  },
+  addMoreText: { fontSize: 11, color: UI.textMuted, fontWeight: '600' },
+
+  categoriesRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12 },
   catChip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E5E7EB',
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 100,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border,
   },
-  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  catChipText: { fontSize: 12.5, fontWeight: '600', color: '#6B7280' },
+  catChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
+  catChipText: { fontSize: 13, fontWeight: '600', color: UI.textGrey },
   catChipTextActive: { color: '#FFFFFF' },
+
+  actionsRow: { flexDirection: 'row-reverse', gap: 16, marginTop: 16 },
+  btn: { flex: 1, height: 52, borderRadius: 12, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnPrimary: { backgroundColor: UI.primary, ...softShadow, shadowOpacity: 0.1, shadowColor: UI.primary },
+  btnPrimaryText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
+  btnSecondary: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border },
+  btnSecondaryText: { fontSize: 15, fontWeight: '700', color: UI.textDark },
 });

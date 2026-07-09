@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
-import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishlist, addToWishlist, removeFromWishlist, isFollowingStore, followStore, unfollowStore, getStoreFollowersCount, getWorkingHours, getOrCreateConversation, getReviews, WorkingHour, Review, StoreSummary, ProductSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishlist, addToWishlist, removeFromWishlist, isFollowingStore, followStore, unfollowStore, getStoreFollowersCount, getWorkingHours, getOrCreateConversation, getReviews, WorkingHour, Review, StoreSummary, ProductSummary, supabase } from '@marketplace/shared-hooks';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -25,6 +25,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
   const [store, setStore] = useState<StoreSummary | null>(null);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [wishedIds, setWishedIds] = useState<Set<string>>(new Set());
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(0);
@@ -65,11 +66,11 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     });
   };
 
-  useEffect(() => {
+  const loadData = React.useCallback(() => {
     Promise.all([getStoreById(storeId), getProductsByStore(storeId)])
       .then(([s, p]) => { setStore(s); setProducts(p); })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); setRefreshing(false); });
     if (user?.id) {
       getWishlist(user.id).then((wl) => setWishedIds(new Set(wl.map((w) => w.product_id)))).catch(() => {});
       isFollowingStore(user.id, storeId).then(setFollowing).catch(() => {});
@@ -78,6 +79,29 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     getWorkingHours(storeId).then(setHours).catch(() => {});
     getReviews(storeId).then(setReviews).catch(() => {});
   }, [storeId, user?.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
+  };
+
+  /*
+  useEffect(() => {
+    const channel = supabase.channel(`store_details_${storeId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles', filter: `id=eq.${storeId}` }, () => {
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `merchant_id=eq.${storeId}` }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, loadData]);
+  */
 
   const toggleWish = async (productId: string) => {
     if (!user?.id) return;
@@ -114,7 +138,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={STORE.coverColor} />
       
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {/* Cover & Header */}
         <View style={[styles.cover, { backgroundColor: STORE.coverColor }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>

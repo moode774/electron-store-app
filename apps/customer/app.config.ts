@@ -40,7 +40,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundler: 'metro'
   },
   plugins: [
-    'expo-secure-store',
     'expo-localization',
     'expo-font',
   ],

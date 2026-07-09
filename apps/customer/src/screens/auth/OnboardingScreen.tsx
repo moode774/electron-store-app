@@ -39,7 +39,9 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
     if (isLast) {
       onFinish();
     } else {
-      listRef.current?.scrollToIndex({ index: index + 1, animated: true });
+      const nextIndex = index + 1;
+      listRef.current?.scrollToOffset({ offset: nextIndex * width, animated: true });
+      setIndex(nextIndex);
     }
   };
 
@@ -61,6 +63,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
         onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
         renderItem={({ item }) => (
           <View style={styles.slide}>

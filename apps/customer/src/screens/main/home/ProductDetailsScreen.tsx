@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Alert, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
-import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, ProductDetail } from '@marketplace/shared-hooks';
+import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, getReviews, ProductDetail } from '@marketplace/shared-hooks';
 
 type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
@@ -31,6 +31,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const [wished, setWished] = useState(false);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  const [reviewsCount, setReviewsCount] = useState(0);
   const addToCart = useCartStore((s) => s.addToCart);
   const user = useAuthStore((s) => s.user);
 
@@ -43,6 +44,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       setLoading(false);
     });
     if (user?.id) isInWishlist(user.id, productId).then(setWished).catch(() => {});
+    getReviews(productId).then((r) => setReviewsCount(r.length)).catch(() => {});
   }, [productId, user?.id]);
 
   const toggleWishlist = async () => {
@@ -77,7 +79,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       name: product?.merchant_profiles?.store_name ?? 'المتجر',
     },
     rating: product?.rating ?? 0,
-    reviews: 0,
+    reviews: reviewsCount,
     sold: product?.total_sold ?? 0,
     // عند اختيار خيار (variant) يُعتمد مخزونه هو، وإلا مخزون المنتج
     stock: selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0),
@@ -100,7 +102,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.س`, title: PRODUCT.name })}>
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist}>
@@ -239,6 +241,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
               quantity,
               storeId: PRODUCT.store.id,
               storeName: PRODUCT.store.name,
+              image: PRODUCT.image ?? undefined,
             });
             navigation.navigate('Cart', { screen: 'CartMain' });
           }}

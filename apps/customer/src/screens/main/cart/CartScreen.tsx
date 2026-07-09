@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@marketplace/shared-hooks';
 
@@ -49,7 +49,11 @@ export default function CartScreen({ navigation }: any) {
             {storeItems.map((item) => (
               <View key={item.id} style={styles.cartItem}>
                 <View style={styles.itemImageWrap}>
-                  <Ionicons name="cube-outline" size={24} color="#6B7280" />
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.itemImage} resizeMode="cover" />
+                  ) : (
+                    <Ionicons name="cube-outline" size={24} color="#6B7280" />
+                  )}
                 </View>
                 
                 <View style={styles.itemInfo}>
@@ -199,6 +203,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 16, // RTL
+    overflow: 'hidden',
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
   },
   itemInfo: {
     flex: 1,

@@ -92,6 +92,7 @@ function AccountNavigator() {
 }
 
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { useCartStore } from '@marketplace/shared-hooks';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -121,8 +122,10 @@ const renderIcon = (focused: boolean, name: any, outlineName: any, color: string
 };
 
 export default function MainTabNavigator() {
+  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   return (
     <Tab.Navigator
+      initialRouteName="Home"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#111827',
@@ -151,11 +154,11 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Favorites"
-        component={FavoritesScreen}
-        options={{ 
-          tabBarLabel: 'المفضلة',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'heart', 'heart-outline', color)
+        name="Orders"
+        component={OrdersNavigator}
+        options={{
+          tabBarLabel: 'طلباتي',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'receipt', 'receipt-outline', color)
         }}
       />
       <Tab.Screen
@@ -171,7 +174,7 @@ export default function MainTabNavigator() {
         component={CartNavigator}
         options={{ 
           tabBarLabel: 'السلة',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'cart', 'cart-outline', color, 2)
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'cart', 'cart-outline', color, cartCount > 0 ? cartCount : undefined)
         }}
       />
       <Tab.Screen

@@ -3,7 +3,6 @@ import { View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
 
 import DeliveryOffersScreen from '../screens/delivery/DeliveryOffersScreen';
 import ActiveDeliveryScreen from '../screens/delivery/ActiveDeliveryScreen';
@@ -12,6 +11,7 @@ import DeliveryAccountScreen from '../screens/delivery/DeliveryAccountScreen';
 import DeliveryWalletScreen from '../screens/delivery/DeliveryWalletScreen';
 import DeliveryProfileScreen from '../screens/delivery/DeliveryProfileScreen';
 import DeliveryZonesScreen from '../screens/delivery/DeliveryZonesScreen';
+import DeliverySupportScreen from '../screens/delivery/DeliverySupportScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 
 export type DeliveryAccountStackParamList = {
@@ -19,6 +19,7 @@ export type DeliveryAccountStackParamList = {
   DeliveryProfile: undefined;
   DeliveryZones: undefined;
   DeliveryWallet: undefined;
+  DeliverySupport: undefined;
   RoleNotifications: { role: 'delivery' };
 };
 
@@ -30,6 +31,7 @@ function AccountNavigator() {
       <AccountStack.Screen name="DeliveryProfile" component={DeliveryProfileScreen} />
       <AccountStack.Screen name="DeliveryZones" component={DeliveryZonesScreen} />
       <AccountStack.Screen name="DeliveryWallet" component={DeliveryWalletScreen} />
+      <AccountStack.Screen name="DeliverySupport" component={DeliverySupportScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
     </AccountStack.Navigator>
   );
@@ -103,10 +105,16 @@ export default function DeliveryTabNavigator() {
       />
       <Tab.Screen
         name="DeliveryAction"
-        component={OffersNavigator} // Placeholder
+        component={OffersNavigator}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('DeliveryHome');
+          },
+        })}
         options={{
-          tabBarLabel: 'التوصيل',
-          tabBarIcon: ({ focused }) => (
+          tabBarLabel: 'قبول',
+          tabBarIcon: () => (
             <View style={{
               width: 56, height: 56, borderRadius: 28, backgroundColor: '#2563EB',
               alignItems: 'center', justifyContent: 'center',

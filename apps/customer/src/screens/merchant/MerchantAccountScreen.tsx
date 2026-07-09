@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   Image,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -17,12 +18,14 @@ const MENU_ITEMS = [
   { id: '1', title: 'بيانات المتجر', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
   { id: '2', title: 'التقارير والإحصائيات', icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
   { id: '3', title: 'المحفظة والمدفوعات', icon: 'wallet-outline', screen: 'Wallet', params: undefined },
-  { id: '4', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
-  { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: null, params: undefined },
+  { id: '4', title: 'كوبونات المتجر', icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
+  { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
+  { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'Support', params: undefined },
 ];
 
 export default function MerchantAccountScreen({ navigation }: any) {
-  const { user, signOut } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const [stat, setStat] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
 
   useFocusEffect(useCallback(() => {
@@ -119,9 +122,18 @@ export default function MerchantAccountScreen({ navigation }: any) {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={24} color="#3B82F6" />
-          <Text style={styles.logoutText}>تسجيل الخروج</Text>
+        <TouchableOpacity
+          style={styles.logoutCard}
+          onPress={() =>
+            Alert.alert('تسجيل الخروج', 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
+              { text: 'تراجع', style: 'cancel' },
+              { text: 'تسجيل الخروج', style: 'destructive', onPress: () => signOut() },
+            ])
+          }
+          activeOpacity={0.7}
+        >
+          <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>تسجيل الخروج</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}
@@ -200,7 +212,7 @@ const styles = StyleSheet.create({
   },
   profileZoneCenter: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
@@ -209,7 +221,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111827',
     marginBottom: 6,
-    textAlign: 'left'
+    textAlign: 'right'
   },
   premiumBadge: {
     flexDirection: 'row-reverse',
@@ -328,13 +340,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   menuItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
   },
   menuItemRight: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
   },
   menuItemText: {
@@ -343,7 +355,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   menuItemIcon: {
-    marginEnd: 12,
+    marginLeft: 12,
   },
   menuDivider: {
     height: 1,

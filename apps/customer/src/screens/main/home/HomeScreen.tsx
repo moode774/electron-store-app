@@ -11,10 +11,11 @@ import {
   Image,
   FlatList,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, useCartStore } from '@marketplace/shared-hooks';
-import { getFeaturedProducts, getCategories, getWishlist, addToWishlist, removeFromWishlist, ProductSummary, Category } from '@marketplace/shared-hooks';
+import { useAuthStore, useCartStore, supabase } from '@marketplace/shared-hooks';
+import { getFeaturedProducts, getCategories, getWishlist, addToWishlist, removeFromWishlist, getUnreadNotificationsCount, ProductSummary, Category } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HomeStackParamList } from '../../../navigation/types';
@@ -54,7 +55,9 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [wishedIds, setWishedIds] = useState<Set<string>>(new Set());
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const toggleWish = async (productId: string) => {
     if (!user?.id) return;
@@ -82,10 +85,31 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         const wl = await getWishlist(user.id);
         setWishedIds(new Set(wl.map((w) => w.product_id)));
       } catch { /* ignore */ }
+      getUnreadNotificationsCount(user.id).then(setUnreadCount).catch(() => {});
     }
   }, [user?.id]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  /*
+  useEffect(() => {
+    const channel = supabase.channel('home_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles' }, () => {
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
+  */
   // ──────────────────────────────────────────────────────
 
   return (
@@ -96,7 +120,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
       <View style={styles.headerRow}>
         <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7} onPress={() => (navigation as any).navigate('More', { screen: 'Notifications' })}>
           <Ionicons name="notifications-outline" size={24} color="#111827" />
-          <View style={styles.bellBadge} />
+          {unreadCount > 0 && <View style={styles.bellBadge} />}
         </TouchableOpacity>
 
         <Image
@@ -128,7 +152,11 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
 
         {/* Main Promo Banner Slider */}
         <View style={{ marginBottom: 16 }}>

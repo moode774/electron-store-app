@@ -85,6 +85,14 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={{ position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, left: 20, zIndex: 10, padding: 8, backgroundColor: '#FEF2F2', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          onPress={() => useAuthStore.getState().signOut()}
+        >
+          <Ionicons name="log-out-outline" size={18} color="#DC2626" />
+          <Text style={{color: '#DC2626', fontSize: 12, fontWeight: '700'}}>خروج</Text>
+        </TouchableOpacity>
+
         <View style={styles.headerIcon}>
           <Ionicons name="bicycle" size={28} color={COLORS.primary} />
         </View>
