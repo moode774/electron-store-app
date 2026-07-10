@@ -429,7 +429,14 @@ export async function createOrder(data: {
     .select('id, order_number')
     .single();
 
-  if (orderError) throw orderError;
+  if (orderError) {
+    // ترجمة حراسة توفّر المتجر إلى رسائل عربية واضحة للعميل
+    const msg = orderError.message ?? '';
+    if (msg.includes('MERCHANT_CLOSED')) throw new Error('هذا المتجر مغلق حالياً، حاول لاحقاً.');
+    if (msg.includes('MERCHANT_UNAVAILABLE') || msg.includes('MERCHANT_NOT_FOUND'))
+      throw new Error('هذا المتجر غير متاح حالياً لاستقبال الطلبات.');
+    throw orderError;
+  }
 
   const orderItems = data.items.map((item) => ({
     order_id: order.id,
