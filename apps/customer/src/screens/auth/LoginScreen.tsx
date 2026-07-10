@@ -60,9 +60,14 @@ export default function LoginScreen(): React.JSX.Element {
     const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
-    // يكمل تسجيل الدخول مباشرة؛ وإن كان الرقم جديداً يُنشأ حساب عميل تلقائياً
-    const { error } = await signInWithPhone(formatted);
-    if (error) {
+    // تسجيل الدخول يميّز الدور تلقائياً: أي حساب موجود (عميل/تاجر/مندوب/أدمن)
+    // يدخل مباشرة على واجهته الصحيحة عبر التوجيه في App.tsx — بلا إعادة تسجيل.
+    const { error, code } = await signInWithPhone(formatted);
+
+    if (!error) { setIsLoading(false); return; }   // نجح → App يوجّهه حسب دوره
+
+    if (code === 'not_found') {
+      // رقم غير مسجّل فقط → يُنشأ حساب عميل تلقائياً (التاجر/المندوب يسجّل من "حساب جديد")
       const { error: signUpError } = await signUp({
         phone: formatted,
         fullName: 'عميل جديد',
@@ -72,7 +77,10 @@ export default function LoginScreen(): React.JSX.Element {
       if (signUpError) showAlert('خطأ', signUpError);
       return;
     }
+
+    // خطأ فعلي (حساب محظور/موقوف/شبكة) → أظهره ولا تنشئ حساباً
     setIsLoading(false);
+    showAlert('تعذّر الدخول', error);
   };
 
   return (

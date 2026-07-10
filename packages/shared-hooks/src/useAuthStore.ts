@@ -14,7 +14,7 @@ interface AuthState {
 
   // Actions
   initialize: () => Promise<void>;
-  signInWithPhone: (phone: string) => Promise<{ error: string | null }>;
+  signInWithPhone: (phone: string) => Promise<{ error: string | null; code?: 'not_found' | 'other' }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: string | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (params: SignUpParams) => Promise<{ error: string | null }>;
@@ -86,15 +86,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   // تسجيل دخول مستخدم موجود برقم هاتفه (يكمل المصادقة مباشرة بدون OTP)
-  signInWithPhone: async (phone: string): Promise<{ error: string | null }> => {
+  // code: 'not_found' = لا حساب بهذا الرقم | 'other' = خطأ فعلي (شبكة/حظر...)
+  signInWithPhone: async (phone: string): Promise<{ error: string | null; code?: 'not_found' | 'other' }> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: phoneToEmail(phone),
       password: phoneToPassword(phone),
     });
     if (error) {
-      return { error: 'لا يوجد حساب بهذا الرقم، أو الرقم غير صحيح. الرجاء إنشاء حساب جديد.' };
+      // كلمة المرور مشتقّة من الرقم؛ لذا "Invalid login credentials" تعني أن الحساب غير موجود
+      const notFound = error.message.toLowerCase().includes('invalid login credentials');
+      return notFound
+        ? { error: 'لا يوجد حساب بهذا الرقم', code: 'not_found' }
+        : { error: error.message, code: 'other' };
     }
-    if (!data.session) return { error: 'فشل تسجيل الدخول' };
+    if (!data.session) return { error: 'فشل تسجيل الدخول', code: 'other' };
     set({ session: data.session });
     await get().refreshUser();
     const blockMsg = blockedMessage(get().user);
