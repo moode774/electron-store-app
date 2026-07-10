@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
+import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import DeliveryOffersScreen from '../screens/delivery/DeliveryOffersScreen';
 import ActiveDeliveryScreen from '../screens/delivery/ActiveDeliveryScreen';
 import EarningsScreen from '../screens/delivery/EarningsScreen';
@@ -16,6 +17,7 @@ import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 
 export type DeliveryAccountStackParamList = {
   AccountMain: undefined;
+  ApiKeys: undefined;
   DeliveryProfile: undefined;
   DeliveryZones: undefined;
   DeliveryWallet: undefined;
@@ -28,6 +30,7 @@ function AccountNavigator() {
   return (
     <AccountStack.Navigator screenOptions={{ headerShown: false }}>
       <AccountStack.Screen name="AccountMain" component={DeliveryAccountScreen} />
+      <AccountStack.Screen name="ApiKeys" component={ApiKeysScreen} />
       <AccountStack.Screen name="DeliveryProfile" component={DeliveryProfileScreen} />
       <AccountStack.Screen name="DeliveryZones" component={DeliveryZonesScreen} />
       <AccountStack.Screen name="DeliveryWallet" component={DeliveryWalletScreen} />

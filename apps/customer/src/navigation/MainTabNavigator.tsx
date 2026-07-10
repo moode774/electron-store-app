@@ -13,6 +13,7 @@ import {
 } from './types';
 
 // Screens
+import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import HomeScreen from '../screens/main/home/HomeScreen';
 import StoresListScreen from '../screens/main/home/StoresListScreen';
 import StoreDetailsScreen from '../screens/main/home/StoreDetailsScreen';
@@ -78,6 +79,7 @@ function AccountNavigator() {
   return (
     <AccountStack.Navigator screenOptions={{ headerShown: false }}>
       <AccountStack.Screen name="AccountMain" component={AccountScreen} />
+      <AccountStack.Screen name="ApiKeys" component={ApiKeysScreen} />
       <AccountStack.Screen name="AddressBook" component={AddressBookScreen} />
       <AccountStack.Screen name="AddAddress" component={AddAddressScreen} />
       <AccountStack.Screen name="Reviews" component={ReviewsScreen} />

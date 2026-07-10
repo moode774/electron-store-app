@@ -42,6 +42,14 @@ const MENU_ITEMS = [
     screen: 'AdminWallet' as keyof AdminMoreStackParamList,
   },
   {
+    title: 'مفاتيح API (ربط الذكاء الاصطناعي)',
+    description: 'إنشاء مفاتيح لربط النظام مع Claude أو أي نموذج AI',
+    icon: 'key',
+    color: '#1E3A8A',
+    bg: '#EEF2FF',
+    screen: 'ApiKeys' as keyof AdminMoreStackParamList,
+  },
+  {
     title: 'الدعم الفني والشكاوى',
     description: 'متابعة ومعالجة تذاكر دعم المستخدمين',
     icon: 'headset',

@@ -20,6 +20,7 @@ const MENU_ITEMS = [
   { id: '3', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
   { id: '4', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
   { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
+  { id: '6', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
 ];
 
 export default function DeliveryAccountScreen({ navigation }: any) {

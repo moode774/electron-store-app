@@ -30,6 +30,7 @@ const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof Accoun
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', route: 'Notifications' },
   { id: '6', title: 'التقييمات والمراجعات', icon: 'star-outline', route: 'Reviews' },
   { id: '7', title: 'مركز المساعدة', icon: 'headset-outline', route: 'HelpCenter' },
+  { id: '10', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', route: 'ApiKeys' },
   { id: '8', title: 'سياسة الخصوصية', icon: 'shield-checkmark-outline', route: 'Legal', params: { type: 'privacy' } },
   { id: '9', title: 'الشروط والأحكام', icon: 'document-text-outline', route: 'Legal', params: { type: 'terms' } },
 ];

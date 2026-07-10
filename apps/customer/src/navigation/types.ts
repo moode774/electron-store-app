@@ -22,6 +22,7 @@ export type OrdersStackParamList = {
 
 export type AccountStackParamList = {
   AccountMain: undefined;
+  ApiKeys: undefined;
   AddressBook: undefined;
   AddAddress: undefined;
   Reviews: undefined;

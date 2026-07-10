@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 
+import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import MerchantDashboardScreen from '../screens/merchant/MerchantDashboardScreen';
 import MerchantOrdersScreen from '../screens/merchant/MerchantOrdersScreen';
 import MerchantOrderDetailsScreen from '../screens/merchant/MerchantOrderDetailsScreen';
@@ -65,6 +66,7 @@ function ProductsNavigator() {
 
 export type MerchantAccountStackParamList = {
   AccountMain: undefined;
+  ApiKeys: undefined;
   StoreSettings: undefined;
   Reports: undefined;
   Wallet: undefined;
@@ -78,6 +80,7 @@ function AccountNavigator() {
   return (
     <AccountStack.Navigator screenOptions={{ headerShown: false }}>
       <AccountStack.Screen name="AccountMain" component={MerchantAccountScreen} />
+      <AccountStack.Screen name="ApiKeys" component={ApiKeysScreen} />
       <AccountStack.Screen name="StoreSettings" component={StoreSettingsScreen} />
       <AccountStack.Screen name="Reports" component={MerchantReportsScreen} />
       <AccountStack.Screen name="Wallet" component={MerchantWalletScreen} />

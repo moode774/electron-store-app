@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 
+import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import AdminMerchantsScreen from '../screens/admin/AdminMerchantsScreen';
 import AdminOrdersScreen from '../screens/admin/AdminOrdersScreen';
@@ -24,6 +25,7 @@ const A = { purple: '#7C3AED', purpleLight: '#EDE9FE', bg: '#F5F3FF', dark: '#11
 
 export type AdminMoreStackParamList = {
   AdminMoreMain: undefined;
+  ApiKeys: undefined;
   AdminDelivery: undefined;
   AdminWallet: undefined;
   AdminSupport: undefined;
@@ -39,6 +41,7 @@ function MoreNavigator() {
   return (
     <MoreStack.Navigator screenOptions={{ headerShown: false }}>
       <MoreStack.Screen name="AdminMoreMain" component={AdminMoreScreen} />
+      <MoreStack.Screen name="ApiKeys" component={ApiKeysScreen} />
       <MoreStack.Screen name="AdminDelivery" component={AdminDeliveryScreen} />
       <MoreStack.Screen name="AdminWallet" component={AdminWalletScreen} />
       <MoreStack.Screen name="AdminSupport" component={AdminSupportScreen} />

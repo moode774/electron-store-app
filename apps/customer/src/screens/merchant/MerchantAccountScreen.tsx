@@ -21,6 +21,7 @@ const MENU_ITEMS = [
   { id: '4', title: 'كوبونات المتجر', icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
   { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'Support', params: undefined },
+  { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
 ];
 
 export default function MerchantAccountScreen({ navigation }: any) {

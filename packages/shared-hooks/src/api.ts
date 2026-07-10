@@ -1536,6 +1536,52 @@ export async function getAdminUsers(role?: string): Promise<AdminUser[]> {
 }
 
 // ============================================================
+// مفاتيح API الشخصية — للربط مع Claude أو أي نموذج AI
+// ============================================================
+
+export interface ApiKeyInfo {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string[];
+  is_active: boolean;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+/** ينشئ مفتاحاً جديداً ويعيد المفتاح الكامل — يُعرض للمستخدم مرة واحدة فقط */
+export async function createApiKey(name: string, expiresDays?: number): Promise<{ id: string; key: string }> {
+  const { data, error } = await supabase.rpc('create_api_key', {
+    p_name: name,
+    p_expires_days: expiresDays ?? null,
+  });
+  if (error) throw error;
+  return data as { id: string; key: string };
+}
+
+export async function getMyApiKeys(): Promise<ApiKeyInfo[]> {
+  const { data, error } = await supabase.from('api_keys')
+    .select('id, name, key_prefix, scopes, is_active, last_used_at, expires_at, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as ApiKeyInfo[];
+}
+
+export async function revokeApiKey(keyId: string): Promise<void> {
+  const { error } = await supabase.from('api_keys').update({ is_active: false }).eq('id', keyId);
+  if (error) throw error;
+}
+
+export async function deleteApiKey(keyId: string): Promise<void> {
+  const { error } = await supabase.from('api_keys').delete().eq('id', keyId);
+  if (error) throw error;
+}
+
+/** عنوان الـ API الأساسي + مفتاح anon المطلوب في ترويسة Authorization */
+export const API_V1_URL = 'https://sghaihfjuttwqikdszgh.supabase.co/functions/v1/api-v1';
+
+// ============================================================
 // سيطرة الأدمن الكاملة على المستخدمين
 // ============================================================
 
