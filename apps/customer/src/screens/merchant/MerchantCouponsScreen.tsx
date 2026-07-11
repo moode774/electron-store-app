@@ -199,7 +199,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <View style={styles.detailChip}>
             <Ionicons name="pricetag-outline" size={13} color={UI.textGrey} />
             <Text style={styles.detailChipText}>
-              {item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.س`}
+              {item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.ي`}
             </Text>
           </View>
 
@@ -341,13 +341,13 @@ export default function MerchantCouponsScreen({ navigation }: any) {
                   onPress={() => setType('fixed')}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.typeBtnText, type === 'fixed' && styles.typeBtnTextActive]}>مبلغ ثابت ر.س</Text>
+                  <Text style={[styles.typeBtnText, type === 'fixed' && styles.typeBtnTextActive]}>مبلغ ثابت ر.ي</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Value */}
               <Text style={styles.fieldLabel}>
-                {type === 'percentage' ? 'نسبة الخصم (%) *' : 'مبلغ الخصم (ر.س) *'}
+                {type === 'percentage' ? 'نسبة الخصم (%) *' : 'مبلغ الخصم (ر.ي) *'}
               </Text>
               <TextInput
                 style={styles.input}

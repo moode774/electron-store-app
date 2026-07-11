@@ -119,7 +119,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           <View style={s.statDivider} />
           <View style={s.statItem}>
             <Text style={[s.statValue, { color: UI.success }]}>{item.wallet_balance.toFixed(2)}</Text>
-            <Text style={s.statLabel}>الرصيد المتاح (ر.س)</Text>
+            <Text style={s.statLabel}>الرصيد المتاح (ر.ي)</Text>
           </View>
         </View>
 

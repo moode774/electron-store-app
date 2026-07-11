@@ -232,7 +232,7 @@ export default function MerchantDashboardScreen() {
                 </View>
                 <TouchableOpacity style={styles.iconBtn}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
               </View>
-              <Text style={styles.chartTotalValue}>{chart.reduce((s, v) => s + v, 0).toLocaleString()} ر.س</Text>
+              <Text style={styles.chartTotalValue}>{chart.reduce((s, v) => s + v, 0).toLocaleString()} ر.ي</Text>
               <View style={{ marginTop: 20, alignItems: 'center' }}>
                  <LineChart w={col3Width - 48} h={80} points={chart} color={UI.primary} />
               </View>
@@ -289,7 +289,7 @@ export default function MerchantDashboardScreen() {
                        <Ionicons name={st.icon as any} size={10} color={st.color} />
                        <Text style={[styles.tdTextBold, { color: UI.textDark }]}>{st.label}</Text>
                     </View>
-                    <Text style={[styles.td, styles.tdTextBold, { flex: 2, textAlign: 'left' }]}>{order.total_amount} ر.س</Text>
+                    <Text style={[styles.td, styles.tdTextBold, { flex: 2, textAlign: 'left' }]}>{order.total_amount} ر.ي</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -308,7 +308,7 @@ export default function MerchantDashboardScreen() {
                       <Text style={styles.tdSub}>{d.toLocaleDateString('en-GB')}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-start' }}>
-                      <Text style={styles.tdTextBold}>{order.total_amount} ر.س</Text>
+                      <Text style={styles.tdTextBold}>{order.total_amount} ر.ي</Text>
                       <Text style={[styles.tdSub, { color: st.color }]}>{st.label}</Text>
                     </View>
                   </TouchableOpacity>

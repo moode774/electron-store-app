@@ -84,13 +84,13 @@ export default function AdminCouponsScreen({ navigation }: any) {
 
         <View style={s.detailsRow}>
           <Text style={s.detailLabel}>الخصم:</Text>
-          <Text style={s.detailValue}>{item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.س`}</Text>
+          <Text style={s.detailValue}>{item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.ي`}</Text>
         </View>
         
         {item.min_order_amount > 0 && (
           <View style={s.detailsRow}>
             <Text style={s.detailLabel}>الحد الأدنى:</Text>
-            <Text style={s.detailValue}>{item.min_order_amount} ر.س</Text>
+            <Text style={s.detailValue}>{item.min_order_amount} ر.ي</Text>
           </View>
         )}
 

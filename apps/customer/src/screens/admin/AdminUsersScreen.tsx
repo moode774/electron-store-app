@@ -243,7 +243,7 @@ export default function AdminUsersScreen() {
                   <Section title="الإحصائيات" icon="stats-chart-outline">
                     <View style={s.statsGrid}>
                       <StatBox label="الطلبات" value={String(st.orders_count)} />
-                      <StatBox label="إجمالي الإنفاق" value={`${Number(st.total_spent).toFixed(0)} ر.س`} />
+                      <StatBox label="إجمالي الإنفاق" value={`${Number(st.total_spent).toFixed(0)} ر.ي`} />
                       <StatBox label="طلبات ملغاة" value={String(st.cancelled_orders)} />
                       <StatBox label="التقييمات" value={String(st.reviews_count)} />
                       <StatBox label="الشكاوى" value={String(st.complaints_count)} />
@@ -258,7 +258,7 @@ export default function AdminUsersScreen() {
                     <InfoRow label="المتجر" value={details.profile.store_name} />
                     <InfoRow label="المدينة" value={details.profile.city ?? '—'} />
                     <InfoRow label="معتمد" value={details.profile.is_approved ? 'نعم' : 'لا'} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.س`} />
+                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
                   </Section>
                 )}
                 {details?.profile && selected.role === 'delivery' && (
@@ -268,13 +268,13 @@ export default function AdminUsersScreen() {
                     <InfoRow label="معتمد" value={details.profile.is_approved ? 'نعم' : 'لا'} />
                     <InfoRow label="متصل الآن" value={details.profile.is_online ? 'نعم' : 'لا'} />
                     <InfoRow label="التوصيلات" value={String(details.profile.total_deliveries ?? 0)} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.س`} />
+                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
                   </Section>
                 )}
                 {details?.profile && selected.role === 'customer' && (
                   <Section title="بيانات العميل" icon="person-outline">
                     <InfoRow label="نقاط الولاء" value={String(details.profile.loyalty_points ?? 0)} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.س`} />
+                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
                   </Section>
                 )}
 
@@ -374,8 +374,8 @@ export default function AdminUsersScreen() {
                       <Text style={s.activityAction}>
                         {ACTIVITY_LABELS[a.action] ?? a.action}
                         {a.details?.order_number ? ` (${a.details.order_number})` : ''}
-                        {a.details?.total ? ` — ${a.details.total} ر.س` : ''}
-                        {a.details?.amount ? ` — ${a.details.amount} ر.س` : ''}
+                        {a.details?.total ? ` — ${a.details.total} ر.ي` : ''}
+                        {a.details?.amount ? ` — ${a.details.amount} ر.ي` : ''}
                       </Text>
                     </View>
                   )) : <Text style={s.emptySmall}>لا توجد تحركات مسجلة بعد</Text>}
@@ -386,7 +386,7 @@ export default function AdminUsersScreen() {
                   {details?.recent_orders?.length ? details.recent_orders.map((o: any) => (
                     <View key={o.id} style={s.activityRow}>
                       <Text style={s.activityTime}>{o.status}</Text>
-                      <Text style={s.activityAction}>{o.order_number} — {o.total_amount} ر.س</Text>
+                      <Text style={s.activityAction}>{o.order_number} — {o.total_amount} ر.ي</Text>
                     </View>
                   )) : <Text style={s.emptySmall}>لا توجد طلبات</Text>}
                 </Section>
@@ -419,7 +419,7 @@ export default function AdminUsersScreen() {
                   {details?.wallet_transactions?.length ? details.wallet_transactions.map((w: any, i: number) => (
                     <View key={i} style={s.activityRow}>
                       <Text style={s.activityTime}>{fmtDate(w.created_at)}</Text>
-                      <Text style={s.activityAction}>{w.type === 'credit' ? '⬆️ إيداع' : '⬇️ خصم'} {w.amount} ر.س (الرصيد: {w.balance_after})</Text>
+                      <Text style={s.activityAction}>{w.type === 'credit' ? '⬆️ إيداع' : '⬇️ خصم'} {w.amount} ر.ي (الرصيد: {w.balance_after})</Text>
                     </View>
                   )) : <Text style={s.emptySmall}>لا توجد حركات</Text>}
                 </Section>

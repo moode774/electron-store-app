@@ -164,9 +164,9 @@ export default function MerchantReportsScreen({ navigation }: any) {
         `تقرير ${period.label} — ${new Date().toLocaleDateString('ar-SA')}`,
         '',
         'المبيعات والطلبات',
-        `إجمالي المبيعات,${periodStats.currentRevenue.toFixed(2)} ر.س`,
+        `إجمالي المبيعات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
         `إجمالي الطلبات,${periodStats.currentOrders}`,
-        `متوسط قيمة الطلب,${avgValue.toFixed(2)} ر.س`,
+        `متوسط قيمة الطلب,${avgValue.toFixed(2)} ر.ي`,
         `مكتملة,${periodStats.deliveredCount} (${deliveredPct}%)`,
         `قيد التنفيذ,${periodStats.inProgressCount} (${inProgressPct}%)`,
         `ملغاة,${periodStats.cancelledCount} (${cancelledPct}%)`,
@@ -179,7 +179,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         }),
         '',
         'مبيعات الفترة',
-        chartLabels.map((l, i) => `${l}: ${chartData[i]?.toFixed(2) ?? 0} ر.س`).join('\n'),
+        chartLabels.map((l, i) => `${l}: ${chartData[i]?.toFixed(2) ?? 0} ر.ي`).join('\n'),
       ];
       const csv = lines.join('\n');
 
@@ -265,7 +265,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           <View style={{ flex: 1 }}>
             <KPICard
               title="إجمالي المبيعات"
-              value={`${periodStats.currentRevenue.toLocaleString()} ر.س`}
+              value={`${periodStats.currentRevenue.toLocaleString()} ر.ي`}
               icon="wallet-outline"
               trend={revenueTrend.text}
               trendUp={revenueTrend.up}
@@ -285,7 +285,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           <View style={{ flex: 1 }}>
             <KPICard
               title="متوسط قيمة الطلب"
-              value={`${avgValue.toFixed(2)} ر.س`}
+              value={`${avgValue.toFixed(2)} ر.ي`}
               icon="bar-chart-outline"
               trend={avgTrend.text}
               trendUp={avgTrend.up}
@@ -366,7 +366,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
                     </View>
                   </View>
                   <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{p.total_sold}</Text>
-                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{rev.toLocaleString()} ر.س</Text>
+                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{rev.toLocaleString()} ر.ي</Text>
                   <View style={{ flex: 1.5, flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                     <View style={styles.progressTrack}>
                       <View style={[styles.progressFill, { width: `${progress}%` as any }]} />

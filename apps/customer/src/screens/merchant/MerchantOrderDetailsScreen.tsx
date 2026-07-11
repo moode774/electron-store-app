@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { ORDER_STATUS } from '@marketplace/shared-utils';
 import { getOrderById, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
@@ -202,10 +203,10 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.itemName}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
-                      <Text style={styles.itemMeta}>السعر: {item.unit_price} ر.س</Text>
+                      <Text style={styles.itemMeta}>السعر: {item.unit_price} ر.ي</Text>
                     </View>
                     <View style={{ alignItems: 'flex-start' }}>
-                      <Text style={styles.itemTotal}>{item.total_price} ر.س</Text>
+                      <Text style={styles.itemTotal}>{item.total_price} ر.ي</Text>
                       <Text style={styles.itemQtyBadge}>الكمية: {item.quantity}</Text>
                     </View>
                   </View>
@@ -266,16 +267,16 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                <View style={styles.summaryLines}>
                  <View style={styles.summaryLine}>
                    <Text style={styles.summaryLineLabel}>المجموع الفرعي</Text>
-                   <Text style={styles.summaryLineValue}>{subtotal} ر.س</Text>
+                   <Text style={styles.summaryLineValue}>{subtotal} ر.ي</Text>
                  </View>
                  <View style={styles.summaryLine}>
                    <Text style={styles.summaryLineLabel}>رسوم التوصيل</Text>
-                   <Text style={styles.summaryLineValue}>{deliveryFee} ر.س</Text>
+                   <Text style={styles.summaryLineValue}>{deliveryFee} ر.ي</Text>
                  </View>
                </View>
                <View style={styles.summaryTotalLine}>
                  <Text style={styles.summaryTotalLabel}>الإجمالي المستحق</Text>
-                 <Text style={styles.summaryTotalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} <Text style={{ fontSize: 14 }}>ر.س</Text></Text>
+                 <Text style={styles.summaryTotalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} <Text style={{ fontSize: 14 }}>ر.ي</Text></Text>
                </View>
              </View>
 

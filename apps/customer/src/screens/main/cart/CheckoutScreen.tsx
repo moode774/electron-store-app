@@ -285,7 +285,7 @@ export default function CheckoutScreen({ navigation }: any) {
           <TextInput style={[s.input, { marginBottom: 8 }]} placeholder="7xxxxxxxx" placeholderTextColor={UI.textMuted}
             value={walletPhone} onChangeText={setWalletPhone} keyboardType="phone-pad" textAlign="right" />
           <InfoBox icon="information-circle-outline" color={UI.purple} bg="#F5F3FF" border="#DDD6FE">
-            {`سيتم خصم ${finalTotal.toLocaleString()} ر.س من محفظتك الإلكترونية فور تأكيد الطلب`}
+            {`سيتم خصم ${finalTotal.toLocaleString()} ر.ي من محفظتك الإلكترونية فور تأكيد الطلب`}
           </InfoBox>
         </View>
       )}
@@ -301,7 +301,7 @@ export default function CheckoutScreen({ navigation }: any) {
             {'البنك: البنك اليمني للتجارة\nرقم الحساب: 1234-5678-9012\nالاسم: شركة المتجر'}
           </InfoBox>
           <InfoBox icon="time-outline" color={UI.red} bg="#FEF2F2" border="#FECACA" mt={8}>
-            {`حوّل ${finalTotal.toLocaleString()} ر.س ثم أكّد الطلب. سيُفعَّل خلال ساعة من التحقق.`}
+            {`حوّل ${finalTotal.toLocaleString()} ر.ي ثم أكّد الطلب. سيُفعَّل خلال ساعة من التحقق.`}
           </InfoBox>
         </View>
       )}
@@ -335,20 +335,20 @@ export default function CheckoutScreen({ navigation }: any) {
           <Text style={s.storeGroupName}>{storeItems[0]?.storeName || 'المتجر'}</Text>
           {storeItems.map((item) => (
             <View key={item.id} style={s.sumItem}>
-              <Text style={s.sumItemPrice}>{(item.price * item.quantity).toLocaleString()} ر.س</Text>
+              <Text style={s.sumItemPrice}>{(item.price * item.quantity).toLocaleString()} ر.ي</Text>
               <Text style={s.sumItemName} numberOfLines={1}>{item.name} × {item.quantity}</Text>
             </View>
           ))}
         </View>
       ))}
       <View style={s.divider} />
-      <SumRow label="المجموع الفرعي" value={`${cartTotal.toLocaleString()} ر.س`} />
+      <SumRow label="المجموع الفرعي" value={`${cartTotal.toLocaleString()} ر.ي`} />
       <SumRow label={`رسوم التوصيل${storeCount > 1 ? ` (${storeCount} متاجر × ${deliveryFee})` : ''}`}
-              value={`${totalDeliveryFees.toLocaleString()} ر.س`} />
-      {discount > 0 && <SumRow label="خصم الكوبون" value={`- ${discount.toLocaleString()} ر.س`} green />}
+              value={`${totalDeliveryFees.toLocaleString()} ر.ي`} />
+      {discount > 0 && <SumRow label="خصم الكوبون" value={`- ${discount.toLocaleString()} ر.ي`} green />}
       <View style={s.divider} />
       <View style={s.totalRow}>
-        <Text style={s.totalVal}>{finalTotal.toLocaleString()} ر.س</Text>
+        <Text style={s.totalVal}>{finalTotal.toLocaleString()} ر.ي</Text>
         <Text style={s.totalLbl}>الإجمالي المطلوب</Text>
       </View>
     </View>
@@ -364,7 +364,7 @@ export default function CheckoutScreen({ navigation }: any) {
       {placing
         ? <ActivityIndicator color="#FFF" />
         : <>
-            <Text style={s.confirmTotal}>{finalTotal.toLocaleString()} ر.س</Text>
+            <Text style={s.confirmTotal}>{finalTotal.toLocaleString()} ر.ي</Text>
             <Text style={s.confirmTxt}>تأكيد الطلب</Text>
           </>}
     </TouchableOpacity>

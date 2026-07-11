@@ -47,11 +47,11 @@ export default function MerchantWalletScreen({ navigation }: any) {
       return;
     }
     if (amount > balance) {
-      Alert.alert('تنبيه', `المبلغ المطلوب يتجاوز رصيدك المتاح (${balance.toLocaleString()} ر.س)`);
+      Alert.alert('تنبيه', `المبلغ المطلوب يتجاوز رصيدك المتاح (${balance.toLocaleString()} ر.ي)`);
       return;
     }
     if (amount < 50) {
-      Alert.alert('تنبيه', 'الحد الأدنى للسحب 50 ر.س');
+      Alert.alert('تنبيه', 'الحد الأدنى للسحب 50 ر.ي');
       return;
     }
     if (!user?.id) return;
@@ -61,7 +61,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
       setShowWithdrawModal(false);
       Alert.alert(
         'تم إرسال طلب السحب ✅',
-        `سيتم تحويل ${amount.toLocaleString()} ر.س إلى حسابك البنكي خلال 3-5 أيام عمل.`,
+        `سيتم تحويل ${amount.toLocaleString()} ر.ي إلى حسابك البنكي خلال 3-5 أيام عمل.`,
         [{ text: 'حسناً' }]
       );
       loadData();
@@ -98,7 +98,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               {/* Balance Card */}
               <View style={styles.balanceCard}>
                 <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
-                <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.س</Text>
+                <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
                 <Text style={styles.balanceNote}>يشمل الأرباح المؤكدة من الطلبات المكتملة</Text>
                 <TouchableOpacity
                   style={[styles.withdrawBtn, balance < 50 && { opacity: 0.5 }]}
@@ -110,7 +110,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.withdrawBtnText}>طلب سحب</Text>
                 </TouchableOpacity>
                 {balance < 50 && (
-                  <Text style={styles.minNote}>الحد الأدنى للسحب 50 ر.س</Text>
+                  <Text style={styles.minNote}>الحد الأدنى للسحب 50 ر.ي</Text>
                 )}
               </View>
 
@@ -135,7 +135,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
                 </View>
                 <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>
-                  {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.س
+                  {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.ي
                 </Text>
               </View>
             );
@@ -172,11 +172,11 @@ export default function MerchantWalletScreen({ navigation }: any) {
 
             <View style={styles.modalBalanceRow}>
               <Text style={styles.modalBalanceLabel}>الرصيد المتاح</Text>
-              <Text style={styles.modalBalanceValue}>{balance.toLocaleString()} ر.س</Text>
+              <Text style={styles.modalBalanceValue}>{balance.toLocaleString()} ر.ي</Text>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>المبلغ المطلوب (ر.س) *</Text>
+              <Text style={styles.inputLabel}>المبلغ المطلوب (ر.ي) *</Text>
               <TextInput
                 style={styles.inputBox}
                 placeholder="أدخل المبلغ"

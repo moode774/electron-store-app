@@ -181,7 +181,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // دخول الأدمن بجلسة Supabase حقيقية حتى تعمل سياسات RLS الإدارية (is_admin)
   signInAsAdmin: async (): Promise<{ error: string | null }> => {
-    const { error } = await get().signInWithPhone('+966509999999');
+    const { error } = await get().signInWithPhone('+967509999999');
     if (error) return { error: 'تعذر تسجيل دخول المدير. تأكد من وجود حساب الأدمن في قاعدة البيانات.' };
     return { error: null };
   },

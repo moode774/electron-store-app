@@ -65,7 +65,7 @@ export default function CartScreen({ navigation }: any) {
                   </View>
                   
                   <View style={styles.itemBottomRow}>
-                    <Text style={styles.itemPrice}>{item.price} ر.س</Text>
+                    <Text style={styles.itemPrice}>{item.price} ر.ي</Text>
                     
                     <View style={styles.quantityWrap}>
                       <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, item.quantity - 1)}>
@@ -88,7 +88,7 @@ export default function CartScreen({ navigation }: any) {
       <View style={styles.bottomBar}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>الإجمالي المبدئي</Text>
-          <Text style={styles.summaryValue}>{totalPrice} ر.س</Text>
+          <Text style={styles.summaryValue}>{totalPrice} ر.ي</Text>
         </View>
         <TouchableOpacity 
           style={styles.checkoutBtn}

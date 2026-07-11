@@ -84,7 +84,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       <View key={item.id} style={s.tableRow}>
          <Text style={s.tdAction}><Ionicons name="ellipsis-horizontal" size={20} color="#9CA3AF" /></Text>
          <Text style={s.td}>{date}</Text>
-         <Text style={s.td}>{item.total_amount?.toFixed(2)} ر.س</Text>
+         <Text style={s.td}>{item.total_amount?.toFixed(2)} ر.ي</Text>
          <Text style={[s.td, { color: statusColor, fontWeight: '700' }]}>{statusLabel}</Text>
          <Text style={s.td}>{item.drivers?.full_name ?? '—'}</Text>
          <Text style={s.td}>{item.merchant_profiles?.store_name ?? '—'}</Text>
@@ -255,7 +255,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <View style={s.quickRow}>
                    <View style={[s.quickIcon, { backgroundColor: '#ECFDF5' }]}><Ionicons name="stats-chart" size={16} color="#10B981" /></View>
                    <Text style={s.quickLabel}>متوسط قيمة الطلب</Text>
-                   <Text style={s.quickValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} ر.س</Text>
+                   <Text style={s.quickValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} ر.ي</Text>
                 </View>
                 <View style={s.quickDivider} />
                 <View style={s.quickRow}>

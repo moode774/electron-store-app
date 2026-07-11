@@ -121,7 +121,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
             </View>
             <View style={{ alignItems: 'flex-start' }}>
                <Text style={[styles.amountText, item.status === ORDER_STATUS.CANCELLED && styles.amountCancelled]}>
-                 {item.total_amount} <Text style={{ fontSize: 12 }}>ر.س</Text>
+                 {item.total_amount} <Text style={{ fontSize: 12 }}>ر.ي</Text>
                </Text>
                <View style={styles.statusWrap}>
                  <Ionicons name={info.icon as any} size={14} color={info.color} />
@@ -172,7 +172,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
              <View style={styles.statsRow}>
                 <View style={styles.statBox}>
                   <Text style={styles.statLabel}>إجمالي المحصل</Text>
-                  <Text style={styles.statValueGreen}>{totalDelivered} ر.س</Text>
+                  <Text style={styles.statValueGreen}>{totalDelivered} ر.ي</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statBox}>

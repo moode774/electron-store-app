@@ -68,7 +68,7 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject 
             </View>
             <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }]}>
               <Text style={styles.amountLabel}>أجر التوصيل المتوقع:</Text>
-              <Text style={styles.amountValue}>{order.delivery_fee ?? 0} ر.س</Text>
+              <Text style={styles.amountValue}>{order.delivery_fee ?? 0} ر.ي</Text>
             </View>
           </View>
 

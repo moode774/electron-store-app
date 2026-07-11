@@ -283,7 +283,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                       >
                         <Ionicons name="cart-outline" size={18} color="#111827" />
                       </TouchableOpacity>
-                      <Text style={styles.priceText}>{price} <Text style={styles.currency}>ر.س</Text></Text>
+                      <Text style={styles.priceText}>{price} <Text style={styles.currency}>ر.ي</Text></Text>
                     </View>
                   </View>
                 </TouchableOpacity>

@@ -57,7 +57,7 @@ export default function LoginScreen(): React.JSX.Element {
       return;
     }
 
-    const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
+    const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
     // تسجيل الدخول يميّز الدور تلقائياً: أي حساب موجود (عميل/تاجر/مندوب/أدمن)
@@ -129,7 +129,7 @@ export default function LoginScreen(): React.JSX.Element {
           <View style={styles.formContainer}>
             <View style={styles.inputRow}>
               <TouchableOpacity style={styles.countryCodeBox} activeOpacity={0.7}>
-                <Text style={styles.countryCodeText}>+966</Text>
+                <Text style={styles.countryCodeText}>+967</Text>
                 <Ionicons name="chevron-down" size={16} color="#111827" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
 

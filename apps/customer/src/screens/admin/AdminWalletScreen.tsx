@@ -103,7 +103,7 @@ export default function AdminWalletScreen({ navigation }: any) {
 
         <View style={s.amountBox}>
           <View style={s.amountRow}>
-            <Text style={s.amountText}>{item.amount.toFixed(2)} ر.س</Text>
+            <Text style={s.amountText}>{item.amount.toFixed(2)} ر.ي</Text>
             <Ionicons name="wallet" size={24} color={UI.primary} />
           </View>
           <Text style={s.dateText}>{date}</Text>
@@ -151,7 +151,7 @@ export default function AdminWalletScreen({ navigation }: any) {
             <Text style={s.headerTitle}>طلبات السحب</Text>
           </View>
           <View style={s.headerBadge}>
-            <Text style={s.headerBadgeText}>{totalPending.toFixed(0)} ر.س معلق</Text>
+            <Text style={s.headerBadgeText}>{totalPending.toFixed(0)} ر.ي معلق</Text>
           </View>
         </View>
       </View>
@@ -201,8 +201,8 @@ export default function AdminWalletScreen({ navigation }: any) {
             </View>
             <Text style={s.modalSub}>
               {modalAction === 'approved'
-                ? `هل أنت متأكد من الموافقة على سحب مبلغ ${selectedRequest?.amount.toFixed(2)} ر.س؟`
-                : `سيتم رفض طلب سحب مبلغ ${selectedRequest?.amount.toFixed(2)} ر.س، هل أنت متأكد؟`}
+                ? `هل أنت متأكد من الموافقة على سحب مبلغ ${selectedRequest?.amount.toFixed(2)} ر.ي؟`
+                : `سيتم رفض طلب سحب مبلغ ${selectedRequest?.amount.toFixed(2)} ر.ي، هل أنت متأكد؟`}
             </Text>
             
             <View style={s.inputWrapper}>

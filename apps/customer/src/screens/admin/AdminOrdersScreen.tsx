@@ -97,8 +97,8 @@ export default function AdminOrdersScreen({ navigation }: any) {
 
         <View style={s.cardBottom}>
           <View style={s.amountWrap}>
-            <Text style={s.totalAmount}>{item.total_amount?.toFixed(2)} ر.س</Text>
-            <Text style={s.deliveryFee}>التوصيل: {item.delivery_fee?.toFixed(2) ?? '0.00'} ر.س</Text>
+            <Text style={s.totalAmount}>{item.total_amount?.toFixed(2)} ر.ي</Text>
+            <Text style={s.deliveryFee}>التوصيل: {item.delivery_fee?.toFixed(2) ?? '0.00'} ر.ي</Text>
           </View>
           <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)}>
              <Text style={s.viewDetailsText}>التفاصيل</Text>
@@ -175,8 +175,8 @@ export default function AdminOrdersScreen({ navigation }: any) {
                 <View style={s.detailBlock}><Text style={s.detailLbl}>المتجر</Text><Text style={s.detailVal}>{selected.merchant_profiles?.store_name ?? '—'}</Text></View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>العميل</Text><Text style={s.detailVal}>{(selected.users as any)?.full_name ?? '—'}</Text></View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>العنوان</Text><Text style={s.detailVal}>{selected.addresses?.full_address ?? selected.addresses?.city ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المبلغ الإجمالي</Text><Text style={s.detailVal}>{selected.total_amount?.toFixed(2)} ر.س</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>رسوم التوصيل</Text><Text style={s.detailVal}>{selected.delivery_fee?.toFixed(2) ?? '0.00'} ر.س</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>المبلغ الإجمالي</Text><Text style={s.detailVal}>{selected.total_amount?.toFixed(2)} ر.ي</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>رسوم التوصيل</Text><Text style={s.detailVal}>{selected.delivery_fee?.toFixed(2) ?? '0.00'} ر.ي</Text></View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>طريقة الدفع</Text><Text style={s.detailVal}>{selected.payment_method ?? '—'}</Text></View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>التاريخ</Text><Text style={s.detailVal}>{new Date(selected.created_at).toLocaleString('ar-SA')}</Text></View>
                 {selected.notes ? <View style={s.detailBlock}><Text style={s.detailLbl}>ملاحظات</Text><Text style={s.detailVal}>{selected.notes}</Text></View> : null}

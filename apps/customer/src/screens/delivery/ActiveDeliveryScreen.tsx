@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, ActivityIndicator } from 'react-native';
+import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, getDeliveryOrders, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
@@ -218,7 +219,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
           <View style={styles.codBox}>
             <Text style={styles.codLabel}>💵 المبلغ المطلوب تحصيله (COD)</Text>
-            <Text style={styles.codValue}>{ORDER.codAmount} ر.س</Text>
+            <Text style={styles.codValue}>{ORDER.codAmount} ر.ي</Text>
           </View>
         </View>
       </ScrollView>

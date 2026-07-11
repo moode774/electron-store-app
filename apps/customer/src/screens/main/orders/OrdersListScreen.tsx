@@ -62,7 +62,7 @@ export default function OrdersListScreen({ navigation }: any) {
           </View>
           <View style={styles.orderFooter}>
             <Text style={styles.orderDate}>{date}</Text>
-            <Text style={styles.orderTotal}>{item.total_amount ?? 0} ر.س</Text>
+            <Text style={styles.orderTotal}>{item.total_amount ?? 0} ر.ي</Text>
           </View>
           {item.status === ORDER_STATUS.DELIVERED && (
             <TouchableOpacity style={styles.reorderBtn} onPress={() => reorder(item.id, storeName)} activeOpacity={0.8}>

@@ -73,7 +73,7 @@ export default function RegisterScreen(): React.JSX.Element {
       Alert.alert('تنبيه', 'الرجاء إدخال رقم جوال صحيح');
       return;
     }
-    const formatted = cleaned.startsWith('+') ? cleaned : `+966${cleaned.replace(/^0/, '')}`;
+    const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
     // ينشئ الحساب ويدخل مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
@@ -292,7 +292,7 @@ export default function RegisterScreen(): React.JSX.Element {
                   <View style={styles.inputWrapper}>
                     <View style={styles.countryCodeBox}>
                       <Text style={styles.flagEmoji}>🇸🇦</Text>
-                      <Text style={styles.countryCodeText}>+966</Text>
+                      <Text style={styles.countryCodeText}>+967</Text>
                     </View>
                     <View style={styles.verticalDivider} />
                     <TextInput

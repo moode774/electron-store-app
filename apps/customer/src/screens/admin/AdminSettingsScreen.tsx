@@ -145,11 +145,11 @@ export default function AdminSettingsScreen({ navigation }: any) {
             <Text style={s.cardTitle}>التحكم بالإيرادات والرسوم</Text>
             {renderSettingRow('app_commission_percent', 'نسبة عمولة التطبيق', 'pie-chart', '%')}
             <View style={s.divider} />
-            {renderSettingRow('delivery_fee', 'رسوم التوصيل الافتراضية', 'bicycle', 'ر.س')}
+            {renderSettingRow('delivery_fee', 'رسوم التوصيل الافتراضية', 'bicycle', 'ر.ي')}
             <View style={s.divider} />
             {renderSettingRow('tax_percent', 'ضريبة القيمة المضافة', 'receipt', '%')}
             <View style={s.divider} />
-            {renderSettingRow('min_order_amount', 'الحد الأدنى للطلب', 'cart', 'ر.س')}
+            {renderSettingRow('min_order_amount', 'الحد الأدنى للطلب', 'cart', 'ر.ي')}
           </View>
         ) : (
           areasLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :

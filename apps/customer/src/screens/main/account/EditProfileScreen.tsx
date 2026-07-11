@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, updateUserProfile } from '@marketplace/shared-hooks';
@@ -63,7 +64,7 @@ export default function EditProfileScreen({ navigation }: any) {
         {/* Phone (read-only) */}
         <Text style={styles.label}>رقم الجوال</Text>
         <View style={styles.phoneBox}>
-          <Text style={styles.phoneText}>{user?.phone ?? '+966xxxxxxxxx'}</Text>
+          <Text style={styles.phoneText}>{user?.phone ?? '+967xxxxxxxxx'}</Text>
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={14} color="#059669" />
             <Text style={styles.verifiedText}>موثّق</Text>

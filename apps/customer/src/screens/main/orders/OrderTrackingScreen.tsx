@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { Alert } from '../../../components/appAlert';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, CancellationReason, OrderDetail } from '@marketplace/shared-hooks';
 
@@ -148,7 +149,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Order Info Summary */}
         <View style={styles.infoCard}>
           <Text style={styles.orderId}>طلب رقم: {order?.order_number ?? orderId}</Text>
-          <Text style={styles.estimatedTime}>المبلغ الإجمالي: {order?.total_amount ?? 0} ر.س</Text>
+          <Text style={styles.estimatedTime}>المبلغ الإجمالي: {order?.total_amount ?? 0} ر.ي</Text>
         </View>
 
         {/* إلغاء الطلب */}

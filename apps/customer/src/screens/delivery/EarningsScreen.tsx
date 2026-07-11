@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, StatusBar, Platform, ActivityIndicator, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, StatusBar, Platform, ActivityIndicator, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
@@ -33,7 +34,7 @@ export default function EarningsScreen() {
       await requestWithdrawal(amount, user.id);
       setShowWithdraw(false);
       setWithdrawAmount('');
-      Alert.alert('تم الطلب ✅', `تم إرسال طلب سحب ${amount} ر.س وسيتم معالجته خلال 1-3 أيام عمل.`);
+      Alert.alert('تم الطلب ✅', `تم إرسال طلب سحب ${amount} ر.ي وسيتم معالجته خلال 1-3 أيام عمل.`);
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال طلب السحب');
     } finally {
@@ -53,10 +54,10 @@ export default function EarningsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
-            <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: '#111827' }}>{balance} ر.س</Text></Text>
+            <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: '#111827' }}>{balance} ر.ي</Text></Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="المبلغ المراد سحبه (ر.س)"
+              placeholder="المبلغ المراد سحبه (ر.ي)"
               placeholderTextColor="#9CA3AF"
               value={withdrawAmount}
               onChangeText={setWithdrawAmount}
@@ -94,7 +95,7 @@ export default function EarningsScreen() {
             {/* Summary Card */}
             <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>رصيد المحفظة</Text>
-              <Text style={styles.summaryValue}>{balance} ر.س</Text>
+              <Text style={styles.summaryValue}>{balance} ر.ي</Text>
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryItemValue}>{history.length}</Text>
@@ -134,7 +135,7 @@ export default function EarningsScreen() {
               <Text style={styles.route}>توصيلة مكتملة</Text>
               <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
-            <Text style={styles.fee}>+{item.total_earning} ر.س</Text>
+            <Text style={styles.fee}>+{item.total_earning} ر.ي</Text>
           </View>
         )}
       />

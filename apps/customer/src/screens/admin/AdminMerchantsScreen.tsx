@@ -159,7 +159,7 @@ export default function AdminMerchantsScreen() {
           </View>
           <View style={s.metaItem}>
             <View style={[s.metaIconBox, { backgroundColor: '#ECFDF5' }]}><Ionicons name="wallet" size={14} color={UI.success} /></View>
-            <Text style={[s.metaText, { color: UI.success, fontWeight: '800' }]}>{(item.wallet_balance || 0).toFixed(2)} ر.س</Text>
+            <Text style={[s.metaText, { color: UI.success, fontWeight: '800' }]}>{(item.wallet_balance || 0).toFixed(2)} ر.ي</Text>
           </View>
           {item.is_approved && (
             <View style={[s.metaItem, item.is_active ? s.activePill : s.inactivePill]}>

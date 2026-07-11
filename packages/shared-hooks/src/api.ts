@@ -407,56 +407,33 @@ export async function createOrder(data: {
     product_name?: string;
   }[];
 }): Promise<{ id: string; order_number: string }> {
-  const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+  // عملية ذرّية واحدة: إنشاء الطلب + عناصره + خصم المخزون في معاملة واحدة
+  // (RPC create_order_with_items، SECURITY DEFINER). يمنع الطلبات الناقصة
+  // إذا فشلت أي خطوة، ويتحقق من الهوية والمخزون وحالة المتجر (عبر trigger الحراسة).
+  const { data: rows, error } = await supabase.rpc('create_order_with_items', {
+    p_customer_id: data.customer_id,
+    p_merchant_id: data.merchant_id,
+    p_address_id: data.address_id,
+    p_subtotal: data.subtotal,
+    p_delivery_fee: data.delivery_fee,
+    p_discount_amount: data.discount_amount,
+    p_tax_amount: data.tax_amount,
+    p_total_amount: data.total_amount,
+    p_payment_method: data.payment_method,
+    p_notes: data.notes ?? null,
+    p_items: data.items,
+  });
 
-  const { data: order, error: orderError } = await supabase
-    .from(TABLES.ORDERS)
-    .insert({
-      order_number: orderNumber,
-      customer_id: data.customer_id,
-      merchant_id: data.merchant_id,
-      address_id: data.address_id,
-      subtotal: data.subtotal,
-      delivery_fee: data.delivery_fee,
-      discount_amount: data.discount_amount,
-      tax_amount: data.tax_amount,
-      total_amount: data.total_amount,
-      payment_method: data.payment_method,
-      notes: data.notes,
-      status: 'pending',
-      payment_status: 'pending',
-    })
-    .select('id, order_number')
-    .single();
-
-  if (orderError) {
-    // ترجمة حراسة توفّر المتجر إلى رسائل عربية واضحة للعميل
-    const msg = orderError.message ?? '';
+  if (error) {
+    const msg = error.message ?? '';
     if (msg.includes('MERCHANT_CLOSED')) throw new Error('هذا المتجر مغلق حالياً، حاول لاحقاً.');
     if (msg.includes('MERCHANT_UNAVAILABLE') || msg.includes('MERCHANT_NOT_FOUND'))
       throw new Error('هذا المتجر غير متاح حالياً لاستقبال الطلبات.');
-    throw orderError;
+    if (msg.includes('المخزون')) throw new Error('نفدت كمية أحد المنتجات. حدّث السلة وحاول مجدداً.');
+    throw error;
   }
 
-  const orderItems = data.items.map((item) => ({
-    order_id: order.id,
-    product_id: item.product_id,
-    product_name: item.product_name ?? '',
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.total_price,
-  }));
-
-  const { error: itemsError } = await supabase.from(TABLES.ORDER_ITEMS).insert(orderItems);
-  if (itemsError) throw itemsError;
-
-  // خصم المخزون وزيادة المبيعات لكل منتج (عبر دالة آمنة تتجاوز RLS)
-  await Promise.all(
-    data.items.map((item) =>
-      supabase.rpc('decrement_product_stock', { p_id: item.product_id, p_qty: item.quantity })
-    )
-  );
-
+  const order = Array.isArray(rows) ? rows[0] : rows;
   return order as { id: string; order_number: string };
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { ORDER_STATUS } from '@marketplace/shared-utils';
 import { useAuthStore, getMerchantOrders, updateOrderStatus, OrderSummary } from '@marketplace/shared-hooks';
@@ -137,7 +138,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.total}>{item.total_amount ?? 0} <Text style={styles.currency}>ر.س</Text></Text>
+          <Text style={styles.total}>{item.total_amount ?? 0} <Text style={styles.currency}>ر.ي</Text></Text>
           <View style={styles.actionsRow}>
             {item.status === ORDER_STATUS.PENDING && (
               <TouchableOpacity

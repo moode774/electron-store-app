@@ -246,7 +246,7 @@ export default function AddProductScreen({ navigation }: any) {
               <View style={[styles.row, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
                 <View style={{ flex: 1 }}>
                   <FormInput
-                    label="السعر (ر.س) *"
+                    label="السعر (ر.ي) *"
                     placeholder="0.00"
                     icon="cash-outline"
                     keyboardType="numeric"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Share } from 'react-native';
+import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -102,7 +103,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.س`, title: PRODUCT.name })}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })}>
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist}>
@@ -142,7 +143,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           <Text style={styles.productName}>{PRODUCT.name}</Text>
           
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.س</Text></Text>
+            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.ي</Text></Text>
             {PRODUCT.oldPrice ? (
               <>
                 <Text style={styles.oldPrice}>{PRODUCT.oldPrice}</Text>
@@ -248,7 +249,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         >
           <Text style={styles.addToCartText}>{PRODUCT.hasStock ? 'إضافة للسلة' : 'نفد المخزون'}</Text>
           <View style={styles.addToCartPriceBox}>
-            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.س</Text>
+            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.ي</Text>
           </View>
         </TouchableOpacity>
       </View>
