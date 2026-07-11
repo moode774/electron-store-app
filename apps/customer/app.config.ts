@@ -8,7 +8,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   scheme: 'marketplace-customer',
   userInterfaceStyle: 'light',
+  icon: './assets/icon.png',
   splash: {
+    image: './assets/splash.png',
     resizeMode: 'contain',
     backgroundColor: '#1B2B4B'
   },
@@ -23,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#1B2B4B'
     },
     package: 'com.marketplace.customer',
@@ -37,7 +40,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ]
   },
   web: {
-    bundler: 'metro'
+    bundler: 'metro',
+    favicon: './assets/favicon.png'
   },
   plugins: [
     'expo-localization',
