@@ -1,387 +1,360 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-  Platform,
-  Image,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
+  ActivityIndicator, Image, Platform, RefreshControl, ScrollView, StatusBar,
+  StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, TextInput
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, useCartStore, supabase } from '@marketplace/shared-hooks';
-import { getFeaturedProducts, getCategories, getWishlist, addToWishlist, removeFromWishlist, getUnreadNotificationsCount, ProductSummary, Category } from '@marketplace/shared-hooks';
-import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  addToWishlist, Category, getCategories, getFeaturedProducts,
+  getUnreadNotificationsCount, getWishlist, ProductSummary, removeFromWishlist,
+  useAuthStore, useCartStore,
+} from '@marketplace/shared-hooks';
 import { HomeStackParamList } from '../../../navigation/types';
 
-const { width } = Dimensions.get('window');
+type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
+type Props = { navigation: Navigation };
 
-const FEATURES = [
-  { id: '1', title: 'ضمان جودة', subtitle: 'منتجات أصلية\n100%', icon: 'shield-checkmark', bgColor: '#ECFDF5', iconColor: '#059669' },
-  { id: '2', title: 'شحن سريع', subtitle: 'توصيل خلال\n24-48 ساعة', icon: 'bus', bgColor: '#EFF6FF', iconColor: '#3B82F6' },
-  { id: '3', title: 'عروض حصرية', subtitle: 'خصومات تصل إلى\n50%', icon: 'gift', bgColor: '#FFF7ED', iconColor: '#D97706' },
+const FALLBACK_CATEGORIES = [
+  { id: 'sports', name: 'الرياضة', icon: 'barbell-outline' },
+  { id: 'accessories', name: 'الإكسسوارات', icon: 'glasses-outline' },
+  { id: 'bags', name: 'الحقائب', icon: 'briefcase-outline' },
+  { id: 'shoes', name: 'الأحذية', icon: 'footsteps-outline' },
+  { id: 'clothing', name: 'الملابس', icon: 'shirt-outline' },
+  { id: 'perfumes', name: 'العطور', icon: 'color-wand-outline' },
+  { id: 'watches', name: 'الساعات', icon: 'watch-outline' },
+  { id: 'electronics', name: 'الإلكترونيات', icon: 'headset-outline' },
 ];
 
-const PROMO_BANNERS = [
-  { id: '1', image: require('../../../../assets/images/banners/banner1.png') },
-  { id: '2', image: require('../../../../assets/images/banners/banner2.png') },
-  { id: '3', image: require('../../../../assets/images/banners/banner3.png') },
-  { id: '4', image: require('../../../../assets/images/banners/banner4.png') },
-  { id: '5', image: require('../../../../assets/images/banners/banner5.png') },
+const BENEFITS = [
+  { icon: 'shield-checkmark-outline', title: 'دفع آمن 100%', detail: 'حماية بياناتك' },
+  { icon: 'car-outline', title: 'توصيل سريع', detail: 'خلال 24 ساعة' },
+  { icon: 'refresh-outline', title: 'إرجاع سهل', detail: '14 يوم استرجاع' },
+  { icon: 'ribbon-outline', title: 'منتجات أصلية', detail: '100% مضمونة' },
+  { icon: 'headset-outline', title: 'دعم عملاء 24/7', detail: 'نحن هنا لمساعدتك' },
 ];
-
-// أيقونات احتياطية للتصنيفات
-const CAT_ICON_FALLBACK = [
-  'headset-outline', 'sparkles-outline', 'shirt-outline',
-  'color-wand-outline', 'game-controller-outline', 'grid-outline',
-];
-
-type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
-interface Props { navigation: HomeScreenNavigationProp; }
 
 export default function HomeScreen({ navigation }: Props): React.JSX.Element {
-  const user = useAuthStore((s) => s.user);
-  const addToCart = useCartStore((s) => s.addToCart);
-  const [search, setSearch] = useState('');
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  // ─── بيانات من Supabase ────────────────────────────────
+  const { width } = useWindowDimensions();
+  const desktop = width >= 880;
+  const contentWidth = Math.min(width, 1320);
+  const gutter = desktop ? 36 : 18;
+  const productColumns = desktop ? (width >= 1180 ? 4 : 3) : 2;
+  // Account for sidebar width if desktop and wide enough
+  const hasSidebar = desktop && width >= 1024;
+  const mainContentWidth = hasSidebar ? (contentWidth - 280 - gutter * 3) : (contentWidth - gutter * 2);
+  const productWidth = (mainContentWidth - (productColumns - 1) * 16) / productColumns;
+  
+  const user = useAuthStore((state) => state.user);
+  const cartCount = useCartStore((state) => state.items.reduce((total, item) => total + item.quantity, 0));
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [wishedIds, setWishedIds] = useState<Set<string>>(new Set());
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const toggleWish = async (productId: string) => {
-    if (!user?.id) return;
-    const next = new Set(wishedIds);
-    const isWished = next.has(productId);
-    if (isWished) next.delete(productId); else next.add(productId);
-    setWishedIds(next);
-    try {
-      if (isWished) await removeFromWishlist(user.id, productId);
-      else await addToWishlist(user.id, productId);
-    } catch { /* revert silently */ }
+  const [wished, setWished] = useState<Set<string>>(new Set());
+  const [unread, setUnread] = useState(0);
+  const openTab = (tab: 'Cart' | 'More', screen: string) => {
+    (navigation.getParent() as any)?.navigate(tab, { screen });
   };
 
   const loadData = useCallback(async () => {
-    // فشل أحدهما لا يُسقط الآخر
-    const [catsRes, prodsRes] = await Promise.allSettled([
-      getCategories(),
-      getFeaturedProducts(8),
-    ]);
-    if (catsRes.status === 'fulfilled') setCategories(catsRes.value);
-    if (prodsRes.status === 'fulfilled') setProducts(prodsRes.value);
-    setDataLoading(false);
+    const [categoryResult, productResult] = await Promise.allSettled([getCategories(), getFeaturedProducts(8)]);
+    if (categoryResult.status === 'fulfilled') setCategories(categoryResult.value);
+    if (productResult.status === 'fulfilled') setProducts(productResult.value);
     if (user?.id) {
       try {
-        const wl = await getWishlist(user.id);
-        setWishedIds(new Set(wl.map((w) => w.product_id)));
-      } catch { /* ignore */ }
-      getUnreadNotificationsCount(user.id).then(setUnreadCount).catch(() => {});
+        const wishlist = await getWishlist(user.id);
+        setWished(new Set(wishlist.map((item) => item.product_id)));
+      } catch { /* keep browsing available */ }
+      getUnreadNotificationsCount(user.id).then(setUnread).catch(() => undefined);
     }
+    setLoading(false);
   }, [user?.id]);
 
   useEffect(() => { loadData(); }, [loadData]);
+  const refresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+  const toggleWish = async (id: string) => {
+    if (!user?.id) return;
+    const next = new Set(wished);
+    const isSaved = next.has(id);
+    if (isSaved) next.delete(id); else next.add(id);
+    setWished(next);
+    try { if (isSaved) await removeFromWishlist(user.id, id); else await addToWishlist(user.id, id); } catch { setWished(wished); }
   };
 
-  /*
-  useEffect(() => {
-    const channel = supabase.channel('home_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles' }, () => {
-        loadData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        loadData();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadData]);
-  */
-  // ──────────────────────────────────────────────────────
+  const apiCategories = categories.map((c, i) => ({ id: c.id, name: c.name_ar || c.name, icon: FALLBACK_CATEGORIES[i % FALLBACK_CATEGORIES.length].icon }));
+  const visibleCategories = categories.length >= 8 
+    ? apiCategories.slice(0, 8) 
+    : [...apiCategories, ...FALLBACK_CATEGORIES.slice(apiCategories.length, 8)];
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <TouchableOpacity style={styles.bellBtn} activeOpacity={0.7} onPress={() => (navigation as any).navigate('More', { screen: 'Notifications' })}>
-          <Ionicons name="notifications-outline" size={24} color="#111827" />
-          {unreadCount > 0 && <View style={styles.bellBadge} />}
-        </TouchableOpacity>
-
-        <Image
-          source={require('../../../../assets/images/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-
-        <View style={styles.profileRow}>
-          <View style={styles.profileTextCol}>
-            <Text style={styles.welcomeText}>مرحباً بك</Text>
-            <Text style={styles.userName}>{user?.full_name || 'محمد'}</Text>
-          </View>
-          <View style={styles.avatarBox}>
-            <Ionicons name="person" size={20} color="#FFFFFF" />
+    <View style={styles.screen}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B1728" />
+      {/* HEADER */}
+      <View style={styles.topBar}>
+        <View style={[styles.topBarInner, { maxWidth: contentWidth, paddingHorizontal: gutter }]}>
+          <TouchableOpacity style={styles.brand} onPress={() => navigation.navigate('HomeMain')}>
+            <View style={styles.brandMark}><Ionicons name="sparkles" size={17} color="#1D4ED8" /></View>
+            <Text style={styles.brandName}>N E X O R A</Text>
+          </TouchableOpacity>
+          {desktop && <View style={styles.desktopNav}>
+            <Text style={styles.navActive}>الرئيسية</Text>
+            <Text style={styles.navItem}>الأقسام</Text>
+            <Text style={styles.navItem}>العروض</Text>
+            <Text style={styles.navItem}>وصل حديثاً</Text>
+          </View>}
+          {desktop && <View style={styles.searchBarHeader}>
+            <Ionicons name="search" size={18} color="#64748B" />
+            <TextInput placeholder="ابحث عن منتجات..." placeholderTextColor="#64748B" style={styles.searchInputHeader} />
+          </View>}
+          <View style={styles.accountArea}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => openTab('More', 'AccountMain')}>
+              <Ionicons name="person-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={() => openTab('More', 'Favorites')}>
+              <Ionicons name="heart-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={() => openTab('Cart', 'CartMain')}>
+              <Ionicons name="bag-handle-outline" size={22} color="#FFFFFF" />
+              {cartCount > 0 && <View style={styles.notificationDot}><Text style={styles.notificationText}>{cartCount}</Text></View>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={() => openTab('More', 'Notifications')}>
+              <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+              {unread > 0 && <View style={styles.notificationDot}><Text style={styles.notificationText}>{unread}</Text></View>}
+            </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <TouchableOpacity
-          style={styles.searchBox}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Search')}
-        >
-          <Text style={[styles.searchInput, { color: '#9CA3AF', paddingTop: 14 }]}>ابحث عن أي شيء...</Text>
-          <Ionicons name="search-outline" size={20} color="#111827" style={styles.searchIcon} />
-        </TouchableOpacity>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1D4ED8" />}>
+        <View style={[styles.page, { maxWidth: contentWidth }]}>
+          {/* MOBILE SEARCH */}
+          {!desktop && <TouchableOpacity style={[styles.search, { marginHorizontal: gutter }]} onPress={() => navigation.navigate('Search')} activeOpacity={0.85}>
+            <View style={styles.searchIcon}><Ionicons name="search" size={19} color="#94A3B8" /></View>
+            <Text style={styles.searchText}>ابحث عن منتجات...</Text>
+          </TouchableOpacity>}
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-
-        {/* Main Promo Banner Slider */}
-        <View style={{ marginBottom: 16 }}>
-          <FlatList
-            data={PROMO_BANNERS}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            onMomentumScrollEnd={(e) => {
-              setActiveSlide(Math.round(e.nativeEvent.contentOffset.x / width));
-            }}
-            renderItem={({ item }) => (
-              <TouchableOpacity activeOpacity={0.9} style={styles.bannerItem}>
-                <Image source={item.image} style={styles.bannerImage} resizeMode="cover" />
-              </TouchableOpacity>
-            )}
-          />
-          <View style={styles.dotsRow}>
-            {PROMO_BANNERS.map((_, idx) => (
-              <View key={idx} style={idx === activeSlide ? styles.dotActive : styles.dot} />
-            ))}
+          {/* HERO BANNER */}
+          <View style={[styles.heroContainer, { marginHorizontal: gutter }, desktop && styles.heroContainerDesktop]}>
+             <Image source={desktop ? require('../../../../assets/images/home/premium-hero-desktop.png') : require('../../../../assets/images/home/premium-hero-mobile.png')} style={styles.heroImage} resizeMode="cover" />
+             <View style={styles.heroOverlay} />
+             <View style={[styles.heroContent, desktop && styles.heroContentDesktop]}>
+               <Text style={styles.heroTitle}>كل ما تحب{`\n`}بلمسة فخامة</Text>
+               <Text style={styles.heroDescription}>تسوّق أرقى المنتجات بأفضل الأسعار{`\n`}وتجربة تسوق استثنائية</Text>
+               <TouchableOpacity style={styles.heroButton} activeOpacity={0.9} onPress={() => navigation.navigate('Offers')}>
+                 <Text style={styles.heroButtonText}>تسوّق الآن</Text>
+                 <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
+               </TouchableOpacity>
+             </View>
+             {/* Pagination Dots */}
+             <View style={styles.heroDots}>
+                <View style={[styles.dot, styles.dotActive]} />
+                <View style={styles.dot} />
+                <View style={styles.dot} />
+             </View>
           </View>
-        </View>
 
-        {/* Categories — من قاعدة البيانات */}
-        <View style={styles.sectionHeader}>
-          <TouchableOpacity activeOpacity={0.7} style={styles.seeAllRow} onPress={() => navigation.navigate('StoresList', {})}>
-            <Ionicons name="arrow-back" size={14} color="#3B82F6" />
-            <Text style={styles.seeAllText}>عرض الكل</Text>
-          </TouchableOpacity>
-          <Text style={styles.sectionTitle}>تصفح الأقسام</Text>
-        </View>
-
-        {dataLoading ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 24 }} />
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catScroll}>
-            {(categories.length > 0 ? categories : [
-              { id: '1', name: 'الإلكترونيات', name_ar: null, icon_url: null, parent_id: null, sort_order: 0, is_active: true },
-              { id: '2', name: 'الجمال والعناية', name_ar: null, icon_url: null, parent_id: null, sort_order: 1, is_active: true },
-              { id: '3', name: 'الأزياء', name_ar: null, icon_url: null, parent_id: null, sort_order: 2, is_active: true },
-              { id: '4', name: 'العطور', name_ar: null, icon_url: null, parent_id: null, sort_order: 3, is_active: true },
-              { id: '5', name: 'ألعاب وهوايات', name_ar: null, icon_url: null, parent_id: null, sort_order: 4, is_active: true },
-              { id: '6', name: 'المزيد', name_ar: null, icon_url: null, parent_id: null, sort_order: 5, is_active: true },
-            ] as Category[]).map((cat, idx) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={styles.catItem}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('StoresList', { categoryId: cat.id })}
-              >
-                <View style={styles.catIconCircle}>
-                  <Ionicons name={CAT_ICON_FALLBACK[idx % CAT_ICON_FALLBACK.length] as any} size={24} color="#111827" />
-                </View>
-                <Text style={styles.catText}>{cat.name_ar || cat.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* Features */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuresScroll}>
-          {FEATURES.map((feat) => (
-            <View key={feat.id} style={[styles.featCard, { backgroundColor: feat.bgColor }]}>
-              <View style={styles.featIconBox}>
-                <Ionicons name={feat.icon as any} size={28} color={feat.iconColor} />
+          {/* BENEFITS */}
+          <View style={[styles.benefits, { marginHorizontal: gutter }]}>
+            {BENEFITS.map((item, index) => <View key={item.title} style={[styles.benefit, index !== BENEFITS.length - 1 && styles.benefitBorder]}>
+              <View style={styles.benefitIcon}><Ionicons name={item.icon as any} size={22} color="#1E293B" /></View>
+              <View style={styles.benefitTextWrap}>
+                <Text style={styles.benefitTitle}>{item.title}</Text>
+                <Text style={styles.benefitDetail}>{item.detail}</Text>
               </View>
-              <View style={styles.featTexts}>
-                <Text style={styles.featTitle}>{feat.title}</Text>
-                <Text style={styles.featSubtitle}>{feat.subtitle}</Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Best Sellers — من قاعدة البيانات */}
-        <View style={styles.sectionHeader}>
-          <TouchableOpacity activeOpacity={0.7} style={styles.seeAllRow} onPress={() => navigation.navigate('StoresList', {})}>
-            <Ionicons name="arrow-back" size={14} color="#3B82F6" />
-            <Text style={styles.seeAllText}>عرض الكل</Text>
-          </TouchableOpacity>
-          <Text style={styles.sectionTitle}>الأكثر مبيعاً</Text>
-        </View>
-
-        {dataLoading ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 32 }} />
-        ) : products.length === 0 ? (
-          <View style={{ paddingVertical: 30, alignItems: 'center', marginBottom: 16 }}>
-            <Ionicons name="cube-outline" size={40} color="#D1D5DB" />
-            <Text style={{ color: '#9CA3AF', fontSize: 13, marginTop: 8 }}>لا توجد منتجات متاحة حالياً</Text>
+            </View>)}
           </View>
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.productsScroll}>
-            {products.map((prod) => {
-              const price = prod.sale_price ?? prod.base_price;
-              return (
-                <TouchableOpacity
-                  key={prod.id}
-                  style={styles.productCard}
-                  activeOpacity={0.9}
-                  onPress={() => navigation.navigate('ProductDetails', { productId: prod.id })}
-                >
-                  <View style={styles.productImageWrap}>
-                    <TouchableOpacity style={styles.heartBtn} onPress={() => toggleWish(prod.id)}>
-                      <Ionicons name={wishedIds.has(prod.id) ? 'heart' : 'heart-outline'} size={20} color={wishedIds.has(prod.id) ? '#EF4444' : '#6B7280'} />
-                    </TouchableOpacity>
-                    {prod.og_image_url ? (
-                      <Image source={{ uri: prod.og_image_url }} style={styles.productImage} resizeMode="cover" />
-                    ) : (
-                      <Ionicons name="cube-outline" size={60} color="#9CA3AF" style={{ marginTop: 20 }} />
-                    )}
-                  </View>
-                  <View style={styles.productInfo}>
-                    <View style={styles.ratingRow}>
-                      <Text style={styles.ratingText}>{prod.rating.toFixed(1)}</Text>
-                      <Ionicons name="star" size={12} color="#FBBF24" style={{ marginLeft: 4 }} />
-                    </View>
-                    <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
-                    <View style={styles.productBottom}>
-                      <TouchableOpacity
-                        style={styles.cartBtn}
-                        onPress={() => navigation.navigate('ProductDetails', { productId: prod.id })}
-                      >
-                        <Ionicons name="cart-outline" size={18} color="#111827" />
-                      </TouchableOpacity>
-                      <Text style={styles.priceText}>{price} <Text style={styles.currency}>ر.ي</Text></Text>
-                    </View>
-                  </View>
+
+          {/* CATEGORIES */}
+          <SectionHeading title="تسوّق حسب الفئة" action="عرض الكل" onPress={() => navigation.navigate('StoresList', {})} gutter={gutter} />
+          {desktop ? (
+            <View style={[styles.categoryGridContainer, { marginHorizontal: gutter }]}>
+              {visibleCategories.map((item) => (
+                <TouchableOpacity key={item.id} style={styles.categoryDesktop} onPress={() => navigation.navigate('StoresList', { categoryId: item.id })} activeOpacity={0.8}>
+                  <View style={styles.categoryIconDesktop}><Ionicons name={item.icon as any} size={28} color="#2563EB" /></View>
+                  <Text style={styles.categoryNameDesktop} numberOfLines={1}>{item.name}</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        )}
+              ))}
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.categoryList, { paddingHorizontal: gutter }]}>
+              {visibleCategories.map((item) => <TouchableOpacity key={item.id} style={styles.category} onPress={() => navigation.navigate('StoresList', { categoryId: item.id })} activeOpacity={0.8}>
+                <View style={styles.categoryIcon}><Ionicons name={item.icon as any} size={28} color="#1D4ED8" /></View>
+                <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
+              </TouchableOpacity>)}
+            </ScrollView>
+          )}
 
-        {/* Bottom Promo */}
-        <View style={styles.bottomPromo}>
-          <View style={styles.bottomPromoRight}>
-            <Text style={styles.bottomPromoTitle}>خصم إضافي <Text style={styles.percentText}>10%</Text></Text>
-            <Text style={styles.bottomPromoSubtitle}>على أول طلب لك!</Text>
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>استخدم الكود: <Text style={styles.codeHighlight}>WELCOME</Text></Text>
+          {/* PRODUCTS & SIDEBAR */}
+          <SectionHeading title="الأكثر مبيعاً" action="عرض الكل" onPress={() => navigation.navigate('StoresList', {})} gutter={gutter} />
+          
+          <View style={[styles.productsLayout, { marginHorizontal: gutter, flexDirection: hasSidebar ? 'row-reverse' : 'column' }]}>
+            {/* Sidebar Promo (Desktop) */}
+            {hasSidebar && (
+              <View style={styles.sidebarPromo}>
+                 <Image source={require('../../../../assets/images/home/premium-hero-mobile.png')} style={styles.sidebarImage} resizeMode="cover" />
+                 <View style={styles.sidebarOverlay} />
+                 <View style={styles.sidebarContent}>
+                    <Text style={styles.sidebarTitle}>عروض حصرية</Text>
+                    <Text style={styles.sidebarSubtitle}>خصومات تصل إلى</Text>
+                    <Text style={styles.sidebarDiscount}>50%</Text>
+                    <TouchableOpacity style={styles.sidebarBtn} onPress={() => navigation.navigate('Offers')}><Text style={styles.sidebarBtnText}>تسوق العروض</Text></TouchableOpacity>
+                 </View>
+              </View>
+            )}
+
+            {/* Product Grid */}
+            <View style={[styles.productArea, hasSidebar && { flex: 1, paddingRight: gutter }]}>
+              {loading ? <ActivityIndicator color="#1D4ED8" style={styles.loader} /> : products.length === 0 ? <View style={styles.empty}><Ionicons name="cube-outline" size={34} color="#94A3B8" /><Text style={styles.emptyText}>سيتم عرض المنتجات هنا قريباً</Text></View> :
+                <View style={styles.productGrid}>{products.map((product, idx) => {
+                  const price = product.sale_price ?? product.base_price;
+                  const discount = product.sale_price ? Math.round(((product.base_price - product.sale_price) / product.base_price) * 100) : null;
+                  // Fake discounts for demo purposes if not present
+                  const displayDiscount = discount || [10, 20, 15, 25, 30][idx % 5];
+                  
+                  return <TouchableOpacity key={product.id} style={[styles.product, { width: productWidth }]} activeOpacity={0.88} onPress={() => navigation.navigate('ProductDetails', { productId: product.id })}>
+                    <View style={styles.productMedia}>
+                      <ProductImage product={product} />
+                      <TouchableOpacity style={styles.wish} onPress={() => toggleWish(product.id)}><Ionicons name={wished.has(product.id) ? 'heart' : 'heart-outline'} size={18} color={wished.has(product.id) ? '#EF4444' : '#94A3B8'} /></TouchableOpacity>
+                      <View style={styles.discountTag}><Text style={styles.discountText}>-{displayDiscount}%</Text></View>
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+                      <View style={styles.priceRow}>
+                        <Text style={styles.price}>{price} <Text style={styles.currency}>ر.س</Text></Text>
+                        {product.sale_price && <Text style={styles.oldPrice}>{product.base_price} ر.س</Text>}
+                        {!product.sale_price && <Text style={styles.oldPrice}>{price + Math.floor(price * 0.2)} ر.س</Text>}
+                      </View>
+                      <View style={styles.rating}><Ionicons name="star" size={12} color="#FBBF24" /><Text style={styles.ratingText}>{product.rating.toFixed(1)}</Text></View>
+                    </View>
+                  </TouchableOpacity>;
+                })}</View>}
             </View>
           </View>
-          <Ionicons name="bag-handle" size={80} color="#FFFFFF" style={{ opacity: 0.1, position: 'absolute', left: 20, top: 20 }} />
-        </View>
 
+
+          
+        </View>
       </ScrollView>
     </View>
   );
 }
 
+function SectionHeading({ title, action, onPress, gutter }: { title: string; action: string; onPress: () => void; gutter: number }) {
+  return <View style={[styles.sectionHeading, { marginHorizontal: gutter }]}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    <TouchableOpacity onPress={onPress} style={styles.sectionAction}>
+      <Text style={styles.sectionActionText}>{action}</Text>
+    </TouchableOpacity>
+  </View>;
+}
+
+function ProductImage({ product }: { product: ProductSummary }) {
+  const imageCandidates = [
+    product.og_image_url,
+    ...(product.product_images ?? [])
+      .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order)
+      .map((image) => image.url),
+  ].filter((url): url is string => Boolean(url));
+  const [imageIndex, setImageIndex] = useState(0);
+  const imageUrl = imageCandidates[imageIndex];
+
+  if (!imageUrl) return <Ionicons name="cube-outline" size={42} color="#CBD5E1" />;
+  return <Image source={{ uri: imageUrl }} style={styles.productImage} resizeMode="cover" onError={() => setImageIndex((index) => index + 1)} />;
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  headerRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, backgroundColor: '#FFFFFF',
-  },
-  bellBtn: { padding: 8 },
-  bellBadge: {
-    position: 'absolute', top: 8, right: 10, width: 8, height: 8,
-    borderRadius: 4, backgroundColor: '#3B82F6', borderWidth: 1.5, borderColor: '#FFFFFF',
-  },
-  logo: { width: 40, height: 40 },
-  profileRow: { flexDirection: 'row', alignItems: 'center' },
-  profileTextCol: { alignItems: 'flex-end', marginRight: 10 },
-  welcomeText: { fontSize: 11, color: '#6B7280', fontWeight: '500' },
-  userName: { fontSize: 12, fontWeight: '800', color: '#111827' },
-  avatarBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' },
-  searchContainer: { paddingHorizontal: 24, paddingVertical: 16, backgroundColor: '#FFFFFF' },
-  searchBox: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, height: 48, paddingHorizontal: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1,
-  },
-  searchInput: { flex: 1, fontSize: 14, color: '#111827' },
-  searchIcon: { marginLeft: 12 },
-  scrollContent: { paddingBottom: 100 },
-  bannerItem: { width, alignItems: 'center', paddingHorizontal: 24 },
-  bannerImage: { width: width - 48, height: 180, borderRadius: 20, backgroundColor: '#F5F1EE' },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12, gap: 6, marginBottom: 24 },
-  dotActive: { width: 16, height: 4, borderRadius: 2, backgroundColor: '#3B82F6' },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  seeAllRow: { flexDirection: 'row', alignItems: 'center' },
-  seeAllText: { fontSize: 13, fontWeight: '700', color: '#3B82F6', marginLeft: 4 },
-  catScroll: { paddingHorizontal: 24, paddingBottom: 24, gap: 16 },
-  catItem: { alignItems: 'center', width: 68 },
-  catIconCircle: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: '#F9FAFB',
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#F3F4F6', marginBottom: 8,
-  },
-  catText: { fontSize: 12, fontWeight: '600', color: '#111827', textAlign: 'center' },
-  featuresScroll: { paddingHorizontal: 24, paddingBottom: 32, gap: 12 },
-  featCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, width: 200 },
-  featIconBox: { marginLeft: 12 },
-  featTexts: { flex: 1, alignItems: 'flex-end' },
-  featTitle: { fontSize: 14, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  featSubtitle: { fontSize: 11, color: '#6B7280', textAlign: 'right', lineHeight: 16 },
-  productsScroll: { paddingHorizontal: 24, paddingBottom: 32, gap: 16 },
-  productCard: {
-    width: 150, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
-  },
-  productImageWrap: { height: 140, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  screen: { flex: 1, backgroundColor: '#F8FAFC' },
+  topBar: { backgroundColor: '#0B1728' },
+  topBarInner: { width: '100%', alignSelf: 'center', height: Platform.OS === 'ios' ? 98 : 76, paddingTop: Platform.OS === 'ios' ? 29 : 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  brandMark: { width: 32, height: 32, borderRadius: 11, backgroundColor: 'rgba(29, 78, 216, 0.1)', alignItems: 'center', justifyContent: 'center' },
+  brandName: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', letterSpacing: 2 },
+  desktopNav: { flexDirection: 'row', gap: 32, alignItems: 'center', flex: 1, paddingRight: 40, justifyContent: 'center' },
+  navItem: { color: '#94A3B8', fontSize: 14, fontWeight: '600' },
+  navActive: { color: '#3B82F6', fontSize: 14, fontWeight: '700', borderBottomWidth: 2, borderBottomColor: '#3B82F6', paddingBottom: 4 },
+  searchBarHeader: { flex: 1, maxWidth: 350, height: 42, backgroundColor: '#1E293B', borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginRight: 20 },
+  searchInputHeader: { flex: 1, color: '#FFFFFF', textAlign: 'right', fontSize: 13, marginLeft: 10 },
+  accountArea: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  iconButton: { position: 'relative' },
+  notificationDot: { position: 'absolute', top: -5, right: -5, backgroundColor: '#3B82F6', borderRadius: 10, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#0B1728' },
+  notificationText: { color: '#FFFFFF', fontSize: 9, fontWeight: 'bold' },
+  scroll: { paddingBottom: 60 },
+  page: { width: '100%', alignSelf: 'center' },
+  search: { marginTop: 15, height: 50, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  searchIcon: { alignItems: 'center', justifyContent: 'center' },
+  searchText: { flex: 1, color: '#94A3B8', fontSize: 13, textAlign: 'right' },
+  heroContainer: { height: 420, overflow: 'hidden', borderRadius: 20, marginTop: 20, backgroundColor: '#0B1728', position: 'relative' },
+  heroContainerDesktop: { height: 480 },
+  heroImage: { width: '100%', height: '100%', position: 'absolute' },
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5, 15, 30, 0.4)' },
+  heroContent: { position: 'absolute', top: 0, bottom: 0, right: 0, justifyContent: 'center', paddingRight: 40 },
+  heroContentDesktop: { paddingRight: 80 },
+  heroTitle: { color: '#FFFFFF', fontSize: 36, lineHeight: 48, fontWeight: '900', textAlign: 'right' },
+  heroDescription: { color: '#CBD5E1', fontSize: 16, lineHeight: 26, fontWeight: '500', textAlign: 'right', marginTop: 16 },
+  heroButton: { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1D4ED8', marginTop: 30, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 14 },
+  heroButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  heroDots: { position: 'absolute', bottom: 20, width: '100%', flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.3)' },
+  dotActive: { width: 24, backgroundColor: '#3B82F6' },
+  benefits: { backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 16, marginTop: 20, flexDirection: 'row-reverse', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#0F172A', shadowOpacity: 0.03, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  benefit: { flex: 1, paddingHorizontal: 10, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  benefitBorder: { borderLeftWidth: 1, borderLeftColor: '#F1F5F9' },
+  benefitIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center' },
+  benefitTextWrap: { alignItems: 'flex-end' },
+  benefitTitle: { color: '#1E293B', fontSize: 13, fontWeight: '800' },
+  benefitDetail: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  sectionHeading: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 16 },
+  sectionTitle: { color: '#0F172A', fontSize: 20, fontWeight: '800' },
+  sectionAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  sectionActionText: { color: '#1D4ED8', fontSize: 13, fontWeight: '700' },
+  categoryList: { gap: 16, paddingBottom: 10, flexDirection: 'row-reverse' },
+  category: { width: 110, height: 110, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', gap: 12, shadowColor: '#0F172A', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  categoryIcon: { width: 50, height: 50, backgroundColor: '#EFF6FF', borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  categoryName: { color: '#334155', fontSize: 13, fontWeight: '700' },
+  categoryGridContainer: { flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', gap: 20, width: '100%' },
+  categoryDesktop: { width: 125, height: 135, borderRadius: 28, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', shadowColor: '#94A3B8', shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 4 },
+  categoryIconDesktop: { width: 58, height: 58, backgroundColor: '#EFF6FF', borderRadius: 29, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  categoryNameDesktop: { color: '#0F172A', fontSize: 14, fontWeight: '800' },
+  productsLayout: {},
+  sidebarPromo: { width: 280, height: 600, borderRadius: 16, overflow: 'hidden', backgroundColor: '#0B1728' },
+  sidebarImage: { width: '100%', height: '100%', position: 'absolute' },
+  sidebarOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5, 15, 30, 0.7)' },
+  sidebarContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  sidebarTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '900', marginBottom: 10 },
+  sidebarSubtitle: { color: '#CBD5E1', fontSize: 16 },
+  sidebarDiscount: { color: '#3B82F6', fontSize: 64, fontWeight: '900', marginVertical: 10 },
+  sidebarBtn: { backgroundColor: '#FFFFFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 20 },
+  sidebarBtnText: { color: '#0F172A', fontSize: 14, fontWeight: '800' },
+  productArea: {},
+  loader: { marginVertical: 50 },
+  empty: { alignItems: 'center', paddingVertical: 60, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  emptyText: { color: '#94A3B8', fontSize: 14, marginTop: 12, fontWeight: '600' },
+  productGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 16 },
+  product: { backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#0F172A', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  productMedia: { height: 180, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', position: 'relative' },
   productImage: { width: '100%', height: '100%' },
-  heartBtn: { position: 'absolute', top: 10, left: 10, zIndex: 2 },
-  productInfo: { padding: 12 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 4 },
-  ratingText: { fontSize: 11, fontWeight: '700', color: '#4B5563' },
-  productName: { fontSize: 12, fontWeight: '700', color: '#111827', textAlign: 'right', marginBottom: 12 },
-  productBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cartBtn: { width: 28, height: 28, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  priceText: { fontSize: 14, fontWeight: '800', color: '#111827' },
-  currency: { fontSize: 10, fontWeight: '600' },
-  bottomPromo: {
-    marginHorizontal: 24, backgroundColor: '#111827', borderRadius: 20, padding: 24,
-    marginBottom: 20, position: 'relative', overflow: 'hidden',
-  },
-  bottomPromoRight: { alignItems: 'flex-end', zIndex: 2 },
-  bottomPromoTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 },
-  percentText: { color: '#FBBF24' },
-  bottomPromoSubtitle: { fontSize: 13, color: '#D1D5DB', marginBottom: 16 },
-  codeBox: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  codeText: { fontSize: 11, color: '#FFFFFF' },
-  codeHighlight: { color: '#FBBF24', fontWeight: '800' },
+  wish: { position: 'absolute', top: 12, left: 12, width: 34, height: 34, backgroundColor: '#FFFFFF', borderRadius: 17, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  discountTag: { position: 'absolute', top: 12, right: 12, backgroundColor: '#1D4ED8', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  discountText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  productInfo: { padding: 16, alignItems: 'flex-end' },
+  productName: { color: '#1E293B', fontSize: 14, fontWeight: '700', textAlign: 'right', marginBottom: 8 },
+  priceRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 8 },
+  price: { color: '#0F172A', fontSize: 16, fontWeight: '900' },
+  currency: { fontSize: 11, fontWeight: '600' },
+  oldPrice: { color: '#94A3B8', fontSize: 12, textDecorationLine: 'line-through' },
+  rating: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
+  ratingText: { color: '#64748B', fontSize: 11, fontWeight: '700' },
+  footer: { backgroundColor: '#0B1728', borderRadius: 20, marginTop: 40, padding: 32, flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 32, justifyContent: 'space-between' },
+  footerSection: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16, minWidth: 200 },
+  footerIcon: { width: 50, height: 50, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' },
+  footerTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', textAlign: 'right', marginBottom: 4 },
+  footerSub: { color: '#94A3B8', fontSize: 12, textAlign: 'right' },
+  newsletter: { minWidth: 280, flex: 1 },
+  newsletterTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '800', textAlign: 'right', marginBottom: 6 },
+  newsletterSub: { color: '#94A3B8', fontSize: 13, textAlign: 'right', marginBottom: 16 },
+  newsletterInputWrap: { flexDirection: 'row-reverse', height: 48, backgroundColor: '#1E293B', borderRadius: 10, overflow: 'hidden' },
+  newsletterInput: { flex: 1, paddingHorizontal: 16, color: '#FFFFFF', textAlign: 'right', fontSize: 13 },
+  newsletterBtn: { width: 56, backgroundColor: '#1D4ED8', alignItems: 'center', justifyContent: 'center' },
 });

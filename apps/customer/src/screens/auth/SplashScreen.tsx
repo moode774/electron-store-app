@@ -23,15 +23,15 @@ export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX
   const textTranslateY = useRef(new Animated.Value(15)).current;
 
   useEffect(() => {
-    // Ultra minimal elegant entrance
+    // Ultra minimal elegant entrance (Fast)
     Animated.parallel([
-      Animated.spring(logoScale, { toValue: 1, tension: 20, friction: 5, useNativeDriver: true }),
-      Animated.timing(logoOpacity, { toValue: 1, duration: 1000, useNativeDriver: true }),
-      Animated.timing(textOpacity, { toValue: 1, duration: 1000, delay: 400, useNativeDriver: true }),
-      Animated.timing(textTranslateY, { toValue: 0, duration: 1000, delay: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      Animated.spring(logoScale, { toValue: 1, tension: 40, friction: 5, useNativeDriver: true }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(textOpacity, { toValue: 1, duration: 400, delay: 100, useNativeDriver: true }),
+      Animated.timing(textTranslateY, { toValue: 0, duration: 400, delay: 100, easing: Easing.out(Easing.ease), useNativeDriver: true }),
     ]).start(() => {
-      // Hold the screen a bit before navigating away
-      setTimeout(onFinish, 1800); 
+      // Navigate away immediately without holding
+      onFinish();
     });
   }, []);
 

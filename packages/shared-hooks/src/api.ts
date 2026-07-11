@@ -27,6 +27,7 @@ export interface ProductSummary {
   is_featured: boolean;
   category_id: string | null;
   og_image_url: string | null;
+  product_images?: { url: string; is_primary: boolean; sort_order: number }[];
   stock_quantity?: number;
   merchant_profiles?: { store_name: string } | null;
 }
@@ -161,7 +162,7 @@ export async function getCategories(): Promise<Category[]> {
 export async function getFeaturedProducts(limit = 10): Promise<ProductSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles!inner(store_name, is_active)')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles!inner(store_name, is_active)')
     .eq('is_active', true)
     .eq('merchant_profiles.is_active', true)
     .order('total_sold', { ascending: false })

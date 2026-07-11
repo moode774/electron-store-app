@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { I18nManager, Platform, View, ActivityIndicator, AppState } from 'react-native';
+import { I18nManager, Platform, View, ActivityIndicator, AppState, Text, TextInput } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -10,6 +10,15 @@ import { enableScreens } from 'react-native-screens';
 enableScreens(false);
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreenExpo from 'expo-splash-screen';
+import { IBMPlexSansArabic_400Regular, useFonts } from '@expo-google-fonts/ibm-plex-sans-arabic';
+import { Ionicons } from '@expo/vector-icons';
+
+// Use the bundled font on web and native; do not request Google Fonts at runtime.
+(Text as any).defaultProps = (Text as any).defaultProps || {};
+(Text as any).defaultProps.style = { fontFamily: 'IBMPlexSansArabic_400Regular' };
+(TextInput as any).defaultProps = (TextInput as any).defaultProps || {};
+(TextInput as any).defaultProps.style = { fontFamily: 'IBMPlexSansArabic_400Regular' };
+
 
 import { useAuthStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
@@ -134,6 +143,10 @@ export default function App(): React.JSX.Element | null {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const initialize = useAuthStore((s) => s.initialize);
 
+  // Preload the Arabic text font and the Ionicons font together.  Ionicons are
+  // glyphs, so this prevents their late "pop in" on the web.
+  useFonts({ IBMPlexSansArabic_400Regular, ...Ionicons.font });
+
   // Reset to home screen when app comes to foreground from a hidden merchant tab
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
@@ -172,6 +185,8 @@ export default function App(): React.JSX.Element | null {
     storage.set(ONBOARDING_KEY, '1').catch(() => {});
   }, []);
 
+  // Never keep the application on a blank screen if a browser delays a font.
+  // The bundled font is applied as soon as it is ready.
   if (!appReady) return null;
 
   // 🧪 وضع اختبار الكيبورد: غيّر إلى true لعرض شاشة الدخول بدون طبقة التنقل
