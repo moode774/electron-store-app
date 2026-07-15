@@ -8,6 +8,8 @@
 -- -----------------------------------------------------------------------------
 -- Refund requests: normalize the drifted schemas and preserve decision audit.
 -- -----------------------------------------------------------------------------
+DROP TRIGGER IF EXISTS trg_notify_refund_participants ON public.refund_requests;
+
 ALTER TABLE public.refund_requests ALTER COLUMN status DROP DEFAULT;
 ALTER TABLE public.refund_requests DROP CONSTRAINT IF EXISTS refund_requests_status_check;
 ALTER TABLE public.refund_requests
@@ -2447,6 +2449,10 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+CREATE TRIGGER trg_notify_refund_participants
+AFTER INSERT OR UPDATE OF status ON public.refund_requests
+FOR EACH ROW EXECUTE FUNCTION public.notify_refund_participants();
 
 -- -----------------------------------------------------------------------------
 -- Function privileges. Postgres grants PUBLIC execute by default; remove it

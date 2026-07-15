@@ -1626,7 +1626,9 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.admin_set_user_active(
+DROP FUNCTION IF EXISTS public.admin_set_user_active(uuid, boolean);
+
+CREATE FUNCTION public.admin_set_user_active(
   p_user_id uuid,
   p_active boolean
 )
@@ -2525,6 +2527,37 @@ USING (
 CREATE POLICY categories_active_select ON public.categories FOR SELECT TO anon, authenticated
 USING (is_active IS TRUE);
 
+ALTER TABLE public.advertisements
+  ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS starts_at timestamptz,
+  ADD COLUMN IF NOT EXISTS ends_at timestamptz;
+
+DO $normalize_legacy_advertisements$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'advertisements' AND column_name = 'status'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE public.advertisements
+      SET is_active = lower(COALESCE(status, 'active')) IN ('active', 'approved', 'published')
+    $sql$;
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'advertisements' AND column_name = 'start_date'
+  ) THEN
+    EXECUTE 'UPDATE public.advertisements SET starts_at = COALESCE(starts_at, start_date)';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'advertisements' AND column_name = 'end_date'
+  ) THEN
+    EXECUTE 'UPDATE public.advertisements SET ends_at = COALESCE(ends_at, end_date)';
+  END IF;
+END;
+$normalize_legacy_advertisements$;
+
 CREATE POLICY advertisements_active_select ON public.advertisements FOR SELECT TO anon, authenticated
 USING (
   is_active IS TRUE
@@ -2901,6 +2934,9 @@ GRANT UPDATE (current_latitude, current_longitude, is_online)
   ON public.delivery_profiles TO authenticated;
 
 GRANT SELECT, DELETE ON public.addresses TO authenticated;
+
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
 GRANT SELECT (
   id, merchant_id, category_id, name, name_ar, description, description_ar,

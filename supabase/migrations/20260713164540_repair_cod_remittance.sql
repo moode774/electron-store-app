@@ -595,8 +595,11 @@ BEGIN
       FROM public.marketplace_ledger_entries AS le
       WHERE le.operation_key = v_operation_key
       FOR UPDATE;
-      IF NOT FOUND
-         OR v_ledger.order_id IS DISTINCT FROM v_collection.order_id
+      IF NOT FOUND THEN
+        RAISE EXCEPTION USING ERRCODE = '23505',
+          MESSAGE = 'COD remittance ledger idempotency conflict';
+      END IF;
+      IF v_ledger.order_id IS DISTINCT FROM v_collection.order_id
          OR v_ledger.entry_type IS DISTINCT FROM 'cod_remittance'
          OR v_ledger.debit_account IS DISTINCT FROM 'delivery_cash_custody'
          OR v_ledger.debit_owner_id IS DISTINCT FROM v_submission.submitted_by

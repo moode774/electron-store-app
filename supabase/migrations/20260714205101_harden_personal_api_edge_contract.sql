@@ -81,7 +81,7 @@ BEGIN
   ) VALUES (
     v_uid,
     v_name,
-    pg_catalog.substring(v_key FROM 1 FOR 12) || '…',
+    pg_catalog.left(v_key, 12) || '…',
     pg_catalog.encode(extensions.digest(v_key, 'sha256'), 'hex'),
     CASE WHEN p_expires_days IS NULL THEN NULL
       ELSE pg_catalog.now() + pg_catalog.make_interval(days => p_expires_days)
@@ -151,9 +151,10 @@ BEGIN
   ELSIF v_row.rate_window_count >= 120 THEN
     v_retry_after := pg_catalog.greatest(
       1,
-      pg_catalog.ceil(pg_catalog.extract(epoch FROM (
+      pg_catalog.ceil(pg_catalog.date_part(
+        'epoch',
         v_row.rate_window_started_at + pg_catalog.make_interval(secs => 60) - v_now
-      )))::integer
+      ))::integer
     );
     RETURN pg_catalog.jsonb_build_object(
       'valid', false,
