@@ -1,8 +1,9 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
-import {
-  PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  PUBLIC_SUPABASE_URL,
-} from './public-config';
+
+// Public client values: safe to embed in web/mobile bundles. Authorization
+// remains enforced by Supabase RLS. Never place a secret/service-role key here.
+const PUBLIC_SUPABASE_URL = 'https://sghaihfjuttwqikdszgh.supabase.co';
+const PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_yHRZdDnJ54Py3ZOPkHbUXQ_PF7LnRdk';
 
 const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? PUBLIC_SUPABASE_URL;
