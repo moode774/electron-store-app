@@ -2510,7 +2510,7 @@ export interface AdminWithdrawal {
 }
 
 export async function getAdminWithdrawals(status?: string): Promise<AdminWithdrawal[]> {
-  let q = supabase.from('withdrawal_requests').select('id, user_id, amount, status, notes, requester_notes, admin_notes, payout_destination, external_reference, processed_at, paid_at, created_at, users(full_name, role)').order('created_at', { ascending: false }).limit(100);
+  let q = supabase.from('withdrawal_requests').select('id, user_id, amount, status, notes, requester_notes, admin_notes, payout_destination, external_reference, processed_at, paid_at, created_at, users:users!withdrawal_requests_user_id_fkey(full_name, role)').order('created_at', { ascending: false }).limit(100);
   if (status) q = (q as any).eq('status', status);
   const { data, error } = await q;
   if (error) throw error;
@@ -2618,7 +2618,7 @@ export async function reconcileLegacyDeliveredOrder(input: {
 
 export async function getAdminSupportTickets(status?: string): Promise<any[]> {
   let q = supabase.from('support_tickets')
-    .select('id, user_id, order_id, subject, category, status, priority, assigned_to, created_at, resolved_at, users(full_name, phone, role)')
+    .select('id, user_id, order_id, subject, category, status, priority, assigned_to, created_at, resolved_at, users:users!support_tickets_user_id_fkey(full_name, phone, role)')
     .order('created_at', { ascending: false })
     .limit(100);
   if (status) q = (q as any).eq('status', status);
@@ -2637,7 +2637,7 @@ export async function updateSupportTicketStatus(ticketId: string, status: string
 
 export async function getAdminOrders(status?: string): Promise<any[]> {
   let q = supabase.from(TABLES.ORDERS)
-    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, subtotal, delivery_fee, discount_amount, platform_commission, tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason, delivered_at, cancelled_at, created_at, updated_at, customer:users(full_name, phone), merchant_profiles(store_name, address, city), delivery_profiles(user_id, vehicle_type, vehicle_plate, users(full_name, phone)), addresses(full_address, city), order_items(id, product_name, quantity, unit_price, total_price), order_tracking(id, status, notes, latitude, longitude, created_at)')
+    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, subtotal, delivery_fee, discount_amount, platform_commission, tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason, delivered_at, cancelled_at, created_at, updated_at, customer:users!orders_customer_id_fkey(full_name, phone), merchant_profiles!orders_merchant_id_fkey(store_name, address, city), delivery_profiles!orders_delivery_id_fkey(user_id, vehicle_type, vehicle_plate, users:users!delivery_profiles_user_id_fkey(full_name, phone)), addresses!orders_address_id_fkey(full_address, city), order_items(id, product_name, quantity, unit_price, total_price), order_tracking(id, status, notes, latitude, longitude, created_at)')
     .order('created_at', { ascending: false })
     .limit(100);
   if (status) q = (q as any).eq('status', status);
