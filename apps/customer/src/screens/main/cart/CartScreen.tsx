@@ -22,6 +22,8 @@ export default function CartScreen({ navigation }: any) {
           style={styles.browseBtn}
           onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="تصفح المتاجر"
         >
           <Text style={styles.browseBtnText}>تصفح المتاجر</Text>
         </TouchableOpacity>
@@ -59,7 +61,7 @@ export default function CartScreen({ navigation }: any) {
                 <View style={styles.itemInfo}>
                   <View style={styles.itemTitleRow}>
                     <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                    <TouchableOpacity onPress={() => removeFromCart(item.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <TouchableOpacity onPress={() => removeFromCart(item.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel={`حذف ${item.name} من السلة`}>
                       <Ionicons name="trash-outline" size={20} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
@@ -68,11 +70,11 @@ export default function CartScreen({ navigation }: any) {
                     <Text style={styles.itemPrice}>{item.price} ر.ي</Text>
                     
                     <View style={styles.quantityWrap}>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, item.quantity - 1)}>
+                      <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, item.quantity - 1)} accessibilityRole="button" accessibilityLabel={`تقليل كمية ${item.name}`}>
                         <Ionicons name="remove" size={16} color="#111827" />
                       </TouchableOpacity>
                       <Text style={styles.qtyText}>{item.quantity}</Text>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, item.quantity + 1)}>
+                      <TouchableOpacity style={[styles.qtyBtn, item.maxQuantity === item.quantity && { opacity: 0.4 }]} onPress={() => updateQuantity(item.id, item.quantity + 1)} disabled={item.maxQuantity === item.quantity} accessibilityRole="button" accessibilityLabel={`زيادة كمية ${item.name}`} accessibilityState={{ disabled: item.maxQuantity === item.quantity }}>
                         <Ionicons name="add" size={16} color="#111827" />
                       </TouchableOpacity>
                     </View>
@@ -88,12 +90,15 @@ export default function CartScreen({ navigation }: any) {
       <View style={styles.bottomBar}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>الإجمالي المبدئي</Text>
-          <Text style={styles.summaryValue}>{totalPrice} ر.ي</Text>
+          <Text style={styles.summaryValue}>{totalPrice.toLocaleString()} ر.ي</Text>
         </View>
+        {Object.keys(groupedItems).length > 1 ? <Text style={styles.multiStoreNote}>سيُنشأ طلب مستقل لكل متجر، ولن تُمسح السلة إلا بعد نجاحها جميعاً.</Text> : null}
         <TouchableOpacity 
           style={styles.checkoutBtn}
           onPress={() => navigation.navigate('Checkout')}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="الانتقال إلى إتمام الطلب"
         >
           <Text style={styles.checkoutBtnText}>إتمام الطلب</Text>
           <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
@@ -298,6 +303,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#111827',
     fontWeight: '800',
+  },
+  multiStoreNote: {
+    color: '#6B7280',
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: 'right',
+    marginBottom: 10,
   },
   checkoutBtn: {
     flexDirection: 'row',

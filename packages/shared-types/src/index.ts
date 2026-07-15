@@ -297,8 +297,6 @@ export interface Notification extends BaseRecord {
   data: Record<string, unknown> | null;
   is_read: boolean;
   channel: NotificationChannel;
-  sent_at: string | null;
-  failed_reason: string | null;
 }
 
 // ---- 22. WalletTransaction ----------------------------------

@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 
 import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
@@ -20,6 +19,11 @@ import AdminNotificationsScreen from '../screens/admin/AdminNotificationsScreen'
 import AdminBannersScreen from '../screens/admin/AdminBannersScreen';
 import AdminCouponsScreen from '../screens/admin/AdminCouponsScreen';
 import AdminBroadcastScreen from '../screens/admin/AdminBroadcastScreen';
+import AdminRefundsScreen from '../screens/admin/AdminRefundsScreen';
+import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
+import AdminPhysicalReturnsScreen from '../screens/admin/AdminPhysicalReturnsScreen';
+import AdminFinancialReconciliationScreen from '../screens/admin/AdminFinancialReconciliationScreen';
+import AdminCodCollectionsScreen from '../screens/admin/AdminCodCollectionsScreen';
 
 const A = { purple: '#7C3AED', purpleLight: '#EDE9FE', bg: '#F5F3FF', dark: '#111827' };
 
@@ -34,6 +38,11 @@ export type AdminMoreStackParamList = {
   AdminBanners: undefined;
   AdminCoupons: undefined;
   AdminBroadcast: undefined;
+  AdminRefunds: undefined;
+  AdminProducts: undefined;
+  AdminPhysicalReturns: undefined;
+  AdminFinancialReconciliation: undefined;
+  AdminCodCollections: undefined;
 };
 
 const MoreStack = createNativeStackNavigator<AdminMoreStackParamList>();
@@ -50,6 +59,11 @@ function MoreNavigator() {
       <MoreStack.Screen name="AdminBanners" component={AdminBannersScreen} />
       <MoreStack.Screen name="AdminCoupons" component={AdminCouponsScreen} />
       <MoreStack.Screen name="AdminBroadcast" component={AdminBroadcastScreen} />
+      <MoreStack.Screen name="AdminRefunds" component={AdminRefundsScreen} />
+      <MoreStack.Screen name="AdminProducts" component={AdminProductsScreen} />
+      <MoreStack.Screen name="AdminPhysicalReturns" component={AdminPhysicalReturnsScreen} />
+      <MoreStack.Screen name="AdminFinancialReconciliation" component={AdminFinancialReconciliationScreen} />
+      <MoreStack.Screen name="AdminCodCollections" component={AdminCodCollectionsScreen} />
     </MoreStack.Navigator>
   );
 }
@@ -57,7 +71,7 @@ function MoreNavigator() {
 export type AdminTabParamList = {
   AdminDashboard: undefined;
   AdminMerchants: undefined;
-  AdminOrders: undefined;
+  AdminOrders: { initialSearch?: string } | undefined;
   AdminUsers: undefined;
   AdminMore: undefined;
 };
@@ -70,15 +84,15 @@ const SIDEBAR_TABS = [
   { name: 'AdminOrders', label: 'الطلبات', icon: 'receipt-outline', activeIcon: 'receipt' },
   { name: 'AdminUsers', label: 'المستخدمون', icon: 'people-outline', activeIcon: 'people' },
   { name: 'AdminDelivery', label: 'السائقون', icon: 'bicycle-outline', activeIcon: 'bicycle', isMore: true },
-  { name: 'AdminWallet', label: 'التقارير', icon: 'bar-chart-outline', activeIcon: 'bar-chart', isMore: true },
+  { name: 'AdminWallet', label: 'طلبات السحب', icon: 'wallet-outline', activeIcon: 'wallet', isMore: true },
+  { name: 'AdminPhysicalReturns', label: 'الإرجاعات المادية', icon: 'return-down-back-outline', activeIcon: 'return-down-back', isMore: true },
+  { name: 'AdminCodCollections', label: 'تحصيلات الدفع', icon: 'cash-outline', activeIcon: 'cash', isMore: true },
+  { name: 'AdminFinancialReconciliation', label: 'المطابقة المالية', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
   { name: 'AdminSettings', label: 'الإعدادات', icon: 'settings-outline', activeIcon: 'settings', isMore: true },
   { name: 'AdminSupport', label: 'الدعم الفني', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
 ];
 
-function AdminSidebar() {
-  const navigation = useNavigation<any>();
-  const state = useNavigationState((s) => s);
-  
+function AdminSidebar({ navigation, state }: any) {
   let routeName = 'AdminDashboard';
   if (state) {
     const route = state.routes[state.index];
@@ -97,6 +111,7 @@ function AdminSidebar() {
   const signOut = useAuthStore((s) => s.signOut);
 
   const handleNavigate = (tab: any) => {
+    if (!navigation) return;
     if (tab.isMore) {
       navigation.navigate('AdminMore', { screen: tab.name });
     } else {
@@ -125,6 +140,9 @@ function AdminSidebar() {
               style={[ss.menuItem, active && ss.menuItemActive]}
               onPress={() => handleNavigate(tab)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`الانتقال إلى ${tab.label}`}
+              accessibilityState={{ selected: active }}
             >
               {active && <View style={ss.activeIndicator} />}
               <Text style={[ss.menuLabel, active && ss.menuLabelActive]}>{tab.label}</Text>
@@ -135,7 +153,13 @@ function AdminSidebar() {
       </View>
 
       <View style={ss.bottomMenu}>
-        <TouchableOpacity style={ss.logoutBtn} onPress={signOut} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={ss.logoutBtn}
+          onPress={signOut}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="تسجيل الخروج من لوحة الإدارة"
+        >
            <Text style={ss.logoutText}>تسجيل الخروج</Text>
            <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
         </TouchableOpacity>
@@ -164,6 +188,8 @@ const ss = StyleSheet.create({
 export default function AdminTabNavigator() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const [desktopTabs, setDesktopTabs] = React.useState<{ navigation: any; state: any } | null>(null);
+  const updateDesktopTabs = React.useCallback((next: { navigation: any; state: any }) => setDesktopTabs(next), []);
 
   const content = (
     <Tab.Navigator
@@ -182,6 +208,7 @@ export default function AdminTabNavigator() {
         },
         tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
       }}
+      tabBar={isDesktop ? (props) => <DesktopTabBridge {...props} onUpdate={updateDesktopTabs} /> : undefined}
     >
       <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen}
         options={{ tabBarLabel: 'الرئيسية', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
@@ -199,10 +226,15 @@ export default function AdminTabNavigator() {
   if (isDesktop) {
     return (
       <View style={{ flex: 1, flexDirection: 'row-reverse', backgroundColor: '#F3F4F6' }}>
-        <AdminSidebar />
+        <AdminSidebar navigation={desktopTabs?.navigation} state={desktopTabs?.state} />
         <View style={{ flex: 1 }}>{content}</View>
       </View>
     );
   }
   return content;
+}
+
+function DesktopTabBridge({ navigation, state, onUpdate }: any) {
+  React.useEffect(() => { onUpdate({ navigation, state }); }, [navigation, onUpdate, state]);
+  return null;
 }

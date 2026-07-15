@@ -10,11 +10,17 @@ export default function ReviewsScreen({ navigation }: any) {
   const [activeTab, setActiveTab] = useState<'store' | 'driver'>('store');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
-    getMyReviews(user.id).then(setReviews).catch(() => {}).finally(() => setLoading(false));
-  }, [user?.id]));
+    setLoadError('');
+    try { setReviews(await getMyReviews(user.id)); }
+    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل تقييماتك.'); }
+    finally { setLoading(false); }
+  }, [user?.id]);
+
+  useFocusEffect(useCallback(() => { setLoading(true); void load(); }, [load]));
 
   const isDriver = (t?: string) => t === 'delivery' || t === 'driver';
   const filteredReviews = reviews.filter((r) =>
@@ -77,6 +83,12 @@ export default function ReviewsScreen({ navigation }: any) {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
+      ) : loadError ? (
+        <View style={styles.emptyWrap} accessibilityRole="alert">
+          <Text style={styles.emptyEmoji}>⚠️</Text>
+          <Text style={styles.emptyText}>{loadError}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={filteredReviews}
@@ -120,4 +132,6 @@ const styles = StyleSheet.create({
   emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
   emptyEmoji: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 16, color: COLORS.textMuted },
+  retryBtn: { marginTop: 14, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

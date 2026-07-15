@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, useWindowDimensions, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ORDER_STATUS } from '@marketplace/shared-utils';
-import { useAuthStore, getMerchantOrders, OrderSummary } from '@marketplace/shared-hooks';
+import { useAuthStore, OrderSummary } from '@marketplace/shared-hooks';
+import { useMerchantOrderFeed } from './useMerchantOrderFeed';
+import { getMerchantOrderStatusInfo, HISTORY_MERCHANT_ORDER_STATUSES } from './merchantOrderState';
 
 const UI = {
   primary: '#111827',
@@ -26,27 +28,14 @@ const softShadow = {
 
 export default function MerchantHistoryScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
-
-  const load = useCallback(async () => {
-    if (!user?.id) { setLoading(false); return; }
-    try { 
-      const allOrders = await getMerchantOrders(user.id);
-      // Only keep completed/cancelled orders
-      const historyOrders = allOrders.filter(o => 
-        o.status === ORDER_STATUS.DELIVERED || 
-        o.status === ORDER_STATUS.CANCELLED
-      );
-      setOrders(historyOrders);
-    } catch { setOrders([]); }
-    finally { setLoading(false); }
-  }, [user?.id]);
-
-  useEffect(() => { load(); }, [load]);
+  const { orders: allOrders, loading, refreshing, error, realtimeError, refresh } = useMerchantOrderFeed(user?.id, 'history');
+  const orders = useMemo(
+    () => allOrders.filter((order) => HISTORY_MERCHANT_ORDER_STATUSES.has(order.status)),
+    [allOrders],
+  );
 
   // Group by Date + Search Logic
   const groupedOrders = useMemo(() => {
@@ -77,19 +66,10 @@ export default function MerchantHistoryScreen({ navigation }: any) {
   const totalDelivered = useMemo(() => orders.filter(o => o.status === ORDER_STATUS.DELIVERED).reduce((acc, o) => acc + (o.total_amount || 0), 0), [orders]);
   const totalOrders = orders.length;
 
-  const statusInfo = (status: string) => {
-    switch (status) {
-      case ORDER_STATUS.DELIVERED: return { label: 'مكتمل', color: UI.green, icon: 'checkmark-circle' };
-      case ORDER_STATUS.CANCELLED: return { label: 'ملغي', color: UI.red, icon: 'close-circle' };
-      default: return { label: status, color: UI.textGrey, icon: 'ellipse' };
-    }
-  };
-
   const renderItem = ({ item, index, sectionData }: { item: OrderSummary, index: number, sectionData: OrderSummary[] }) => {
-    const info = statusInfo(item.status);
+    const info = getMerchantOrderStatusInfo(item.status);
     const customerName = item.customer_profiles?.full_name || 'عميل غير مسجل';
-    const city = item.addresses?.city ? `${item.addresses.city} • ` : '';
-    const payment = item.payment_method === 'cash' ? 'نقداً' : 'إلكتروني';
+    const payment = item.payment_method === 'cash' ? 'نقداً عند الاستلام' : 'دفع غير نقدي';
     
     let timeStr = '';
     try {
@@ -105,6 +85,8 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         style={styles.ledgerRowWrap} 
         activeOpacity={0.8}
         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
+        accessibilityRole="button"
+        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
       >
         {/* Timeline connector */}
         <View style={styles.timelineCol}>
@@ -137,7 +119,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
             </View>
             <View style={styles.ledgerDetailItem}>
               <Ionicons name="location-outline" size={14} color={UI.textMuted} />
-              <Text style={styles.ledgerDetailText}>{city}{payment}</Text>
+              <Text style={styles.ledgerDetailText}>{payment}</Text>
             </View>
           </View>
         </View>
@@ -151,7 +133,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
       
       {!isDesktop && (
         <View style={styles.headerMobile}>
-          <Text style={styles.headerTitleMobile}>دفتر السجل (Ledger)</Text>
+          <Text style={styles.headerTitleMobile}>سجل الطلبات</Text>
         </View>
       )}
 
@@ -161,8 +143,8 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           {isDesktop && (
             <View style={styles.pageHeaderRow}>
               <View>
-                <Text style={styles.pageTitle}>السجل المالي والتشغيلي</Text>
-                <Text style={styles.pageSubtitle}>تتبع كل حركة وطلب في متجرك كدفتر أستاذ احترافي</Text>
+                <Text style={styles.pageTitle}>سجل الطلبات</Text>
+                <Text style={styles.pageSubtitle}>الطلبات المكتملة والملغاة والمرتجعة وحالات تعذر التسليم</Text>
               </View>
             </View>
           )}
@@ -171,7 +153,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           <View style={[styles.dashboardCard, isDesktop && styles.dashboardCardDesktop]}>
              <View style={styles.statsRow}>
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>إجمالي المحصل</Text>
+                  <Text style={styles.statLabel}>قيمة الطلبات المسلّمة</Text>
                   <Text style={styles.statValueGreen}>{totalDelivered} ر.ي</Text>
                 </View>
                 <View style={styles.statDivider} />
@@ -187,23 +169,41 @@ export default function MerchantHistoryScreen({ navigation }: any) {
                  style={styles.searchInput}
                  placeholder="ابحث برقم الطلب أو اسم العميل..."
                  placeholderTextColor={UI.textMuted}
-                 value={searchQuery}
-                 onChangeText={setSearchQuery}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  accessibilityLabel="البحث في سجل الطلبات"
                />
              </View>
           </View>
         </View>
 
         <View style={[styles.contentBox, isDesktop && styles.contentBoxDesktop]}>
+          {realtimeError || (error && orders.length > 0) ? (
+            <View style={styles.inlineWarning} accessibilityRole="alert">
+              <Ionicons name="cloud-offline-outline" size={18} color="#92400E" />
+              <Text style={styles.inlineWarningText}>{realtimeError ?? error}</Text>
+            </View>
+          ) : null}
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={UI.primary} />
+            </View>
+          ) : error && orders.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
+              <Text style={styles.emptyTitle}>تعذر تحميل السجل</Text>
+              <Text style={styles.emptyText}>{error}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل سجل الطلبات">
+                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <FlatList
               data={groupedOrders}
               keyExtractor={(item) => item.date}
               contentContainerStyle={styles.listContent}
+              refreshing={refreshing}
+              onRefresh={() => void refresh()}
               renderItem={({ item }) => (
                 <View style={styles.dateGroup}>
                   <View style={styles.dateBadge}>
@@ -219,7 +219,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
               ListEmptyComponent={
                 <View style={styles.empty}>
                   <Ionicons name="documents-outline" size={64} color={UI.border} />
-                  <Text style={styles.emptyTitle}>دفتر السجل فارغ</Text>
+                  <Text style={styles.emptyTitle}>سجل الطلبات فارغ</Text>
                   <Text style={styles.emptyText}>لم يتم العثور على أي حركات متطابقة.</Text>
                 </View>
               }
@@ -297,4 +297,8 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
   emptyText: { fontSize: 14, color: UI.textMuted, textAlign: 'center' },
+  retryBtn: { backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12 },
+  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  inlineWarning: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#FFFBEB', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingHorizontal: 18, paddingVertical: 10 },
+  inlineWarningText: { flex: 1, color: '#92400E', fontSize: 12.5, fontWeight: '700', textAlign: 'right' },
 });

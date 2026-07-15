@@ -286,6 +286,10 @@ export interface Database {
           channel: string;
           sent_at: string | null;
           failed_reason: string | null;
+          push_claim_token: string | null;
+          push_claimed_at: string | null;
+          push_dispatched_at: string | null;
+          push_attempt_count: number;
           created_at: string;
         };
         Insert: {
@@ -298,6 +302,10 @@ export interface Database {
           is_read?: boolean;
           channel?: string;
           sent_at?: string | null;
+          push_claim_token?: string | null;
+          push_claimed_at?: string | null;
+          push_dispatched_at?: string | null;
+          push_attempt_count?: number;
           created_at?: string;
         };
         Update: {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { OrderSummary } from '@marketplace/shared-hooks';
@@ -9,9 +9,10 @@ interface Props {
   order: OrderSummary | null;
   onAccept: () => void;
   onReject: () => void;
+  accepting?: boolean;
 }
 
-export default function IncomingOrderModal({ visible, order, onAccept, onReject }: Props) {
+export default function IncomingOrderModal({ visible, order, onAccept, onReject, accepting = false }: Props) {
   const [timeLeft, setTimeLeft] = useState(30);
   const [scaleAnim] = useState(new Animated.Value(0.8));
 
@@ -39,12 +40,12 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject 
       scaleAnim.setValue(0.8);
     }
     return () => clearInterval(timer);
-  }, [visible]);
+  }, [onReject, scaleAnim, visible]);
 
   if (!visible || !order) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onReject}>
       <View style={styles.overlay}>
         <Animated.View style={[styles.modalCard, { transform: [{ scale: scaleAnim }] }]}>
           
@@ -63,7 +64,7 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject 
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={18} color="#6B7280" />
               <Text style={styles.detailText} numberOfLines={2}>
-                إلى: {order.addresses?.full_address ?? 'عنوان غير محدد'}
+                يظهر عنوان العميل بالتفصيل بعد قبول الطلب
               </Text>
             </View>
             <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }]}>
@@ -75,12 +76,34 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject 
           <Text style={styles.timerText}>يختفي الطلب خلال <Text style={{ color: '#DC2626' }}>{timeLeft}</Text> ثانية</Text>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.rejectBtn} onPress={onReject} activeOpacity={0.7}>
-              <Text style={styles.rejectText}>رفض</Text>
+            <TouchableOpacity
+              style={[styles.rejectBtn, accepting && styles.disabledBtn]}
+              onPress={onReject}
+              activeOpacity={0.7}
+              disabled={accepting}
+              accessibilityRole="button"
+              accessibilityLabel="تخطي عرض التوصيل الحالي"
+              accessibilityState={{ disabled: accepting }}
+            >
+              <Text style={styles.rejectText}>تخطي</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.acceptBtn} onPress={onAccept} activeOpacity={0.7}>
-              <Text style={styles.acceptText}>قبول الطلب</Text>
-              <Ionicons name="bicycle" size={20} color="#FFFFFF" />
+            <TouchableOpacity
+              style={[styles.acceptBtn, accepting && styles.disabledBtn]}
+              onPress={onAccept}
+              activeOpacity={0.7}
+              disabled={accepting}
+              accessibilityRole="button"
+              accessibilityLabel="قبول طلب التوصيل"
+              accessibilityState={{ disabled: accepting, busy: accepting }}
+            >
+              {accepting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.acceptText}>قبول الطلب</Text>
+                  <Ionicons name="bicycle" size={20} color="#FFFFFF" />
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -122,4 +145,5 @@ const styles = StyleSheet.create({
   rejectText: { color: '#4B5563', fontSize: 15, fontWeight: '700' },
   acceptBtn: { flex: 2, height: 50, borderRadius: 14, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   acceptText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  disabledBtn: { opacity: 0.6 },
 });

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
-  Platform, Alert, TextInput, useWindowDimensions, KeyboardAvoidingView, Image, ActivityIndicator,
+  Platform, TextInput, useWindowDimensions, KeyboardAvoidingView, Image, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuthStore, createProduct, addProductImages, uploadImageToStorage, getCategories, Category } from '@marketplace/shared-hooks';
+import { useAuthStore, createProduct, addProductImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
 
 const UI = {
   primary: '#111827',
@@ -57,13 +58,14 @@ export default function AddProductScreen({ navigation }: any) {
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesError, setCategoriesError] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => {});
+    getCategories().then((data) => { setCategories(data); setCategoriesError(''); }).catch(() => setCategoriesError('تعذّر تحميل التصنيفات. يمكنك حفظ المنتج دون تصنيف ثم تعديله لاحقاً.'));
   }, []);
 
   const pickImages = async () => {
@@ -105,10 +107,17 @@ export default function AddProductScreen({ navigation }: any) {
       return;
     }
     const parsedStock = parseInt(stock, 10);
+    if (stock.trim() && (!Number.isFinite(parsedStock) || parsedStock < 0)) {
+      Alert.alert('تنبيه', 'الرجاء إدخال مخزون صحيح لا يقل عن صفر');
+      return;
+    }
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
 
     setSaving(true);
     try {
+      const merchant = await getMerchantProfile(user.id);
+      if (!merchant?.id) throw new Error('لم يتم العثور على ملف المتجر المرتبط بالحساب');
+
       let og_image_url: string | undefined;
       let uploadedUrls: string[] = [];
 
@@ -116,7 +125,7 @@ export default function AddProductScreen({ navigation }: any) {
         setUploadingImages(true);
         uploadedUrls = await Promise.all(
           selectedImages.map((uri, i) =>
-            uploadImageToStorage('products', `${user.id}/${Date.now()}_${i}`, uri)
+            uploadImageToStorage('products', `${merchant.id}/${Date.now()}_${i}`, uri)
           )
         );
         og_image_url = uploadedUrls[0];
@@ -124,7 +133,7 @@ export default function AddProductScreen({ navigation }: any) {
       }
 
       const product = await createProduct({
-        merchant_id: user.id,
+        merchant_id: merchant.id,
         name: name.trim(),
         description: description.trim() || undefined,
         base_price: parsedPrice,
@@ -134,14 +143,15 @@ export default function AddProductScreen({ navigation }: any) {
         og_image_url,
       });
 
+      let galleryWarning = false;
       if (product?.id && uploadedUrls.length > 0) {
-        await addProductImages(product.id, uploadedUrls).catch(() => {});
+        try { await addProductImages(product.id, uploadedUrls); }
+        catch { galleryWarning = true; }
       }
 
-      Alert.alert('تم الحفظ ✅', 'تمت إضافة المنتج بنجاح', [
+      Alert.alert('تم الحفظ ✅', galleryWarning ? 'تمت إضافة المنتج والصورة الرئيسية، لكن تعذّر ربط بعض صور المعرض. يمكنك إعادة إضافتها من تعديل المنتج.' : 'تمت إضافة المنتج بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
-      if (Platform.OS === 'web') navigation.goBack();
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'فشل حفظ المنتج');
     } finally {
@@ -300,7 +310,7 @@ export default function AddProductScreen({ navigation }: any) {
                   })}
                 </View>
               ) : (
-                <Text style={{ textAlign: 'right', color: UI.textMuted, fontSize: 13 }}>جاري تحميل التصنيفات...</Text>
+                <Text style={{ textAlign: 'right', color: categoriesError ? UI.error : UI.textMuted, fontSize: 13 }}>{categoriesError || 'جاري تحميل التصنيفات...'}</Text>
               )}
             </View>
 

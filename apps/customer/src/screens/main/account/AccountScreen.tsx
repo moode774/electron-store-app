@@ -8,13 +8,14 @@ import {
   Platform,
   Image,
   ImageBackground,
-  Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, getAccountStats, getLoyaltyPoints, getReferralCode, deleteMyAccount } from '@marketplace/shared-hooks';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AccountStackParamList } from '../../../navigation/types';
+import { Alert } from '../../../components/appAlert';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -36,20 +37,37 @@ const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof Accoun
 ];
 
 export default function AccountScreen({ navigation }: Props): React.JSX.Element {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 760;
+  const cardWidth = isDesktop
+    ? Math.min(Math.max((width - 100) * 0.45, 0), 620)
+    : Math.min(Math.max(width - 40, 0), 560);
+  const profileCardHeight = Math.min(Math.max(Math.round(cardWidth * 0.42), 132), 190);
+  const promoHeight = isDesktop ? 190 : Math.min(Math.max(Math.round(cardWidth * 0.32), 104), 150);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const [counts, setCounts] = useState({ orders: 0, coupons: 0, addresses: 0, favorites: 0 });
   const [points, setPoints] = useState(0);
   const [referral, setReferral] = useState('');
+  const [statsError, setStatsError] = useState('');
 
-  const loadStats = useCallback(() => {
+  const loadStats = useCallback(async () => {
     if (!user?.id) return;
-    getAccountStats(user.id).then(setCounts).catch(() => {});
-    getLoyaltyPoints(user.id).then(setPoints).catch(() => {});
-    getReferralCode(user.id).then(setReferral).catch(() => {});
+    setStatsError('');
+    const results = await Promise.allSettled([
+      getAccountStats(user.id),
+      getLoyaltyPoints(user.id),
+      getReferralCode(user.id),
+    ]);
+    if (results[0].status === 'fulfilled') setCounts(results[0].value);
+    if (results[1].status === 'fulfilled') setPoints(results[1].value);
+    if (results[2].status === 'fulfilled') setReferral(results[2].value);
+    if (results.some((result) => result.status === 'rejected')) {
+      setStatsError('تعذّر تحديث بعض بيانات الحساب.');
+    }
   }, [user?.id]);
 
-  useFocusEffect(useCallback(() => { loadStats(); }, [loadStats]));
+  useFocusEffect(useCallback(() => { void loadStats(); }, [loadStats]));
 
   const STATS = [
     { id: '1', title: 'الطلبات', value: String(counts.orders), icon: 'bag-handle-outline' },
@@ -60,28 +78,14 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Ionicons name="settings-outline" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Image
-          source={require('../../../../assets/images/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <TouchableOpacity style={styles.iconBtn}>
-          <Ionicons name="notifications-outline" size={24} color="#111827" />
-          <View style={styles.badge} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]}>
+        <View style={isDesktop ? styles.desktopColumns : undefined}>
+        <View style={isDesktop ? styles.desktopSummary : undefined}>
 
         {/* Profile Card */}
         <ImageBackground
           source={require('../../../../assets/images/profile_card_art.png')}
-          style={styles.profileCard}
+          style={[styles.profileCard, { height: profileCardHeight }]}
           imageStyle={styles.profileCardBg}
         >
 
@@ -115,6 +119,12 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
             </View>
           ))}
         </View>
+        {!!statsError && (
+          <TouchableOpacity style={styles.statsError} onPress={() => void loadStats()} accessibilityRole="button">
+            <Ionicons name="refresh-circle-outline" size={18} color="#B91C1C" />
+            <Text style={styles.statsErrorText}>{statsError} اضغط لإعادة المحاولة.</Text>
+          </TouchableOpacity>
+        )}
 
         {/* بطاقة الولاء والإحالة */}
         <View style={styles.loyaltyCard}>
@@ -134,7 +144,9 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
             </View>
           )}
         </View>
+        </View>
 
+        <View style={isDesktop ? styles.desktopSettings : undefined}>
         <Text style={styles.sectionTitle}>حسابي</Text>
 
         {/* Menu List */}
@@ -192,9 +204,11 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
           <Ionicons name="trash-outline" size={22} color="#EF4444" />
           <Text style={[styles.logoutText, { color: '#EF4444' }]}>حذف الحساب نهائياً</Text>
         </TouchableOpacity>
+        </View>
+        </View>
 
         {/* Promo Banner */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper}>
+        <TouchableOpacity activeOpacity={0.9} style={[styles.promoBannerWrapper, { height: promoHeight }]}>
           <Image
             source={require('../../../../assets/images/account_promo.png')}
             style={styles.promoBannerFullImage}
@@ -244,10 +258,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
+  scrollContentDesktop: {
+    width: '100%',
+    maxWidth: 1260,
+    alignSelf: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 36,
+    paddingBottom: 56,
+  },
+  desktopColumns: {
+    width: '100%',
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    gap: 28,
+  },
+  desktopSummary: { flex: 0.9 },
+  desktopSettings: { flex: 1.1 },
   profileCard: {
     borderRadius: 24,
     padding: 24,
-    minHeight: 140,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -261,6 +291,8 @@ const styles = StyleSheet.create({
   profileCardBg: {
     borderRadius: 24,
     resizeMode: 'cover',
+    width: '100%',
+    height: '100%',
   },
   profileZoneRight: {
     justifyContent: 'center',
@@ -329,6 +361,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  statsError: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 12, padding: 10, marginTop: -10, marginBottom: 18 },
+  statsErrorText: { color: '#991B1B', fontSize: 12, fontWeight: '700', textAlign: 'right' },
   statWrapper: {
     flex: 1,
     flexDirection: 'row-reverse',
@@ -369,7 +403,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 24,
     overflow: 'hidden',
-    height: 140,
     backgroundColor: '#F3F4F6',
     width: '100%',
     shadowColor: '#000',
@@ -381,6 +414,7 @@ const styles = StyleSheet.create({
   promoBannerFullImage: {
     width: '100%',
     height: '100%',
+    maxHeight: '100%',
   },
   sectionTitle: {
     fontSize: 18,

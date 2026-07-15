@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
@@ -10,10 +10,17 @@ export default function OffersScreen({ navigation }: any) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [offers, setOffers] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => {
-    getActiveCoupons().then(setOffers).catch(() => setOffers([])).finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try { setOffers(await getActiveCoupons()); }
+    catch (error: any) { setLoadError(error?.message ?? 'تعذّر تحميل العروض.'); }
+    finally { setLoading(false); }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
 
   const handleCopy = async (id: string, code: string) => {
     if (Platform.OS === 'web') {
@@ -44,6 +51,14 @@ export default function OffersScreen({ navigation }: any) {
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : loadError ? (
+        <View style={styles.errorState} accessibilityRole="alert">
+          <Ionicons name="cloud-offline-outline" size={48} color="#B91C1C" />
+          <Text style={styles.errorText}>{loadError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
+            <Text style={styles.retryText}>إعادة المحاولة</Text>
+          </TouchableOpacity>
         </View>
       ) : (
       <FlatList
@@ -97,6 +112,10 @@ export default function OffersScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
+  errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+  errorText: { color: '#991B1B', textAlign: 'center' },
+  retryButton: { minHeight: 44, borderRadius: 11, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,

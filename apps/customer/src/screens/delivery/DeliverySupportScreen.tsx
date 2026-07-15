@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket } from '@marketplace/shared-hooks';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 
 const UI = {
   primary: '#111827',
@@ -19,7 +20,7 @@ const UI = {
 const CATEGORIES = [
   { value: 'technical', label: 'مشكلة تقنية' },
   { value: 'payment', label: 'الأرباح والمحفظة' },
-  { value: 'orders', label: 'الطلبات' },
+  { value: 'order', label: 'الطلبات' },
   { value: 'account', label: 'الحساب' },
   { value: 'other', label: 'أخرى' },
 ];
@@ -33,10 +34,10 @@ const TICKET_STATUS: Record<string, { label: string; color: string }> = {
 };
 
 const FAQS = [
-  { id: '1', q: 'كيف أستلم أرباحي؟', a: 'تُضاف أرباح كل توصيلة تلقائياً لمحفظتك فور إكمال التسليم. يمكنك طلب سحب الرصيد من شاشة "أرباحي" وسيُحوَّل خلال 1-3 أيام عمل.' },
+  { id: '1', q: 'كيف أستلم أرباحي؟', a: 'تظهر التوصيلات التي تمت تسويتها في شاشة الأرباح. يمكنك تقديم طلب سحب من الشاشة نفسها ومتابعة حالته مع الدعم.' },
   { id: '2', q: 'ماذا أفعل إذا لم يفتح الطلب بعد قبوله؟', a: 'تأكد من اتصالك بالإنترنت ثم افتح تبويب "الطلبات". إذا استمرت المشكلة، تواصل مع فريق الدعم الفني عبر هذه الشاشة.' },
   { id: '3', q: 'كيف أُعدّل بيانات مركبتي؟', a: 'اذهب لـ "المزيد" ثم "بياناتي ومركبتي" وقم بتعديل نوع المركبة أو رقم اللوحة ثم احفظ.' },
-  { id: '4', q: 'كيف أُبلّغ عن مشكلة مع العميل؟', a: 'يمكنك فتح تذكرة دعم أدناه موضحاً فيها رقم الطلب وتفاصيل المشكلة. سيتولى فريق الدعم المتابعة معك خلال ساعات.' },
+  { id: '4', q: 'كيف أُبلّغ عن مشكلة مع العميل؟', a: 'يمكنك فتح تذكرة دعم أدناه موضحاً فيها رقم الطلب وتفاصيل المشكلة، ثم متابعة الرد من قائمة التذاكر.' },
 ];
 
 export default function DeliverySupportScreen({ navigation }: any) {
@@ -47,12 +48,35 @@ export default function DeliverySupportScreen({ navigation }: any) {
   const [category, setCategory] = useState('technical');
   const [sending, setSending] = useState(false);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [ticketsError, setTicketsError] = useState('');
 
-  const loadTickets = useCallback(() => {
-    if (user?.id) getSupportTickets(user.id).then(setTickets).catch(() => {});
+  const loadTickets = useCallback(async () => {
+    if (!user?.id) {
+      setTickets([]);
+      setTicketsLoading(false);
+      return;
+    }
+    setTicketsError('');
+    try {
+      setTickets(await getSupportTickets(user.id));
+    } catch (error) {
+      setTicketsError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل تذاكر الدعم.');
+    } finally {
+      setTicketsLoading(false);
+    }
   }, [user?.id]);
 
-  useEffect(() => { loadTickets(); }, [loadTickets]);
+  useFocusEffect(useCallback(() => {
+    setTicketsLoading(true);
+    void loadTickets();
+    if (!user?.id) return undefined;
+    const channel = supabase
+      .channel(`delivery-support-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets', filter: `user_id=eq.${user.id}` }, () => { void loadTickets(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [loadTickets, user?.id]));
 
   const submitTicket = async () => {
     if (!subject.trim() || !message.trim()) { Alert.alert('تنبيه', 'الرجاء إدخال الموضوع والتفاصيل'); return; }
@@ -61,8 +85,8 @@ export default function DeliverySupportScreen({ navigation }: any) {
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم وسيتم الرد عليك في أسرع وقت.');
-      loadTickets();
+      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم. يمكنك فتحها من القائمة لمتابعة الرد.');
+      await loadTickets();
     } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
     finally { setSending(false); }
   };
@@ -72,7 +96,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={UI.bgMobile} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color={UI.textDark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>مركز المساعدة</Text>
@@ -83,21 +107,21 @@ export default function DeliverySupportScreen({ navigation }: any) {
 
         {/* Contact Channels */}
         <View style={styles.channelsRow}>
-          <TouchableOpacity style={styles.channelCard} activeOpacity={0.8} onPress={() => Linking.openURL('https://wa.me/967700000000')}>
+          <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: '#DCFCE7' }]}>
               <Ionicons name="logo-whatsapp" size={28} color="#059669" />
             </View>
             <Text style={styles.channelTitle}>واتساب</Text>
-            <Text style={styles.channelSub}>رد فوري</Text>
-          </TouchableOpacity>
+            <Text style={styles.channelSub}>غير مفعّل حالياً</Text>
+          </View>
 
-          <TouchableOpacity style={styles.channelCard} activeOpacity={0.8} onPress={() => Linking.openURL('tel:+967700000000')}>
+          <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: '#EFF6FF' }]}>
               <Ionicons name="call" size={28} color={UI.blue} />
             </View>
             <Text style={styles.channelTitle}>الاتصال</Text>
-            <Text style={styles.channelSub}>24 ساعة</Text>
-          </TouchableOpacity>
+            <Text style={styles.channelSub}>استخدم تذكرة الدعم</Text>
+          </View>
         </View>
 
         {/* Ticket Form */}
@@ -112,6 +136,9 @@ export default function DeliverySupportScreen({ navigation }: any) {
                 style={[styles.catChip, category === c.value && styles.catChipActive]}
                 onPress={() => setCategory(c.value)}
                 activeOpacity={0.7}
+                accessibilityRole="radio"
+                accessibilityLabel={c.label}
+                accessibilityState={{ checked: category === c.value }}
               >
                 <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{c.label}</Text>
               </TouchableOpacity>
@@ -125,6 +152,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
             value={subject}
             onChangeText={setSubject}
             textAlign="right"
+            accessibilityLabel="موضوع المشكلة"
           />
           <TextInput
             style={[styles.inputField, styles.textArea]}
@@ -135,6 +163,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
             multiline
             textAlign="right"
             textAlignVertical="top"
+            accessibilityLabel="تفاصيل المشكلة"
           />
 
           <TouchableOpacity
@@ -142,6 +171,9 @@ export default function DeliverySupportScreen({ navigation }: any) {
             onPress={submitTicket}
             disabled={sending}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="إرسال تذكرة الدعم"
+            accessibilityState={{ disabled: sending, busy: sending }}
           >
             {sending ? <ActivityIndicator color="#fff" size="small" /> : (
               <>
@@ -152,6 +184,16 @@ export default function DeliverySupportScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
+        {ticketsLoading && <ActivityIndicator color={UI.blue} accessibilityLabel="جاري تحميل تذاكر الدعم" />}
+        {ticketsError ? (
+          <View style={styles.ticketErrorCard}>
+            <Text style={styles.ticketErrorText}>{ticketsError}</Text>
+            <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة تحميل تذاكر الدعم">
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {/* Previous Tickets */}
         {tickets.length > 0 && (
           <View style={styles.card}>
@@ -159,7 +201,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
             {tickets.map((t, i) => {
               const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
               return (
-                <View key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]}>
+                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ticketSubject}>{t.subject}</Text>
                     <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
@@ -167,7 +209,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
                   <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
                     <Text style={[styles.ticketStatusText, { color: st.color }]}>{st.label}</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -180,7 +222,14 @@ export default function DeliverySupportScreen({ navigation }: any) {
             const isOpen = expandedId === faq.id;
             return (
               <View key={faq.id} style={[styles.faqItem, index === FAQS.length - 1 && { borderBottomWidth: 0 }]}>
-                <TouchableOpacity style={styles.faqHeader} onPress={() => setExpandedId(isOpen ? null : faq.id)} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.faqHeader}
+                  onPress={() => setExpandedId(isOpen ? null : faq.id)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={faq.q}
+                  accessibilityState={{ expanded: isOpen }}
+                >
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={UI.textMuted} />
                   <Text style={styles.faqQuestion}>{faq.q}</Text>
                 </TouchableOpacity>
@@ -237,6 +286,10 @@ const styles = StyleSheet.create({
   ticketDate: { fontSize: 11.5, color: UI.textMuted, marginTop: 3, textAlign: 'right', fontWeight: '600' },
   ticketStatusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   ticketStatusText: { fontSize: 11.5, fontWeight: '800' },
+  ticketErrorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 16, alignItems: 'center', gap: 10 },
+  ticketErrorText: { color: '#B91C1C', fontSize: 12.5, textAlign: 'center', lineHeight: 19, fontWeight: '600' },
+  retryBtn: { backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  retryText: { color: UI.blue, fontSize: 12.5, fontWeight: '800' },
   faqItem: { borderBottomWidth: 1, borderBottomColor: UI.border },
   faqHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
   faqQuestion: { flex: 1, fontSize: 13.5, fontWeight: '800', color: UI.textDark, marginRight: 10, textAlign: 'right' },

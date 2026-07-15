@@ -1,0 +1,46 @@
+name: Database Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "supabase/config.toml"
+      - "scripts/check-sql-migrations.mjs"
+      - ".github/workflows/database-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pgtap:
+    name: PostgreSQL 17 migrations and pgTAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v2.1.1
+        with:
+          version: 2.109.1
+
+      - name: Show Supabase CLI version
+        run: supabase --version
+
+      - name: Start clean local database and apply all migrations
+        run: supabase db start
+
+      - name: Run database contract tests
+        run: supabase test db
+
+      - name: Stop disposable database
+        if: always()
+        continue-on-error: true
+        run: supabase stop --no-backup

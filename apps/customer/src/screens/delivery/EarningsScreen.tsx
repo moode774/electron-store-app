@@ -1,43 +1,102 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, StatusBar, Platform, ActivityIndicator, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, getDeliveryEarnings, requestWithdrawal, DeliveryEarning } from '@marketplace/shared-hooks';
+import { useAuthStore, getDeliveryEarnings, getMyWithdrawalRequests, requestWithdrawal, DeliveryEarning, WithdrawalRequest, WithdrawalStatus } from '@marketplace/shared-hooks';
+
+const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
+  'pending',
+  'approved',
+  'processing',
+]);
+
+const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: string; backgroundColor: string }> = {
+  pending: { label: 'قيد المراجعة', color: '#92400E', backgroundColor: '#FEF3C7' },
+  approved: { label: 'معتمد — لم يُثبت التحويل بعد', color: '#1D4ED8', backgroundColor: '#DBEAFE' },
+  processing: { label: 'جاري التحويل', color: '#6D28D9', backgroundColor: '#EDE9FE' },
+  paid: { label: 'مدفوع', color: '#047857', backgroundColor: '#D1FAE5' },
+  rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+  failed: { label: 'فشل التحويل', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+};
+
+function withdrawalErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (/COD_FUNDS_NOT_YET_REMITTED/i.test(message)) {
+    return 'جزء من الرصيد ناتج عن طلبات دفع عند الاستلام ولم تعتمد الإدارة تسليم تحصيلها بعد. راجع «المحفظة والتحصيلات» لمعرفة المبلغ قيد المراجعة.';
+  }
+  return message || 'تعذّر إرسال طلب السحب';
+}
 
 export default function EarningsScreen() {
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
   const [history, setHistory] = useState<DeliveryEarning[]>([]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const withdrawLock = useRef(false);
+
+  const loadEarnings = useCallback(async () => {
+    if (!user?.id) { setLoading(false); return; }
+    setLoadError('');
+    try {
+      const [result, requests] = await Promise.all([
+        getDeliveryEarnings(user.id),
+        getMyWithdrawalRequests(user.id),
+      ]);
+      setBalance(result.balance);
+      setTotalDeliveries(result.totalDeliveries);
+      setHistory(result.earnings);
+      setWithdrawals(requests);
+    } catch (error) {
+      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل الأرباح.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  const blockingWithdrawal = withdrawals.find((request) => BLOCKING_WITHDRAWAL_STATUSES.has(request.status));
+  const hasBlockingWithdrawal = Boolean(blockingWithdrawal);
 
   useFocusEffect(useCallback(() => {
-    if (!user?.id) { setLoading(false); return; }
-    getDeliveryEarnings(user.id)
-      .then((r) => { setBalance(r.balance); setTotalDeliveries(r.totalDeliveries); setHistory(r.earnings); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user?.id]));
+    setLoading(true);
+    void loadEarnings();
+  }, [loadEarnings]));
 
   const handleWithdraw = async () => {
+    if (withdrawLock.current || withdrawing) return;
+    if (blockingWithdrawal) {
+      Alert.alert(
+        blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
+        blockingWithdrawal.status === 'failed'
+          ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
+          : 'لديك طلب سحب قائم بالفعل.',
+      );
+      return;
+    }
     const amount = parseFloat(withdrawAmount);
     if (!amount || amount <= 0) { Alert.alert('تنبيه', 'الرجاء إدخال مبلغ صحيح'); return; }
     if (amount > balance) { Alert.alert('تنبيه', 'المبلغ المطلوب أكبر من رصيدك الحالي'); return; }
+    if (amount < 50) { Alert.alert('تنبيه', 'الحد الأدنى للسحب 50 ر.ي'); return; }
     if (!user?.id) return;
+    withdrawLock.current = true;
     setWithdrawing(true);
     try {
       await requestWithdrawal(amount, user.id);
       setShowWithdraw(false);
       setWithdrawAmount('');
-      Alert.alert('تم الطلب ✅', `تم إرسال طلب سحب ${amount} ر.ي وسيتم معالجته خلال 1-3 أيام عمل.`);
-    } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال طلب السحب');
+      await loadEarnings();
+      Alert.alert('تم إنشاء الطلب', `تم تسجيل طلب سحب ${amount} ر.ي للمراجعة. يمكنك متابعة حالته في هذه الصفحة، ولا يُعد المبلغ مدفوعاً حتى تظهر حالة «مدفوع».`);
+    } catch (error) {
+      Alert.alert('تعذّر طلب السحب', withdrawalErrorMessage(error));
     } finally {
+      withdrawLock.current = false;
       setWithdrawing(false);
     }
   };
@@ -50,7 +109,7 @@ export default function EarningsScreen() {
       </View>
 
       {/* Withdrawal Modal */}
-      <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => setShowWithdraw(false)}>
+      <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => !withdrawing && setShowWithdraw(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
@@ -63,18 +122,24 @@ export default function EarningsScreen() {
               onChangeText={setWithdrawAmount}
               keyboardType="numeric"
               textAlign="right"
+              editable={!withdrawing}
             />
             <TouchableOpacity
-              style={[styles.modalBtn, withdrawing && { opacity: 0.6 }]}
+              style={[styles.modalBtn, (withdrawing || hasBlockingWithdrawal) && { opacity: 0.6 }]}
               onPress={handleWithdraw}
-              disabled={withdrawing}
+              disabled={withdrawing || hasBlockingWithdrawal}
+              accessibilityState={{ disabled: withdrawing || hasBlockingWithdrawal }}
               activeOpacity={0.8}
             >
               {withdrawing
                 ? <ActivityIndicator color="#FFFFFF" size="small" />
                 : <Text style={styles.modalBtnText}>إرسال طلب السحب</Text>}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowWithdraw(false); setWithdrawAmount(''); }}>
+            <TouchableOpacity
+              style={[styles.modalCancel, withdrawing && { opacity: 0.5 }]}
+              onPress={() => { setShowWithdraw(false); setWithdrawAmount(''); }}
+              disabled={withdrawing}
+            >
               <Text style={styles.modalCancelText}>إلغاء</Text>
             </TouchableOpacity>
           </View>
@@ -92,6 +157,14 @@ export default function EarningsScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
+            {loadError ? (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorText}>{loadError}</Text>
+                <TouchableOpacity onPress={() => void loadEarnings()} accessibilityRole="button" accessibilityLabel="إعادة تحميل الأرباح">
+                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
             {/* Summary Card */}
             <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>رصيد المحفظة</Text>
@@ -108,15 +181,43 @@ export default function EarningsScreen() {
                 </View>
               </View>
               <TouchableOpacity
-                style={styles.withdrawBtn}
+                style={[styles.withdrawBtn, (balance < 50 || hasBlockingWithdrawal || withdrawing) && { opacity: 0.5 }]}
                 onPress={() => setShowWithdraw(true)}
                 activeOpacity={0.8}
-                disabled={balance <= 0}
+                disabled={balance < 50 || hasBlockingWithdrawal || withdrawing}
+                accessibilityRole="button"
+                accessibilityLabel="طلب سحب الأرباح"
+                accessibilityState={{ disabled: balance < 50 || hasBlockingWithdrawal || withdrawing }}
               >
                 <Ionicons name="arrow-up-circle-outline" size={18} color="#111827" />
                 <Text style={styles.withdrawBtnText}>طلب سحب الأرباح</Text>
               </TouchableOpacity>
             </View>
+
+            {withdrawals.length ? (
+              <View style={styles.withdrawalSection}>
+                <Text style={styles.sectionTitle}>طلبات السحب</Text>
+                {withdrawals.slice(0, 5).map((request) => {
+                  const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
+                  return (
+                    <View key={request.id} style={styles.withdrawalRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
+                        <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-SA')}</Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.withdrawalStatus,
+                          { color: statusInfo.color, backgroundColor: statusInfo.backgroundColor },
+                        ]}
+                      >
+                        {statusInfo.label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
 
             <Text style={styles.sectionTitle}>سجل التوصيلات</Text>
           </>
@@ -149,6 +250,14 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#111827' },
   listContent: { padding: 20, gap: 12, paddingBottom: 100 },
+  errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
+  errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
+  retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
+  withdrawalSection: { gap: 8, marginBottom: 6 },
+  withdrawalRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  withdrawalAmount: { color: '#111827', fontSize: 13.5, fontWeight: '800' },
+  withdrawalDate: { color: '#9CA3AF', fontSize: 10.5, marginTop: 3 },
+  withdrawalStatus: { maxWidth: '52%', fontSize: 11, fontWeight: '700', textAlign: 'right', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, overflow: 'hidden' },
   summaryCard: {
     backgroundColor: COLORS.primary, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 8,
   },

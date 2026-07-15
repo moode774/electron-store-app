@@ -1,0 +1,20 @@
+project_id = "marketplace-local"
+
+[db]
+# Keep disposable/CI verification on the same PostgreSQL major version as production.
+major_version = 17
+
+[db.seed]
+# Every pgTAP suite creates and rolls back its own fixtures.
+enabled = false
+
+[functions.api-v1]
+# api-v1 performs custom authentication with per-user `lv_` API keys and
+# re-checks the live account state on every request. Requiring a Supabase JWT
+# at the gateway would add a second unrelated credential and break this API.
+verify_jwt = false
+
+[functions.send-push]
+# Database Webhook requests use a service-role JWT and the function validates
+# that exact credential again before using service-role database access.
+verify_jwt = true

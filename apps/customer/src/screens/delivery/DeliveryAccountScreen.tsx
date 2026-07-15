@@ -8,31 +8,41 @@ import {
   Platform,
   Image,
   ImageBackground,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
   { id: '2', title: 'المحفظة والتحصيلات', icon: 'wallet-outline', screen: 'DeliveryWallet', params: undefined },
-  { id: '3', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
-  { id: '4', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
-  { id: '5', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
-  { id: '6', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
+  { id: '3', title: 'مهام الإرجاع', icon: 'return-down-back-outline', screen: 'DeliveryReturns', params: undefined },
+  { id: '4', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
+  { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
+  { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
+  { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
 ];
 
 export default function DeliveryAccountScreen({ navigation }: any) {
   const { user, signOut } = useAuthStore();
   const [info, setInfo] = useState({ balance: 0, totalDeliveries: 0, count: 0 });
+  const [loadError, setLoadError] = useState('');
+
+  const loadInfo = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadError('');
+    try {
+      const result = await getDeliveryEarnings(user.id);
+      setInfo({ balance: result.balance, totalDeliveries: result.totalDeliveries, count: result.earnings.length });
+    } catch (error) {
+      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحديث ملخص الحساب.');
+    }
+  }, [user?.id]);
 
   useFocusEffect(useCallback(() => {
-    if (!user?.id) return;
-    getDeliveryEarnings(user.id)
-      .then((r) => setInfo({ balance: r.balance, totalDeliveries: r.totalDeliveries, count: r.earnings.length }))
-      .catch(() => {});
-  }, [user?.id]));
+    void loadInfo();
+  }, [loadInfo]));
 
   const STATS = [
     { id: '1', title: 'إجمالي التوصيلات', value: `${info.totalDeliveries}`, icon: 'cube-outline' },
@@ -45,13 +55,12 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')} accessibilityRole="button" accessibilityLabel="إعدادات بيانات المندوب">
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>حساب المندوب</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })} accessibilityRole="button" accessibilityLabel="إشعارات المندوب">
           <Ionicons name="notifications-outline" size={24} color="#111827" />
-          <View style={styles.badge} />
         </TouchableOpacity>
       </View>
 
@@ -76,25 +85,34 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                 <Ionicons name="person" size={28} color="#111827" />
               </View>
               <View style={styles.premiumBadge}>
-                <Ionicons name="sparkles" size={10} color="#3B82F6" />
-                <Text style={styles.premiumText}>مندوب مميز</Text>
+                <Ionicons name="bicycle" size={10} color="#3B82F6" />
+                <Text style={styles.premiumText}>مندوب توصيل</Text>
               </View>
             </View>
           </View>
 
         </ImageBackground>
 
+        {loadError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorText}>{loadError}</Text>
+            <TouchableOpacity onPress={() => void loadInfo()} accessibilityRole="button" accessibilityLabel="إعادة تحميل ملخص الحساب">
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         {/* Stats Row */}
         <View style={styles.statsCardContainer}>
           {STATS.map((stat, index) => (
             <View key={stat.id} style={styles.statWrapper}>
-              <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+              <View style={styles.statItem} accessibilityLabel={`${stat.title}: ${stat.value}`}>
                 <View style={styles.statIconCircle}>
                   <Ionicons name={stat.icon as any} size={18} color="#111827" />
                 </View>
                 <Text style={styles.statValue}>{stat.value}</Text>
                 <Text style={styles.statTitle} numberOfLines={1} adjustsFontSizeToFit>{stat.title}</Text>
-              </TouchableOpacity>
+              </View>
               {index < STATS.length - 1 && <View style={styles.statDivider} />}
             </View>
           ))}
@@ -110,6 +128,8 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                 style={styles.menuItem}
                 activeOpacity={0.7}
                 onPress={() => item.screen && navigation.navigate(item.screen as any, item.params as any)}
+                accessibilityRole="button"
+                accessibilityLabel={item.title}
               >
                 <View style={styles.menuItemRight}>
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
@@ -123,13 +143,13 @@ export default function DeliveryAccountScreen({ navigation }: any) {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
           <Ionicons name="log-out-outline" size={24} color="#3B82F6" />
           <Text style={styles.logoutText}>تسجيل الخروج</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper} onPress={() => Alert.alert('عرض خاص', 'تفاصيل العرض الترويجي للمندوبين المميزين')}>
+        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper} onPress={() => Alert.alert('قريبًا', 'سيتم نشر برامج ومزايا المندوبين المعتمدة هنا.')} accessibilityRole="button" accessibilityLabel="برامج ومزايا المندوبين">
           <Image
             source={require('../../../assets/images/account_promo.png')}
             style={styles.promoBannerFullImage}
@@ -160,17 +180,6 @@ const styles = StyleSheet.create({
     padding: 8,
     position: 'relative',
   },
-  badge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3B82F6',
-    borderWidth: 1.5,
-    borderColor: '#F9FAFB',
-  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
@@ -180,6 +189,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
+  errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 16, alignItems: 'center', gap: 8 },
+  errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
+  retryText: { color: '#2563EB', fontSize: 12.5, fontWeight: '800' },
   profileCard: {
     borderRadius: 24,
     padding: 24,

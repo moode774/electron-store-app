@@ -1,6 +1,21 @@
 import { supabase } from './supabaseClient';
 import { TABLES } from '@marketplace/shared-utils';
 
+const ADMIN_UPDATE_TIMEOUT_MS = 15_000;
+
+function withRequestTimeout<T>(request: PromiseLike<T>, timeoutMs = ADMIN_UPDATE_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('انتهت مهلة الاتصال بالخادم. تحقق من الإنترنت ثم حاول مرة أخرى.'));
+    }, timeoutMs);
+
+    request.then(
+      (result) => { clearTimeout(timer); resolve(result); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+}
+
 // ============================================================
 // TYPES
 // ============================================================
@@ -29,7 +44,17 @@ export interface ProductSummary {
   og_image_url: string | null;
   product_images?: { url: string; is_primary: boolean; sort_order: number }[];
   stock_quantity?: number;
-  merchant_profiles?: { store_name: string } | null;
+  approval_status?: ProductApprovalStatus;
+  approval_note?: string | null;
+  approved_at?: string | null;
+  product_variants?: { id: string; is_active?: boolean }[];
+  merchant_profiles?: {
+    store_name: string;
+    is_active?: boolean;
+    is_approved?: boolean;
+    is_open?: boolean;
+  } | null;
+  categories?: { name: string; name_ar: string | null } | null;
 }
 
 export interface ProductDetail {
@@ -85,13 +110,19 @@ export interface Address {
 export interface OrderSummary {
   id: string;
   order_number: string;
+  customer_id?: string | null;
+  merchant_id?: string | null;
+  delivery_id?: string | null;
+  address_id?: string | null;
   status: string;
   total_amount: number | null;
   created_at: string;
+  updated_at?: string;
+  delivered_at?: string | null;
   delivery_fee?: number;
   customer_profiles?: { full_name: string | null; phone: string | null } | null;
   merchant_profiles?: { store_name: string; address?: string | null; city?: string | null } | null;
-  addresses?: { full_address: string; city: string | null } | null;
+  addresses?: { full_address?: string; city: string | null } | null;
   payment_method?: string | null;
   payment_status?: string;
 }
@@ -99,7 +130,10 @@ export interface OrderSummary {
 export interface OrderDetail {
   id: string;
   order_number: string;
+  customer_id?: string | null;
   merchant_id?: string;
+  delivery_id?: string | null;
+  address_id?: string | null;
   status: string;
   subtotal: number | null;
   delivery_fee: number;
@@ -112,6 +146,8 @@ export interface OrderDetail {
   cancel_reason?: string | null;
   created_at: string;
   updated_at: string;
+  delivered_at?: string | null;
+  cancelled_at?: string | null;
   delivery_fee_amount?: number;
   addresses?: { full_address: string; city: string | null } | null;
   merchant_profiles?: { store_name: string; store_logo_url: string | null } | null;
@@ -124,6 +160,14 @@ export interface OrderDetail {
     product_name?: string | null;
     products?: { name: string } | null;
   }[];
+  order_tracking?: {
+    id: string;
+    status: string;
+    notes: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    created_at: string;
+  }[];
 }
 
 export interface Notification {
@@ -131,6 +175,7 @@ export interface Notification {
   title: string | null;
   body: string | null;
   type: string | null;
+  data?: Record<string, unknown> | null;
   is_read: boolean;
   channel: string;
   created_at: string;
@@ -162,9 +207,11 @@ export async function getCategories(): Promise<Category[]> {
 export async function getFeaturedProducts(limit = 10): Promise<ProductSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles!inner(store_name, is_active)')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
     .eq('is_active', true)
     .eq('merchant_profiles.is_active', true)
+    .eq('merchant_profiles.is_approved', true)
+    .eq('merchant_profiles.is_open', true)
     .order('total_sold', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -175,35 +222,45 @@ export async function getProductById(id: string): Promise<ProductDetail | null> 
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
     .select(`
-      *,
-      merchant_profiles!inner(id, store_name, store_logo_url, is_active),
+      id, merchant_id, category_id, name, name_ar, description, description_ar,
+      base_price, sale_price, sku, is_active, is_featured, weight, total_sold,
+      rating, tags, og_image_url, stock_quantity, created_at,
+      merchant_profiles!inner(id, store_name, store_logo_url, is_active, is_approved, is_open),
       product_images(id, url:image_url, is_primary, sort_order),
-      product_variants(id, name, price_modifier, stock_quantity, is_active)
+      product_variants(id, name:size, price_modifier, stock_quantity:stock_qty, is_active)
     `)
     .eq('id', id)
+    .eq('is_active', true)
     .eq('merchant_profiles.is_active', true)
-    .single();
-  if (error) return null;
+    .eq('merchant_profiles.is_approved', true)
+    .eq('merchant_profiles.is_open', true)
+    .maybeSingle();
+  if (error) throw error;
   return data as unknown as ProductDetail;
 }
 
 export async function getProductsByStore(merchantId: string): Promise<ProductSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_variants(id, is_active), merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
     .eq('merchant_id', merchantId)
     .eq('is_active', true)
+    .eq('merchant_profiles.is_active', true)
+    .eq('merchant_profiles.is_approved', true)
+    .eq('merchant_profiles.is_open', true)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data as ProductSummary[];
+  return data as unknown as ProductSummary[];
 }
 
 export async function searchProducts(query?: string, categoryId?: string, limit = 30): Promise<ProductSummary[]> {
   let q = supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles!inner(store_name, is_active)')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
     .eq('is_active', true)
-    .eq('merchant_profiles.is_active', true);
+    .eq('merchant_profiles.is_active', true)
+    .eq('merchant_profiles.is_approved', true)
+    .eq('merchant_profiles.is_open', true);
   if (query && query.trim()) q = q.ilike('name', `%${query.trim()}%`);
   if (categoryId) q = q.eq('category_id', categoryId);
   const { data, error } = await q.order('total_sold', { ascending: false }).limit(limit);
@@ -214,14 +271,29 @@ export async function searchProducts(query?: string, categoryId?: string, limit 
 // ============================================================
 // MERCHANT PRODUCTS (for merchant screens)
 // ============================================================
-export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & { product_variants?: { stock_quantity: number }[] })[]> {
-  const { data, error } = await supabase
-    .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, base_price, sale_price, rating, total_sold, is_active, is_featured, og_image_url, product_variants(stock_quantity)')
-    .eq('merchant_id', merchantId)
-    .order('created_at', { ascending: false });
+export async function getMerchantProducts(merchantId: string): Promise<(ProductSummary & {
+  product_variants?: { stock_quantity: number }[];
+  categories?: { name: string; name_ar: string | null } | null;
+})[]> {
+  const [productsResult, moderation] = await Promise.all([
+    supabase
+      .from(TABLES.PRODUCTS)
+      .select('id, merchant_id, name, name_ar, category_id, base_price, sale_price, stock_quantity, rating, total_sold, is_active, is_featured, og_image_url, categories(name, name_ar), product_variants(stock_quantity:stock_qty)')
+      .eq('merchant_id', merchantId)
+      .order('created_at', { ascending: false }),
+    getMyProductModeration(),
+  ]);
+  const { data, error } = productsResult;
   if (error) throw error;
-  return data as any;
+  const moderationByProduct = new Map(moderation.map((item) => [item.id, item]));
+  return (data ?? []).map((product) => ({
+    ...product,
+    ...(moderationByProduct.get(product.id) ?? {
+      approval_status: 'pending' as ProductApprovalStatus,
+      approval_note: null,
+      approved_at: null,
+    }),
+  })) as any;
 }
 
 export async function createProduct(data: {
@@ -236,6 +308,15 @@ export async function createProduct(data: {
   tags?: string[];
   og_image_url?: string | null;
 }): Promise<{ id: string } | null> {
+  if (!Number.isFinite(data.base_price) || data.base_price < 0) {
+    throw new Error('سعر المنتج يجب أن يكون رقمًا غير سالب.');
+  }
+  if (data.sale_price != null && (!Number.isFinite(data.sale_price) || data.sale_price < 0)) {
+    throw new Error('سعر التخفيض يجب أن يكون رقمًا غير سالب.');
+  }
+  if (data.stock_quantity != null && (!Number.isInteger(data.stock_quantity) || data.stock_quantity < 0)) {
+    throw new Error('المخزون يجب أن يكون عددًا صحيحًا غير سالب.');
+  }
   const { data: result, error } = await supabase
     .from(TABLES.PRODUCTS)
     .insert(data)
@@ -251,9 +332,14 @@ export async function updateProduct(id: string, updates: {
   base_price?: number;
   sale_price?: number | null;
   is_active?: boolean;
-  is_featured?: boolean;
   tags?: string[];
 }): Promise<void> {
+  if (updates.base_price != null && (!Number.isFinite(updates.base_price) || updates.base_price < 0)) {
+    throw new Error('سعر المنتج يجب أن يكون رقمًا غير سالب.');
+  }
+  if (updates.sale_price != null && (!Number.isFinite(updates.sale_price) || updates.sale_price < 0)) {
+    throw new Error('سعر التخفيض يجب أن يكون رقمًا غير سالب.');
+  }
   const { error } = await supabase
     .from(TABLES.PRODUCTS)
     .update(updates)
@@ -278,6 +364,7 @@ export async function getStores(search?: string, limit = 30): Promise<StoreSumma
     .select('id, store_name, store_logo_url, store_category, store_description, city, rating, total_reviews, is_approved')
     .eq('is_approved', true)
     .eq('is_active', true)
+    .eq('is_open', true)
     .order('rating', { ascending: false })
     .limit(limit);
 
@@ -295,9 +382,11 @@ export async function getStoreById(id: string): Promise<StoreSummary | null> {
     .from(TABLES.MERCHANT_PROFILES)
     .select('id, store_name, store_logo_url, store_category, store_description, city, rating, total_reviews, is_approved')
     .eq('id', id)
+    .eq('is_approved', true)
     .eq('is_active', true)
-    .single();
-  if (error) return null;
+    .eq('is_open', true)
+    .maybeSingle();
+  if (error) throw error;
   return data as StoreSummary;
 }
 
@@ -324,19 +413,17 @@ export async function createAddress(data: {
   longitude?: number;
   is_default?: boolean;
 }): Promise<Address> {
-  if (data.is_default) {
-    await supabase
-      .from(TABLES.ADDRESSES)
-      .update({ is_default: false })
-      .eq('user_id', data.user_id);
-  }
-  const { data: result, error } = await supabase
-    .from(TABLES.ADDRESSES)
-    .insert(data)
-    .select()
-    .single();
+  // Ownership comes from auth.uid(); the RPC also serializes default changes.
+  const { data: result, error } = await supabase.rpc('create_address', {
+    p_label: data.label,
+    p_full_address: data.full_address,
+    p_city: data.city ?? null,
+    p_latitude: data.latitude ?? null,
+    p_longitude: data.longitude ?? null,
+    p_is_default: data.is_default ?? false,
+  });
   if (error) throw error;
-  return result as Address;
+  return result as unknown as Address;
 }
 
 export async function deleteAddress(id: string): Promise<void> {
@@ -345,8 +432,9 @@ export async function deleteAddress(id: string): Promise<void> {
 }
 
 export async function setDefaultAddress(userId: string, addressId: string): Promise<void> {
-  await supabase.from(TABLES.ADDRESSES).update({ is_default: false }).eq('user_id', userId);
-  await supabase.from(TABLES.ADDRESSES).update({ is_default: true }).eq('id', addressId);
+  void userId;
+  const { error } = await supabase.rpc('set_default_address', { p_address_id: addressId });
+  if (error) throw error;
 }
 
 // ============================================================
@@ -355,7 +443,7 @@ export async function setDefaultAddress(userId: string, addressId: string): Prom
 export async function getOrders(userId: string): Promise<OrderSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, created_at, payment_method, payment_status, merchant_profiles(store_name)')
+    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, total_amount, created_at, updated_at, delivered_at, payment_method, payment_status, merchant_profiles(store_name)')
     .eq('customer_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -366,23 +454,25 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select(`
-      id, order_number, merchant_id, status, subtotal, delivery_fee, discount_amount,
-      tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason, created_at, updated_at,
+      id, order_number, customer_id, merchant_id, delivery_id, address_id, status, subtotal, delivery_fee, discount_amount,
+      tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason,
+      delivered_at, cancelled_at, created_at, updated_at,
       addresses(full_address, city),
       merchant_profiles(store_name, store_logo_url),
       customer:users(full_name, phone),
-      order_items(id, quantity, unit_price, total_price, product_name, products(name))
+      order_items(id, quantity, unit_price, total_price, product_name, variant_id, products(name)),
+      order_tracking(id, status, notes, latitude, longitude, created_at)
     `)
     .eq('id', id)
-    .single();
-  if (error) return null;
+    .maybeSingle();
+  if (error) throw error;
   return data as unknown as OrderDetail;
 }
 
 export async function getMerchantOrders(merchantId: string): Promise<OrderSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, created_at, payment_method, payment_status, customer_profiles:users(full_name, phone)')
+    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, total_amount, delivery_fee, created_at, updated_at, delivered_at, payment_method, payment_status, customer_profiles:users(full_name, phone), addresses(full_address, city)')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -400,29 +490,36 @@ export async function createOrder(data: {
   total_amount: number;
   payment_method: string;
   notes?: string;
+  coupon_code?: string;
+  idempotency_key?: string;
   items: {
     product_id: string;
+    variant_id?: string | null;
     quantity: number;
     unit_price: number;
     total_price: number;
     product_name?: string;
   }[];
 }): Promise<{ id: string; order_number: string }> {
-  // عملية ذرّية واحدة: إنشاء الطلب + عناصره + خصم المخزون في معاملة واحدة
-  // (RPC create_order_with_items، SECURITY DEFINER). يمنع الطلبات الناقصة
-  // إذا فشلت أي خطوة، ويتحقق من الهوية والمخزون وحالة المتجر (عبر trigger الحراسة).
-  const { data: rows, error } = await supabase.rpc('create_order_with_items', {
-    p_customer_id: data.customer_id,
+  if (data.payment_method !== 'cash') {
+    throw new Error('الدفع المتاح حاليًا هو الدفع عند الاستلام فقط.');
+  }
+  if (!data.items.length) throw new Error('السلة فارغة.');
+
+  // لا نثق بالأسعار أو الإجماليات القادمة من الجهاز. RPC الخادم هو المسؤول
+  // عن ملكية العنوان وعلاقات المتجر والمنتجات والأسعار والمخزون.
+  const { data: order, error } = await supabase.rpc('place_order', {
     p_merchant_id: data.merchant_id,
     p_address_id: data.address_id,
-    p_subtotal: data.subtotal,
-    p_delivery_fee: data.delivery_fee,
-    p_discount_amount: data.discount_amount,
-    p_tax_amount: data.tax_amount,
-    p_total_amount: data.total_amount,
     p_payment_method: data.payment_method,
     p_notes: data.notes ?? null,
-    p_items: data.items,
+    p_coupon_code: data.coupon_code?.trim() || null,
+    p_items: data.items.map((item) => ({
+      product_id: item.product_id,
+      variant_id: item.variant_id ?? null,
+      quantity: item.quantity,
+    })),
+    p_idempotency_key: data.idempotency_key ?? createIdempotencyKey(),
   });
 
   if (error) {
@@ -430,19 +527,68 @@ export async function createOrder(data: {
     if (msg.includes('MERCHANT_CLOSED')) throw new Error('هذا المتجر مغلق حالياً، حاول لاحقاً.');
     if (msg.includes('MERCHANT_UNAVAILABLE') || msg.includes('MERCHANT_NOT_FOUND'))
       throw new Error('هذا المتجر غير متاح حالياً لاستقبال الطلبات.');
-    if (msg.includes('المخزون')) throw new Error('نفدت كمية أحد المنتجات. حدّث السلة وحاول مجدداً.');
+    if (msg.includes('OUT_OF_STOCK')) throw new Error('نفدت كمية أحد المنتجات. حدّث السلة وحاول مجدداً.');
+    if (msg.includes('INVALID_ADDRESS')) throw new Error('العنوان غير صالح لهذا الحساب. اختر عنوانًا محفوظًا وحاول مجددًا.');
+    if (msg.includes('PRODUCT_UNAVAILABLE')) throw new Error('أحد المنتجات لم يعد متاحًا من هذا المتجر. حدّث السلة.');
     throw error;
   }
 
-  const order = Array.isArray(rows) ? rows[0] : rows;
+  if (!order || typeof order !== 'object') throw new Error('لم يُرجع الخادم بيانات الطلب.');
   return order as { id: string; order_number: string };
 }
 
+export function createIdempotencyKey(): string {
+  const randomUuid = (globalThis as any)?.crypto?.randomUUID;
+  if (typeof randomUuid === 'function') return randomUuid.call((globalThis as any).crypto);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+export async function createOrderGroup(data: {
+  address_id: string;
+  payment_method: 'cash';
+  notes?: string;
+  coupon_code?: string;
+  idempotency_key: string;
+  stores: {
+    merchant_id: string;
+    items: { product_id: string; variant_id?: string | null; quantity: number }[];
+  }[];
+}): Promise<{ id: string; order_number: string }[]> {
+  if (!data.stores.length || data.stores.some((store) => !store.items.length)) {
+    throw new Error('السلة لا تحتوي على مجموعة طلبات صالحة.');
+  }
+  const { data: result, error } = await supabase.rpc('place_order_group', {
+    p_address_id: data.address_id,
+    p_payment_method: data.payment_method,
+    p_stores: data.stores,
+    p_coupon_code: data.coupon_code?.trim() || null,
+    p_notes: data.notes?.trim() || null,
+    p_idempotency_key: data.idempotency_key,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('IDEMPOTENCY_CONFLICT')) throw new Error('تغيّرت بيانات الدفع بعد محاولة سابقة. راجع السلة ثم أعد المحاولة.');
+    if (msg.includes('MERCHANT_CLOSED')) throw new Error('أحد المتاجر مغلق حالياً. راجع السلة وحاول لاحقاً.');
+    if (msg.includes('MERCHANT_UNAVAILABLE')) throw new Error('أحد المتاجر لم يعد متاحاً لاستقبال الطلبات.');
+    if (msg.includes('OUT_OF_STOCK')) throw new Error('نفدت كمية أحد المنتجات. حدّث السلة وحاول مجدداً.');
+    if (msg.includes('INVALID_ADDRESS')) throw new Error('العنوان غير صالح لهذا الحساب.');
+    if (msg.includes('PRODUCT_UNAVAILABLE') || msg.includes('INVALID_VARIANT')) throw new Error('أحد المنتجات أو خياراته لم يعد متاحاً. حدّث السلة.');
+    throw error;
+  }
+  const orders = Array.isArray(result) ? result : (result as any)?.orders;
+  if (!Array.isArray(orders) || !orders.length) throw new Error('لم يُرجع الخادم الطلبات المنشأة.');
+  return orders as { id: string; order_number: string }[];
+}
+
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
-  const { error } = await supabase
-    .from(TABLES.ORDERS)
-    .update({ status })
-    .eq('id', orderId);
+  const { error } = await supabase.rpc('transition_order_status', {
+    p_order_id: orderId,
+    p_next_status: status,
+  });
   if (error) throw error;
 }
 
@@ -451,12 +597,7 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
 // ============================================================
 // الطلبات الجاهزة المتاحة لأي مندوب (غير مُسندة)
 export async function getAvailableDeliveryOrders(): Promise<OrderSummary[]> {
-  const { data, error } = await supabase
-    .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)')
-    .eq('status', 'ready')
-    .is('delivery_id', null)
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('list_available_delivery_orders');
   if (error) throw error;
   return data as unknown as OrderSummary[];
 }
@@ -473,16 +614,17 @@ export async function claimDeliveryOrder(orderId: string, deliveryUserId: string
 
 // طلبات المندوب الحالية (المُسندة له)
 export async function getDeliveryOrders(deliveryUserId: string): Promise<OrderSummary[]> {
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from(TABLES.DELIVERY_PROFILES)
     .select('id')
     .eq('user_id', deliveryUserId)
     .maybeSingle();
+  if (profileError) throw profileError;
   if (!profile) return [];
 
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)')
+    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, total_amount, delivery_fee, created_at, updated_at, payment_method, payment_status, merchant_profiles(store_name, address, city), addresses(full_address, city)')
     .eq('delivery_id', (profile as { id: string }).id)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -495,7 +637,7 @@ export async function getDeliveryOrders(deliveryUserId: string): Promise<OrderSu
 export async function getNotifications(userId: string): Promise<Notification[]> {
   const { data, error } = await supabase
     .from(TABLES.NOTIFICATIONS)
-    .select('id, title, body, type, is_read, channel, created_at')
+    .select('id, title, body, type, data, is_read, channel, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -504,15 +646,67 @@ export async function getNotifications(userId: string): Promise<Notification[]> 
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  await supabase.from(TABLES.NOTIFICATIONS).update({ is_read: true }).eq('id', id);
+  const { error } = await supabase.from(TABLES.NOTIFICATIONS).update({ is_read: true }).eq('id', id);
+  if (error) throw error;
 }
 
 export async function markAllNotificationsRead(userId: string): Promise<void> {
-  await supabase
+  const { error } = await supabase
     .from(TABLES.NOTIFICATIONS)
     .update({ is_read: true })
     .eq('user_id', userId)
     .eq('is_read', false);
+  if (error) throw error;
+}
+
+export interface NotificationPreferences {
+  notifications_enabled: boolean;
+  order_notifications: boolean;
+  promo_notifications: boolean;
+}
+
+function normalizeNotificationPreferences(value: unknown): NotificationPreferences {
+  const row = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  return {
+    notifications_enabled: row.notifications_enabled !== false,
+    order_notifications: row.order_notifications !== false,
+    promo_notifications: row.promo_notifications !== false,
+  };
+}
+
+export async function getNotificationPreferences(): Promise<NotificationPreferences> {
+  const { data, error } = await withRequestTimeout(
+    supabase.rpc('get_my_notification_settings'),
+  );
+  if (error) throw error;
+  return normalizeNotificationPreferences(data);
+}
+
+export async function updateNotificationPreferences(
+  preferences: NotificationPreferences,
+): Promise<NotificationPreferences> {
+  const { data, error } = await withRequestTimeout(
+    supabase.rpc('update_my_notification_settings', {
+      p_notifications_enabled: preferences.notifications_enabled,
+      p_order_notifications: preferences.order_notifications,
+      p_promo_notifications: preferences.promo_notifications,
+    }),
+  );
+  if (error) throw error;
+  return normalizeNotificationPreferences(data);
+}
+
+export async function registerDeviceToken(token: string, deviceType: 'ios' | 'android'): Promise<void> {
+  const { error } = await supabase.rpc('register_device_token', {
+    p_token: token,
+    p_device_type: deviceType,
+  });
+  if (error) throw error;
+}
+
+export async function deactivateDeviceToken(token: string): Promise<void> {
+  const { error } = await supabase.rpc('deactivate_device_token', { p_token: token });
+  if (error) throw error;
 }
 
 // ============================================================
@@ -597,6 +791,9 @@ export async function getAccountStats(userId: string): Promise<{
       .or(`end_date.is.null,end_date.gte.${now}`),
   ]);
 
+  const firstError = [ordersRes.error, addressesRes.error, favoritesRes.error, couponsRes.error].find(Boolean);
+  if (firstError) throw firstError;
+
   return {
     orders: ordersRes.count ?? 0,
     addresses: addressesRes.count ?? 0,
@@ -610,34 +807,83 @@ export async function getAccountStats(userId: string): Promise<{
 // ============================================================
 export interface SupportTicket {
   id: string;
+  user_id?: string;
+  order_id?: string | null;
   subject: string;
   category: string;
   status: string;
+  priority?: string | null;
+  assigned_to?: string | null;
   created_at: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  ticket_id: string;
+  sender_id: string;
+  message: string;
+  attachments: unknown[];
+  is_internal: boolean;
+  created_at: string;
+  users?: { full_name: string; role: string } | null;
 }
 
 export async function getSupportTickets(userId: string): Promise<SupportTicket[]> {
   const { data, error } = await supabase
     .from('support_tickets')
-    .select('id, subject, category, status, created_at')
+    .select('id, user_id, order_id, subject, category, status, priority, assigned_to, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
-  if (error) return [];
+  if (error) throw error;
   return data as SupportTicket[];
 }
 
 export async function createSupportTicket(data: {
-  user_id: string; subject: string; category: string; message: string;
-}): Promise<void> {
-  const { data: ticket, error } = await supabase
-    .from('support_tickets')
-    .insert({ user_id: data.user_id, subject: data.subject, category: data.category, status: 'open', priority: 'medium' })
-    .select('id')
-    .single();
-  if (error) throw error;
-  await supabase.from('support_messages').insert({
-    ticket_id: (ticket as { id: string }).id, sender_id: data.user_id, message: data.message, is_internal: false,
+  user_id: string; subject: string; category: string; message: string; order_id?: string;
+}): Promise<string> {
+  const { data: ticketId, error } = await supabase.rpc('create_support_ticket', {
+    p_subject: data.subject.trim(),
+    p_category: data.category,
+    p_message: data.message.trim(),
+    p_order_id: data.order_id ?? null,
   });
+  if (error) throw error;
+  return ticketId as string;
+}
+
+export async function getSupportTicketThread(ticketId: string): Promise<{
+  ticket: SupportTicket;
+  messages: SupportMessage[];
+}> {
+  const [{ data: ticket, error: ticketError }, { data: messages, error: messagesError }] = await Promise.all([
+    supabase
+      .from('support_tickets')
+      .select('id, user_id, order_id, subject, category, status, priority, assigned_to, created_at')
+      .eq('id', ticketId)
+      .single(),
+    supabase
+      .from('support_messages')
+      .select('id, ticket_id, sender_id, message, attachments, is_internal, created_at, users(full_name, role)')
+      .eq('ticket_id', ticketId)
+      .eq('is_internal', false)
+      .order('created_at', { ascending: true }),
+  ]);
+  if (ticketError) throw ticketError;
+  if (messagesError) throw messagesError;
+  return { ticket: ticket as SupportTicket, messages: (messages ?? []) as unknown as SupportMessage[] };
+}
+
+export const getAdminSupportTicketThread = getSupportTicketThread;
+
+export async function replyToSupportTicket(ticketId: string, message: string): Promise<string> {
+  const body = message.trim();
+  if (!body) throw new Error('اكتب نص الرد أولًا.');
+  const { data, error } = await supabase.rpc('reply_support_ticket', {
+    p_ticket_id: ticketId,
+    p_message: body,
+  });
+  if (error) throw error;
+  return data as string;
 }
 
 // ============================================================
@@ -652,11 +898,12 @@ export interface LoyaltyTransaction {
 }
 
 export async function getLoyaltyPoints(userId: string): Promise<number> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(TABLES.CUSTOMER_PROFILES)
     .select('loyalty_points')
     .eq('user_id', userId)
     .maybeSingle();
+  if (error) throw error;
   return (data as { loyalty_points?: number } | null)?.loyalty_points ?? 0;
 }
 
@@ -667,13 +914,13 @@ export async function getLoyaltyHistory(userId: string): Promise<LoyaltyTransact
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(50);
-  if (error) return [];
+  if (error) throw error;
   return data as LoyaltyTransaction[];
 }
 
 export async function getReferralCode(userId: string): Promise<string> {
   const { data, error } = await supabase.rpc('get_or_create_referral', { p_user: userId });
-  if (error) return '';
+  if (error) throw error;
   return (data as string) ?? '';
 }
 
@@ -681,22 +928,44 @@ export async function getReferralCode(userId: string): Promise<string> {
 // REORDER (إعادة الطلب)
 // ============================================================
 export async function getReorderItems(orderId: string): Promise<{
-  productId: string; name: string; price: number; quantity: number; storeId: string;
+  productId: string; variantId?: string; name: string; price: number; quantity: number;
+  maxQuantity?: number; storeId: string;
 }[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('merchant_id, order_items(product_id, product_name, quantity, unit_price)')
+    .select(`
+      merchant_id,
+      order_items(
+        product_id, variant_id, product_name, quantity, unit_price,
+        products!inner(is_active, stock_quantity),
+        product_variants(stock_qty, is_active)
+      )
+    `)
     .eq('id', orderId)
     .maybeSingle();
+  if (error) throw error;
   if (!data) return [];
   const o = data as any;
-  return (o.order_items ?? []).map((it: any) => ({
-    productId: it.product_id,
-    name: it.product_name ?? 'منتج',
-    price: it.unit_price,
-    quantity: it.quantity,
-    storeId: o.merchant_id,
-  }));
+  return (o.order_items ?? [])
+    .filter((it: any) => {
+      if (!it.products?.is_active) return false;
+      if (!it.variant_id) return Number(it.products.stock_quantity ?? 0) > 0;
+      return Boolean(it.product_variants?.is_active) && Number(it.product_variants.stock_qty ?? 0) > 0;
+    })
+    .map((it: any) => {
+      const maxQuantity = Number(it.variant_id
+        ? it.product_variants?.stock_qty
+        : it.products?.stock_quantity) || 0;
+      return {
+        productId: it.product_id,
+        variantId: it.variant_id ?? undefined,
+        name: it.product_name ?? 'منتج',
+        price: Number(it.unit_price ?? 0),
+        quantity: Math.min(Number(it.quantity ?? 1), maxQuantity),
+        maxQuantity,
+        storeId: o.merchant_id,
+      };
+    });
 }
 
 // ============================================================
@@ -714,15 +983,15 @@ export async function getCancellationReasons(applicableTo = 'customer'): Promise
     .select('id, reason_text_ar, applicable_to')
     .eq('is_active', true)
     .in('applicable_to', [applicableTo, 'system']);
-  if (error) return [];
+  if (error) throw error;
   return data as CancellationReason[];
 }
 
 export async function cancelOrder(orderId: string, reason: string): Promise<void> {
-  const { error } = await supabase
-    .from(TABLES.ORDERS)
-    .update({ status: 'cancelled', cancel_reason: reason, cancelled_at: new Date().toISOString() })
-    .eq('id', orderId);
+  const { error } = await supabase.rpc('cancel_order', {
+    p_order_id: orderId,
+    p_reason: reason.trim(),
+  });
   if (error) throw error;
 }
 
@@ -732,19 +1001,490 @@ export async function createRefundRequest(data: {
   reason: string;
   description?: string;
   refund_amount?: number;
+  refund_method?: 'wallet' | 'original_payment';
+  evidence_images?: string[];
 }): Promise<void> {
-  const { error } = await supabase.from('refund_requests').insert({ ...data, status: 'pending' });
+  const { error } = await supabase.rpc('create_refund_request', {
+    p_order_id: data.order_id,
+    p_reason: data.reason,
+    p_description: data.description?.trim() || null,
+    p_refund_method: data.refund_method ?? 'original_payment',
+    p_evidence_images: data.evidence_images ?? [],
+  });
+  if (error) throw error;
+}
+
+export type PhysicalReturnStatus =
+  | 'requested'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled'
+  | 'pickup_scheduled'
+  | 'picked_up'
+  | 'received'
+  | 'inspected'
+  | 'completed';
+
+export interface PhysicalReturnItem {
+  id: string;
+  return_request_id: string;
+  order_item_id: string;
+  product_id: string;
+  variant_id: string | null;
+  purchased_quantity: number;
+  requested_quantity: number;
+  approved_quantity: number | null;
+  accepted_quantity: number | null;
+  unit_price: number;
+  line_total: number;
+  disposition: 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected' | null;
+  inspection_notes: string | null;
+  restocked_at: string | null;
+  products?: { name: string; name_ar: string | null } | null;
+  order_items?: {
+    product_name: string | null;
+    variant_details: Record<string, string> | null;
+  } | null;
+}
+
+export interface PhysicalReturnTrackingEvent {
+  id: string;
+  status: PhysicalReturnStatus;
+  actor_role: string | null;
+  notes: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface PhysicalReturnRequest {
+  id: string;
+  order_id: string;
+  customer_id: string;
+  status: PhysicalReturnStatus;
+  reason: 'damaged' | 'not_as_described' | 'wrong_item' | 'changed_mind' | 'other';
+  description: string | null;
+  evidence_images: string[];
+  pickup_method: 'courier_pickup' | 'customer_dropoff';
+  refund_method: 'wallet' | 'original_payment';
+  merchant_recommendation: 'approve' | 'reject' | null;
+  merchant_response: string | null;
+  review_notes: string | null;
+  assigned_delivery_id: string | null;
+  pickup_scheduled_at: string | null;
+  picked_up_at: string | null;
+  received_at: string | null;
+  merchant_received_at?: string | null;
+  inspected_at: string | null;
+  inspection_notes: string | null;
+  cancellation_reason: string | null;
+  refund_request_id: string | null;
+  refund_amount: number;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  return_items?: PhysicalReturnItem[];
+  return_tracking?: PhysicalReturnTrackingEvent[];
+}
+
+export async function getMyPhysicalReturns(
+  customerId: string,
+  orderId?: string,
+): Promise<PhysicalReturnRequest[]> {
+  let query = supabase
+    .from('return_requests')
+    .select(`
+      id, order_id, customer_id, status, reason, description, evidence_images,
+      pickup_method, refund_method, merchant_recommendation, merchant_response,
+      review_notes, assigned_delivery_id, pickup_scheduled_at, picked_up_at,
+      received_at, inspected_at, inspection_notes, cancellation_reason,
+      refund_request_id, refund_amount, completed_at, created_at, updated_at,
+      return_items(
+        id, return_request_id, order_item_id, product_id, variant_id,
+        purchased_quantity, requested_quantity, approved_quantity,
+        accepted_quantity, unit_price, line_total, disposition,
+        inspection_notes, restocked_at
+      ),
+      return_tracking(id, status, actor_role, notes, metadata, created_at)
+    `)
+    .eq('customer_id', customerId);
+  if (orderId) query = query.eq('order_id', orderId);
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as PhysicalReturnRequest[];
+}
+
+export async function createPhysicalReturnRequest(data: {
+  order_id: string;
+  items: Array<{ order_item_id: string; quantity: number }>;
+  reason: PhysicalReturnRequest['reason'];
+  description: string;
+  evidence_images?: string[];
+  pickup_method: PhysicalReturnRequest['pickup_method'];
+  refund_method?: PhysicalReturnRequest['refund_method'];
+  idempotency_key?: string;
+}): Promise<{ id: string; order_id: string; status: PhysicalReturnStatus; idempotent_replay: boolean }> {
+  const { data: result, error } = await supabase.rpc('create_return_request', {
+    p_order_id: data.order_id,
+    p_items: data.items,
+    p_reason: data.reason,
+    p_description: data.description.trim(),
+    p_evidence_images: data.evidence_images ?? [],
+    p_pickup_method: data.pickup_method,
+    p_refund_method: data.refund_method ?? 'original_payment',
+    p_idempotency_key: data.idempotency_key ?? createIdempotencyKey(),
+  });
+  if (error) throw error;
+  return result as { id: string; order_id: string; status: PhysicalReturnStatus; idempotent_replay: boolean };
+}
+
+export async function cancelPhysicalReturnRequest(requestId: string, reason: string): Promise<void> {
+  const { error } = await supabase.rpc('cancel_return_request', {
+    p_request_id: requestId,
+    p_reason: reason.trim(),
+  });
+  if (error) throw error;
+}
+
+export interface MerchantPhysicalReturnProof {
+  id: string;
+  proof_type: 'pickup' | 'merchant_delivery';
+  proof_path: string;
+  created_at: string;
+}
+
+export interface MerchantPhysicalReturnTrackingEvent {
+  id: string;
+  status: PhysicalReturnStatus;
+  actor_role: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface MerchantPhysicalReturn extends Pick<PhysicalReturnRequest,
+  | 'id'
+  | 'order_id'
+  | 'customer_id'
+  | 'status'
+  | 'reason'
+  | 'description'
+  | 'evidence_images'
+  | 'pickup_method'
+  | 'merchant_recommendation'
+  | 'merchant_response'
+  | 'review_notes'
+  | 'pickup_scheduled_at'
+  | 'picked_up_at'
+  | 'received_at'
+  | 'merchant_received_at'
+  | 'inspected_at'
+  | 'inspection_notes'
+  | 'cancellation_reason'
+  | 'refund_request_id'
+  | 'refund_amount'
+  | 'completed_at'
+  | 'created_at'
+  | 'updated_at'
+> {
+  return_items?: PhysicalReturnItem[];
+  return_tracking?: MerchantPhysicalReturnTrackingEvent[];
+  return_proofs?: MerchantPhysicalReturnProof[];
+  orders?: {
+    id: string;
+    order_number: string;
+    merchant_id: string;
+  } | null;
+  users?: { full_name: string | null; phone: string | null } | null;
+}
+
+export interface MerchantPhysicalReturnPageOptions {
+  limit?: number;
+  offset?: number;
+}
+
+export async function getMerchantPhysicalReturns(
+  merchantProfileId: string,
+  options: MerchantPhysicalReturnPageOptions = {},
+): Promise<MerchantPhysicalReturn[]> {
+  const limit = Math.min(Math.max(Math.trunc(options.limit ?? 50), 1), 100);
+  const offset = Math.max(Math.trunc(options.offset ?? 0), 0);
+  const { data, error } = await supabase
+    .from('return_requests')
+    .select(`
+      id, order_id, customer_id, status, reason, description, evidence_images,
+      pickup_method, merchant_recommendation, merchant_response,
+      review_notes, pickup_scheduled_at, picked_up_at,
+      received_at, merchant_received_at, inspected_at, inspection_notes,
+      cancellation_reason, refund_request_id, refund_amount,
+      completed_at, created_at, updated_at,
+      return_items(
+        id, return_request_id, order_item_id, product_id, variant_id,
+        purchased_quantity, requested_quantity, approved_quantity,
+        accepted_quantity, unit_price, line_total, disposition,
+        inspection_notes, restocked_at,
+        products(name, name_ar), order_items(product_name, variant_details)
+      ),
+      return_tracking(id, status, actor_role, notes, created_at),
+      return_proofs(id, proof_type, proof_path, created_at),
+      orders!inner(id, order_number, merchant_id),
+      users:customer_id(full_name, phone)
+    `)
+    .eq('orders.merchant_id', merchantProfileId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return (data ?? []) as unknown as MerchantPhysicalReturn[];
+}
+
+export async function respondPhysicalReturnRequest(
+  requestId: string,
+  recommendation: 'approve' | 'reject',
+  response: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('respond_return_request', {
+    p_request_id: requestId,
+    p_recommendation: recommendation,
+    p_response: response.trim(),
+  });
+  if (error) throw error;
+}
+
+export async function merchantReceivePhysicalReturn(requestId: string, notes?: string): Promise<void> {
+  const { error } = await supabase.rpc('merchant_receive_return', {
+    p_request_id: requestId,
+    p_notes: notes?.trim() || null,
+  });
+  if (error) throw error;
+}
+
+export async function inspectPhysicalReturn(data: {
+  request_id: string;
+  items: Array<{
+    return_item_id: string;
+    accepted_quantity: number;
+    disposition: 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected';
+    notes?: string;
+  }>;
+  notes?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('inspect_return_request', {
+    p_request_id: data.request_id,
+    p_items: data.items,
+    p_notes: data.notes?.trim() || null,
+  });
+  if (error) throw error;
+}
+
+export interface DeliveryPhysicalReturnJob {
+  id: string;
+  order_id: string;
+  status: 'pickup_scheduled' | 'picked_up' | 'received';
+  reason: PhysicalReturnRequest['reason'];
+  pickup_method: 'courier_pickup';
+  scheduled_at: string;
+  picked_up_at: string | null;
+  received_at: string | null;
+  customer_id: string;
+  order_number: string;
+  address_id: string;
+  merchant_id: string;
+  address: {
+    id: string;
+    label: string;
+    full_address: string;
+    city: string | null;
+    area: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+  merchant: {
+    id: string;
+    store_name: string;
+    address: string | null;
+    city: string | null;
+    store_phone: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+  items: Array<{
+    id: string;
+    order_item_id: string;
+    product_id: string;
+    variant_id: string | null;
+    approved_quantity: number;
+  }>;
+}
+
+export async function getMyDeliveryReturns(): Promise<DeliveryPhysicalReturnJob[]> {
+  const { data, error } = await supabase.rpc('list_my_delivery_returns');
+  if (error) throw error;
+  return (data ?? []) as DeliveryPhysicalReturnJob[];
+}
+
+export async function updateDeliveryReturnStatus(data: {
+  request_id: string;
+  status: 'picked_up' | 'received';
+  proof_path: string;
+  latitude: number;
+  longitude: number;
+  idempotency_key: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('delivery_update_return_status', {
+    p_request_id: data.request_id,
+    p_status: data.status,
+    p_proof_path: data.proof_path,
+    p_latitude: data.latitude,
+    p_longitude: data.longitude,
+    p_idempotency_key: data.idempotency_key,
+  });
+  if (error) throw error;
+}
+
+export interface AdminPhysicalReturnBundle {
+  return: PhysicalReturnRequest;
+  order: {
+    id: string;
+    order_number: string;
+    status: string;
+    subtotal: number;
+    delivery_fee: number;
+    discount_amount: number;
+    tax_amount: number;
+    total_amount: number;
+    payment_status: string;
+  };
+  customer: { id: string; full_name: string | null; phone: string | null; email: string | null };
+  merchant: { id: string; user_id: string; store_name: string } | null;
+  delivery: { id: string; user_id: string; full_name: string | null; phone: string | null } | null;
+  items: PhysicalReturnItem[];
+  tracking: PhysicalReturnTrackingEvent[];
+  proofs: Array<{
+    id: string;
+    return_request_id: string;
+    delivery_profile_id: string;
+    proof_type: 'pickup' | 'merchant_delivery';
+    proof_path: string;
+    latitude: number;
+    longitude: number;
+    captured_by: string;
+    created_at: string;
+  }>;
+  refund: Record<string, unknown> | null;
+}
+
+export async function getAdminPhysicalReturns(status?: PhysicalReturnStatus): Promise<AdminPhysicalReturnBundle[]> {
+  const { data, error } = await supabase.rpc('admin_list_return_requests', {
+    p_status: status ?? null,
+    p_limit: 200,
+    p_offset: 0,
+  });
+  if (error) throw error;
+  return (data ?? []) as AdminPhysicalReturnBundle[];
+}
+
+export interface PhysicalReturnEvidenceLink {
+  path: string;
+  signedUrl: string;
+}
+
+async function getPhysicalReturnStorageLinks(
+  bucket: 'return-evidence' | 'return-proofs',
+  paths: string[],
+): Promise<PhysicalReturnEvidenceLink[]> {
+  const uniquePaths = [...new Set(paths.filter((path) => typeof path === 'string' && path.trim()))];
+  const links = await Promise.all(uniquePaths.map(async (path) => {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 10 * 60);
+    if (error) throw error;
+    return { path, signedUrl: data.signedUrl };
+  }));
+  return links;
+}
+
+export async function getPhysicalReturnEvidenceLinks(paths: string[]): Promise<PhysicalReturnEvidenceLink[]> {
+  return getPhysicalReturnStorageLinks('return-evidence', paths);
+}
+
+export async function getPhysicalReturnProofLinks(paths: string[]): Promise<PhysicalReturnEvidenceLink[]> {
+  return getPhysicalReturnStorageLinks('return-proofs', paths);
+}
+
+export async function adminReviewPhysicalReturn(data: {
+  request_id: string;
+  decision: 'approved' | 'rejected';
+  approved_items?: Array<{ return_item_id: string; approved_quantity: number }>;
+  notes?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('admin_review_return_request', {
+    p_request_id: data.request_id,
+    p_decision: data.decision,
+    p_approved_items: data.approved_items ?? [],
+    p_notes: data.notes?.trim() || null,
+  });
+  if (error) throw error;
+}
+
+export async function adminSchedulePhysicalReturn(data: {
+  request_id: string;
+  delivery_profile_id?: string | null;
+  scheduled_at: string;
+  notes?: string;
+  idempotency_key?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('admin_schedule_return_pickup', {
+    p_request_id: data.request_id,
+    p_delivery_profile_id: data.delivery_profile_id ?? null,
+    p_scheduled_at: data.scheduled_at,
+    p_notes: data.notes?.trim() || null,
+    p_idempotency_key: data.idempotency_key ?? createIdempotencyKey(),
+  });
+  if (error) throw error;
+}
+
+export async function adminCompletePhysicalReturn(data: {
+  request_id: string;
+  external_reference?: string;
+  notes?: string;
+  idempotency_key?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('admin_complete_return', {
+    p_request_id: data.request_id,
+    p_external_reference: data.external_reference?.trim() || null,
+    p_notes: data.notes?.trim() || null,
+    p_idempotency_key: data.idempotency_key ?? createIdempotencyKey(),
+  });
   if (error) throw error;
 }
 
 export async function getMyRefundRequests(customerId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('refund_requests')
-    .select('id, order_id, reason, status, refund_amount, created_at, orders(order_number)')
+    .select('id, order_id, reason, status, decision_reason, refund_amount, created_at, orders(order_number)')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
-  if (error) return [];
+  if (error) throw error;
   return data as any[];
+}
+
+export async function getMerchantRefundRequests(merchantProfileId: string): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('refund_requests')
+    .select('id, order_id, customer_id, reason, description, evidence_images, refund_amount, refund_method, status, merchant_response, decision_reason, processed_at, created_at, orders!inner(order_number, merchant_id, total_amount, payment_method, payment_status, delivered_at, order_items(product_name, variant_details, quantity, unit_price, total_price)), users:customer_id(full_name)')
+    .eq('orders.merchant_id', merchantProfileId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function respondToRefundRequest(requestId: string, response: string): Promise<void> {
+  const body = response.trim();
+  if (!body) throw new Error('اكتب رد التاجر أولاً.');
+  if (body.length > 2000) throw new Error('الرد طويل جداً؛ الحد الأقصى 2000 حرف.');
+  const { error } = await supabase.rpc('respond_refund_request', {
+    p_request_id: requestId,
+    p_response: body,
+  });
+  if (error) throw error;
 }
 
 // ============================================================
@@ -764,10 +1504,10 @@ export interface ProductVariant {
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
   const { data, error } = await supabase
     .from('product_variants')
-    .select('id, name, name_ar, price_modifier, stock_quantity, is_active')
+    .select('id, name:size, name_ar, price_modifier, stock_quantity:stock_qty, is_active')
     .eq('product_id', productId)
     .eq('is_active', true);
-  if (error) return [];
+  if (error) throw error;
   return data as ProductVariant[];
 }
 
@@ -788,7 +1528,7 @@ export async function getWorkingHours(merchantId: string): Promise<WorkingHour[]
     .select('id, day_of_week, open_time, close_time, is_closed')
     .eq('merchant_id', merchantId)
     .order('day_of_week');
-  if (error) return [];
+  if (error) throw error;
   return data as WorkingHour[];
 }
 
@@ -825,31 +1565,15 @@ export interface ChatMessage {
 
 // إيجاد محادثة موجودة أو إنشاؤها (merchantUserId = user_id للتاجر)
 // إن مُرّر merchant_profile.id يُحوَّل تلقائياً إلى user_id
-export async function getOrCreateConversation(customerId: string, merchantRef: string, orderId?: string): Promise<string> {
-  // حوّل merchant_profile.id إلى user_id إن لزم
-  let merchantUserId = merchantRef;
-  const { data: mp } = await supabase
-    .from(TABLES.MERCHANT_PROFILES)
-    .select('user_id')
-    .eq('id', merchantRef)
-    .maybeSingle();
-  if (mp && (mp as { user_id: string }).user_id) merchantUserId = (mp as { user_id: string }).user_id;
-
-  const { data: existing } = await supabase
-    .from('chat_conversations')
-    .select('id')
-    .eq('customer_id', customerId)
-    .eq('merchant_id', merchantUserId)
-    .maybeSingle();
-  if (existing) return (existing as { id: string }).id;
-
-  const { data, error } = await supabase
-    .from('chat_conversations')
-    .insert({ customer_id: customerId, merchant_id: merchantUserId, order_id: orderId ?? null, is_active: true })
-    .select('id')
-    .single();
+export async function getOrCreateConversation(_customerId: string, merchantRef: string, orderId?: string): Promise<string> {
+  // The database derives the customer from auth.uid(), resolves profile/user IDs,
+  // and validates order participation. Client-supplied identities are never trusted.
+  const { data, error } = await supabase.rpc('get_or_create_conversation', {
+    p_merchant_ref: merchantRef,
+    p_order_id: orderId ?? null,
+  });
   if (error) throw error;
-  return (data as { id: string }).id;
+  return data as string;
 }
 
 export async function getConversations(userId: string, asMerchant: boolean): Promise<ChatConversation[]> {
@@ -859,7 +1583,7 @@ export async function getConversations(userId: string, asMerchant: boolean): Pro
     .select('id, order_id, customer_id, merchant_id, last_message, last_message_at, customer_unread, merchant_unread, merchant_user:users!merchant_id(full_name), customer:users!customer_id(full_name)')
     .eq(col, userId)
     .order('last_message_at', { ascending: false, nullsFirst: false });
-  if (error) return [];
+  if (error) throw error;
   return data as unknown as ChatConversation[];
 }
 
@@ -868,21 +1592,28 @@ export async function getMessages(conversationId: string): Promise<ChatMessage[]
     .from('chat_messages')
     .select('id, conversation_id, sender_id, message, message_type, is_read, created_at')
     .eq('conversation_id', conversationId)
-    .order('created_at');
-  if (error) return [];
-  return data as ChatMessage[];
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return [...(data as ChatMessage[])].reverse();
 }
 
-export async function sendMessage(conversationId: string, senderId: string, message: string): Promise<void> {
-  const { error } = await supabase
-    .from('chat_messages')
-    .insert({ conversation_id: conversationId, sender_id: senderId, message, message_type: 'text', is_read: false });
+export async function sendMessage(conversationId: string, _senderId: string, message: string): Promise<void> {
+  const body = message.trim();
+  if (!body) throw new Error('اكتب نص الرسالة أولاً.');
+  if (body.length > 2000) throw new Error('الرسالة طويلة جداً؛ الحد الأقصى 2000 حرف.');
+  const { error } = await supabase.rpc('send_chat_message', {
+    p_conversation_id: conversationId,
+    p_message: body,
+  });
   if (error) throw error;
 }
 
-export async function markConversationRead(conversationId: string, asMerchant: boolean): Promise<void> {
-  const field = asMerchant ? { merchant_unread: 0 } : { customer_unread: 0 };
-  await supabase.from('chat_conversations').update(field).eq('id', conversationId);
+export async function markConversationRead(conversationId: string, _asMerchant: boolean): Promise<void> {
+  const { error } = await supabase.rpc('mark_conversation_read', {
+    p_conversation_id: conversationId,
+  });
+  if (error) throw error;
 }
 
 // ============================================================
@@ -914,11 +1645,11 @@ export async function unfollowStore(userId: string, merchantId: string): Promise
 }
 
 export async function getStoreFollowersCount(merchantId: string): Promise<number> {
-  const { count } = await supabase
-    .from('store_follows')
-    .select('id', { count: 'exact', head: true })
-    .eq('merchant_id', merchantId);
-  return count ?? 0;
+  const { data, error } = await supabase.rpc('get_store_followers_count', {
+    p_merchant_id: merchantId,
+  });
+  if (error) throw error;
+  return Number(data ?? 0);
 }
 
 // ============================================================
@@ -937,7 +1668,7 @@ export async function getServiceAreas(): Promise<ServiceArea[]> {
     .select('id, city, is_active, delivery_available')
     .eq('is_active', true)
     .order('city');
-  if (error) return [];
+  if (error) throw error;
   return data as ServiceArea[];
 }
 
@@ -946,7 +1677,7 @@ export async function getAllServiceAreas(): Promise<ServiceArea[]> {
     .from('service_areas')
     .select('id, city, is_active, delivery_available')
     .order('city');
-  if (error) return [];
+  if (error) throw error;
   return data as ServiceArea[];
 }
 
@@ -965,10 +1696,13 @@ export async function updateServiceArea(id: string, updates: Partial<ServiceArea
 // ============================================================
 export interface Coupon {
   id: string;
+  merchant_id?: string | null;
   code: string;
   type: string;
   value: number;
   min_order_amount: number | null;
+  max_discount_amount?: number | null;
+  start_date?: string | null;
   end_date: string | null;
   merchant_profiles?: { store_name: string } | null;
 }
@@ -980,41 +1714,26 @@ export async function validateCoupon(code: string, subtotal: number): Promise<{
   message: string;
   coupon?: Coupon;
 }> {
-  const now = new Date().toISOString();
-  const { data } = await supabase
-    .from('coupons')
-    .select('id, code, type, value, min_order_amount, max_discount_amount, end_date, is_active, max_uses, used_count')
-    .eq('code', code.trim().toUpperCase())
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (!data) return { valid: false, discount: 0, message: 'كود الخصم غير صحيح' };
-  const c = data as any;
-  if (c.end_date && c.end_date < now) return { valid: false, discount: 0, message: 'انتهت صلاحية هذا الكود' };
-  if (c.max_uses != null && (c.used_count ?? 0) >= c.max_uses) {
-    return { valid: false, discount: 0, message: 'تم استنفاد هذا الكود' };
-  }
-  if (c.min_order_amount && subtotal < c.min_order_amount) {
-    return { valid: false, discount: 0, message: `الحد الأدنى للطلب ${c.min_order_amount} ر.س` };
-  }
-
-  let discount = c.type === 'percentage' ? Math.round((subtotal * c.value) / 100) : c.value;
-  if (c.max_discount_amount && discount > c.max_discount_amount) discount = c.max_discount_amount;
-  if (discount > subtotal) discount = subtotal;
-
-  return { valid: true, discount, message: `تم تطبيق خصم ${discount} ر.س`, coupon: c as Coupon };
+  if (!Number.isFinite(subtotal) || subtotal < 0) throw new Error('قيمة السلة غير صالحة.');
+  const { data, error } = await supabase.rpc('preview_coupon', {
+    p_code: code.trim().toUpperCase(),
+    p_subtotal: subtotal,
+  });
+  if (error) throw error;
+  const result = (data ?? {}) as { valid?: boolean; discount?: number; message?: string; coupon_id?: string };
+  return {
+    valid: result.valid === true,
+    discount: Number(result.discount ?? 0),
+    message: result.message ?? (result.valid ? 'تم تطبيق الخصم' : 'كود الخصم غير صالح'),
+  };
 }
 
 export async function getActiveCoupons(): Promise<Coupon[]> {
-  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('coupons')
-    .select('id, code, type, value, min_order_amount, end_date, merchant_profiles:merchant_id(store_name)')
-    .eq('is_active', true)
-    .or(`end_date.is.null,end_date.gte.${now}`)
-    .order('created_at', { ascending: false })
+    .select('id, merchant_id, code, type, value, min_order_amount, max_discount_amount, start_date, end_date, merchant_profiles:merchant_id(store_name)')
     .limit(50);
-  if (error) return [];
+  if (error) throw error;
   return data as unknown as Coupon[];
 }
 
@@ -1028,7 +1747,7 @@ export async function getMerchantTopProducts(merchantId: string, limit = 5): Pro
     .eq('merchant_id', merchantId)
     .order('total_sold', { ascending: false })
     .limit(limit);
-  if (error) return [];
+  if (error) throw error;
   return data as any;
 }
 
@@ -1042,8 +1761,9 @@ export async function getMerchantSalesChart(merchantId: string, days = 8): Promi
     .from(TABLES.ORDERS)
     .select('total_amount, created_at')
     .eq('merchant_id', merchantId)
+    .eq('status', 'delivered')
     .gte('created_at', since.toISOString());
-  if (error) return new Array(days).fill(0);
+  if (error) throw error;
 
   const buckets = new Array(days).fill(0);
   (data ?? []).forEach((o: { total_amount: number | null; created_at: string }) => {
@@ -1069,7 +1789,7 @@ export async function getMerchantStats(merchantId: string): Promise<{
   const [ordersRes, productsRes, pendingRes] = await Promise.all([
     supabase
       .from(TABLES.ORDERS)
-      .select('total_amount')
+      .select('total_amount, status')
       .eq('merchant_id', merchantId)
       .gte('created_at', today),
     supabase
@@ -1085,7 +1805,9 @@ export async function getMerchantStats(merchantId: string): Promise<{
   ]);
 
   const todayOrders = ordersRes.data?.length ?? 0;
-  const todayRevenue = ordersRes.data?.reduce((sum, o) => sum + (o.total_amount ?? 0), 0) ?? 0;
+  const todayRevenue = ordersRes.data
+    ?.filter((order) => order.status === 'delivered')
+    .reduce((sum, order) => sum + (order.total_amount ?? 0), 0) ?? 0;
 
   return {
     todayOrders,
@@ -1117,7 +1839,7 @@ export async function getActiveAds(): Promise<Advertisement[]> {
     .or(`starts_at.is.null,starts_at.lte.${now}`)
     .or(`ends_at.is.null,ends_at.gte.${now}`)
     .order('sort_order');
-  if (error) return [];
+  if (error) throw error;
   return data as Advertisement[];
 }
 
@@ -1139,6 +1861,26 @@ export async function uploadImageToStorage(
   if (error) throw error;
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
   return urlData.publicUrl;
+}
+
+export async function uploadPrivateFileToStorage(data: {
+  bucket: string;
+  objectPath: string;
+  uri: string;
+  contentType: 'image/jpeg' | 'image/png' | 'application/pdf';
+  upsert?: boolean;
+}): Promise<string> {
+  const response = await fetch(data.uri);
+  if (!response.ok) throw new Error('تعذّر قراءة الملف المحدد قبل رفعه.');
+  const blob = await response.blob();
+  if (blob.size < 1 || blob.size > 10 * 1024 * 1024) {
+    throw new Error('حجم الملف يجب أن يكون بين 1 بايت و10 ميجابايت.');
+  }
+  const { error } = await supabase.storage
+    .from(data.bucket)
+    .upload(data.objectPath, blob, { contentType: data.contentType, upsert: data.upsert ?? false });
+  if (error) throw error;
+  return data.objectPath;
 }
 
 // ============================================================
@@ -1182,16 +1924,23 @@ export async function getMerchantProfile(userId: string): Promise<{
   bank_name?: string | null; bank_account?: string | null; bank_account_name?: string | null;
   is_active?: boolean | null; pause_reason?: string | null;
 } | null> {
-  const { data } = await supabase
-    .from(TABLES.MERCHANT_PROFILES)
-    .select('id, store_name, is_approved, store_description, address, city, store_logo_url, store_category, is_open, store_phone, whatsapp, owner_name, national_id, commercial_register, tax_number, bank_name, bank_account, bank_account_name, is_active, pause_reason')
-    .eq('user_id', userId)
-    .maybeSingle();
-  return data ?? null;
+  void userId;
+  const { data, error } = await supabase.rpc('get_my_merchant_profile');
+  if (error) throw error;
+  return data as {
+    id: string; store_name: string; is_approved: boolean;
+    store_description?: string | null; address?: string | null; city?: string | null;
+    store_logo_url?: string | null; store_category?: string | null; is_open?: boolean | null;
+    store_phone?: string | null; whatsapp?: string | null; owner_name?: string | null;
+    national_id?: string | null; commercial_register?: string | null; tax_number?: string | null;
+    bank_name?: string | null; bank_account?: string | null; bank_account_name?: string | null;
+    is_active?: boolean | null; pause_reason?: string | null;
+  } | null;
 }
 
 export async function createMerchantProfile(data: MerchantProfileData): Promise<void> {
-  const { error } = await supabase.from(TABLES.MERCHANT_PROFILES).insert(data);
+  const { user_id: _userId, ...profile } = data;
+  const { error } = await supabase.rpc('create_my_merchant_profile', { p_profile: profile });
   if (error) throw error;
 }
 
@@ -1199,10 +1948,8 @@ export async function updateMerchantProfileByUser(
   userId: string,
   updates: Partial<Omit<MerchantProfileData, 'user_id' | 'store_slug'>>,
 ): Promise<void> {
-  const { error } = await supabase
-    .from(TABLES.MERCHANT_PROFILES)
-    .update(updates)
-    .eq('user_id', userId);
+  void userId;
+  const { error } = await supabase.rpc('update_my_merchant_profile', { p_updates: updates });
   if (error) throw error;
 }
 
@@ -1210,22 +1957,18 @@ export async function updateMerchantProfileByUser(
 // ONBOARDING - DELIVERY PROFILE
 // ============================================================
 export async function getDeliveryProfile(userId: string): Promise<{ id: string; vehicle_type: string | null; vehicle_plate: string | null; national_id: string | null; is_approved: boolean } | null> {
-  const { data } = await supabase
-    .from(TABLES.DELIVERY_PROFILES)
-    .select('id, vehicle_type, vehicle_plate, national_id, is_approved')
-    .eq('user_id', userId)
-    .maybeSingle();
-  return data ?? null;
+  void userId;
+  const { data, error } = await supabase.rpc('get_my_delivery_profile');
+  if (error) throw error;
+  return data as { id: string; vehicle_type: string | null; vehicle_plate: string | null; national_id: string | null; is_approved: boolean } | null;
 }
 
 export async function updateDeliveryProfileByUser(
   userId: string,
   updates: { vehicle_type?: string; vehicle_plate?: string },
 ): Promise<void> {
-  const { error } = await supabase
-    .from(TABLES.DELIVERY_PROFILES)
-    .update(updates)
-    .eq('user_id', userId);
+  void userId;
+  const { error } = await supabase.rpc('update_my_delivery_profile', { p_updates: updates });
   if (error) throw error;
 }
 
@@ -1235,8 +1978,36 @@ export async function createDeliveryProfile(data: {
   vehicle_type?: string;
   vehicle_plate?: string;
 }): Promise<void> {
-  const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).insert(data);
+  const { user_id: _userId, ...profile } = data;
+  const { error } = await supabase.rpc('create_my_delivery_profile', { p_profile: profile });
   if (error) throw error;
+}
+
+export async function saveDeliveryOnboardingDocuments(data: {
+  workCity: string;
+  nationalIdImagePath?: string;
+  licenseImagePath?: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('save_my_delivery_onboarding_documents', {
+    p_work_city: data.workCity.trim(),
+    p_national_id_image_path: data.nationalIdImagePath ?? null,
+    p_license_image_path: data.licenseImagePath ?? null,
+  });
+  if (error) throw error;
+}
+
+export async function getDeliveryOnboardingDocumentLinks(paths: string[]): Promise<Array<{
+  path: string;
+  signedUrl: string;
+}>> {
+  const uniquePaths = [...new Set(paths.filter((path) => typeof path === 'string' && path.trim()))];
+  return Promise.all(uniquePaths.map(async (path) => {
+    const { data, error } = await supabase.storage
+      .from('delivery-onboarding-documents')
+      .createSignedUrl(path, 10 * 60);
+    if (error) throw error;
+    return { path, signedUrl: data.signedUrl };
+  }));
 }
 
 // ============================================================
@@ -1247,6 +2018,7 @@ export interface WalletTransaction {
   type: string;
   amount: number;
   source: string | null;
+  reference_id: string | null;
   balance_after: number | null;
   notes: string | null;
   created_at: string;
@@ -1255,7 +2027,7 @@ export interface WalletTransaction {
 export async function getWalletTransactions(userId: string): Promise<WalletTransaction[]> {
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('id, type, amount, source, balance_after, notes, created_at')
+    .select('id, type, amount, source, reference_id, balance_after, notes, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -1265,12 +2037,11 @@ export async function getWalletTransactions(userId: string): Promise<WalletTrans
 
 // رصيد محفظة التاجر
 export async function getMerchantWalletBalance(userId: string): Promise<number> {
-  const { data } = await supabase
-    .from(TABLES.MERCHANT_PROFILES)
-    .select('wallet_balance')
-    .eq('user_id', userId)
-    .maybeSingle();
-  return (data as { wallet_balance?: number } | null)?.wallet_balance ?? 0;
+  void userId;
+  const { data, error } = await supabase.rpc('get_my_merchant_profile');
+  if (error) throw error;
+  if (!data) throw new Error('تعذّر العثور على ملف التاجر المرتبط بهذا الحساب.');
+  return Number((data as { wallet_balance?: number }).wallet_balance ?? 0);
 }
 
 // ============================================================
@@ -1290,12 +2061,10 @@ export async function getDeliveryEarnings(deliveryUserId: string): Promise<{
   totalDeliveries: number;
   earnings: DeliveryEarning[];
 }> {
-  const { data: profile } = await supabase
-    .from(TABLES.DELIVERY_PROFILES)
-    .select('id, wallet_balance, total_deliveries')
-    .eq('user_id', deliveryUserId)
-    .maybeSingle();
-  if (!profile) return { balance: 0, totalDeliveries: 0, earnings: [] };
+  void deliveryUserId;
+  const { data: profile, error: profileError } = await supabase.rpc('get_my_delivery_profile');
+  if (profileError) throw profileError;
+  if (!profile) throw new Error('تعذّر العثور على ملف المندوب المرتبط بهذا الحساب.');
 
   const p = profile as { id: string; wallet_balance?: number; total_deliveries?: number };
   const { data, error } = await supabase
@@ -1306,10 +2075,121 @@ export async function getDeliveryEarnings(deliveryUserId: string): Promise<{
     .limit(50);
   if (error) throw error;
   return {
-    balance: p.wallet_balance ?? 0,
-    totalDeliveries: p.total_deliveries ?? 0,
+    balance: Number(p.wallet_balance ?? 0),
+    totalDeliveries: Number(p.total_deliveries ?? 0),
     earnings: (data ?? []) as DeliveryEarning[],
   };
+}
+
+export type CodCollectionStatus = 'collected' | 'partially_remitted' | 'remitted' | 'disputed';
+export type CodRemittanceStatus = 'pending' | 'approved' | 'rejected' | 'disputed';
+
+export interface CodRemittanceSubmission {
+  id: string;
+  amount: number;
+  reference: string;
+  proof_path: string;
+  status: CodRemittanceStatus;
+  submitted_by?: string;
+  processor_id?: string | null;
+  review_note: string | null;
+  ledger_entry_id?: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+}
+
+export interface CodCollection {
+  id: string;
+  order_id: string;
+  order_number?: string;
+  delivery_id: string;
+  delivery_user_id?: string;
+  delivery_name?: string | null;
+  merchant_id?: string;
+  merchant_user_id?: string;
+  customer_id?: string;
+  amount_collected: number;
+  amount_remitted: number;
+  amount_outstanding: number;
+  amount_pending_review: number;
+  status: CodCollectionStatus;
+  collected_at: string;
+  remitted_at: string | null;
+  disputed_at: string | null;
+  disputed_by?: string | null;
+  dispute_reason: string | null;
+  submissions: CodRemittanceSubmission[];
+}
+
+export interface CodRemittanceProofLink {
+  path: string;
+  signedUrl: string;
+}
+
+export async function getMyCodCollections(): Promise<CodCollection[]> {
+  const { data, error } = await supabase.rpc('list_my_cod_collections');
+  if (error) throw error;
+  return (data ?? []) as CodCollection[];
+}
+
+export async function submitCodRemittance(data: {
+  collection_id: string;
+  amount: number;
+  reference: string;
+  proof_path: string;
+  idempotency_key: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('submit_cod_remittance', {
+    p_collection_id: data.collection_id,
+    p_amount: data.amount,
+    p_reference: data.reference.trim(),
+    p_proof_path: data.proof_path,
+    p_idempotency_key: data.idempotency_key,
+  });
+  if (error) throw error;
+}
+
+export async function getAdminCodCollections(): Promise<CodCollection[]> {
+  const { data, error } = await supabase.rpc('admin_list_cod_collections');
+  if (error) throw error;
+  return (data ?? []) as CodCollection[];
+}
+
+export async function getCodRemittanceProofLinks(paths: string[]): Promise<CodRemittanceProofLink[]> {
+  const uniquePaths = [...new Set(paths.filter((path) => typeof path === 'string' && path.trim()))];
+  return Promise.all(uniquePaths.map(async (path) => {
+    const { data, error } = await supabase.storage
+      .from('cod-remittance-proofs')
+      .createSignedUrl(path, 10 * 60);
+    if (error) throw error;
+    return { path, signedUrl: data.signedUrl };
+  }));
+}
+
+export async function reviewCodRemittance(
+  submissionId: string,
+  decision: 'approved' | 'rejected' | 'disputed',
+  note?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_review_cod_remittance', {
+    p_submission_id: submissionId,
+    p_decision: decision,
+    p_note: note?.trim() || null,
+  });
+  if (error) throw error;
+}
+
+export async function setCodCollectionDispute(
+  collectionId: string,
+  disputed: boolean,
+  reason?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_set_cod_collection_dispute', {
+    p_collection_id: collectionId,
+    p_disputed: disputed,
+    p_reason: reason?.trim() || null,
+  });
+  if (error) throw error;
 }
 
 // ============================================================
@@ -1321,13 +2201,12 @@ export interface Review {
   comment: string | null;
   created_at: string;
   target_type?: string;
-  reviewer?: { full_name: string } | null;
 }
 
 export async function getReviews(targetId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select('id, rating, comment, created_at, reviewer:reviewer_id(full_name)')
+    .select('id, rating, comment, created_at')
     .eq('target_id', targetId)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -1354,7 +2233,14 @@ export async function createReview(data: {
   rating: number;
   comment?: string;
 }): Promise<void> {
-  const { error } = await supabase.from('reviews').insert(data);
+  if (!data.order_id) throw new Error('لا يمكن إضافة تقييم دون طلب مرتبط.');
+  const { error } = await supabase.rpc('create_order_review', {
+    p_order_id: data.order_id,
+    p_target_type: data.target_type,
+    p_target_id: data.target_id,
+    p_rating: data.rating,
+    p_comment: data.comment?.trim() || null,
+  });
   if (error) throw error;
 }
 
@@ -1406,27 +2292,96 @@ export interface AdminMerchant {
   is_active: boolean;
   pause_reason: string | null;
   wallet_balance: number;
+  national_id?: string | null;
+  commercial_register?: string | null;
+  tax_number?: string | null;
+  bank_name?: string | null;
+  bank_account_name?: string | null;
   created_at: string;
   users?: { full_name: string; phone: string | null };
 }
 
 export async function getAdminMerchants(filter?: 'pending' | 'approved' | 'all'): Promise<AdminMerchant[]> {
-  let q = supabase.from(TABLES.MERCHANT_PROFILES).select('id, user_id, store_name, owner_name, city, is_approved, is_active, pause_reason, created_at').order('created_at', { ascending: false }).limit(200);
-  if (filter === 'pending') q = (q as any).eq('is_approved', false);
-  if (filter === 'approved') q = (q as any).eq('is_approved', true);
-  const { data, error } = await q;
+  const { data, error } = await supabase.rpc('admin_list_merchants', {
+    p_filter: filter ?? 'all',
+  });
   if (error) throw error;
   return data as unknown as AdminMerchant[];
 }
 
-export async function approveMerchant(merchantProfileId: string, approved: boolean): Promise<void> {
-  const { error } = await supabase.from(TABLES.MERCHANT_PROFILES).update({ is_approved: approved }).eq('id', merchantProfileId);
+export async function approveMerchant(merchantProfileId: string, approved: boolean, reason?: string): Promise<void> {
+  const { error } = await supabase.rpc('review_merchant_application', {
+    p_profile_id: merchantProfileId,
+    p_approved: approved,
+    p_reason: reason?.trim() || null,
+  });
   if (error) throw error;
 }
 
 export async function toggleMerchantActive(merchantProfileId: string, active: boolean, reason?: string): Promise<void> {
-  const payload = active ? { is_active: true, pause_reason: null } : { is_active: false, pause_reason: reason };
-  const { error } = await supabase.from(TABLES.MERCHANT_PROFILES).update(payload).eq('id', merchantProfileId);
+  const { error } = await withRequestTimeout(supabase.rpc('set_merchant_operational_status', {
+    p_profile_id: merchantProfileId,
+    p_active: active,
+    p_reason: reason?.trim() || null,
+  }));
+  if (error) throw error;
+}
+
+export type RefundRequestStatus = 'pending' | 'approved' | 'rejected' | 'processing' | 'completed';
+export type RefundDecisionStatus = Exclude<RefundRequestStatus, 'pending'>;
+
+export interface AdminRefundRequest {
+  id: string;
+  order_id: string;
+  customer_id: string;
+  reason: string;
+  description: string | null;
+  evidence_images: string[] | null;
+  refund_amount: number;
+  refund_method: 'wallet' | 'original_payment';
+  status: RefundRequestStatus;
+  merchant_response: string | null;
+  decision_reason: string | null;
+  admin_notes: string | null;
+  external_reference?: string | null;
+  processed_at: string | null;
+  created_at: string;
+  orders?: {
+    order_number: string;
+    total_amount: number;
+    payment_method: string;
+    payment_status: string;
+    delivered_at: string | null;
+    merchant_profiles?: { store_name: string } | null;
+    order_items?: Array<{
+      product_name: string;
+      variant_details: unknown;
+      quantity: number;
+      unit_price: number;
+      total_price: number;
+    }>;
+  } | null;
+  users?: { full_name: string; phone: string | null } | null;
+}
+
+export async function getAdminRefundRequests(): Promise<AdminRefundRequest[]> {
+  const { data, error } = await supabase.rpc('admin_list_refund_requests');
+  if (error) throw error;
+  return (data ?? []) as unknown as AdminRefundRequest[];
+}
+
+export async function updateRefundRequestStatus(
+  id: string,
+  status: RefundDecisionStatus,
+  adminNotes?: string,
+  externalReference?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('process_refund_request', {
+    p_request_id: id,
+    p_status: status,
+    p_notes: adminNotes?.trim() || null,
+    p_external_reference: externalReference?.trim() || null,
+  });
   if (error) throw error;
 }
 
@@ -1435,6 +2390,12 @@ export interface AdminDriver {
   user_id: string;
   vehicle_type: string | null;
   vehicle_plate: string | null;
+  national_id?: string | null;
+  work_city?: string | null;
+  national_id_image_path?: string | null;
+  license_image_path?: string | null;
+  application_revision: number;
+  is_online?: boolean;
   is_approved: boolean;
   wallet_balance: number;
   total_deliveries: number;
@@ -1443,44 +2404,218 @@ export interface AdminDriver {
 }
 
 export async function getAdminDrivers(filter?: 'pending' | 'approved' | 'all'): Promise<AdminDriver[]> {
-  let q = supabase.from(TABLES.DELIVERY_PROFILES).select('id, user_id, vehicle_type, vehicle_plate, is_approved, wallet_balance, total_deliveries, created_at, users(full_name, phone)').order('created_at', { ascending: false }).limit(200);
-  if (filter === 'pending') q = (q as any).eq('is_approved', false);
-  if (filter === 'approved') q = (q as any).eq('is_approved', true);
-  const { data, error } = await q;
+  const { data, error } = await supabase.rpc('admin_list_drivers', {
+    p_filter: filter ?? 'all',
+  });
   if (error) throw error;
   return data as unknown as AdminDriver[];
 }
 
-export async function approveDriver(driverProfileId: string, approved: boolean): Promise<void> {
-  const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).update({ is_approved: approved }).eq('id', driverProfileId);
+export async function approveDriver(
+  driverProfileId: string,
+  approved: boolean,
+  expectedRevision: number,
+  reason?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('review_delivery_application', {
+    p_profile_id: driverProfileId,
+    p_approved: approved,
+    p_reason: reason?.trim() || null,
+    p_expected_revision: expectedRevision,
+  });
   if (error) throw error;
 }
+
+export type ProductApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface AdminProductReview {
+  id: string;
+  merchant_id: string;
+  name: string;
+  name_ar: string | null;
+  description: string | null;
+  description_ar: string | null;
+  base_price: number;
+  sale_price: number | null;
+  stock_quantity: number;
+  is_active: boolean;
+  is_approved: boolean;
+  approval_status: ProductApprovalStatus;
+  approval_note: string | null;
+  approved_at: string | null;
+  created_at: string;
+  primary_image: string | null;
+  merchant_profiles?: { id: string; store_name: string; user_id: string } | null;
+}
+
+export async function getAdminProducts(
+  filter: ProductApprovalStatus | 'all' = 'pending',
+): Promise<AdminProductReview[]> {
+  const { data, error } = await supabase.rpc('admin_list_products', { p_filter: filter });
+  if (error) throw error;
+  return (data ?? []) as AdminProductReview[];
+}
+
+export async function reviewAdminProduct(
+  productId: string,
+  decision: Exclude<ProductApprovalStatus, 'pending'>,
+  note?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_review_product', {
+    p_product_id: productId,
+    p_decision: decision,
+    p_note: note?.trim() || null,
+  });
+  if (error) throw error;
+}
+
+export async function getMyProductModeration(): Promise<Array<{
+  id: string;
+  approval_status: ProductApprovalStatus;
+  approval_note: string | null;
+  approved_at: string | null;
+}>> {
+  const { data, error } = await supabase.rpc('get_my_product_moderation');
+  if (error) throw error;
+  return (data ?? []) as Array<{
+    id: string;
+    approval_status: ProductApprovalStatus;
+    approval_note: string | null;
+    approved_at: string | null;
+  }>;
+}
+
+export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'processing' | 'paid' | 'failed';
+export type WithdrawalDecisionStatus = Exclude<WithdrawalStatus, 'pending'>;
 
 export interface AdminWithdrawal {
   id: string;
   user_id: string;
   amount: number;
-  status: string;
+  status: WithdrawalStatus;
   notes: string | null;
+  requester_notes?: string | null;
+  admin_notes?: string | null;
+  payout_destination?: Record<string, unknown> | null;
+  external_reference?: string | null;
+  processed_at?: string | null;
+  paid_at?: string | null;
   created_at: string;
   users?: { full_name: string; role: string };
 }
 
 export async function getAdminWithdrawals(status?: string): Promise<AdminWithdrawal[]> {
-  let q = supabase.from('withdrawal_requests').select('id, user_id, amount, status, notes, created_at, users(full_name, role)').order('created_at', { ascending: false }).limit(100);
+  let q = supabase.from('withdrawal_requests').select('id, user_id, amount, status, notes, requester_notes, admin_notes, payout_destination, external_reference, processed_at, paid_at, created_at, users(full_name, role)').order('created_at', { ascending: false }).limit(100);
   if (status) q = (q as any).eq('status', status);
   const { data, error } = await q;
   if (error) throw error;
   return data as unknown as AdminWithdrawal[];
 }
 
-export async function processWithdrawal(requestId: string, status: 'approved' | 'rejected', notes?: string): Promise<void> {
-  const { error } = await supabase.from('withdrawal_requests').update({ status, notes: notes ?? null }).eq('id', requestId);
+export async function processWithdrawal(requestId: string, status: WithdrawalDecisionStatus, notes?: string, externalReference?: string): Promise<void> {
+  const { error } = await supabase.rpc('process_withdrawal_request', {
+    p_request_id: requestId,
+    p_status: status,
+    p_notes: notes?.trim() || null,
+    p_external_reference: externalReference?.trim() || null,
+  });
   if (error) throw error;
 }
 
+export type LegacyReconciliationStatsState = 'already_counted' | 'not_counted';
+
+export interface LegacyFinancialReconciliationCandidate {
+  order_id: string;
+  order_number: string;
+  customer_id: string;
+  merchant_id: string;
+  merchant_name: string | null;
+  delivery_id: string | null;
+  delivery_name: string | null;
+  status: string;
+  payment_method: string;
+  payment_status: string;
+  created_at: string;
+  stored_delivered_at: string | null;
+  gross_amount: number;
+  merchant_proceeds: number;
+  delivery_earning: number;
+  platform_commission: number;
+  tax_amount: number;
+  platform_amount: number;
+  stored_stats_counted: boolean;
+  has_active_refund: boolean;
+  has_active_physical_return: boolean;
+  has_completed_refund_or_reversal: boolean;
+  cod_custody_requires_review: boolean;
+  is_reconcilable: boolean;
+  conflict_reasons: string[];
+}
+
+export interface LegacyFinancialReconciliationResult {
+  reconciliation_id: string;
+  order_id: string;
+  settlement_id: string;
+  status: 'completed';
+  cod_custody_requires_review: boolean;
+  idempotent_replay: boolean;
+}
+
+export async function getAdminLegacyFinancialReconciliationQueue(): Promise<LegacyFinancialReconciliationCandidate[]> {
+  const { data, error } = await supabase.rpc('admin_list_legacy_financial_reconciliation');
+  if (error) throw error;
+  return (data ?? []) as LegacyFinancialReconciliationCandidate[];
+}
+
+export async function reconcileLegacyDeliveredOrder(input: {
+  orderId: string;
+  confirmOrderNumber: string;
+  confirmedDeliveredAt: string;
+  grossAmount: number;
+  merchantProceeds: number;
+  deliveryEarning: number;
+  platformCommission: number;
+  taxAmount: number;
+  statsState: LegacyReconciliationStatsState;
+  acknowledgeCodCustody: boolean;
+  evidenceReference: string;
+  reason: string;
+  idempotencyKey: string;
+}): Promise<LegacyFinancialReconciliationResult> {
+  const amounts = [
+    input.grossAmount,
+    input.merchantProceeds,
+    input.deliveryEarning,
+    input.platformCommission,
+    input.taxAmount,
+  ];
+  if (amounts.some((amount) => !Number.isFinite(amount) || amount < 0)) {
+    throw new Error('مبالغ المطابقة المالية غير صالحة.');
+  }
+  const { data, error } = await supabase.rpc('admin_reconcile_legacy_delivered_order', {
+    p_order_id: input.orderId,
+    p_confirm_order_number: input.confirmOrderNumber.trim(),
+    p_confirmed_delivered_at: input.confirmedDeliveredAt,
+    p_gross_amount: input.grossAmount,
+    p_merchant_proceeds: input.merchantProceeds,
+    p_delivery_earning: input.deliveryEarning,
+    p_platform_commission: input.platformCommission,
+    p_tax_amount: input.taxAmount,
+    p_stats_state: input.statsState,
+    p_acknowledge_cod_custody: input.acknowledgeCodCustody,
+    p_evidence_reference: input.evidenceReference.trim(),
+    p_reason: input.reason.trim(),
+    p_idempotency_key: input.idempotencyKey,
+  });
+  if (error) throw error;
+  return data as LegacyFinancialReconciliationResult;
+}
+
 export async function getAdminSupportTickets(status?: string): Promise<any[]> {
-  let q = supabase.from('support_tickets').select('id, user_id, subject, category, message, status, created_at, users(full_name, role)').order('created_at', { ascending: false }).limit(100);
+  let q = supabase.from('support_tickets')
+    .select('id, user_id, order_id, subject, category, status, priority, assigned_to, created_at, resolved_at, users(full_name, phone, role)')
+    .order('created_at', { ascending: false })
+    .limit(100);
   if (status) q = (q as any).eq('status', status);
   const { data, error } = await q;
   if (error) throw error;
@@ -1488,12 +2623,18 @@ export async function getAdminSupportTickets(status?: string): Promise<any[]> {
 }
 
 export async function updateSupportTicketStatus(ticketId: string, status: string): Promise<void> {
-  const { error } = await supabase.from('support_tickets').update({ status }).eq('id', ticketId);
+  const { error } = await supabase.rpc('update_support_ticket_status', {
+    p_ticket_id: ticketId,
+    p_status: status,
+  });
   if (error) throw error;
 }
 
 export async function getAdminOrders(status?: string): Promise<any[]> {
-  let q = supabase.from(TABLES.ORDERS).select('id, order_number, status, total_amount, delivery_fee, created_at, merchant_profiles(store_name, address, city), addresses(full_address, city)').order('created_at', { ascending: false }).limit(100);
+  let q = supabase.from(TABLES.ORDERS)
+    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, subtotal, delivery_fee, discount_amount, platform_commission, tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason, delivered_at, cancelled_at, created_at, updated_at, customer:users(full_name, phone), merchant_profiles(store_name, address, city), delivery_profiles(user_id, vehicle_type, vehicle_plate, users(full_name, phone)), addresses(full_address, city), order_items(id, product_name, quantity, unit_price, total_price), order_tracking(id, status, notes, latitude, longitude, created_at)')
+    .order('created_at', { ascending: false })
+    .limit(100);
   if (status) q = (q as any).eq('status', status);
   const { data, error } = await q;
   if (error) throw error;
@@ -1513,9 +2654,9 @@ export interface AdminUser {
 }
 
 export async function getAdminUsers(role?: string): Promise<AdminUser[]> {
-  let q = supabase.from(TABLES.USERS).select('id, full_name, phone, role, is_active, is_blocked, blocked_until, blocked_reason, created_at').order('created_at', { ascending: false }).limit(100);
-  if (role) q = (q as any).eq('role', role);
-  const { data, error } = await q;
+  const { data, error } = await supabase.rpc('admin_list_users', {
+    p_role: role ?? null,
+  });
   if (error) throw error;
   return data as AdminUser[];
 }
@@ -1563,7 +2704,7 @@ export async function deleteApiKey(keyId: string): Promise<void> {
   if (error) throw error;
 }
 
-/** عنوان الـ API الأساسي + مفتاح anon المطلوب في ترويسة Authorization */
+/** عنوان API المفاتيح الشخصية؛ المصادقة تتم بمفتاح `lv_` في `x-api-key`. */
 export const API_V1_URL = 'https://sghaihfjuttwqikdszgh.supabase.co/functions/v1/api-v1';
 
 // ============================================================
@@ -1572,30 +2713,43 @@ export const API_V1_URL = 'https://sghaihfjuttwqikdszgh.supabase.co/functions/v1
 
 /** حظر دائم (durationHours = null) أو مؤقت لعدد ساعات محدد، مع سبب اختياري */
 export async function adminBlockUser(userId: string, durationHours: number | null, reason?: string): Promise<void> {
-  const payload = durationHours == null
-    ? { is_blocked: true, blocked_until: null, blocked_reason: reason ?? null }
-    : { is_blocked: false, blocked_until: new Date(Date.now() + durationHours * 3600_000).toISOString(), blocked_reason: reason ?? null };
-  const { error } = await supabase.from(TABLES.USERS).update(payload).eq('id', userId);
+  const { error } = await supabase.rpc('admin_set_user_block', {
+    p_user_id: userId,
+    p_blocked: durationHours == null,
+    p_blocked_until: durationHours == null ? null : new Date(Date.now() + durationHours * 3600_000).toISOString(),
+    p_reason: reason?.trim() || null,
+  });
   if (error) throw error;
 }
 
 /** فك الحظر (الدائم والمؤقت معاً) */
 export async function adminUnblockUser(userId: string): Promise<void> {
-  const { error } = await supabase.from(TABLES.USERS)
-    .update({ is_blocked: false, blocked_until: null, blocked_reason: null })
-    .eq('id', userId);
+  const { error } = await supabase.rpc('admin_set_user_block', {
+    p_user_id: userId,
+    p_blocked: false,
+    p_blocked_until: null,
+    p_reason: null,
+  });
   if (error) throw error;
 }
 
 /** تفعيل/تعطيل الحساب */
 export async function adminSetUserActive(userId: string, active: boolean): Promise<void> {
-  const { error } = await supabase.from(TABLES.USERS).update({ is_active: active }).eq('id', userId);
+  const { error } = await supabase.rpc('admin_set_user_active', {
+    p_user_id: userId,
+    p_active: active,
+  });
   if (error) throw error;
 }
 
 /** تعديل بيانات المستخدم الأساسية */
 export async function adminUpdateUser(userId: string, fields: { full_name?: string; phone?: string; role?: string }): Promise<void> {
-  const { error } = await supabase.from(TABLES.USERS).update(fields).eq('id', userId);
+  const { error } = await supabase.rpc('admin_update_user_profile', {
+    p_user_id: userId,
+    p_full_name: fields.full_name?.trim() || null,
+    p_phone: fields.phone?.trim() || null,
+    p_role: fields.role ?? null,
+  });
   if (error) throw error;
 }
 
@@ -1623,7 +2777,10 @@ export async function getAdminUserDetails(userId: string): Promise<AdminUserDeta
 
 /** إجبار المندوب على وضع أوفلاين/أونلاين */
 export async function adminSetDriverOnline(driverProfileId: string, online: boolean): Promise<void> {
-  const { error } = await supabase.from(TABLES.DELIVERY_PROFILES).update({ is_online: online }).eq('id', driverProfileId);
+  const { error } = await supabase.rpc('admin_set_delivery_online', {
+    p_profile_id: driverProfileId,
+    p_online: online,
+  });
   if (error) throw error;
 }
 
@@ -1640,7 +2797,7 @@ export interface SystemSetting {
 
 export async function getSystemSettings(): Promise<Record<string, any>> {
   const { data, error } = await supabase.from('system_settings').select('setting_key, setting_value');
-  if (error) return {};
+  if (error) throw error;
   const settings: Record<string, any> = {};
   data.forEach((row) => { settings[row.setting_key] = row.setting_value; });
   return settings;
@@ -1671,7 +2828,11 @@ export async function getAppBanners(adminMode = false): Promise<AppBanner[]> {
 }
 
 export async function upsertAppBanner(banner: Partial<AppBanner>): Promise<void> {
-  const { error } = await supabase.from('app_banners').upsert(banner);
+  const { id, ...values } = banner;
+  const query = id
+    ? supabase.from('app_banners').update(values).eq('id', id)
+    : supabase.from('app_banners').insert(values);
+  const { error } = await query;
   if (error) throw error;
 }
 
@@ -1681,26 +2842,34 @@ export async function deleteAppBanner(id: string): Promise<void> {
 }
 
 export async function sendBroadcastNotification(data: { title: string; body: string; target_audience: string; user_id: string }): Promise<void> {
-  const { error } = await supabase.from('broadcast_notifications').insert({
+  void data.user_id;
+  const audienceRole: Record<string, 'customer' | 'merchant' | 'delivery' | undefined> = {
+    all: undefined,
+    customers: 'customer',
+    customer: 'customer',
+    merchants: 'merchant',
+    merchant: 'merchant',
+    delivery: 'delivery',
+    drivers: 'delivery',
+  };
+  const result = await broadcastNotification({
     title: data.title,
     body: data.body,
-    target_audience: data.target_audience,
-    created_by: data.user_id,
-    status: 'sent'
+    role: audienceRole[data.target_audience],
   });
-  if (error) throw error;
+  if (result.sent === 0) throw new Error('لا يوجد مستلمون مطابقون لهذه الفئة.');
 }
 
 export async function getAdminPermissions(userId: string): Promise<any> {
   const { data, error } = await supabase.from('admin_permissions').select('permissions').eq('user_id', userId).maybeSingle();
-  if (error) return null;
+  if (error) throw error;
   return data?.permissions ?? null;
 }
 
 export async function getAdminCoupons(): Promise<any[]> {
-  const { data, error } = await supabase.from('coupons').select('*, merchant_profiles(store_name)').order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('admin_list_coupons');
   if (error) throw error;
-  return data;
+  return (data ?? []) as any[];
 }
 
 export async function createGlobalCoupon(data: { code: string; type: 'fixed' | 'percentage'; value: number; min_order_amount: number; max_discount_amount: number | null; max_uses: number | null; end_date: string | null }): Promise<void> {
@@ -1713,9 +2882,10 @@ export async function createGlobalCoupon(data: { code: string; type: 'fixed' | '
 }
 
 export async function getMerchantCoupons(merchantProfileId: string): Promise<any[]> {
-  const { data, error } = await supabase.from('coupons').select('*').eq('merchant_id', merchantProfileId);
+  void merchantProfileId;
+  const { data, error } = await supabase.rpc('get_my_merchant_coupons');
   if (error) throw error;
-  return data;
+  return (data ?? []) as any[];
 }
 
 export async function createMerchantCoupon(coupon: any): Promise<void> {
@@ -1746,13 +2916,42 @@ export interface MerchantCoupon {
   end_date: string;
 }
 
-export async function requestWithdrawal(amount: number, userId: string, notes?: string): Promise<void> {
-  const { error } = await supabase.from('withdrawal_requests').insert({ user_id: userId, amount, status: 'pending', notes: notes ?? null });
+export interface WithdrawalRequest {
+  id: string;
+  amount: number;
+  status: WithdrawalStatus;
+  notes: string | null;
+  requester_notes?: string | null;
+  admin_notes?: string | null;
+  payout_destination?: Record<string, unknown> | null;
+  external_reference?: string | null;
+  processed_at?: string | null;
+  paid_at?: string | null;
+  created_at: string;
+}
+
+export async function getMyWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]> {
+  const { data, error } = await supabase
+    .from('withdrawal_requests')
+    .select('id, amount, status, notes, requester_notes, admin_notes, payout_destination, external_reference, processed_at, paid_at, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return (data ?? []) as WithdrawalRequest[];
+}
+
+export async function requestWithdrawal(amount: number, _userId: string, notes?: string): Promise<void> {
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error('مبلغ السحب غير صالح.');
+  const { error } = await supabase.rpc('request_withdrawal', {
+    p_amount: amount,
+    p_notes: notes?.trim() || null,
+  });
   if (error) throw error;
 }
 
 export interface AdminStats {
-  totalRevenue: number;
+  netSettledGmv: number;
   totalUsers: number;
   totalOrders: number;
   activeOrders: number;
@@ -1760,48 +2959,36 @@ export interface AdminStats {
   pendingMerchants: number;
   averageOrderValue: number;
   completionRate: number;
-  trends: { revenue: number; users: number; orders: number };
+  trends: { netSettledGmv: number; users: number; orders: number };
   chartData: { date: string; count: number }[];
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
-  const [usersRes, ordersRes, merchantsRes, onlineDriversRes] = await Promise.all([
-    supabase.from(TABLES.USERS).select('id', { count: 'exact', head: true }),
-    supabase.from(TABLES.ORDERS).select('id, total_amount, status, created_at'),
-    supabase.from(TABLES.MERCHANT_PROFILES).select('id').eq('is_approved', false),
-    supabase.from(TABLES.DELIVERY_PROFILES).select('id').eq('is_approved', true),
-  ]);
-
-  const orders = ordersRes.data || [];
-  const totalOrders = orders.length;
-  const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_amount || 0), 0);
-  const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length;
-
-  const today = new Date();
-  const chartData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (6 - i));
-    const count = orders.filter(o => new Date(o.created_at).toDateString() === d.toDateString()).length;
-    return { date: d.toLocaleDateString('ar-SA', { weekday: 'short' }), count };
-  });
-
+  const { data, error } = await supabase.rpc('admin_get_operational_stats');
+  if (error) throw error;
+  const raw = (data ?? {}) as Record<string, any>;
+  const trends = (raw.trends ?? {}) as Record<string, any>;
   return {
-    totalRevenue,
-    totalUsers: usersRes.count || 0,
-    totalOrders,
-    activeOrders,
-    pendingMerchants: merchantsRes.data?.length || 0,
-    onlineDrivers: onlineDriversRes.data?.length || 0,
-    averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-    completionRate: totalOrders > 0 ? (orders.filter(o => o.status === 'delivered').length / totalOrders) * 100 : 0,
-    trends: { revenue: 12.5, users: 8.2, orders: 15.3 },
-    chartData,
+    netSettledGmv: Number(raw.net_settled_gmv ?? 0),
+    totalUsers: Number(raw.total_users ?? 0),
+    totalOrders: Number(raw.total_orders ?? 0),
+    activeOrders: Number(raw.active_orders ?? 0),
+    pendingMerchants: Number(raw.pending_merchants ?? 0),
+    onlineDrivers: Number(raw.online_drivers ?? 0),
+    averageOrderValue: Number(raw.average_order_value ?? 0),
+    completionRate: Number(raw.completion_rate ?? 0),
+    trends: {
+      netSettledGmv: Number(trends.net_settled_gmv ?? 0),
+      users: Number(trends.users ?? 0),
+      orders: Number(trends.orders ?? 0),
+    },
+    chartData: Array.isArray(raw.chart_data)
+      ? raw.chart_data.map((point: any) => ({
+          date: String(point.date ?? ''),
+          count: Number(point.count ?? 0),
+        }))
+      : [],
   };
-}
-
-export async function incrementCouponUsage(couponId: string): Promise<void> {
-  const { data } = await supabase.from('coupons').select('used_count').eq('id', couponId).single();
-  await supabase.from('coupons').update({ used_count: ((data as any)?.used_count ?? 0) + 1 }).eq('id', couponId);
 }
 
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {
@@ -1835,19 +3022,20 @@ export async function getMerchantPeriodStats(merchantId: string, days: number): 
   const previousStart = new Date(currentStart);
   previousStart.setDate(previousStart.getDate() - days);
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(TABLES.ORDERS)
     .select('total_amount, status, created_at')
     .eq('merchant_id', merchantId)
     .gte('created_at', previousStart.toISOString());
+  if (error) throw error;
 
   const all = data ?? [];
   const current = all.filter(o => new Date(o.created_at) >= currentStart);
   const previous = all.filter(o => new Date(o.created_at) < currentStart);
 
   return {
-    currentRevenue: current.reduce((s, o) => s + (o.total_amount ?? 0), 0),
-    previousRevenue: previous.reduce((s, o) => s + (o.total_amount ?? 0), 0),
+    currentRevenue: current.filter((o) => o.status === 'delivered').reduce((s, o) => s + (o.total_amount ?? 0), 0),
+    previousRevenue: previous.filter((o) => o.status === 'delivered').reduce((s, o) => s + (o.total_amount ?? 0), 0),
     currentOrders: current.length,
     previousOrders: previous.length,
     deliveredCount: current.filter(o => o.status === 'delivered').length,
@@ -1856,20 +3044,34 @@ export async function getMerchantPeriodStats(merchantId: string, days: number): 
   };
 }
 
-export async function broadcastNotification(data: { title: string; body: string; role?: string }): Promise<{ sent: number }> {
-  let q = supabase.from(TABLES.USERS).select('id');
-  if (data.role) q = (q as any).eq('role', data.role);
-  const { data: users } = await q;
-  if (!users || users.length === 0) return { sent: 0 };
-  const rows = (users as { id: string }[]).map((u) => ({
-    user_id: u.id, title: data.title, body: data.body,
-    type: 'admin_broadcast', is_read: false, channel: 'in_app',
-  }));
-  let sent = 0;
-  for (let i = 0; i < rows.length; i += 100) {
-    const { error } = await supabase.from(TABLES.NOTIFICATIONS).insert(rows.slice(i, i + 100));
-    if (!error) sent += Math.min(100, rows.length - i);
-  }
-  return { sent };
+export interface BroadcastCampaignResult {
+  campaign_id: string;
+  matched: number;
+  created: number;
+  push_queued: number;
+}
+
+export async function broadcastNotification(data: {
+  title: string;
+  body: string;
+  role?: 'customer' | 'merchant' | 'delivery';
+  channel?: 'in_app' | 'push';
+  idempotencyKey?: string;
+}): Promise<{ sent: number } & BroadcastCampaignResult> {
+  const title = data.title.trim();
+  const body = data.body.trim();
+  if (!title || !body) throw new Error('عنوان الإشعار ومحتواه مطلوبان.');
+  if (title.length > 100 || body.length > 1000) throw new Error('محتوى الإشعار أطول من الحد المسموح.');
+  const { data: result, error } = await supabase.rpc('create_broadcast_campaign', {
+    p_title: title,
+    p_body: body,
+    p_role: data.role ?? null,
+    p_channel: data.channel ?? 'in_app',
+    p_idempotency_key: data.idempotencyKey ?? createIdempotencyKey(),
+  });
+  if (error) throw error;
+  const campaign = result as BroadcastCampaignResult | null;
+  if (!campaign?.campaign_id) throw new Error('لم يُرجع الخادم نتيجة حملة الإشعارات.');
+  return { ...campaign, sent: Number(campaign.created ?? 0) };
 }
 

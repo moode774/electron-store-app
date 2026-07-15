@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   TextInput, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { broadcastNotification } from '@marketplace/shared-hooks';
+import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 
 const UI = {
   primary: '#1E3A8A',
@@ -25,7 +25,7 @@ const AUDIENCE_OPTIONS = [
   { key: 'customer', label: 'العملاء', icon: 'person', color: '#059669', bg: '#ECFDF5' },
   { key: 'merchant', label: 'التجار', icon: 'storefront', color: '#7C3AED', bg: '#F5F3FF' },
   { key: 'delivery', label: 'السائقون', icon: 'bicycle', color: '#D97706', bg: '#FFFBEB' },
-];
+] as const;
 
 const QUICK_TEMPLATES = [
   { title: 'تحديث النظام', body: 'تم تحديث التطبيق بميزات جديدة. يُرجى التحديث للاستمتاع بأفضل تجربة.' },
@@ -37,9 +37,10 @@ const QUICK_TEMPLATES = [
 export default function AdminNotificationsScreen({ navigation }: any) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [audience, setAudience] = useState('');
+  const [audience, setAudience] = useState<'' | 'customer' | 'merchant' | 'delivery'>('');
   const [sending, setSending] = useState(false);
   const [sentCount, setSentCount] = useState<number | null>(null);
+  const pendingCampaign = useRef<{ fingerprint: string; idempotencyKey: string } | null>(null);
 
   const handleSend = async () => {
     if (!title.trim()) { Alert.alert('تنبيه', 'أدخل عنوان الإشعار'); return; }
@@ -57,12 +58,20 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             setSending(true);
             setSentCount(null);
             try {
+              const fingerprint = JSON.stringify({ title: title.trim(), body: body.trim(), audience });
+              if (pendingCampaign.current?.fingerprint !== fingerprint) {
+                pendingCampaign.current = { fingerprint, idempotencyKey: createIdempotencyKey() };
+              }
               const result = await broadcastNotification({
                 title: title.trim(),
                 body: body.trim(),
                 role: audience || undefined,
+                channel: 'in_app',
+                idempotencyKey: pendingCampaign.current.idempotencyKey,
               });
+              pendingCampaign.current = null;
               setSentCount(result.sent);
+              if (result.sent === 0) Alert.alert('لا يوجد مستلمون', 'لم يوجد مستخدمون مطابقون للجمهور المحدد.');
               setTitle('');
               setBody('');
             } catch {
@@ -101,7 +110,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         {sentCount !== null && (
           <View style={s.successBanner}>
             <Ionicons name="checkmark-circle" size={22} color={UI.success} />
-            <Text style={s.successText}>نجاح! تم إرسال {sentCount} إشعار.</Text>
+            <Text style={s.successText}>تم إنشاء {sentCount} إشعار داخل التطبيق.</Text>
           </View>
         )}
 

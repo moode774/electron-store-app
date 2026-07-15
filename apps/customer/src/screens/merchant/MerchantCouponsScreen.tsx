@@ -9,7 +9,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
   ScrollView,
   useWindowDimensions,
@@ -25,6 +24,7 @@ import {
   deleteMerchantCoupon,
   MerchantCoupon,
 } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
 
 const UI = {
   primary: '#111827',
@@ -66,9 +66,11 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   const [merchantProfileId, setMerchantProfileId] = useState<string | null>(null);
   const [coupons, setCoupons] = useState<MerchantCoupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // form fields
   const [code, setCode] = useState('');
@@ -81,14 +83,15 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
   const load = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
+    setLoadError('');
     try {
       const profile = await getMerchantProfile(user.id);
-      if (!profile?.id) { setLoading(false); return; }
+      if (!profile?.id) throw new Error('ملف المتجر غير موجود.');
       setMerchantProfileId(profile.id);
       const data = await getMerchantCoupons(profile.id);
       setCoupons(data);
-    } catch {
-      setCoupons([]);
+    } catch (error: any) {
+      setLoadError(error?.message ?? 'تعذّر تحميل كوبونات المتجر.');
     } finally {
       setLoading(false);
     }
@@ -137,8 +140,16 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   }
 
   async function toggleActive(coupon: MerchantCoupon) {
-    setCoupons((prev) => prev.map((c) => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c));
-    await updateMerchantCoupon(coupon.id, { is_active: !coupon.is_active }).catch(() => load());
+    if (updatingId) return;
+    setUpdatingId(coupon.id);
+    try {
+      await updateMerchantCoupon(coupon.id, { is_active: !coupon.is_active });
+      await load();
+    } catch {
+      Alert.alert('لم يتم التحديث', 'تعذر تغيير حالة الكوبون.');
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   function confirmDelete(coupon: MerchantCoupon) {
@@ -151,8 +162,12 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           text: 'حذف',
           style: 'destructive',
           onPress: async () => {
-            await deleteMerchantCoupon(coupon.id);
-            setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
+            try {
+              await deleteMerchantCoupon(coupon.id);
+              setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
+            } catch {
+              Alert.alert('تعذر الحذف', 'لم يتم حذف الكوبون. أعد المحاولة.');
+            }
           },
         },
       ]
@@ -184,11 +199,15 @@ export default function MerchantCouponsScreen({ navigation }: any) {
             <TouchableOpacity
               style={[styles.toggleBtn, { backgroundColor: item.is_active ? `${UI.green}18` : UI.bg }]}
               onPress={() => toggleActive(item)}
+              disabled={!!updatingId}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.is_active ? 'إيقاف' : 'تفعيل'} الكوبون ${item.code}`}
+              accessibilityState={{ disabled: !!updatingId, busy: updatingId === item.id }}
               activeOpacity={0.7}
             >
               <Ionicons name={item.is_active ? 'pause-circle-outline' : 'play-circle-outline'} size={20} color={item.is_active ? UI.green : UI.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)} activeOpacity={0.7} disabled={!!updatingId} accessibilityRole="button" accessibilityLabel={`حذف الكوبون ${item.code}`} accessibilityState={{ disabled: !!updatingId }}>
               <Ionicons name="trash-outline" size={20} color={UI.red} />
             </TouchableOpacity>
           </View>
@@ -281,6 +300,14 @@ export default function MerchantCouponsScreen({ navigation }: any) {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={UI.primary} />
+          </View>
+        ) : loadError ? (
+          <View style={styles.errorState} accessibilityRole="alert">
+            <Ionicons name="cloud-offline-outline" size={48} color={UI.red} />
+            <Text style={styles.errorText}>{loadError}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button">
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
@@ -483,6 +510,10 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, backgroundColor: UI.border },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
+  errorText: { color: UI.red, textAlign: 'center' },
+  retryButton: { minHeight: 44, borderRadius: 11, backgroundColor: UI.primary, justifyContent: 'center', paddingHorizontal: 18 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
 
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
 

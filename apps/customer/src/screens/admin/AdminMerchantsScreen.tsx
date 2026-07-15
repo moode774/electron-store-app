@@ -34,6 +34,7 @@ export default function AdminMerchantsScreen() {
   const [search, setSearch] = useState('');
   const [processing, setProcessing] = useState<string | null>(null);
   const [pauseModal, setPauseModal] = useState<{ visible: boolean; merchant: AdminMerchant | null; reason: string }>({ visible: false, merchant: null, reason: '' });
+  const [reviewModal, setReviewModal] = useState<{ visible: boolean; merchant: AdminMerchant | null; approve: boolean; reason: string }>({ visible: false, merchant: null, approve: true, reason: '' });
 
   const load = useCallback(async () => {
     try {
@@ -50,26 +51,29 @@ export default function AdminMerchantsScreen() {
 
   const onRefresh = () => { setRefreshing(true); load(); };
 
-  const handleApprove = async (merchant: AdminMerchant, approve: boolean) => {
-    Alert.alert(
-      approve ? 'تأكيد الموافقة' : 'تأكيد الرفض',
-      `هل تريد ${approve ? 'الموافقة على' : 'رفض'} التاجر "${merchant.store_name}"؟`,
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: approve ? 'موافقة' : 'رفض',
-          style: approve ? 'default' : 'destructive',
-          onPress: async () => {
-            setProcessing(merchant.id);
-            try {
-              await approveMerchant(merchant.id, approve);
-              load();
-            } catch { Alert.alert('خطأ', 'فشل تحديث حالة التاجر'); }
-            finally { setProcessing(null); }
-          },
-        },
-      ]
-    );
+  const handleApprove = (merchant: AdminMerchant, approve: boolean) => {
+    setReviewModal({ visible: true, merchant, approve, reason: '' });
+  };
+
+  const submitReview = async () => {
+    const { merchant, approve, reason } = reviewModal;
+    if (!merchant || processing) return;
+    if (!approve && !reason.trim()) {
+      Alert.alert('سبب الرفض مطلوب', 'اكتب سبباً واضحاً ليتمكن التاجر من تصحيح الطلب.');
+      return;
+    }
+    setProcessing(merchant.id);
+    try {
+      await (approveMerchant as any)(merchant.id, approve, reason.trim() || undefined);
+      setMerchants((current) => current.map((item) => item.id === merchant.id ? { ...item, is_approved: approve } : item));
+      setReviewModal({ visible: false, merchant: null, approve: true, reason: '' });
+      Alert.alert('تم حفظ المراجعة', approve ? 'تم اعتماد المتجر بعد مراجعة البيانات المعروضة.' : 'تم رفض الطلب وتسجيل السبب.');
+    } catch (err) {
+      console.error('Failed to update merchant approval:', err);
+      Alert.alert('تعذر حفظ المراجعة', err instanceof Error ? err.message : 'لم تتغير حالة التاجر.');
+    } finally {
+      setProcessing(null);
+    }
   };
 
   const handleToggleActive = async (merchant: AdminMerchant) => {
@@ -91,7 +95,10 @@ export default function AdminMerchantsScreen() {
             try {
               await toggleMerchantActive(merchant.id, true);
               load();
-            } catch { Alert.alert('خطأ', 'فشل تحديث حالة التاجر'); }
+            } catch (err) {
+              console.error('Failed to activate merchant:', err);
+              Alert.alert('خطأ', err instanceof Error ? err.message : 'فشل تحديث حالة التاجر');
+            }
             finally { setProcessing(null); }
           },
         },
@@ -110,8 +117,9 @@ export default function AdminMerchantsScreen() {
     try {
       await toggleMerchantActive(merchant.id, false, reason.trim());
       load();
-    } catch {
-      Alert.alert('خطأ', 'فشل تحديث حالة التاجر');
+    } catch (err) {
+      console.error('Failed to pause merchant:', err);
+      Alert.alert('خطأ', err instanceof Error ? err.message : 'فشل تحديث حالة التاجر');
     } finally {
       setProcessing(null);
     }
@@ -309,6 +317,51 @@ export default function AdminMerchantsScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={reviewModal.visible} transparent animationType="fade" onRequestClose={() => !processing && setReviewModal((current) => ({ ...current, visible: false }))} accessibilityViewIsModal>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>{reviewModal.approve ? 'مراجعة واعتماد التاجر' : 'رفض طلب اعتماد التاجر'}</Text>
+              <TouchableOpacity onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing} accessibilityRole="button" accessibilityLabel="إغلاق مراجعة التاجر">
+                <Ionicons name="close" size={24} color={UI.textMuted} />
+              </TouchableOpacity>
+            </View>
+            {reviewModal.merchant && (() => {
+              const merchant = reviewModal.merchant as AdminMerchant & Record<string, any>;
+              return <View style={s.verificationBox}>
+                <Text style={s.verificationTitle}>{merchant.store_name}</Text>
+                <Text style={s.verificationRow}>المالك: {(merchant.users as any)?.full_name ?? merchant.owner_name ?? 'غير متوفر'}</Text>
+                <Text style={s.verificationRow}>رقم الهوية: {merchant.national_id || 'غير مرفق'}</Text>
+                <Text style={s.verificationRow}>السجل التجاري: {merchant.commercial_register || 'غير مرفق'}</Text>
+                <Text style={s.verificationRow}>الرقم الضريبي: {merchant.tax_number || 'غير مرفق'}</Text>
+                <Text style={s.verificationRow}>البنك: {merchant.bank_name || 'غير مرفق'}</Text>
+                <Text style={s.verificationRow}>اسم صاحب الحساب: {merchant.bank_account_name || 'غير مرفق'}</Text>
+                <View style={s.evidenceWarning}>
+                  <Ionicons name="warning-outline" size={17} color={UI.warning} />
+                  <Text style={s.evidenceWarningText}>لا يعرض النظام حالياً مستندات أو صور إثبات قابلة للمطابقة؛ لا تعتمد الطلب إذا لم تتحقق خارجياً.</Text>
+                </View>
+              </View>;
+            })()}
+            <TextInput
+              style={s.reasonInput}
+              placeholder={reviewModal.approve ? 'ملاحظة المراجع (اختياري)...' : 'سبب الرفض (مطلوب)...'}
+              placeholderTextColor={UI.textMuted}
+              value={reviewModal.reason}
+              onChangeText={(reason) => setReviewModal((current) => ({ ...current, reason }))}
+              multiline
+              textAlign="right"
+              accessibilityLabel="ملاحظات مراجعة التاجر"
+            />
+            <View style={s.modalActions}>
+              <TouchableOpacity style={s.modalCancelBtn} onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing}><Text style={s.modalCancelText}>تراجع</Text></TouchableOpacity>
+              <TouchableOpacity style={[s.modalSubmitBtn, !reviewModal.approve && { backgroundColor: UI.danger }]} onPress={submitReview} disabled={!!processing}>
+                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalSubmitText}>{reviewModal.approve ? 'اعتماد بعد المراجعة' : 'تأكيد الرفض'}</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -378,6 +431,11 @@ const s = StyleSheet.create({
   reasonPresetText: { fontSize: 12, color: UI.textMuted, fontWeight: '600' },
   reasonPresetTextActive: { color: UI.danger, fontWeight: '700' },
   reasonInput: { backgroundColor: UI.bg, borderWidth: 1, borderColor: UI.border, borderRadius: 16, height: 100, padding: 16, fontSize: 14, color: UI.text, textAlignVertical: 'top', marginBottom: 24 },
+  verificationBox: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: UI.border, borderRadius: 14, padding: 14, marginBottom: 14, gap: 7 },
+  verificationTitle: { color: UI.text, fontSize: 16, fontWeight: '900', textAlign: 'right', marginBottom: 3 },
+  verificationRow: { color: '#334155', fontSize: 13, fontWeight: '600', textAlign: 'right' },
+  evidenceWarning: { flexDirection: 'row-reverse', gap: 7, alignItems: 'flex-start', backgroundColor: '#FFFBEB', padding: 10, borderRadius: 10, marginTop: 5 },
+  evidenceWarningText: { flex: 1, color: '#92400E', fontSize: 12, lineHeight: 19, textAlign: 'right', fontWeight: '700' },
   modalActions: { flexDirection: 'row-reverse', gap: 12 },
   modalCancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 16, alignItems: 'center', backgroundColor: UI.bg },
   modalCancelText: { fontSize: 14, fontWeight: '700', color: UI.textMuted },

@@ -16,11 +16,22 @@ export default function PaymentMethodsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [saved, setSaved] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
-    getPaymentMethods(user.id).then(setSaved).catch(() => {}).finally(() => setLoading(false));
-  }, [user?.id]));
+    setLoading(true);
+    setLoadError('');
+    try {
+      setSaved(await getPaymentMethods(user.id));
+    } catch (error: any) {
+      setLoadError(error?.message ?? 'تعذّر تحميل وسائل الدفع المحفوظة.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   return (
     <View style={styles.container}>
@@ -60,6 +71,13 @@ export default function PaymentMethodsScreen({ navigation }: any) {
         <Text style={styles.savedTitle}>بطاقاتي المحفوظة</Text>
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
+        ) : loadError ? (
+          <View style={styles.loadError} accessibilityRole="alert">
+            <Text style={styles.loadErrorText}>{loadError}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
         ) : saved.length === 0 ? (
           <View style={styles.emptySaved}>
             <Ionicons name="card-outline" size={28} color="#D1D5DB" />
@@ -125,4 +143,8 @@ const styles = StyleSheet.create({
   savedTitle: { fontSize: 15, fontWeight: '800', color: '#111827', marginTop: 12, marginBottom: 4 },
   emptySaved: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   emptySavedText: { fontSize: 13, color: '#9CA3AF' },
+  loadError: { alignItems: 'center', gap: 10, paddingVertical: 18, paddingHorizontal: 12, backgroundColor: '#FEF2F2', borderRadius: 12 },
+  loadErrorText: { color: '#991B1B', textAlign: 'center' },
+  retryButton: { minHeight: 40, borderRadius: 10, backgroundColor: COLORS.primary, justifyContent: 'center', paddingHorizontal: 16 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

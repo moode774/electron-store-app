@@ -5,27 +5,44 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
 
+import CodRemittancePanel from './CodRemittancePanel';
+
 export default function DeliveryWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [earnings, setEarnings] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const loadWallet = useCallback(async () => {
+    if (!user?.id) { setLoading(false); return; }
+    setLoadError('');
+    try {
+      const [earningsResult, transactionResult] = await Promise.all([
+        getDeliveryEarnings(user.id),
+        getWalletTransactions(user.id),
+      ]);
+      setEarnings(earningsResult.balance);
+      setTransactions(transactionResult);
+    } catch (error) {
+      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل المحفظة.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   useFocusEffect(useCallback(() => {
-    if (!user?.id) { setLoading(false); return; }
-    Promise.all([getDeliveryEarnings(user.id), getWalletTransactions(user.id)])
-      .then(([e, tx]) => { setEarnings(e.balance); setTransactions(tx); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user?.id]));
+    setLoading(true);
+    void loadWallet();
+  }, [loadWallet]));
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>المحفظة والتحصيلات</Text>
@@ -43,6 +60,14 @@ export default function DeliveryWalletScreen({ navigation }: any) {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
+            {loadError ? (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorText}>{loadError}</Text>
+                <TouchableOpacity onPress={() => void loadWallet()} accessibilityRole="button" accessibilityLabel="إعادة تحميل المحفظة">
+                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
             <View style={styles.cardsRow}>
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
@@ -56,6 +81,8 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               </View>
             </View>
 
+            <CodRemittancePanel />
+
             <Text style={styles.sectionTitle}>سجل المعاملات</Text>
           </>
         }
@@ -66,6 +93,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
         }
         renderItem={({ item }) => {
           const income = isIncome(item);
+          const absoluteAmount = Math.abs(item.amount ?? 0);
           return (
           <View style={styles.txCard}>
             <View style={[styles.txIcon, { backgroundColor: income ? '#DCFCE7' : '#FEF3C7' }]}>
@@ -76,7 +104,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#B45309' }]}>
-              {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()}
+              {income ? '+' : '-'}{absoluteAmount.toLocaleString()}
             </Text>
           </View>
           );
@@ -96,6 +124,9 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
   listContent: { padding: 20, gap: 10, paddingBottom: 100 },
+  errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
+  errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
+  retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 4 },
   summaryCard: { flex: 1, borderRadius: 18, padding: 18, gap: 6 },
   summaryValue: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },

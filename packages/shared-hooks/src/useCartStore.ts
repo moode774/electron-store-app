@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 
 export interface CartItem {
-  id: string; // product id + variant string
+  id: string; // product id + variant id
   productId: string;
+  /** معرّف الخيار الحقيقي الذي يجب أن يصل إلى عنصر الطلب. */
+  variantId?: string;
   name: string;
   price: number;
   emoji: string;
   quantity: number;
+  maxQuantity?: number;
   storeId: string;
   storeName: string;
   image?: string;
@@ -29,9 +32,13 @@ export const useCartStore = create<CartState>((set, get) => ({
     set((state) => {
       const existingItem = state.items.find((i) => i.id === newItem.id);
       if (existingItem) {
+        const requestedQuantity = existingItem.quantity + newItem.quantity;
+        const quantity = existingItem.maxQuantity
+          ? Math.min(requestedQuantity, existingItem.maxQuantity)
+          : requestedQuantity;
         return {
           items: state.items.map((i) =>
-            i.id === newItem.id ? { ...i, quantity: i.quantity + newItem.quantity } : i
+            i.id === newItem.id ? { ...i, quantity } : i
           ),
         };
       }
@@ -51,7 +58,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       return;
     }
     set((state) => ({
-      items: state.items.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
+      items: state.items.map((i) => (
+        i.id === itemId
+          ? { ...i, quantity: i.maxQuantity ? Math.min(quantity, i.maxQuantity) : quantity }
+          : i
+      )),
     }));
   },
 

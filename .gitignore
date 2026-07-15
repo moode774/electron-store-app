@@ -5,3 +5,5 @@ hts-cache/
 .env
 .DS_Store
 *.log
+
+.vercel

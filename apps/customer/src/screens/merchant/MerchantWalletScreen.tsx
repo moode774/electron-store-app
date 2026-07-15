@@ -1,46 +1,100 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar,
-  Platform, ActivityIndicator, Modal, TextInput, Alert, KeyboardAvoidingView,
+  Platform, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import {
   useAuthStore, getWalletTransactions, getMerchantWalletBalance,
-  requestWithdrawal, WalletTransaction,
+  getMyWithdrawalRequests, requestWithdrawal, WalletTransaction, WithdrawalRequest, WithdrawalStatus,
 } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
+
+const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
+  'pending',
+  'approved',
+  'processing',
+]);
+
+const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: string; backgroundColor: string }> = {
+  pending: { label: 'قيد المراجعة', color: '#92400E', backgroundColor: '#FEF3C7' },
+  approved: { label: 'معتمد — لم يُثبت التحويل بعد', color: '#1D4ED8', backgroundColor: '#DBEAFE' },
+  processing: { label: 'جاري التحويل', color: '#6D28D9', backgroundColor: '#EDE9FE' },
+  paid: { label: 'مدفوع', color: '#047857', backgroundColor: '#D1FAE5' },
+  rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+  failed: { label: 'فشل التحويل', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+};
 
 export default function MerchantWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawNotes, setWithdrawNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const withdrawLock = useRef(false);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
-    Promise.all([getMerchantWalletBalance(user.id), getWalletTransactions(user.id)])
-      .then(([b, tx]) => { setBalance(b); setTransactions(tx); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [nextBalance, nextTransactions, requests] = await Promise.all([
+        getMerchantWalletBalance(user.id),
+        getWalletTransactions(user.id),
+        getMyWithdrawalRequests(user.id),
+      ]);
+      setBalance(nextBalance);
+      setTransactions(nextTransactions);
+      setWithdrawals(requests);
+    } catch (error: unknown) {
+      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل بيانات المحفظة.');
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
-  useFocusEffect(loadData);
+  useFocusEffect(useCallback(() => {
+    void loadData();
+  }, [loadData]));
 
-  const isIncome = (t: WalletTransaction) => (t.amount ?? 0) >= 0;
+  const isIncome = (t: WalletTransaction) => t.type === 'credit';
+  const blockingWithdrawal = withdrawals.find((request) => BLOCKING_WITHDRAWAL_STATUSES.has(request.status));
+  const hasBlockingWithdrawal = Boolean(blockingWithdrawal);
 
   const openWithdraw = () => {
+    if (blockingWithdrawal) {
+      Alert.alert(
+        blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
+        blockingWithdrawal.status === 'failed'
+          ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
+          : 'لديك طلب سحب قائم. انتظر اكتماله أو رفضه قبل إنشاء طلب آخر.',
+      );
+      return;
+    }
     setWithdrawAmount('');
     setWithdrawNotes('');
     setShowWithdrawModal(true);
   };
 
   const handleWithdraw = async () => {
+    if (withdrawLock.current || submitting) return;
+    if (blockingWithdrawal) {
+      Alert.alert(
+        blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
+        blockingWithdrawal.status === 'failed'
+          ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
+          : 'لديك طلب سحب قائم بالفعل.',
+      );
+      return;
+    }
     const amount = parseFloat(withdrawAmount.replace(',', '.'));
     if (!Number.isFinite(amount) || amount <= 0) {
       Alert.alert('تنبيه', 'أدخل مبلغاً صحيحاً أكبر من صفر');
@@ -55,19 +109,21 @@ export default function MerchantWalletScreen({ navigation }: any) {
       return;
     }
     if (!user?.id) return;
+    withdrawLock.current = true;
     setSubmitting(true);
     try {
       await requestWithdrawal(amount, user.id, withdrawNotes.trim() || undefined);
       setShowWithdrawModal(false);
+      await loadData();
       Alert.alert(
         'تم إرسال طلب السحب ✅',
-        `سيتم تحويل ${amount.toLocaleString()} ر.ي إلى حسابك البنكي خلال 3-5 أيام عمل.`,
+        `تم إرسال طلب بقيمة ${amount.toLocaleString()} ر.ي للمراجعة. لا يُعد المبلغ محولاً حتى تعتمد الإدارة الطلب.`,
         [{ text: 'حسناً' }]
       );
-      loadData();
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال طلب السحب، يرجى المحاولة لاحقاً');
     } finally {
+      withdrawLock.current = false;
       setSubmitting(false);
     }
   };
@@ -95,16 +151,26 @@ export default function MerchantWalletScreen({ navigation }: any) {
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
             <>
+              {loadError ? (
+                <View style={styles.errorCard} accessibilityRole="alert">
+                  <Text style={styles.errorText}>{loadError}</Text>
+                  <TouchableOpacity onPress={() => void loadData()} accessibilityRole="button" accessibilityLabel="إعادة تحميل المحفظة">
+                    <Text style={styles.retryText}>إعادة المحاولة</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
               {/* Balance Card */}
               <View style={styles.balanceCard}>
-                <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
+                <Text style={styles.balanceLabel}>الرصيد المسجل</Text>
                 <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
-                <Text style={styles.balanceNote}>يشمل الأرباح المؤكدة من الطلبات المكتملة</Text>
+                <Text style={styles.balanceNote}>تحقق من سجل المعاملات قبل طلب السحب</Text>
                 <TouchableOpacity
-                  style={[styles.withdrawBtn, balance < 50 && { opacity: 0.5 }]}
+                  style={[styles.withdrawBtn, (balance < 50 || hasBlockingWithdrawal || submitting) && { opacity: 0.5 }]}
                   activeOpacity={0.8}
                   onPress={openWithdraw}
-                  disabled={balance < 50}
+                  disabled={balance < 50 || hasBlockingWithdrawal || submitting}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: balance < 50 || hasBlockingWithdrawal || submitting }}
                 >
                   <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
                   <Text style={styles.withdrawBtnText}>طلب سحب</Text>
@@ -113,6 +179,31 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.minNote}>الحد الأدنى للسحب 50 ر.ي</Text>
                 )}
               </View>
+
+              {withdrawals.length ? (
+                <View style={styles.withdrawalSection}>
+                  <Text style={styles.sectionTitle}>طلبات السحب</Text>
+                  {withdrawals.slice(0, 5).map((request) => {
+                    const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
+                    return (
+                      <View key={request.id} style={styles.withdrawalRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
+                          <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-SA')}</Text>
+                        </View>
+                        <Text
+                          style={[
+                            styles.withdrawalStatus,
+                            { color: statusInfo.color, backgroundColor: statusInfo.backgroundColor },
+                          ]}
+                        >
+                          {statusInfo.label}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
 
               <Text style={styles.sectionTitle}>سجل المعاملات</Text>
             </>
@@ -125,6 +216,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
           }
           renderItem={({ item }) => {
             const income = isIncome(item);
+            const absoluteAmount = Math.abs(item.amount ?? 0);
             return (
               <View style={styles.txCard}>
                 <View style={[styles.txIcon, { backgroundColor: income ? '#DCFCE7' : '#FEE2E2' }]}>
@@ -135,7 +227,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
                 </View>
                 <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>
-                  {income ? '+' : ''}{(item.amount ?? 0).toLocaleString()} ر.ي
+                  {income ? '+' : '-'}{absoluteAmount.toLocaleString()} ر.ي
                 </Text>
               </View>
             );
@@ -206,14 +298,15 @@ export default function MerchantWalletScreen({ navigation }: any) {
             <View style={styles.modalInfoBox}>
               <Ionicons name="information-circle-outline" size={16} color="#1D4ED8" />
               <Text style={styles.modalInfoText}>
-                سيتم التحويل للحساب البنكي المسجل في إعدادات المتجر خلال 3-5 أيام عمل.
+                سيُرسل الطلب للمراجعة على الحساب البنكي المسجل في إعدادات المتجر.
               </Text>
             </View>
 
             <TouchableOpacity
-              style={[styles.submitBtn, submitting && { opacity: 0.7 }]}
+              style={[styles.submitBtn, (submitting || hasBlockingWithdrawal) && { opacity: 0.7 }]}
               onPress={handleWithdraw}
-              disabled={submitting}
+              disabled={submitting || hasBlockingWithdrawal}
+              accessibilityState={{ disabled: submitting || hasBlockingWithdrawal }}
               activeOpacity={0.85}
             >
               {submitting ? (
@@ -243,6 +336,14 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
 
   listContent: { padding: 20, gap: 10, paddingBottom: 100 },
+  errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
+  errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
+  retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
+  withdrawalSection: { gap: 8, marginBottom: 6 },
+  withdrawalRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  withdrawalAmount: { color: '#111827', fontSize: 13.5, fontWeight: '800' },
+  withdrawalDate: { color: '#9CA3AF', fontSize: 10.5, marginTop: 3 },
+  withdrawalStatus: { maxWidth: '52%', fontSize: 11, fontWeight: '700', textAlign: 'right', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, overflow: 'hidden' },
 
   balanceCard: { backgroundColor: COLORS.primary, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 16 },
   balanceLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },

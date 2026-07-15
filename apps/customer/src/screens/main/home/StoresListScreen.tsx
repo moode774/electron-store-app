@@ -6,52 +6,70 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { HomeStackParamList } from '../../../navigation/types';
+import { useFocusEffect } from '@react-navigation/native';
 
-type StoresListScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoresList'>;
-interface Props { navigation: StoresListScreenNavigationProp; }
-
-export default function StoresListScreen({ navigation }: Props) {
+export default function StoresListScreen({ navigation, route }: any) {
+  const categoryId = route?.params?.categoryId;
+  const isDatabaseCategory = Boolean(categoryId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(categoryId));
+  const fallbackCategory = isDatabaseCategory ? undefined : route?.params?.filter;
   const [search, setSearch] = useState('');
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(fallbackCategory ?? null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const loadStores = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
+    setErrorMessage('');
     try {
       const data = await getStores(search || undefined);
-      setStores(data);
-    } catch {
+      if (isDatabaseCategory && categoryId) {
+        const { data: products, error } = await supabase
+          .from('products')
+          .select('merchant_id')
+          .eq('category_id', categoryId)
+          .eq('is_active', true);
+        if (error) throw error;
+        const merchantIds = new Set((products ?? []).map((product: any) => product.merchant_id));
+        setStores(data.filter((store) => merchantIds.has(store.id)));
+      } else {
+        setStores(data);
+      }
+    } catch (error: any) {
       setStores([]);
+      setErrorMessage(error?.message ?? 'تعذّر تحميل المتاجر. تحقق من الاتصال وحاول مجدداً.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [search]);
+  }, [categoryId, isDatabaseCategory, search]);
 
   useEffect(() => {
     const timer = setTimeout(loadStores, 300);
     return () => clearTimeout(timer);
   }, [loadStores]);
 
+  useFocusEffect(useCallback(() => {
+    loadStores(true);
+  }, [loadStores]));
+
   const onRefresh = () => {
     setRefreshing(true);
     loadStores(true);
   };
 
-  /*
   useEffect(() => {
-    const channel = supabase.channel('stores_realtime')
+    const channel = supabase.channel(`customer-stores-${categoryId ?? 'all'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles' }, () => {
+        loadStores(true);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         loadStores(true);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [loadStores]);
-  */
+  }, [categoryId, loadStores]);
 
   const categories = Array.from(new Set(stores.map((s) => s.store_category).filter(Boolean))) as string[];
 
@@ -64,6 +82,8 @@ export default function StoresListScreen({ navigation }: Props) {
       activeOpacity={0.9}
       onPress={() => navigation.navigate('StoreDetails', { storeId: item.id })}
       style={styles.storeCard}
+      accessibilityRole="button"
+      accessibilityLabel={`فتح متجر ${item.store_name}`}
     >
       <View style={styles.storeIconWrap}>
         <Ionicons name="storefront-outline" size={28} color={COLORS.primary} />
@@ -94,7 +114,7 @@ export default function StoresListScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>المتاجر</Text>
@@ -111,9 +131,10 @@ export default function StoresListScreen({ navigation }: Props) {
             value={search}
             onChangeText={setSearch}
             textAlign={Platform.OS === 'web' ? 'right' : 'left'}
+            accessibilityLabel="البحث في المتاجر"
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <TouchableOpacity onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel="مسح البحث">
               <Ionicons name="close-circle" size={20} color="#9CA3AF" />
             </TouchableOpacity>
           )}
@@ -133,6 +154,9 @@ export default function StoresListScreen({ navigation }: Props) {
                   style={[styles.categoryChip, isActive && styles.categoryChipActive]}
                   onPress={() => setActiveCategory(isActive ? null : item)}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`تصفية حسب ${item}`}
+                  accessibilityState={{ selected: isActive }}
                 >
                   <Text style={[styles.categoryChipText, isActive && styles.categoryChipTextActive]}>{item}</Text>
                 </TouchableOpacity>
@@ -157,7 +181,12 @@ export default function StoresListScreen({ navigation }: Props) {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Ionicons name="storefront-outline" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyText}>لا توجد متاجر مسجلة حتى الآن</Text>
+              <Text style={styles.emptyText}>{errorMessage || 'لا توجد متاجر مطابقة حتى الآن'}</Text>
+              {errorMessage ? (
+                <TouchableOpacity style={styles.retryBtn} onPress={() => loadStores()} accessibilityRole="button" accessibilityLabel="إعادة تحميل المتاجر">
+                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           }
         />
@@ -215,4 +244,6 @@ const styles = StyleSheet.create({
   reviewsCount: { fontSize: 12, color: COLORS.primary, fontWeight: '700' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 60 },
   emptyText: { fontSize: 14, color: '#9CA3AF', fontWeight: '600', marginTop: 16 },
+  retryBtn: { marginTop: 14, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.primary },
+  retryText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
 });

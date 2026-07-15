@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
-  Platform, Switch, Alert, ActivityIndicator, useWindowDimensions, TextInput
+  Platform, Switch, ActivityIndicator, useWindowDimensions, TextInput
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, getMerchantProfile, updateMerchantProfileByUser } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
 
 // ─── Design System ──────────────────────────────────────────────────────────
 const UI = {
@@ -105,10 +106,14 @@ export default function StoreSettingsScreen({ navigation }: any) {
   const [bankAccountName, setBankAccountName] = useState('');
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [saving,  setSaving]  = useState(false);
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return; }
+    setLoading(true);
+    setLoadError('');
     getMerchantProfile(user.id).then((p) => {
       if (p) {
         setStoreName(p.store_name ?? '');
@@ -131,8 +136,8 @@ export default function StoreSettingsScreen({ navigation }: any) {
         setBankAccount(p.bank_account ?? '');
         setBankAccountName(p.bank_account_name ?? '');
       }
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, [user?.id]);
+    }).catch((error: unknown) => setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل إعدادات المتجر.')).finally(() => setLoading(false));
+  }, [user?.id, loadAttempt]);
 
   const handleSave = async () => {
     if (!storeName.trim()) { Alert.alert('تنبيه', 'اسم المتجر مطلوب'); return; }
@@ -166,6 +171,18 @@ export default function StoreSettingsScreen({ navigation }: any) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: isDesktop ? UI.bg : UI.bgMobile }}>
         <ActivityIndicator size="large" color={UI.primary} />
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: isDesktop ? UI.bg : UI.bgMobile }} accessibilityRole="alert">
+        <Ionicons name="cloud-offline-outline" size={44} color={UI.red} />
+        <Text style={{ color: UI.red, textAlign: 'center', lineHeight: 21 }}>{loadError}</Text>
+        <TouchableOpacity style={{ backgroundColor: UI.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10 }} onPress={() => setLoadAttempt((value) => value + 1)} accessibilityRole="button">
+          <Text style={{ color: UI.white, fontWeight: '800' }}>إعادة المحاولة</Text>
+        </TouchableOpacity>
       </View>
     );
   }

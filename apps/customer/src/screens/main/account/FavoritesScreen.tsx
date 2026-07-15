@@ -3,15 +3,19 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getWishlist, removeFromWishlist, WishlistItem } from '@marketplace/shared-hooks';
+import { Alert } from '../../../components/appAlert';
 
 export default function FavoritesScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [favorites, setFavorites] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const load = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
-    try { setFavorites(await getWishlist(user.id)); } catch { setFavorites([]); }
+    setLoadError('');
+    try { setFavorites(await getWishlist(user.id)); }
+    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل المفضلة.'); }
     finally { setLoading(false); }
   }, [user?.id]);
 
@@ -19,8 +23,14 @@ export default function FavoritesScreen({ navigation }: any) {
 
   const removeFavorite = async (productId: string) => {
     if (!user?.id) return;
+    const removed = favorites.find((favorite) => favorite.product_id === productId);
+    if (!removed) return;
     setFavorites((prev) => prev.filter((f) => f.product_id !== productId));
-    await removeFromWishlist(user.id, productId).catch(() => {});
+    try { await removeFromWishlist(user.id, productId); }
+    catch (error: any) {
+      setFavorites((current) => current.some((favorite) => favorite.product_id === productId) ? current : [removed, ...current]);
+      Alert.alert('تعذّر إزالة المنتج', error?.message ?? 'لم تتغير قائمة المفضلة. حاول مجددًا.');
+    }
   };
 
   return (
@@ -37,6 +47,13 @@ export default function FavoritesScreen({ navigation }: any) {
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : loadError ? (
+        <View style={styles.emptyContainer} accessibilityRole="alert">
+          <Ionicons name="cloud-offline-outline" size={48} color="#B91C1C" />
+          <Text style={styles.emptyTitle}>تعذّر تحميل المفضلة</Text>
+          <Text style={styles.emptySub}>{loadError}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
         </View>
       ) : favorites.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -114,4 +131,6 @@ const styles = StyleSheet.create({
   emptyIconCircle: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   emptyTitle: { fontSize: 17, fontWeight: '800', color: '#111827', marginBottom: 8 },
   emptySub: { fontSize: 13, color: '#6B7280', textAlign: 'center', lineHeight: 20 },
+  retryBtn: { marginTop: 14, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

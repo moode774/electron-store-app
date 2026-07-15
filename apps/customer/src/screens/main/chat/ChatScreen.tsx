@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage } from '@marketplace/shared-hooks';
+import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
+import { Alert } from '../../../components/appAlert';
 
 export default function ChatScreen({ navigation, route }: any) {
   const conversationId: string = route?.params?.conversationId;
@@ -17,29 +18,48 @@ export default function ChatScreen({ navigation, route }: any) {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const listRef = useRef<FlatList>(null);
 
   const load = useCallback(async () => {
-    if (!conversationId) { setLoading(false); return; }
+    if (!conversationId) {
+      setLoadError('تعذّر تحديد المحادثة المطلوبة.');
+      setLoading(false);
+      return;
+    }
     try {
       const msgs = await getMessages(conversationId);
       setMessages(msgs);
+      setLoadError('');
       markConversationRead(conversationId, asMerchant).catch(() => {});
-    } catch { /* ignore */ }
+    } catch (error: any) {
+      setLoadError(error?.message ?? 'تعذّر تحميل الرسائل. تحقق من الاتصال وحاول مجددًا.');
+    }
     finally { setLoading(false); }
   }, [conversationId, asMerchant]);
 
   useEffect(() => { load(); }, [load]);
 
-  // تحديث دوري بسيط (polling) لجلب الرسائل الجديدة
+  // Realtime is the primary path; a slow refresh remains as a network-recovery fallback.
   useEffect(() => {
-    const t = setInterval(load, 4000);
-    return () => clearInterval(t);
-  }, [load]);
+    if (!conversationId) return undefined;
+    const channel = supabase
+      .channel(`chat-${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'chat_messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      }, () => { load(); })
+      .subscribe();
+    const fallback = setInterval(load, 30000);
+    return () => {
+      clearInterval(fallback);
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, load]);
 
   const handleSend = async () => {
     const msg = text.trim();
-    if (!msg || !user?.id || !conversationId) return;
+    if (!msg || !user?.id || !conversationId || sending) return;
     setText('');
     setSending(true);
     // تفاؤلياً نضيفها فوراً
@@ -51,7 +71,11 @@ export default function ChatScreen({ navigation, route }: any) {
     try {
       await sendMessage(conversationId, user.id, msg);
       await load();
-    } catch { /* ignore */ }
+    } catch (error: any) {
+      setMessages((current) => current.filter((item) => item.id !== optimistic.id));
+      setText((current) => current || msg);
+      Alert.alert('تعذّر إرسال الرسالة', error?.message ?? 'تحقق من الاتصال وحاول مجددًا. لم تُرسل الرسالة.');
+    }
     finally { setSending(false); }
   };
 
@@ -85,20 +109,28 @@ export default function ChatScreen({ navigation, route }: any) {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(m) => m.id}
-          renderItem={renderMessage}
-          contentContainerStyle={styles.listContent}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="chatbubbles-outline" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyText}>ابدأ المحادثة الآن</Text>
-            </View>
-          }
-        />
+        <>
+          {loadError ? (
+            <TouchableOpacity style={styles.errorBanner} onPress={load} accessibilityRole="button" accessibilityLabel="إعادة تحميل الرسائل">
+              <Ionicons name="cloud-offline-outline" size={18} color="#B91C1C" />
+              <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+            </TouchableOpacity>
+          ) : null}
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(m) => m.id}
+            renderItem={renderMessage}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons name="chatbubbles-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptyText}>ابدأ المحادثة الآن</Text>
+              </View>
+            }
+          />
+        </>
       )}
 
       <View style={styles.inputBar}>
@@ -109,8 +141,10 @@ export default function ChatScreen({ navigation, route }: any) {
           value={text}
           onChangeText={setText}
           multiline
+          maxLength={2000}
+          accessibilityLabel="نص الرسالة"
         />
-        <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="إرسال الرسالة">
           <Ionicons name="send" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -138,6 +172,8 @@ const styles = StyleSheet.create({
   bubbleTime: { fontSize: 10, color: '#9CA3AF', marginTop: 4, textAlign: 'left' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 80 },
   emptyText: { fontSize: 14, color: '#9CA3AF' },
+  errorBanner: { margin: 12, marginBottom: 0, padding: 12, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', flexDirection: 'row', alignItems: 'center', gap: 8 },
+  errorText: { flex: 1, color: '#991B1B', fontSize: 12, lineHeight: 18 },
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12,
     paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: '#FFFFFF',

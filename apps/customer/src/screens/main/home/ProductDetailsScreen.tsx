@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Share } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const { productId } = route.params;
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [selectedColor, setSelectedColor] = useState(FALLBACK_COLORS[0]);
   const [quantity, setQuantity] = useState(1);
   const [wished, setWished] = useState(false);
@@ -36,17 +37,31 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const addToCart = useCartStore((s) => s.addToCart);
   const user = useAuthStore((s) => s.user);
 
-  useEffect(() => {
-    getProductById(productId).then((data) => {
+  const loadProduct = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const data = await getProductById(productId);
+      if (!data) throw new Error('المنتج غير موجود أو لم يعد متاحًا.');
       setProduct(data);
-      const v = (data?.product_variants ?? []).filter((x) => x.is_active);
-      setVariants(v);
-      if (v.length) setSelectedVariant(v[0]);
+      const nextVariants = (data.product_variants ?? []).filter((item) => item.is_active);
+      setVariants(nextVariants);
+      setSelectedVariant(nextVariants.find((item) => item.stock_quantity > 0) ?? nextVariants[0] ?? null);
+    } catch (error: any) {
+      setProduct(null);
+      setVariants([]);
+      setSelectedVariant(null);
+      setLoadError(error?.message ?? 'تعذّر تحميل المنتج. تحقق من الاتصال وحاول مجددًا.');
+    } finally {
       setLoading(false);
-    });
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    void loadProduct();
     if (user?.id) isInWishlist(user.id, productId).then(setWished).catch(() => {});
     getReviews(productId).then((r) => setReviewsCount(r.length)).catch(() => {});
-  }, [productId, user?.id]);
+  }, [loadProduct, productId, user?.id]);
 
   const toggleWishlist = async () => {
     if (!user?.id) return;
@@ -55,13 +70,32 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     try {
       if (next) await addToWishlist(user.id, productId);
       else await removeFromWishlist(user.id, productId);
-    } catch { setWished(!next); }
+    } catch {
+      setWished(!next);
+      Alert.alert('تعذّر تحديث المفضلة', 'تحقق من الاتصال وحاول مجددًا.');
+    }
   };
 
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (loadError || !product) {
+    return (
+      <View style={styles.errorState} accessibilityRole="alert">
+        <Ionicons name="cloud-offline-outline" size={52} color="#B91C1C" />
+        <Text style={styles.errorTitle}>تعذّر فتح المنتج</Text>
+        <Text style={styles.errorMessage}>{loadError || 'المنتج غير موجود أو لم يعد متاحًا.'}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => void loadProduct()} accessibilityRole="button">
+          <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button">
+          <Text style={styles.backLink}>العودة</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -99,14 +133,14 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header Options */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel="مشاركة المنتج">
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? 'إزالة المنتج من المفضلة' : 'إضافة المنتج إلى المفضلة'} accessibilityState={{ selected: wished }}>
               <Ionicons name={wished ? 'heart' : 'heart-outline'} size={22} color={wished ? '#EF4444' : '#111827'} />
             </TouchableOpacity>
           </View>
@@ -129,7 +163,13 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         {/* Product Info */}
         <View style={styles.infoContainer}>
           <View style={styles.storeRow}>
-            <TouchableOpacity style={styles.storePill} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.storePill}
+              activeOpacity={0.7}
+              onPress={() => PRODUCT.store.id && navigation.navigate('StoreDetails', { storeId: PRODUCT.store.id })}
+              accessibilityRole="button"
+              accessibilityLabel={`فتح متجر ${PRODUCT.store.name}`}
+            >
               <Ionicons name="storefront-outline" size={14} color={COLORS.primary} />
               <Text style={styles.storeName}>{PRODUCT.store.name}</Text>
             </TouchableOpacity>
@@ -183,7 +223,11 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
                       key={v.id}
                       style={[styles.variantChip, isActive && styles.variantChipActive]}
                       onPress={() => { setSelectedVariant(v); setQuantity(1); }}
+                      disabled={v.stock_quantity <= 0}
                       activeOpacity={0.8}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`${v.name}${v.stock_quantity <= 0 ? '، نفد المخزون' : ''}`}
+                      accessibilityState={{ selected: isActive, disabled: v.stock_quantity <= 0 }}
                     >
                       <Text style={[styles.variantLabel, isActive && styles.variantLabelActive]}>
                         {v.name}{v.price_modifier > 0 ? ` (+${v.price_modifier})` : ''}
@@ -210,6 +254,10 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             style={styles.qtyBtn} 
             onPress={() => setQuantity(Math.max(1, quantity - 1))}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="تقليل الكمية"
+            accessibilityState={{ disabled: quantity <= 1 }}
+            disabled={quantity <= 1}
           >
             <Ionicons name="remove" size={20} color="#111827" />
           </TouchableOpacity>
@@ -218,6 +266,10 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             style={styles.qtyBtn}
             onPress={() => setQuantity(Math.min(PRODUCT.stock > 0 ? PRODUCT.stock : 1, quantity + 1))}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="زيادة الكمية"
+            accessibilityState={{ disabled: quantity >= PRODUCT.stock }}
+            disabled={quantity >= PRODUCT.stock}
           >
             <Ionicons name="add" size={20} color="#111827" />
           </TouchableOpacity>
@@ -227,6 +279,9 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           style={[styles.addToCartBtn, !PRODUCT.hasStock && { backgroundColor: '#9CA3AF' }]}
           activeOpacity={0.9}
           disabled={!PRODUCT.hasStock}
+          accessibilityRole="button"
+          accessibilityLabel={`إضافة ${PRODUCT.name} إلى السلة`}
+          accessibilityState={{ disabled: !PRODUCT.hasStock }}
           onPress={() => {
             if (!PRODUCT.store.id) {
               // بدون معرّف متجر صحيح سيفشل إنشاء الطلب لاحقاً في الدفع
@@ -236,10 +291,12 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             addToCart({
               id: `${PRODUCT.id}-${selectedVariant?.id ?? 'default'}`,
               productId: PRODUCT.id,
+              variantId: selectedVariant?.id,
               name: selectedVariant ? `${PRODUCT.name} (${selectedVariant.name})` : PRODUCT.name,
               price: PRODUCT.price,
               emoji: '🛍️',
               quantity,
+              maxQuantity: PRODUCT.stock,
               storeId: PRODUCT.store.id,
               storeName: PRODUCT.store.name,
               image: PRODUCT.image ?? undefined,
@@ -262,6 +319,12 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#FFFFFF' 
   },
+  errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12, backgroundColor: '#FFFFFF' },
+  errorTitle: { fontSize: 20, fontWeight: '900', color: '#111827' },
+  errorMessage: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
+  retryButton: { marginTop: 8, minWidth: 150, minHeight: 46, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  retryButtonText: { color: '#FFFFFF', fontWeight: '800' },
+  backLink: { color: COLORS.primary, fontWeight: '700', padding: 10 },
   scrollContent: { 
     paddingBottom: 120 
   },

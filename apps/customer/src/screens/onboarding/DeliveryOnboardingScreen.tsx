@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  StatusBar, TextInput, Alert, ActivityIndicator,
+  StatusBar, TextInput, ActivityIndicator,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '@marketplace/shared-utils';
-import { useAuthStore, createDeliveryProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
+import {
+  createDeliveryProfile,
+  createIdempotencyKey,
+  saveDeliveryOnboardingDocuments,
+  updateUserProfile,
+  uploadPrivateFileToStorage,
+  useAuthStore,
+} from '@marketplace/shared-hooks';
 
 const VEHICLE_TYPES = [
   { key: 'motorcycle', label: 'دراجة نارية', icon: 'bicycle-outline' },
@@ -22,6 +30,11 @@ interface Props {
   onComplete: () => void;
 }
 
+type OnboardingImage = {
+  uri: string;
+  contentType: 'image/jpeg' | 'image/png';
+};
+
 export default function DeliveryOnboardingScreen({ onComplete }: Props) {
   const user = useAuthStore((s) => s.user);
 
@@ -30,12 +43,16 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
   const [vehicleType, setVehicleType] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [city, setCity] = useState('');
-  const [idImageUri, setIdImageUri] = useState<string | null>(null);
-  const [licenseImageUri, setLicenseImageUri] = useState<string | null>(null);
+  const [idImage, setIdImage] = useState<OnboardingImage | null>(null);
+  const [licenseImage, setLicenseImage] = useState<OnboardingImage | null>(null);
   const [saving, setSaving] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const documentKeys = useRef({
+    nationalId: createIdempotencyKey(),
+    license: createIdempotencyKey(),
+  });
 
-  const pickImage = async (): Promise<string | null> => {
+  const pickImage = async (): Promise<OnboardingImage | null> => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert('تنبيه', 'يجب السماح بالوصول إلى معرض الصور');
@@ -48,10 +65,15 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
       quality: 0.85,
     });
     if (result.canceled) return null;
-    return result.assets[0].uri;
+    const asset = result.assets[0];
+    return {
+      uri: asset.uri,
+      contentType: asset.mimeType === 'image/png' ? 'image/png' : 'image/jpeg',
+    };
   };
 
   const handleSubmit = async () => {
+    if (fullName.trim().length < 2) { Alert.alert('تنبيه', 'الاسم الكامل مطلوب'); return; }
     if (!nationalId.trim()) { Alert.alert('تنبيه', 'رقم الهوية مطلوب'); return; }
     if (!vehicleType) { Alert.alert('تنبيه', 'اختر نوع المركبة'); return; }
     if (!vehiclePlate.trim()) { Alert.alert('تنبيه', 'رقم لوحة المركبة مطلوب'); return; }
@@ -68,12 +90,52 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         vehicle_plate: vehiclePlate.trim().toUpperCase(),
       });
 
+      if (fullName.trim() !== (user.full_name ?? '').trim()) {
+        await updateUserProfile(user.id, { full_name: fullName.trim() });
+      }
+
+      let nationalIdImagePath: string | undefined;
+      let licenseImagePath: string | undefined;
+      if (idImage) {
+        const extension = idImage.contentType === 'image/png' ? 'png' : 'jpg';
+        nationalIdImagePath = `${user.id}/onboarding/national-id-${documentKeys.current.nationalId}.${extension}`;
+        await uploadPrivateFileToStorage({
+          bucket: 'delivery-onboarding-documents',
+          objectPath: nationalIdImagePath,
+          uri: idImage.uri,
+          contentType: idImage.contentType,
+          upsert: false,
+        });
+      }
+      if (licenseImage) {
+        const extension = licenseImage.contentType === 'image/png' ? 'png' : 'jpg';
+        licenseImagePath = `${user.id}/onboarding/driver-license-${documentKeys.current.license}.${extension}`;
+        await uploadPrivateFileToStorage({
+          bucket: 'delivery-onboarding-documents',
+          objectPath: licenseImagePath,
+          uri: licenseImage.uri,
+          contentType: licenseImage.contentType,
+          upsert: false,
+        });
+      }
+      await saveDeliveryOnboardingDocuments({
+        workCity: city,
+        nationalIdImagePath,
+        licenseImagePath,
+      });
+
       Alert.alert(
         'تم التسجيل ✅',
         'تم إرسال بياناتك بنجاح! سيتم مراجعة طلبك خلال 24 ساعة وستصلك رسالة بالقبول.',
         [{ text: 'ابدأ الآن', onPress: onComplete }],
       );
     } catch (e: any) {
+      // Object keys are immutable. If a response is lost after an upload, the
+      // next attempt uses fresh names instead of replacing evidence already seen.
+      documentKeys.current = {
+        nationalId: createIdempotencyKey(),
+        license: createIdempotencyKey(),
+      };
       Alert.alert('خطأ', e?.message ?? 'فشل حفظ البيانات، حاول مرة أخرى');
     } finally {
       setSaving(false);
@@ -188,19 +250,19 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         <DocPicker
           label="صورة الهوية الوطنية"
           icon="card"
-          picked={!!idImageUri}
+          picked={!!idImage}
           onPick={async () => {
-            const uri = await pickImage();
-            if (uri) setIdImageUri(uri);
+            const image = await pickImage();
+            if (image) setIdImage(image);
           }}
         />
         <DocPicker
           label="صورة رخصة القيادة"
           icon="document-text"
-          picked={!!licenseImageUri}
+          picked={!!licenseImage}
           onPick={async () => {
-            const uri = await pickImage();
-            if (uri) setLicenseImageUri(uri);
+            const image = await pickImage();
+            if (image) setLicenseImage(image);
           }}
         />
 

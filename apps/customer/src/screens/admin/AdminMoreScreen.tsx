@@ -26,6 +26,14 @@ type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
 
 const MENU_ITEMS = [
   {
+    title: 'مراجعة المنتجات',
+    description: 'اعتماد المنتجات الجديدة أو إعادتها للتاجر مع سبب واضح',
+    icon: 'cube',
+    color: '#2563EB',
+    bg: '#EFF6FF',
+    screen: 'AdminProducts' as keyof AdminMoreStackParamList,
+  },
+  {
     title: 'السائقون والمندوبين',
     description: 'إدارة الموافقات ومتابعة أداء المندوبين',
     icon: 'bicycle',
@@ -48,6 +56,38 @@ const MENU_ITEMS = [
     color: '#1E3A8A',
     bg: '#EEF2FF',
     screen: 'ApiKeys' as keyof AdminMoreStackParamList,
+  },
+  {
+    title: 'طلبات الاسترجاع',
+    description: 'مراجعة الاسترجاعات والموافقة أو الرفض',
+    icon: 'refresh',
+    color: '#D97706',
+    bg: '#FFFBEB',
+    screen: 'AdminRefunds' as keyof AdminMoreStackParamList,
+  },
+  {
+    title: 'الإرجاعات المادية',
+    description: 'مراجعة الكميات وجدولة الاستلام والفحص وإكمال الاسترداد',
+    icon: 'return-down-back',
+    color: '#0F766E',
+    bg: '#CCFBF1',
+    screen: 'AdminPhysicalReturns' as keyof AdminMoreStackParamList,
+  },
+  {
+    title: 'المطابقة المالية التاريخية',
+    description: 'تسوية الطلبات القديمة ذات السجل المالي الناقص قبل الاسترداد',
+    icon: 'git-compare',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    screen: 'AdminFinancialReconciliation' as keyof AdminMoreStackParamList,
+  },
+  {
+    title: 'تحصيلات الدفع عند الاستلام',
+    description: 'مراجعة عهدة النقد وإثباتات تحويل المندوبين والنزاعات',
+    icon: 'cash',
+    color: '#047857',
+    bg: '#ECFDF5',
+    screen: 'AdminCodCollections' as keyof AdminMoreStackParamList,
   },
   {
     title: 'الدعم الفني والشكاوى',

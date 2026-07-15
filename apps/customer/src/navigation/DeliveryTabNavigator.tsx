@@ -10,10 +10,12 @@ import ActiveDeliveryScreen from '../screens/delivery/ActiveDeliveryScreen';
 import EarningsScreen from '../screens/delivery/EarningsScreen';
 import DeliveryAccountScreen from '../screens/delivery/DeliveryAccountScreen';
 import DeliveryWalletScreen from '../screens/delivery/DeliveryWalletScreen';
+import DeliveryReturnsScreen from '../screens/delivery/DeliveryReturnsScreen';
 import DeliveryProfileScreen from '../screens/delivery/DeliveryProfileScreen';
 import DeliveryZonesScreen from '../screens/delivery/DeliveryZonesScreen';
 import DeliverySupportScreen from '../screens/delivery/DeliverySupportScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
+import SupportTicketThreadScreen from '../screens/shared/SupportTicketThreadScreen';
 
 export type DeliveryAccountStackParamList = {
   AccountMain: undefined;
@@ -21,7 +23,9 @@ export type DeliveryAccountStackParamList = {
   DeliveryProfile: undefined;
   DeliveryZones: undefined;
   DeliveryWallet: undefined;
+  DeliveryReturns: undefined;
   DeliverySupport: undefined;
+  SupportTicket: { ticketId: string };
   RoleNotifications: { role: 'delivery' };
 };
 
@@ -34,7 +38,9 @@ function AccountNavigator() {
       <AccountStack.Screen name="DeliveryProfile" component={DeliveryProfileScreen} />
       <AccountStack.Screen name="DeliveryZones" component={DeliveryZonesScreen} />
       <AccountStack.Screen name="DeliveryWallet" component={DeliveryWalletScreen} />
+      <AccountStack.Screen name="DeliveryReturns" component={DeliveryReturnsScreen} />
       <AccountStack.Screen name="DeliverySupport" component={DeliverySupportScreen} />
+      <AccountStack.Screen name="SupportTicket" component={SupportTicketThreadScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
     </AccountStack.Navigator>
   );

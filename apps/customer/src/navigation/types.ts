@@ -29,6 +29,7 @@ export type AccountStackParamList = {
   Favorites: undefined;
   Notifications: undefined;
   HelpCenter: undefined;
+  SupportTicket: { ticketId: string };
   EditProfile: undefined;
   PaymentMethods: undefined;
   Legal: { type: 'privacy' | 'terms' };

@@ -35,6 +35,7 @@ import ReviewsScreen from '../screens/main/account/ReviewsScreen';
 import FavoritesScreen from '../screens/main/account/FavoritesScreen';
 import NotificationsScreen from '../screens/main/account/NotificationsScreen';
 import HelpCenterScreen from '../screens/main/account/HelpCenterScreen';
+import SupportTicketThreadScreen from '../screens/shared/SupportTicketThreadScreen';
 import EditProfileScreen from '../screens/main/account/EditProfileScreen';
 import PaymentMethodsScreen from '../screens/main/account/PaymentMethodsScreen';
 import LegalScreen from '../screens/main/account/LegalScreen';
@@ -86,6 +87,7 @@ function AccountNavigator() {
       <AccountStack.Screen name="Favorites" component={FavoritesScreen} />
       <AccountStack.Screen name="Notifications" component={NotificationsScreen} />
       <AccountStack.Screen name="HelpCenter" component={HelpCenterScreen} />
+      <AccountStack.Screen name="SupportTicket" component={SupportTicketThreadScreen} />
       <AccountStack.Screen name="EditProfile" component={EditProfileScreen} />
       <AccountStack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
       <AccountStack.Screen name="Legal" component={LegalScreen} />
@@ -104,7 +106,7 @@ const renderIcon = (focused: boolean, name: any, outlineName: any, color: string
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: focused ? '#111827' : 'transparent',
+      backgroundColor: focused ? '#1D4ED8' : 'transparent',
       justifyContent: 'center',
       alignItems: 'center',
     }}>
@@ -130,29 +132,34 @@ export default function MainTabNavigator() {
       initialRouteName="Home"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#111827',
+        tabBarActiveTintColor: '#1D4ED8',
         tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
-          borderTopColor: '#F3F4F6',
-          elevation: 10,
-          height: Platform.OS === 'ios' ? 90 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-          paddingTop: 10,
+          borderTopWidth: 0,
+          elevation: 14,
+          shadowColor: '#0F172A',
+          shadowOpacity: 0.1,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: -4 },
+          height: Platform.OS === 'ios' ? 88 : 76,
+          paddingBottom: Platform.OS === 'ios' ? 22 : 11,
+          paddingTop: 9,
         },
+        tabBarItemStyle: { paddingTop: 1 },
         tabBarLabelStyle: {
-          fontWeight: '600',
-          fontSize: 11,
+          fontWeight: '700',
+          fontSize: 10.5,
           marginTop: 4,
         },
       }}
     >
       <Tab.Screen
-        name="Categories"
-        component={StoresListScreen}
+        name="Cart"
+        component={CartNavigator}
         options={{ 
-          tabBarLabel: 'الأقسام',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'grid', 'grid-outline', color)
+          tabBarLabel: 'السلة',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'cart', 'cart-outline', color, cartCount > 0 ? cartCount : undefined)
         }}
       />
       <Tab.Screen
@@ -172,19 +179,19 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Cart"
-        component={CartNavigator}
+        name="Categories"
+        component={StoresListScreen}
         options={{ 
-          tabBarLabel: 'السلة',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'cart', 'cart-outline', color, cartCount > 0 ? cartCount : undefined)
+          tabBarLabel: 'المتاجر',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'storefront', 'storefront-outline', color)
         }}
       />
       <Tab.Screen
         name="More"
         component={AccountNavigator}
         options={{ 
-          tabBarLabel: 'المزيد',
-          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'ellipsis-horizontal', 'ellipsis-horizontal-outline', color)
+          tabBarLabel: 'حسابي',
+          tabBarIcon: ({ color, focused }) => renderIcon(focused, 'person', 'person-outline', color)
         }}
       />
     </Tab.Navigator>

@@ -175,6 +175,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // Sign out
   signOut: async (): Promise<void> => {
+    // Best effort: stop push delivery for the session being closed. Cleanup is
+    // deliberately non-blocking so a database issue cannot trap the user.
+    try {
+      await Promise.race([
+        Promise.resolve(supabase.rpc('deactivate_current_session_device_tokens')),
+        new Promise((resolve) => setTimeout(resolve, 2_000)),
+      ]);
+    } catch {
+      // The Supabase sign-out below remains authoritative.
+    }
     await supabase.auth.signOut();
     set({ session: null, user: null, role: null, isAuthenticated: false });
   },
@@ -193,11 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     // 1) قراءة سجل المستخدم. عادةً يكون موجوداً لأن trigger `handle_new_user`
     //    ينشئه لحظة التسجيل. نعيد المحاولة قليلاً تحسّباً لتأخّر الـ trigger.
-    const fetchRow = async () => supabase
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', authUser.id)
-      .maybeSingle();
+    const fetchRow = async () => supabase.rpc('get_my_user_profile');
 
     let { data, error } = await fetchRow();
     if (!data && !error) {

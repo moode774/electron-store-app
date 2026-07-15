@@ -16,6 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: false,
+    buildNumber: '1',
     bundleIdentifier: 'com.marketplace.customer',
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'نحتاج موقعك لتوصيل طلباتك',
@@ -24,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     }
   },
   android: {
+    versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#1B2B4B'
@@ -32,11 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     permissions: [
       'ACCESS_FINE_LOCATION',
       'ACCESS_COARSE_LOCATION',
-      'CAMERA',
-      'READ_EXTERNAL_STORAGE',
-      'WRITE_EXTERNAL_STORAGE',
-      'RECEIVE_BOOT_COMPLETED',
-      'VIBRATE'
+      'CAMERA'
     ]
   },
   web: {
@@ -46,10 +44,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-localization',
     'expo-font',
+    'expo-location',
+    'expo-image-picker',
+    ['expo-notifications', { color: '#2563EB' }],
   ],
   extra: {
     supportsRTL: true,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
   }
 });

@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { ORDER_STATUS } from '@marketplace/shared-utils';
-import { getOrderById, updateOrderStatus, OrderDetail } from '@marketplace/shared-hooks';
+import { getOrderById, updateOrderStatus, OrderDetail, supabase } from '@marketplace/shared-hooks';
+import {
+  getMerchantOrderStatusInfo,
+  getOrderTransitionErrorMessage,
+  merchantOrderProgress,
+} from './merchantOrderState';
 
 const UI = {
   primary: '#111827',
@@ -31,17 +37,56 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const orderId: string = route?.params?.orderId ?? route?.params?.order?.id;
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>(ORDER_STATUS.PENDING);
+  const [deliveryId, setDeliveryId] = useState<string | null | undefined>(undefined);
+  const [updating, setUpdating] = useState(false);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
 
-  useEffect(() => {
-    if (!orderId) { setLoading(false); return; }
-    getOrderById(orderId).then((o) => {
-      setOrder(o);
-      if (o) setStatus(o.status);
-    }).finally(() => setLoading(false));
+  const load = useCallback(async (showLoading = false) => {
+    if (!orderId) {
+      setOrder(null);
+      setLoadError('معرف الطلب غير موجود.');
+      setLoading(false);
+      return;
+    }
+    if (showLoading) setLoading(true);
+    try {
+      const [nextOrder, assignment] = await Promise.all([
+        getOrderById(orderId),
+        supabase.from('orders').select('delivery_id').eq('id', orderId).maybeSingle(),
+      ]);
+      setOrder(nextOrder);
+      if (nextOrder) {
+        setStatus(nextOrder.status);
+        setLoadError(null);
+      } else {
+        setLoadError('تعذر العثور على الطلب أو لا تملك صلاحية عرضه.');
+      }
+      setDeliveryId(assignment.error ? undefined : ((assignment.data as { delivery_id?: string | null } | null)?.delivery_id ?? null));
+    } catch {
+      setLoadError('تعذر تحميل تفاصيل الطلب. تحقق من الاتصال ثم أعد المحاولة.');
+    } finally {
+      setLoading(false);
+    }
   }, [orderId]);
+
+  useFocusEffect(useCallback(() => {
+    void load(true);
+    if (!orderId) return undefined;
+
+    const channel = supabase
+      .channel(`merchant-order-details-${orderId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+        () => { void load(false); },
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [load, orderId]));
 
   const items = order?.order_items ?? [];
   const subtotal = order?.subtotal ?? items.reduce((s, i) => s + i.total_price, 0);
@@ -50,26 +95,25 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const customerPhone = order?.customer?.phone ?? '';
   const customerAddress = order?.addresses?.full_address ?? 'عنوان غير متوفر';
   const customerCity = order?.addresses?.city ?? '';
-  const paymentMethod = order?.payment_method === 'cash' ? 'الدفع عند الاستلام' : 'دفع إلكتروني';
+  const paymentMethod = order?.payment_method === 'cash' ? 'الدفع عند الاستلام' : 'طريقة دفع غير نقدية';
   const notes = order?.notes || '';
 
   const changeStatus = async (next: string) => {
-    setStatus(next);
-    if (orderId) await updateOrderStatus(orderId, next).catch(() => {});
-  };
-
-  const statusInfo = (s: string) => {
-    switch (s) {
-      case ORDER_STATUS.PENDING: return { label: 'جديد', color: UI.orange, bg: `${UI.orange}15` };
-      case ORDER_STATUS.PREPARING: return { label: 'قيد التجهيز', color: UI.blue, bg: `${UI.blue}15` };
-      case ORDER_STATUS.READY: return { label: 'جاهز', color: '#7C3AED', bg: '#EDE9FE' };
-      case ORDER_STATUS.DELIVERED: return { label: 'مكتمل', color: UI.green, bg: `${UI.green}15` };
-      case ORDER_STATUS.CANCELLED: return { label: 'ملغي', color: UI.red, bg: `${UI.red}15` };
-      default: return { label: s, color: UI.textGrey, bg: UI.bg };
+    if (!orderId || updating) return;
+    setUpdating(true);
+    try {
+      await updateOrderStatus(orderId, next);
+      await load(false);
+    } catch (transitionError) {
+      await load(false);
+      Alert.alert('لم تتغير حالة الطلب', getOrderTransitionErrorMessage(transitionError));
+    } finally {
+      setUpdating(false);
     }
   };
 
-  const info = statusInfo(status);
+  const info = getMerchantOrderStatusInfo(status);
+  const progress = merchantOrderProgress(status);
 
   if (loading) {
     return (
@@ -81,8 +125,16 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
   if (!order) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: isDesktop ? UI.bg : UI.bgMobile }}>
-        <Text style={{ fontSize: 16, color: UI.textMuted }}>لم يتم العثور على الطلب</Text>
+      <View style={styles.loadErrorWrap}>
+        <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
+        <Text style={styles.loadErrorTitle}>تعذر فتح الطلب</Text>
+        <Text style={styles.loadErrorText}>{loadError ?? 'لم يتم العثور على الطلب.'}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel="إعادة تحميل تفاصيل الطلب">
+          <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة للطلبات">
+          <Text style={styles.backLinkText}>العودة للطلبات</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -96,13 +148,26 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   }
 
   // Next action buttons logic
-  let nextActionBtn = null;
+  let nextActionBtn: React.ReactNode = null;
+  let actionNotice = '';
   if (status === ORDER_STATUS.PENDING) {
-    nextActionBtn = <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.PREPARING)}><Text style={styles.btnPrimaryText}>بدء التجهيز</Text></TouchableOpacity>;
+    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.PREPARING)} disabled={updating} accessibilityRole="button" accessibilityLabel="قبول الطلب وبدء التجهيز" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>قبول الطلب وبدء التجهيز</Text>}</TouchableOpacity>;
   } else if (status === ORDER_STATUS.PREPARING) {
-    nextActionBtn = <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.READY)}><Text style={styles.btnPrimaryText}>الطلب جاهز للتسليم</Text></TouchableOpacity>;
+    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.READY)} disabled={updating} accessibilityRole="button" accessibilityLabel="تحديد الطلب جاهزًا للمندوب" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>الطلب جاهز للمندوب</Text>}</TouchableOpacity>;
   } else if (status === ORDER_STATUS.READY) {
-    nextActionBtn = <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.DELIVERED)}><Text style={styles.btnPrimaryText}>تأكيد التسليم والمكتمل</Text></TouchableOpacity>;
+    if (deliveryId === null) {
+      nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.ON_THE_WAY)} disabled={updating} accessibilityRole="button" accessibilityLabel="بدء التوصيل الذاتي" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>سأوصل الطلب بنفسي</Text>}</TouchableOpacity>;
+      actionNotice = 'يمكنك بدء التوصيل الذاتي طالما لم يطالب مندوب بالطلب.';
+    } else if (deliveryId) {
+      actionNotice = 'تم إسناد الطلب إلى مندوب. ستتحدث الحالة تلقائيًا عند الاستلام.';
+    } else {
+      actionNotice = 'تعذر التحقق من إسناد المندوب الآن؛ تم إخفاء إجراء التوصيل الذاتي احتياطياً.';
+    }
+  } else if (status === ORDER_STATUS.ON_THE_WAY && deliveryId === null) {
+    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.DELIVERED)} disabled={updating} accessibilityRole="button" accessibilityLabel="تأكيد توصيل الطلب ذاتيًا" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>تأكيد توصيل الطلب</Text>}</TouchableOpacity>;
+    actionNotice = 'استخدم التأكيد بعد تسليم الطلب فعليًا للعميل.';
+  } else if ([ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKED_UP, ORDER_STATUS.ON_THE_WAY, ORDER_STATUS.RESCHEDULED].includes(status as any)) {
+    actionNotice = 'الطلب الآن ضمن مسار المندوب، ولا يحتاج إلى تغيير يدوي من التاجر.';
   }
 
   return (
@@ -147,7 +212,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                   <Text style={styles.orderIdText}>{order.order_number}</Text>
                   <Text style={styles.dateText}>{dateStr}</Text>
                 </View>
-                <View style={[styles.badge, { backgroundColor: info.bg }]}>
+                <View style={[styles.badge, { backgroundColor: info.background }]}>
                   <Text style={[styles.badgeText, { color: info.color }]}>{info.label}</Text>
                 </View>
               </View>
@@ -163,30 +228,34 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>مسار الطلب</Text>
               <View style={styles.timelineRow}>
-                {/* Step 1 */}
                 <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: UI.orange }]} />
+                  <View style={[styles.timelineDot, { backgroundColor: progress >= 1 ? UI.orange : UI.border }]} />
                   <Text style={[styles.timelineText, { color: UI.textDark }]}>جديد</Text>
                 </View>
-                <View style={[styles.timelineLine, { backgroundColor: (status === ORDER_STATUS.PREPARING || status === ORDER_STATUS.READY || status === ORDER_STATUS.DELIVERED) ? UI.blue : UI.border }]} />
-                {/* Step 2 */}
+                <View style={[styles.timelineLine, { backgroundColor: progress >= 2 ? UI.blue : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: (status === ORDER_STATUS.PREPARING || status === ORDER_STATUS.READY || status === ORDER_STATUS.DELIVERED) ? UI.blue : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: (status === ORDER_STATUS.PREPARING || status === ORDER_STATUS.READY || status === ORDER_STATUS.DELIVERED) ? UI.textDark : UI.textMuted }]}>قيد التجهيز</Text>
+                  <View style={[styles.timelineDot, { backgroundColor: progress >= 2 ? UI.blue : UI.border }]} />
+                  <Text style={[styles.timelineText, { color: progress >= 2 ? UI.textDark : UI.textMuted }]}>تجهيز</Text>
                 </View>
-                <View style={[styles.timelineLine, { backgroundColor: (status === ORDER_STATUS.READY || status === ORDER_STATUS.DELIVERED) ? '#7C3AED' : UI.border }]} />
-                {/* Step 3 */}
+                <View style={[styles.timelineLine, { backgroundColor: progress >= 3 ? '#7C3AED' : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: (status === ORDER_STATUS.READY || status === ORDER_STATUS.DELIVERED) ? '#7C3AED' : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: (status === ORDER_STATUS.READY || status === ORDER_STATUS.DELIVERED) ? UI.textDark : UI.textMuted }]}>جاهز</Text>
+                  <View style={[styles.timelineDot, { backgroundColor: progress >= 3 ? '#7C3AED' : UI.border }]} />
+                  <Text style={[styles.timelineText, { color: progress >= 3 ? UI.textDark : UI.textMuted }]}>جاهز</Text>
                 </View>
-                <View style={[styles.timelineLine, { backgroundColor: status === ORDER_STATUS.DELIVERED ? UI.green : UI.border }]} />
-                {/* Step 4 */}
+                <View style={[styles.timelineLine, { backgroundColor: progress >= 4 ? '#0369A1' : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: status === ORDER_STATUS.DELIVERED ? UI.green : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: status === ORDER_STATUS.DELIVERED ? UI.textDark : UI.textMuted }]}>مكتمل</Text>
+                  <View style={[styles.timelineDot, { backgroundColor: progress >= 4 ? '#0369A1' : UI.border }]} />
+                  <Text style={[styles.timelineText, { color: progress >= 4 ? UI.textDark : UI.textMuted }]}>التوصيل</Text>
+                </View>
+                <View style={[styles.timelineLine, { backgroundColor: progress >= 5 ? UI.green : UI.border }]} />
+                <View style={[styles.timelineStep, { flex: 1 }]}>
+                  <View style={[styles.timelineDot, { backgroundColor: progress >= 5 ? UI.green : UI.border }]} />
+                  <Text style={[styles.timelineText, { color: progress >= 5 ? UI.textDark : UI.textMuted }]}>مكتمل</Text>
                 </View>
               </View>
+              {progress === 0 && (
+                <Text style={styles.terminalStatusNote}>الحالة الحالية: {info.label}</Text>
+              )}
             </View>
 
             {/* Receipt (Items) */}
@@ -239,7 +308,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                      <Text style={styles.infoValue}>{customerPhone || 'غير متوفر'}</Text>
                    </View>
                    {!!customerPhone && (
-                     <TouchableOpacity style={styles.callIconBtn} onPress={() => Linking.openURL(`tel:${customerPhone}`)}>
+                      <TouchableOpacity style={styles.callIconBtn} onPress={() => Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert('تعذر الاتصال', 'لا يمكن فتح تطبيق الاتصال على هذا الجهاز.'))} accessibilityRole="button" accessibilityLabel={`الاتصال بالعميل ${customerName}`}>
                        <Ionicons name="call" size={16} color="#FFFFFF" />
                      </TouchableOpacity>
                    )}
@@ -259,9 +328,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
              <View style={styles.card}>
                <Text style={styles.sectionTitle}>ملخص الدفع</Text>
                
-               <View style={styles.paymentMethodBox}>
-                 <Ionicons name="card-outline" size={20} color={UI.primary} />
-                 <Text style={styles.paymentMethodText}>{paymentMethod}</Text>
+                <View style={styles.paymentMethodBox}>
+                  <Ionicons name="card-outline" size={20} color={UI.primary} />
+                  <Text style={styles.paymentMethodText}>{paymentMethod} · {order.payment_status === 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'}</Text>
                </View>
 
                <View style={styles.summaryLines}>
@@ -281,23 +350,15 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
              </View>
 
              {/* Actions */}
-             {(status === ORDER_STATUS.PENDING || status === ORDER_STATUS.PREPARING || status === ORDER_STATUS.READY) && (
+             {(nextActionBtn || actionNotice) && (
                <View style={styles.actionsCard}>
-                 {nextActionBtn}
-                 {status === ORDER_STATUS.PENDING && (
-                   <TouchableOpacity
-                     style={styles.btnReject}
-                     activeOpacity={0.7}
-                     onPress={() =>
-                       Alert.alert('رفض الطلب', 'هل أنت متأكد من رفض هذا الطلب وإلغائه؟', [
-                         { text: 'تراجع', style: 'cancel' },
-                         { text: 'تأكيد الرفض', style: 'destructive', onPress: () => changeStatus(ORDER_STATUS.CANCELLED) },
-                       ])
-                     }
-                   >
-                     <Text style={styles.btnRejectText}>رفض وإلغاء الطلب</Text>
-                   </TouchableOpacity>
+                 {!!actionNotice && (
+                   <View style={styles.waitingDriverNotice}>
+                     <Ionicons name="information-circle-outline" size={20} color="#5B21B6" />
+                     <Text style={styles.waitingDriverText}>{actionNotice}</Text>
+                   </View>
                  )}
+                 {nextActionBtn}
                </View>
              )}
 
@@ -311,6 +372,12 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
+  loadErrorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bgMobile, padding: 24, gap: 14 },
+  loadErrorTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+  loadErrorText: { fontSize: 14, color: UI.textGrey, textAlign: 'center', lineHeight: 21 },
+  retryBtn: { backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
+  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  backLinkText: { color: UI.textGrey, fontSize: 14, fontWeight: '700', padding: 8 },
   
   headerMobile: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
@@ -348,6 +415,7 @@ const styles = StyleSheet.create({
   timelineDot: { width: 14, height: 14, borderRadius: 7 },
   timelineText: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
   timelineLine: { height: 2, flex: 1, marginHorizontal: 4, marginTop: -20 },
+  terminalStatusNote: { marginTop: 14, color: UI.textGrey, textAlign: 'center', fontSize: 13, fontWeight: '700' },
 
   itemsCount: { fontSize: 13, fontWeight: '600', color: UI.textMuted },
   itemsWrapper: { marginTop: 8 },
@@ -386,6 +454,7 @@ const styles = StyleSheet.create({
   actionsCard: { padding: 24, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: UI.border, ...softShadow, gap: 12 },
   btnPrimary: { height: 52, backgroundColor: UI.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-  btnReject: { height: 52, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnRejectText: { color: UI.red, fontSize: 14, fontWeight: '700' },
+  btnDisabled: { opacity: 0.6 },
+  waitingDriverNotice: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: '#F5F3FF', borderWidth: 1, borderColor: '#DDD6FE', borderRadius: 14, padding: 15 },
+  waitingDriverText: { flex: 1, color: '#5B21B6', fontSize: 14, fontWeight: '700', textAlign: 'right' },
 });

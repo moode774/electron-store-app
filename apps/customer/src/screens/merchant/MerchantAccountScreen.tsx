@@ -8,17 +8,19 @@ import {
   Platform,
   Image,
   ImageBackground,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuthStore, getMerchantStats } from '@marketplace/shared-hooks';
+import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بيانات المتجر', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
   { id: '2', title: 'التقارير والإحصائيات', icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
   { id: '3', title: 'المحفظة والمدفوعات', icon: 'wallet-outline', screen: 'Wallet', params: undefined },
   { id: '4', title: 'كوبونات المتجر', icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
+  { id: '4b', title: 'طلبات الاسترداد', icon: 'refresh-circle-outline', screen: 'Refunds', params: undefined },
+  { id: '4c', title: 'المرتجعات الفعلية', icon: 'return-down-back-outline', screen: 'PhysicalReturns', params: undefined },
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
   { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'Support', params: undefined },
   { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
@@ -28,34 +30,52 @@ export default function MerchantAccountScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const [stat, setStat] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
+  const [profile, setProfile] = useState<Awaited<ReturnType<typeof getMerchantProfile>>>(null);
+  const [loadError, setLoadError] = useState('');
 
-  useFocusEffect(useCallback(() => {
+  const loadAccount = useCallback(async () => {
     if (!user?.id) return;
-    getMerchantStats(user.id).then(setStat).catch(() => {});
-  }, [user?.id]));
+    setLoadError('');
+    try {
+      const merchant = await getMerchantProfile(user.id);
+      if (!merchant?.id) throw new Error('تعذّر العثور على ملف المتجر.');
+      setProfile(merchant);
+      setStat(await getMerchantStats(merchant.id));
+    } catch (error) {
+      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل بيانات حساب التاجر.');
+    }
+  }, [user?.id]);
+
+  useFocusEffect(useCallback(() => { void loadAccount(); }, [loadAccount]));
 
   const STATS = [
-    { id: '1', title: 'مبيعات اليوم', value: `${stat.todayRevenue}`, icon: 'cash-outline' },
-    { id: '2', title: 'طلبات اليوم', value: `${stat.todayOrders}`, icon: 'cube-outline' },
-    { id: '3', title: 'المنتجات', value: `${stat.totalProducts}`, icon: 'pricetags-outline' },
-    { id: '4', title: 'قيد الانتظار', value: `${stat.pendingOrders}`, icon: 'time-outline' },
+    { id: '1', title: 'قيمة طلبات اليوم', value: `${stat.todayRevenue} ر.ي`, icon: 'cash-outline', target: 'Reports' },
+    { id: '2', title: 'طلبات اليوم', value: `${stat.todayOrders}`, icon: 'cube-outline', target: 'MerchantOrders' },
+    { id: '3', title: 'المنتجات', value: `${stat.totalProducts}`, icon: 'pricetags-outline', target: 'MerchantProducts' },
+    { id: '4', title: 'قيد الانتظار', value: `${stat.pendingOrders}`, icon: 'time-outline', target: 'MerchantOrders' },
   ];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel="إعدادات المتجر">
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>حساب التاجر</Text>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })} accessibilityRole="button" accessibilityLabel="إشعارات التاجر">
           <Ionicons name="notifications-outline" size={24} color="#111827" />
           <View style={styles.badge} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+        {loadError ? (
+          <TouchableOpacity style={styles.errorCard} onPress={() => void loadAccount()} accessibilityRole="button" accessibilityLabel="إعادة تحميل حساب التاجر">
+            <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* Profile Card */}
         <ImageBackground
@@ -66,7 +86,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
 
           {/* Center Zone: Info */}
           <View style={styles.profileZoneCenter}>
-            <Text style={styles.userName}>{user?.full_name ?? 'متجري'}</Text>
+            <Text style={styles.userName}>{profile?.store_name ?? user?.full_name ?? 'متجري'}</Text>
           </View>
 
           {/* Right Zone: Avatar */}
@@ -77,7 +97,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
               </View>
               <View style={styles.premiumBadge}>
                 <Ionicons name="sparkles" size={10} color="#3B82F6" />
-                <Text style={styles.premiumText}>تاجر موثق</Text>
+                <Text style={styles.premiumText}>{profile?.is_approved ? 'تاجر معتمد' : 'قيد المراجعة'}</Text>
               </View>
             </View>
           </View>
@@ -88,7 +108,13 @@ export default function MerchantAccountScreen({ navigation }: any) {
         <View style={styles.statsCardContainer}>
           {STATS.map((stat, index) => (
             <View key={stat.id} style={styles.statWrapper}>
-              <TouchableOpacity style={styles.statItem} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.statItem}
+                activeOpacity={0.7}
+                onPress={() => stat.target === 'Reports' ? navigation.navigate('Reports') : navigation.getParent()?.navigate(stat.target)}
+                accessibilityRole="button"
+                accessibilityLabel={`${stat.title}: ${stat.value}`}
+              >
                 <View style={styles.statIconCircle}>
                   <Ionicons name={stat.icon as any} size={18} color="#111827" />
                 </View>
@@ -110,6 +136,8 @@ export default function MerchantAccountScreen({ navigation }: any) {
                 style={styles.menuItem}
                 activeOpacity={0.7}
                 onPress={() => item.screen && navigation.navigate(item.screen as any, item.params as any)}
+                accessibilityRole="button"
+                accessibilityLabel={item.title}
               >
                 <View style={styles.menuItemRight}>
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
@@ -132,19 +160,21 @@ export default function MerchantAccountScreen({ navigation }: any) {
             ])
           }
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="تسجيل الخروج"
         >
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
           <Text style={[styles.logoutText, { color: '#EF4444' }]}>تسجيل الخروج</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper}>
+        <View style={styles.promoBannerWrapper}>
           <Image
             source={require('../../../assets/images/account_promo.png')}
             style={styles.promoBannerFullImage}
             resizeMode="cover"
           />
-        </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </View>
@@ -156,6 +186,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  errorCard: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 13, padding: 12, marginBottom: 12 },
+  errorText: { color: '#991B1B', fontSize: 12, lineHeight: 19, textAlign: 'right', fontWeight: '600' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

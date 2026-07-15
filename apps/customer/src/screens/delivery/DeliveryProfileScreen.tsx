@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Image } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, VEHICLE_TYPE } from '@marketplace/shared-utils';
 import { Input, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getDeliveryProfile, updateDeliveryProfileByUser, updateUserProfile } from '@marketplace/shared-hooks';
@@ -20,24 +20,36 @@ export default function DeliveryProfileScreen({ navigation }: any) {
   const [plateNumber, setPlateNumber] = useState('');
   const [vehicle, setVehicle] = useState<string>(VEHICLE_TYPE.MOTORCYCLE);
   const [saving, setSaving] = useState(false);
-  const [licenseUri, setLicenseUri] = useState<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
+  const [hasNationalId, setHasNationalId] = useState(false);
 
-  const pickLicense = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('إذن مطلوب', 'يرجى السماح بالوصول للصور'); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (!result.canceled && result.assets[0]) setLicenseUri(result.assets[0].uri);
-  };
-
-  useEffect(() => {
-    if (!user?.id) return;
-    getDeliveryProfile(user.id).then((p) => {
+  const loadProfile = useCallback(async () => {
+    if (!user?.id) {
+      setProfileLoading(false);
+      return;
+    }
+    setProfileError('');
+    try {
+      const p = await getDeliveryProfile(user.id);
       if (p) {
         setVehicle(p.vehicle_type ?? VEHICLE_TYPE.MOTORCYCLE);
         setPlateNumber(p.vehicle_plate ?? '');
+        setIsApproved(p.is_approved);
+        setHasNationalId(Boolean(p.national_id));
       }
-    }).catch(() => {});
+    } catch (error) {
+      setProfileError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل بيانات المندوب.');
+    } finally {
+      setProfileLoading(false);
+    }
   }, [user?.id]);
+
+  useFocusEffect(useCallback(() => {
+    setProfileLoading(true);
+    void loadProfile();
+  }, [loadProfile]));
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -64,7 +76,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>بياناتي ومركبتي</Text>
@@ -72,6 +84,16 @@ export default function DeliveryProfileScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {profileLoading ? <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 20 }} accessibilityLabel="جاري تحميل بيانات المندوب" /> : null}
+        {profileError ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorText}>{profileError}</Text>
+            <TouchableOpacity onPress={() => void loadProfile()} accessibilityRole="button" accessibilityLabel="إعادة تحميل بيانات المندوب">
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <Input label="الاسم الكامل" placeholder="اسمك" value={name} onChangeText={setName} />
 
         <Text style={styles.label}>نوع المركبة</Text>
@@ -84,6 +106,9 @@ export default function DeliveryProfileScreen({ navigation }: any) {
                 style={[styles.vehicleCard, active && styles.vehicleCardActive]}
                 onPress={() => setVehicle(v.key)}
                 activeOpacity={0.7}
+                accessibilityRole="radio"
+                accessibilityLabel={v.label}
+                accessibilityState={{ checked: active }}
               >
                 <Ionicons name={v.icon as any} size={26} color={active ? '#FFFFFF' : '#6B7280'} />
                 <Text style={[styles.vehicleLabel, active && { color: '#FFFFFF' }]}>{v.label}</Text>
@@ -94,32 +119,30 @@ export default function DeliveryProfileScreen({ navigation }: any) {
 
         <Input label="رقم اللوحة (اختياري)" placeholder="مثال: 1-12345" value={plateNumber} onChangeText={setPlateNumber} />
 
-        {/* Documents */}
-        <Text style={styles.label}>الوثائق</Text>
-        <TouchableOpacity style={styles.docCard} activeOpacity={0.7} onPress={() => Alert.alert('البطاقة الشخصية', 'تم التحقق من الوثيقة بنجاح.')}>
+        <Text style={styles.label}>حالة التحقق</Text>
+        <View style={styles.docCard}>
           <View style={styles.docIcon}>
             <Ionicons name="card-outline" size={20} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1, marginHorizontal: 12 }}>
             <Text style={styles.docTitle}>البطاقة الشخصية</Text>
-            <Text style={styles.docStatus}>✅ تم التحقق</Text>
-          </View>
-          <Ionicons name="chevron-back" size={18} color="#D1D5DB" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.docCard} activeOpacity={0.7} onPress={pickLicense}>
-          <View style={styles.docIcon}>
-            {licenseUri
-              ? <Image source={{ uri: licenseUri }} style={{ width: 40, height: 40, borderRadius: 8 }} />
-              : <Ionicons name="document-attach-outline" size={20} color={COLORS.primary} />}
-          </View>
-          <View style={{ flex: 1, marginHorizontal: 12 }}>
-            <Text style={styles.docTitle}>رخصة القيادة</Text>
-            <Text style={[styles.docStatus, { color: licenseUri ? '#059669' : '#D97706' }]}>
-              {licenseUri ? '✅ تم الرفع' : '⏳ اضغط لرفع الصورة'}
+            <Text style={[styles.docStatus, { color: hasNationalId ? '#059669' : '#D97706' }]}>
+              {hasNationalId ? 'البيانات مسجلة لدى الإدارة' : 'لم تُسجّل بيانات البطاقة بعد'}
             </Text>
           </View>
-          <Ionicons name={licenseUri ? 'checkmark-circle-outline' : 'cloud-upload-outline'} size={18} color={licenseUri ? '#059669' : COLORS.primary} />
-        </TouchableOpacity>
+        </View>
+        <View style={styles.docCard}>
+          <View style={styles.docIcon}>
+            <Ionicons name={isApproved ? 'shield-checkmark-outline' : 'time-outline'} size={20} color={isApproved ? '#059669' : '#D97706'} />
+          </View>
+          <View style={{ flex: 1, marginHorizontal: 12 }}>
+            <Text style={styles.docTitle}>اعتماد حساب المندوب</Text>
+            <Text style={[styles.docStatus, { color: isApproved ? '#059669' : '#D97706' }]}>
+              {isApproved ? 'الحساب معتمد' : 'الحساب بانتظار مراجعة الإدارة'}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.verificationNote}>رفع الوثائق والتحقق منها يحتاجان مسارًا آمنًا لدى الإدارة، لذلك لا يعرض التطبيق حالة تحقق غير مؤكدة.</Text>
 
         <View style={{ height: 20 }} />
         <Button title={saving ? 'جاري الحفظ...' : 'حفظ التغييرات'} onPress={handleSave} disabled={saving} />
@@ -138,6 +161,9 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
   scrollContent: { padding: 24 },
+  errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 18, alignItems: 'center', gap: 8 },
+  errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
+  retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   label: { fontSize: 13, color: '#111827', marginBottom: 10, fontWeight: '600' },
   vehiclesRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   vehicleCard: {
@@ -153,4 +179,5 @@ const styles = StyleSheet.create({
   docIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F0F4FF', alignItems: 'center', justifyContent: 'center' },
   docTitle: { fontSize: 13.5, fontWeight: '700', color: '#111827' },
   docStatus: { fontSize: 11.5, color: '#059669', marginTop: 3, fontWeight: '600' },
+  verificationNote: { fontSize: 11.5, color: '#6B7280', lineHeight: 18, textAlign: 'right', marginBottom: 8 },
 });

@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishlist, addToWishlist, removeFromWishlist, isFollowingStore, followStore, unfollowStore, getStoreFollowersCount, getWorkingHours, getOrCreateConversation, getReviews, WorkingHour, Review, StoreSummary, ProductSummary, supabase } from '@marketplace/shared-hooks';
+import { Alert } from '../../../components/appAlert';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -25,6 +26,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
   const [store, setStore] = useState<StoreSummary | null>(null);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [wishedIds, setWishedIds] = useState<Set<string>>(new Set());
   const [following, setFollowing] = useState(false);
@@ -38,7 +40,9 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     try {
       const convId = await getOrCreateConversation(user.id, storeId);
       navigation.navigate('Chat', { conversationId: convId, title: store?.store_name ?? 'المتجر' });
-    } catch { /* ignore */ }
+    } catch (error: any) {
+      Alert.alert('تعذّر فتح المحادثة', error?.message ?? 'تحقق من الاتصال وحاول مجددًا.');
+    }
   };
   const addToCart = useCartStore((s) => s.addToCart);
 
@@ -50,10 +54,22 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     try {
       if (next) await followStore(user.id, storeId);
       else await unfollowStore(user.id, storeId);
-    } catch { setFollowing(!next); }
+    } catch {
+      setFollowing(!next);
+      setFollowers((count) => Math.max(0, count + (next ? -1 : 1)));
+      Alert.alert('تعذّر تحديث المتابعة', 'تحقق من الاتصال وحاول مجددًا.');
+    }
   };
 
   const quickAdd = (product: ProductSummary) => {
+    if ((product.product_variants ?? []).some((variant) => variant.is_active !== false)) {
+      navigation.navigate('ProductDetails', { productId: product.id });
+      return;
+    }
+    if (Number(product.stock_quantity ?? 0) <= 0) {
+      Alert.alert('نفد المخزون', 'هذا المنتج غير متاح للإضافة حاليًا.');
+      return;
+    }
     addToCart({
       id: product.id,
       productId: product.id,
@@ -61,16 +77,27 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
       price: product.sale_price ?? product.base_price,
       emoji: '🛍️',
       quantity: 1,
+      maxQuantity: product.stock_quantity ?? undefined,
       storeId: product.merchant_id,
       storeName: store?.store_name ?? 'المتجر',
     });
   };
 
-  const loadData = React.useCallback(() => {
-    Promise.all([getStoreById(storeId), getProductsByStore(storeId)])
-      .then(([s, p]) => { setStore(s); setProducts(p); })
-      .catch(() => {})
-      .finally(() => { setLoading(false); setRefreshing(false); });
+  const loadData = React.useCallback(async () => {
+    setLoadError('');
+    try {
+      const [nextStore, nextProducts] = await Promise.all([getStoreById(storeId), getProductsByStore(storeId)]);
+      if (!nextStore) throw new Error('المتجر غير موجود أو غير متاح حاليًا.');
+      setStore(nextStore);
+      setProducts(nextProducts);
+    } catch (error: any) {
+      setStore(null);
+      setProducts([]);
+      setLoadError(error?.message ?? 'تعذّر تحميل المتجر. تحقق من الاتصال وحاول مجددًا.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
     if (user?.id) {
       getWishlist(user.id).then((wl) => setWishedIds(new Set(wl.map((w) => w.product_id)))).catch(() => {});
       isFollowingStore(user.id, storeId).then(setFollowing).catch(() => {});
@@ -81,7 +108,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
   }, [storeId, user?.id]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [loadData]);
 
   const onRefresh = () => {
@@ -89,19 +116,17 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     loadData();
   };
 
-  /*
   useEffect(() => {
     const channel = supabase.channel(`store_details_${storeId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles', filter: `id=eq.${storeId}` }, () => {
-        loadData();
+        void loadData();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `merchant_id=eq.${storeId}` }, () => {
-        loadData();
+        void loadData();
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { void supabase.removeChannel(channel); };
   }, [storeId, loadData]);
-  */
 
   const toggleWish = async (productId: string) => {
     if (!user?.id) return;
@@ -112,13 +137,36 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     try {
       if (isWished) await removeFromWishlist(user.id, productId);
       else await addToWishlist(user.id, productId);
-    } catch { /* ignore */ }
+    } catch {
+      setWishedIds((current) => {
+        const restored = new Set(current);
+        if (isWished) restored.add(productId); else restored.delete(productId);
+        return restored;
+      });
+      Alert.alert('تعذّر تحديث المفضلة', 'تحقق من الاتصال وحاول مجددًا.');
+    }
   };
 
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (loadError || !store) {
+    return (
+      <View style={styles.errorState} accessibilityRole="alert">
+        <Ionicons name="storefront-outline" size={52} color="#B91C1C" />
+        <Text style={styles.errorTitle}>تعذّر فتح المتجر</Text>
+        <Text style={styles.errorMessage}>{loadError || 'المتجر غير موجود أو غير متاح حاليًا.'}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void loadData(); }} accessibilityRole="button">
+          <Text style={styles.retryText}>إعادة المحاولة</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button">
+          <Text style={styles.backLink}>العودة</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -334,6 +382,12 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#F9FAFB' 
   },
+  errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12, backgroundColor: '#F9FAFB' },
+  errorTitle: { fontSize: 20, fontWeight: '900', color: '#111827' },
+  errorMessage: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
+  retryButton: { minHeight: 46, minWidth: 150, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
+  backLink: { color: COLORS.primary, fontWeight: '700', padding: 10 },
   cover: { 
     height: 180, 
     paddingTop: 50, 

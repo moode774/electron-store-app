@@ -2,7 +2,6 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
 
 import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import MerchantDashboardScreen from '../screens/merchant/MerchantDashboardScreen';
@@ -18,10 +17,13 @@ import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 import MerchantHistoryScreen from '../screens/merchant/MerchantHistoryScreen';
 import MerchantSupportScreen from '../screens/merchant/MerchantSupportScreen';
 import MerchantCouponsScreen from '../screens/merchant/MerchantCouponsScreen';
+import MerchantRefundsScreen from '../screens/merchant/MerchantRefundsScreen';
+import MerchantPhysicalReturnsScreen from '../screens/merchant/MerchantPhysicalReturnsScreen';
+import SupportTicketThreadScreen from '../screens/shared/SupportTicketThreadScreen';
 
 export type MerchantHistoryStackParamList = {
   HistoryList: undefined;
-  OrderDetails: { order?: object };
+  OrderDetails: { orderId: string };
 };
 
 const HistoryStack = createNativeStackNavigator<MerchantHistoryStackParamList>();
@@ -36,7 +38,7 @@ function HistoryNavigator() {
 
 export type MerchantOrdersStackParamList = {
   OrdersList: undefined;
-  OrderDetails: { order?: object };
+  OrderDetails: { orderId: string };
 };
 
 const OrdersStack = createNativeStackNavigator<MerchantOrdersStackParamList>();
@@ -72,7 +74,10 @@ export type MerchantAccountStackParamList = {
   Wallet: undefined;
   RoleNotifications: { role: 'merchant' };
   Support: undefined;
+  SupportTicket: { ticketId: string };
   Coupons: undefined;
+  Refunds: undefined;
+  PhysicalReturns: undefined;
 };
 
 const AccountStack = createNativeStackNavigator<MerchantAccountStackParamList>();
@@ -86,8 +91,26 @@ function AccountNavigator() {
       <AccountStack.Screen name="Wallet" component={MerchantWalletScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
       <AccountStack.Screen name="Support" component={MerchantSupportScreen} />
+      <AccountStack.Screen name="SupportTicket" component={SupportTicketThreadScreen} />
       <AccountStack.Screen name="Coupons" component={MerchantCouponsScreen} />
+      <AccountStack.Screen name="Refunds" component={MerchantRefundsScreen} />
+      <AccountStack.Screen name="PhysicalReturns" component={MerchantPhysicalReturnsScreen} />
     </AccountStack.Navigator>
+  );
+}
+
+export type MerchantSupportStackParamList = {
+  SupportHome: undefined;
+  SupportTicket: { ticketId: string };
+};
+
+const SupportStack = createNativeStackNavigator<MerchantSupportStackParamList>();
+function SupportNavigator() {
+  return (
+    <SupportStack.Navigator screenOptions={{ headerShown: false }}>
+      <SupportStack.Screen name="SupportHome" component={MerchantSupportScreen} />
+      <SupportStack.Screen name="SupportTicket" component={SupportTicketThreadScreen} />
+    </SupportStack.Navigator>
   );
 }
 
@@ -104,7 +127,7 @@ export type MerchantTabParamList = {
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
-import { useWindowDimensions, View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { useWindowDimensions, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 
@@ -125,7 +148,7 @@ function DesktopSidebar() {
     { name: 'MerchantOrders',       label: 'الطلبات',   icon: 'receipt-outline',       activeIcon: 'receipt'        },
     { name: 'MerchantProducts',     label: 'المنتجات',  icon: 'cube-outline',          activeIcon: 'cube'           },
     { name: 'MerchantHistory',      label: 'السجل',    icon: 'time-outline',          activeIcon: 'time'           },
-    { name: 'MerchantAccount',      label: 'التقارير',  icon: 'document-text-outline', activeIcon: 'document-text'  },
+    { name: 'MerchantAccount',      label: 'حسابي',  icon: 'person-outline', activeIcon: 'person'  },
     { name: 'MerchantWallet',       label: 'المحفظة',   icon: 'wallet-outline',        activeIcon: 'wallet'         },
     { name: 'MerchantSupport',      label: 'الدعم',     icon: 'headset-outline',       activeIcon: 'headset'        },
     { name: 'MerchantStoreSettings',label: 'المعلومات', icon: 'storefront-outline',    activeIcon: 'storefront'     },
@@ -146,6 +169,9 @@ function DesktopSidebar() {
               style={[sidebarStyles.menuItem, isActive && sidebarStyles.menuItemActive]}
               onPress={() => navigation.navigate(tab.name as any)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: isActive }}
             >
               <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={22} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
             </TouchableOpacity>
@@ -154,7 +180,7 @@ function DesktopSidebar() {
       </View>
 
       <View style={sidebarStyles.footer}>
-        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8}>
+        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
           <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
         </TouchableOpacity>
       </View>
@@ -250,6 +276,7 @@ export default function MerchantTabNavigator() {
         component={MerchantDashboardScreen}
         options={{
           tabBarLabel: 'الرئيسية',
+          tabBarAccessibilityLabel: 'الرئيسية',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={size} color={color} />,
         }}
       />
@@ -258,6 +285,7 @@ export default function MerchantTabNavigator() {
         component={OrdersNavigator}
         options={{
           tabBarLabel: 'الطلبات',
+          tabBarAccessibilityLabel: 'الطلبات النشطة',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={color} />,
         }}
       />
@@ -266,6 +294,7 @@ export default function MerchantTabNavigator() {
         component={ProductsNavigator}
         options={{
           tabBarLabel: 'منتجاتي',
+          tabBarAccessibilityLabel: 'منتجات المتجر',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'cube' : 'cube-outline'} size={size} color={color} />,
         }}
       />
@@ -274,6 +303,7 @@ export default function MerchantTabNavigator() {
         component={HistoryNavigator}
         options={{
           tabBarLabel: 'السجل',
+          tabBarAccessibilityLabel: 'سجل الطلبات',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />,
         }}
       />
@@ -282,6 +312,7 @@ export default function MerchantTabNavigator() {
         component={AccountNavigator}
         options={{
           tabBarLabel: 'حسابي',
+          tabBarAccessibilityLabel: 'حساب التاجر',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />,
         }}
       />
@@ -296,7 +327,7 @@ export default function MerchantTabNavigator() {
       />
       <Tab.Screen
         name="MerchantSupport"
-        component={MerchantSupportScreen}
+        component={SupportNavigator}
         options={{
           tabBarLabel: 'الدعم',
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'headset' : 'headset-outline'} size={size} color={color} />,
@@ -365,41 +396,41 @@ function DesktopTopHeader() {
   return (
     <View style={topHeaderStyles.topHeader}>
       <View style={topHeaderStyles.navLinks}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantDashboard')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
           <Text style={getStyle('MerchantDashboard')}>الرئيسية</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel="التقارير">
           <Text style={getStyle('MerchantAccount', 'Reports')}>التقارير</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantProducts')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantProducts')} accessibilityRole="button" accessibilityLabel="المنتجات">
           <Text style={getStyle('MerchantProducts')}>المنتجات</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantOrders')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
           <Text style={getStyle('MerchantOrders')}>الطلبات</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantHistory')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel="سجل الطلبات">
           <Text style={getStyle('MerchantHistory')}>السجل</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantWallet')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantWallet')} accessibilityRole="button" accessibilityLabel="المحفظة">
           <Text style={getStyle('MerchantWallet')}>المحفظة</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantSupport')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantSupport')} accessibilityRole="button" accessibilityLabel="الدعم">
           <Text style={getStyle('MerchantSupport')}>الدعم</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantStoreSettings')}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantStoreSettings')} accessibilityRole="button" accessibilityLabel="بيانات المتجر">
           <Text style={getStyle('MerchantStoreSettings')}>المعلومات</Text>
         </TouchableOpacity>
       </View>
       <View style={topHeaderStyles.headerRight}>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn}>
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="فتح الطلبات">
           <Ionicons name="search-outline" size={20} color={UI.textDark} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn}>
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantAccount', { screen: 'RoleNotifications', params: { role: 'merchant' } })} accessibilityRole="button" accessibilityLabel="الإشعارات">
           <Ionicons name="notifications-outline" size={20} color={UI.textDark} />
         </TouchableOpacity>
-        <View style={topHeaderStyles.avatarMini}>
+        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('MerchantAccount')} accessibilityRole="button" accessibilityLabel="حساب التاجر">
           <Ionicons name="person" size={16} color="#FFF" />
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );

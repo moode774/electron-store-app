@@ -95,13 +95,18 @@ function createStorageAdapter() {
   };
 }
 
+// Durable cross-platform storage for small operational tokens such as
+// checkout idempotency attempts. It intentionally shares the same tested
+// web/native adapter, but uses independent keys from the auth session.
+export const appStorage = createStorageAdapter();
+
 // ---- Typed Supabase client ----------------------------------
 export const supabase: SupabaseClient = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      storage: createStorageAdapter(),
+      storage: appStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,

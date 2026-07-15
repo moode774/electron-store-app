@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket } from '@marketplace/shared-hooks';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 
 const UI = {
   primary: '#111827',
@@ -27,7 +28,7 @@ const softShadow = {
 const CATEGORIES = [
   { value: 'technical', label: 'مشكلة تقنية' },
   { value: 'payment', label: 'المدفوعات والمحفظة' },
-  { value: 'orders', label: 'الطلبات' },
+  { value: 'order', label: 'الطلبات' },
   { value: 'account', label: 'حساب المتجر' },
   { value: 'other', label: 'أخرى' },
 ];
@@ -41,10 +42,10 @@ const TICKET_STATUS: Record<string, { label: string, color: string }> = {
 };
 
 const FAQS = [
-  { id: '1', q: 'كيف أستلم أرباحي من الطلبات الإلكترونية؟', a: 'يتم تحويل الأرباح للمحفظة فور إكمال الطلب، ويمكنك سحب الرصيد لحسابك البنكي من خلال شاشة المحفظة.' },
-  { id: '2', q: 'كيف أقوم بإلغاء طلب العميل؟', a: 'يمكنك رفض الطلب فقط إذا كان في حالة "بانتظار القبول". إذا تم القبول لا يمكن الإلغاء إلا من خلال الدعم الفني تجنباً للمشاكل.' },
-  { id: '3', q: 'متى يصل المندوب لاستلام الطلب؟', a: 'بمجرد تحويل حالة الطلب إلى "جاهز"، سيتم تنبيه أقرب مندوب للتوجه إليك فوراً.' },
-  { id: '4', q: 'كيف أعدّل أوقات العمل لمتجري؟', a: 'من خلال "حسابي" ثم "بيانات المتجر"، يمكنك تعديل أوقات العمل، وسيظهر المتجر مغلقاً للعملاء خارج هذه الأوقات.' },
+  { id: '1', q: 'متى يظهر الرصيد في المحفظة؟', a: 'يظهر الرصيد بعد اكتمال تسوية الطلب. إذا بقي الطلب مسلماً دون تسوية، افتح تذكرة دعم وأرفق رقم الطلب.' },
+  { id: '2', q: 'كيف ألغي طلباً؟', a: 'لا يملك التاجر انتقال إلغاء مباشر حالياً. افتح تذكرة دعم تتضمن رقم الطلب وسبب الإلغاء.' },
+  { id: '3', q: 'متى يستلم المندوب الطلب؟', a: 'بعد تحويله إلى «جاهز للمندوب» يبقى بانتظار مطالبة مندوب، ثم تظهر مراحل الإسناد والاستلام والتوصيل تلقائياً.' },
+  { id: '4', q: 'كيف أفتح أو أغلق متجري؟', a: 'من «بيانات المتجر» يمكنك تغيير حالة المتجر يدوياً. الجدولة الآلية لساعات العمل غير مفعلة حالياً.' },
 ];
 
 export default function MerchantSupportScreen({ navigation }: any) {
@@ -55,14 +56,29 @@ export default function MerchantSupportScreen({ navigation }: any) {
   const [category, setCategory] = useState('payment');
   const [sending, setSending] = useState(false);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [ticketsError, setTicketsError] = useState('');
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
 
-  const loadTickets = useCallback(() => {
-    if (user?.id) getSupportTickets(user.id).then(setTickets).catch(() => {});
+  const loadTickets = useCallback(async () => {
+    if (!user?.id) { setTicketsLoading(false); return; }
+    setTicketsLoading(true);
+    setTicketsError('');
+    try { setTickets(await getSupportTickets(user.id)); }
+    catch (error) { setTicketsError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل تذاكر الدعم.'); }
+    finally { setTicketsLoading(false); }
   }, [user?.id]);
-  
-  useEffect(() => { loadTickets(); }, [loadTickets]);
+
+  useFocusEffect(useCallback(() => {
+    void loadTickets();
+    if (!user?.id) return undefined;
+    const channel = supabase
+      .channel(`merchant-support-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets', filter: `user_id=eq.${user.id}` }, () => { void loadTickets(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [loadTickets, user?.id]));
 
   const submitTicket = async () => {
     if (!subject.trim() || !message.trim()) { Alert.alert('تنبيه', 'الرجاء إدخال الموضوع والتفاصيل'); return; }
@@ -71,7 +87,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم خاصة بالتاجر وسيتم الرد عليك في أسرع وقت.');
+      Alert.alert('تم الإرسال ✅', 'تم فتح التذكرة، ويمكنك متابعة حالتها من هذه الشاشة.');
       loadTickets();
     } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
     finally { setSending(false); }
@@ -101,28 +117,28 @@ export default function MerchantSupportScreen({ navigation }: any) {
              </TouchableOpacity>
              <View>
                <Text style={styles.pageTitle}>مركز مساعدة الشركاء</Text>
-               <Text style={styles.pageSubtitle}>نحن هنا لخدمتك ودعم متجرك على مدار الساعة</Text>
+               <Text style={styles.pageSubtitle}>افتح تذكرة وتابع ردود فريق الدعم من المكان نفسه</Text>
              </View>
           </View>
         )}
 
         {/* Contact Channels */}
         <View style={styles.channelsRow}>
-          <TouchableOpacity style={styles.channelCard} activeOpacity={0.8} onPress={() => Linking.openURL('https://wa.me/967700000000')}>
+          <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: '#DCFCE7' }]}>
               <Ionicons name="logo-whatsapp" size={28} color="#059669" />
             </View>
-            <Text style={styles.channelTitle}>دعم الواتساب</Text>
-            <Text style={styles.channelSub}>رد فوري للشركاء</Text>
-          </TouchableOpacity>
+            <Text style={styles.channelTitle}>قناة واتساب</Text>
+            <Text style={styles.channelSub}>غير مفعلة حالياً</Text>
+          </View>
 
-          <TouchableOpacity style={styles.channelCard} activeOpacity={0.8} onPress={() => Linking.openURL('tel:+967700000000')}>
+          <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: '#F0F4FF' }]}>
               <Ionicons name="call" size={28} color={UI.blue} />
             </View>
-            <Text style={styles.channelTitle}>مركز الاتصال</Text>
-            <Text style={styles.channelSub}>متاح 24 ساعة</Text>
-          </TouchableOpacity>
+            <Text style={styles.channelTitle}>تذاكر الدعم</Text>
+            <Text style={styles.channelSub}>القناة المتاحة حالياً</Text>
+          </View>
         </View>
 
         {/* Form and Tickets Wrapper */}
@@ -132,20 +148,20 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {/* Ticket Form */}
               <View style={styles.card}>
                 <Text style={styles.sectionTitle}>فتح تذكرة دعم فني</Text>
-                <Text style={styles.sectionDesc}>فريقنا التقني جاهز لحل أي مشكلة تواجه متجرك، الرجاء توضيح المشكلة أدناه:</Text>
+                <Text style={styles.sectionDesc}>وضّح المشكلة والطلب المرتبط بها إن وجد، ثم تابع حالة التذكرة والردود من القائمة أدناه:</Text>
                 
                 <View style={styles.catRow}>
                   {CATEGORIES.map((c) => (
-                    <TouchableOpacity key={c.value} style={[styles.catChip, category === c.value && styles.catChipActive]} onPress={() => setCategory(c.value)} activeOpacity={0.7}>
+                    <TouchableOpacity key={c.value} style={[styles.catChip, category === c.value && styles.catChipActive]} onPress={() => setCategory(c.value)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={c.label} accessibilityState={{ selected: category === c.value }}>
                       <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{c.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
-                <TextInput style={styles.inputField} placeholder="عنوان المشكلة الملحّة..." placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" />
-                <TextInput style={[styles.inputField, styles.textArea]} placeholder="اشرح لنا تفاصيل المشكلة أو طلب المساعدة هنا..." placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" />
+                <TextInput style={styles.inputField} placeholder="عنوان المشكلة الملحّة..." placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
+                <TextInput style={[styles.inputField, styles.textArea]} placeholder="اشرح لنا تفاصيل المشكلة أو طلب المساعدة هنا..." placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
                 
-                <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85}>
+                <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
                   {sending ? <ActivityIndicator color="#fff" size="small" /> : (
                     <>
                        <Text style={styles.submitBtnText}>إرسال التذكرة لفريق الدعم</Text>
@@ -156,13 +172,22 @@ export default function MerchantSupportScreen({ navigation }: any) {
               </View>
 
               {/* Tickets List */}
+              {ticketsLoading && <ActivityIndicator color={UI.primary} style={{ marginVertical: 18 }} />}
+              {ticketsError ? (
+                <View style={styles.ticketErrorCard} accessibilityRole="alert">
+                  <Text style={styles.ticketErrorText}>{ticketsError}</Text>
+                  <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة تحميل تذاكر الدعم">
+                    <Text style={styles.retryText}>إعادة المحاولة</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
               {tickets.length > 0 && (
                 <View style={styles.card}>
                   <Text style={styles.sectionTitle}>تذاكري السابقة</Text>
                   {tickets.map((t, i) => {
                     const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
                     return (
-                      <View key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]}>
+                      <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.ticketSubject}>{t.subject}</Text>
                           <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
@@ -170,7 +195,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
                         <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
                           <Text style={[styles.ticketStatusText, { color: st.color }]}>{st.label}</Text>
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
@@ -185,7 +210,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   const isOpen = expandedId === faq.id;
                   return (
                     <View key={faq.id} style={[styles.faqItem, index === FAQS.length - 1 && { borderBottomWidth: 0 }]}>
-                      <TouchableOpacity style={styles.faqHeader} onPress={() => setExpandedId(isOpen ? null : faq.id)} activeOpacity={0.7}>
+                      <TouchableOpacity style={styles.faqHeader} onPress={() => setExpandedId(isOpen ? null : faq.id)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={faq.q} accessibilityState={{ expanded: isOpen }}>
                         <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={UI.textMuted} />
                         <Text style={styles.faqQuestion}>{faq.q}</Text>
                       </TouchableOpacity>
@@ -250,6 +275,10 @@ const styles = StyleSheet.create({
   ticketDate: { fontSize: 12, color: UI.textMuted, marginTop: 4, textAlign: 'right', fontWeight: '600' },
   ticketStatusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   ticketStatusText: { fontSize: 12, fontWeight: '800' },
+  ticketErrorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 16, alignItems: 'center', gap: 10, marginBottom: 12 },
+  ticketErrorText: { color: '#B91C1C', fontSize: 12.5, textAlign: 'center', lineHeight: 19, fontWeight: '600' },
+  retryBtn: { backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  retryText: { color: UI.blue, fontSize: 12.5, fontWeight: '800' },
 
   faqItem: { borderBottomWidth: 1, borderBottomColor: UI.border, paddingVertical: 4 },
   faqHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16 },

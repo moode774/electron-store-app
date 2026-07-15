@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { getAdminWithdrawals, processWithdrawal, AdminWithdrawal } from '@marketplace/shared-hooks';
+import { getAdminWithdrawals, processWithdrawal, AdminWithdrawal, type WithdrawalDecisionStatus } from '@marketplace/shared-hooks';
 
 const UI = {
   primary: '#1E3A8A',
@@ -24,12 +24,18 @@ const STATUS_FILTERS = [
   { key: '', label: 'الكل' },
   { key: 'pending', label: 'قيد الانتظار' },
   { key: 'approved', label: 'تمت الموافقة' },
+  { key: 'processing', label: 'قيد التحويل' },
+  { key: 'paid', label: 'مدفوع' },
+  { key: 'failed', label: 'فشل التحويل' },
   { key: 'rejected', label: 'مرفوض' },
 ];
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'قيد الانتظار', color: UI.warning, bg: '#FFFBEB' },
   approved: { label: 'موافق عليه', color: UI.success, bg: '#ECFDF5' },
+  processing: { label: 'قيد التحويل الخارجي', color: '#7C3AED', bg: '#F5F3FF' },
+  paid: { label: 'تم الدفع', color: UI.success, bg: '#ECFDF5' },
+  failed: { label: 'فشل التحويل', color: UI.danger, bg: '#FEF2F2' },
   rejected: { label: 'مرفوض', color: UI.danger, bg: '#FEF2F2' },
 };
 
@@ -39,6 +45,21 @@ const ROLE_LABELS: Record<string, string> = {
   customer: 'عميل',
 };
 
+function payoutDestinationLines(destination: AdminWithdrawal['payout_destination']): string[] {
+  if (!destination || typeof destination !== 'object') return [];
+  const value = destination as Record<string, unknown>;
+  const line = (label: string, ...keys: string[]) => {
+    const found = keys.map((key) => value[key]).find((item) => typeof item === 'string' && item.trim());
+    return typeof found === 'string' ? `${label}: ${found}` : null;
+  };
+  return [
+    line('الوسيلة', 'method', 'type', 'payout_method'),
+    line('البنك أو المزود', 'bank_name', 'provider_name'),
+    line('اسم المستفيد', 'account_name', 'bank_account_name', 'beneficiary_name'),
+    line('الحساب', 'masked_account', 'account_last4', 'bank_account', 'account_number', 'wallet_number'),
+  ].filter((item): item is string => !!item);
+}
+
 export default function AdminWalletScreen({ navigation }: any) {
   const [requests, setRequests] = useState<AdminWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,14 +68,20 @@ export default function AdminWalletScreen({ navigation }: any) {
   const [processing, setProcessing] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AdminWithdrawal | null>(null);
-  const [modalAction, setModalAction] = useState<'approved' | 'rejected'>('approved');
+  const [modalAction, setModalAction] = useState<WithdrawalDecisionStatus>('approved');
   const [notes, setNotes] = useState('');
+  const [externalReference, setExternalReference] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoadError(null);
     try {
       const data = await getAdminWithdrawals(filter || undefined);
       setRequests(data);
-    } catch { Alert.alert('خطأ', 'فشل تحميل طلبات السحب'); }
+    } catch (e) {
+      console.error('Failed to load withdrawal requests:', e);
+      setLoadError('تعذر تحميل طلبات السحب. تحقق من الاتصال ثم أعد المحاولة.');
+    }
     finally { setLoading(false); setRefreshing(false); }
   }, [filter]);
 
@@ -62,31 +89,68 @@ export default function AdminWalletScreen({ navigation }: any) {
 
   const onRefresh = () => { setRefreshing(true); load(); };
 
-  const openModal = (req: AdminWithdrawal, action: 'approved' | 'rejected') => {
+  const openModal = (req: AdminWithdrawal, action: WithdrawalDecisionStatus) => {
     setSelectedRequest(req);
     setModalAction(action);
     setNotes('');
+    setExternalReference('');
     setModalVisible(true);
   };
 
   const handleProcess = async () => {
-    if (!selectedRequest) return;
+    if (!selectedRequest || processing) return;
+    const allowedTransitions: Record<string, WithdrawalDecisionStatus[]> = {
+      pending: ['approved', 'rejected'],
+      approved: ['processing'],
+      processing: ['paid', 'failed'],
+    };
+    if (!allowedTransitions[selectedRequest.status]?.includes(modalAction)) {
+      Alert.alert('تمت معالجة الطلب', 'حدّث القائمة للاطلاع على حالته الحالية.');
+      return;
+    }
+    if ((modalAction === 'rejected' || modalAction === 'failed') && !notes.trim()) {
+      Alert.alert('سبب القرار مطلوب', 'اكتب سبباً واضحاً ليظهر في سجل طلب السحب.');
+      return;
+    }
+    if (modalAction === 'paid' && !externalReference.trim()) {
+      Alert.alert('مرجع التحويل مطلوب', 'أدخل المرجع الصادر من وسيلة التحويل قبل تأكيد الدفع.');
+      return;
+    }
     setProcessing(selectedRequest.id);
-    setModalVisible(false);
     try {
-      await processWithdrawal(selectedRequest.id, modalAction, notes.trim() || undefined);
-      load();
-      Alert.alert('تم', modalAction === 'approved' ? 'تمت الموافقة على طلب السحب بنجاح' : 'تم رفض طلب السحب');
-    } catch { Alert.alert('خطأ', 'فشل معالجة الطلب'); }
-    finally { setProcessing(null); }
+      await processWithdrawal(selectedRequest.id, modalAction, notes.trim() || undefined, externalReference.trim() || undefined);
+      setRequests((current) => {
+        if (filter && modalAction !== filter) return current.filter((request) => request.id !== selectedRequest.id);
+        return current.map((request) => request.id === selectedRequest.id
+          ? {
+              ...request,
+              status: modalAction,
+              admin_notes: notes.trim() || request.admin_notes,
+              external_reference: externalReference.trim() || request.external_reference,
+            }
+          : request);
+      });
+      setModalVisible(false);
+      setSelectedRequest(null);
+      const successMessages: Record<WithdrawalDecisionStatus, string> = {
+        approved: 'تم اعتماد الطلب وحجز المبلغ، ولم يُسجل كمدفوع بعد.',
+        rejected: 'تم رفض طلب السحب وفك الحجز وتسجيل السبب.',
+        processing: 'تم تسجيل بدء التحويل الخارجي.',
+        paid: 'تم توثيق دفع طلب السحب بالمرجع الخارجي.',
+        failed: 'تم تسجيل فشل التحويل وحفظ السبب، ولم يُسجل الطلب كمدفوع.',
+      };
+      Alert.alert('تم', successMessages[modalAction]);
+    } catch (e) {
+      console.error('Failed to process withdrawal request:', e);
+      Alert.alert('تعذر معالجة الطلب', e instanceof Error ? e.message : 'لم تتغير حالة الطلب. أعد المحاولة.');
+    } finally { setProcessing(null); }
   };
-
-  const totalPending = requests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0);
 
   const renderRequest = ({ item }: { item: AdminWithdrawal }) => {
     const statusInfo = STATUS_META[item.status] ?? { label: item.status, color: UI.textMuted, bg: '#F1F5F9' };
     const user = item.users as any;
     const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const destinationLines = payoutDestinationLines(item.payout_destination);
     return (
       <View style={s.card}>
         <View style={s.cardTop}>
@@ -109,12 +173,25 @@ export default function AdminWalletScreen({ navigation }: any) {
           <Text style={s.dateText}>{date}</Text>
         </View>
 
-        {item.notes && (
+        {(item.requester_notes ?? item.notes) && (
           <View style={s.notesBox}>
             <Ionicons name="document-text-outline" size={14} color={UI.textMuted} />
-            <Text style={s.notesText}>{item.notes}</Text>
+            <Text style={s.notesText}>{item.requester_notes ?? item.notes}</Text>
           </View>
         )}
+        <View style={s.destinationBox}>
+          <View style={s.destinationTitleRow}>
+            <Ionicons name="business-outline" size={16} color={UI.primary} />
+            <Text style={s.destinationTitle}>وجهة الصرف المحفوظة وقت الطلب</Text>
+          </View>
+          {destinationLines.length ? destinationLines.map((line) => <Text key={line} style={s.destinationLine}>{line}</Text>) : (
+            <Text style={s.missingDestination}>لا توجد وجهة صرف محفوظة؛ لا تبدأ التحويل قبل التحقق منها.</Text>
+          )}
+        </View>
+        {!!item.admin_notes && <Text style={s.auditText}>ملاحظة الإدارة: {item.admin_notes}</Text>}
+        {!!item.external_reference && <Text style={s.auditText}>مرجع التحويل: {item.external_reference}</Text>}
+        {!!item.processed_at && <Text style={s.auditText}>آخر معالجة: {new Date(item.processed_at).toLocaleString('ar-SA')}</Text>}
+        {!!item.paid_at && <Text style={s.auditText}>وقت الدفع: {new Date(item.paid_at).toLocaleString('ar-SA')}</Text>}
 
         {item.status === 'pending' && (
           <>
@@ -128,16 +205,48 @@ export default function AdminWalletScreen({ navigation }: any) {
                   <Ionicons name="close-circle" size={18} color={UI.danger} />
                 </TouchableOpacity>
                 <TouchableOpacity style={s.approveBtn} onPress={() => openModal(item, 'approved')} activeOpacity={0.8}>
-                  <Text style={s.approveBtnText}>موافقة وتحويل</Text>
+                  <Text style={s.approveBtnText}>مراجعة واعتماد</Text>
                   <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             )}
           </>
         )}
+        {item.status === 'approved' && (
+          <>
+            <View style={s.divider} />
+            <TouchableOpacity style={s.approveBtn} onPress={() => openModal(item, 'processing')} disabled={processing === item.id} accessibilityRole="button">
+              <Text style={s.approveBtnText}>بدء التحويل الخارجي</Text>
+              <Ionicons name="swap-horizontal" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </>
+        )}
+        {item.status === 'processing' && (
+          <>
+            <View style={s.divider} />
+            <View style={s.actionsRow}>
+              <TouchableOpacity style={s.rejectBtn} onPress={() => openModal(item, 'failed')} disabled={processing === item.id} accessibilityRole="button">
+                <Text style={s.rejectBtnText}>فشل التحويل</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.approveBtn} onPress={() => openModal(item, 'paid')} disabled={processing === item.id} accessibilityRole="button">
+                <Text style={s.approveBtnText}>تأكيد الدفع</Text>
+                <Ionicons name="checkmark-done" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </View>
     );
   };
+
+  const actionMeta: Record<WithdrawalDecisionStatus, { title: string; detail: string; confirm: string }> = {
+    approved: { title: 'اعتماد طلب السحب', detail: 'سيُحجز المبلغ للمعالجة، ولن يظهر كمدفوع حتى توثيق التحويل الخارجي.', confirm: 'تأكيد الاعتماد' },
+    rejected: { title: 'رفض طلب السحب', detail: 'سيُفك حجز المبلغ ويُسجل سبب الرفض.', confirm: 'تأكيد الرفض' },
+    processing: { title: 'بدء التحويل الخارجي', detail: 'استخدم هذه المرحلة عند بدء التنفيذ لدى البنك أو وسيلة الصرف.', confirm: 'بدء التحويل' },
+    paid: { title: 'تأكيد دفع السحب', detail: 'أدخل المرجع الخارجي الذي يثبت تنفيذ التحويل للمستفيد.', confirm: 'تأكيد الدفع' },
+    failed: { title: 'تسجيل فشل التحويل', detail: 'سيُحفظ سبب الفشل ولن يُسجل الطلب كمدفوع.', confirm: 'تسجيل الفشل' },
+  };
+  const currentAction = actionMeta[modalAction];
 
   return (
     <View style={s.root}>
@@ -151,7 +260,7 @@ export default function AdminWalletScreen({ navigation }: any) {
             <Text style={s.headerTitle}>طلبات السحب</Text>
           </View>
           <View style={s.headerBadge}>
-            <Text style={s.headerBadgeText}>{totalPending.toFixed(0)} ر.ي معلق</Text>
+            <Text style={s.headerBadgeText}>{requests.length} نتيجة</Text>
           </View>
         </View>
       </View>
@@ -173,6 +282,12 @@ export default function AdminWalletScreen({ navigation }: any) {
 
       {loading ? (
         <View style={s.center}><ActivityIndicator size="large" color={UI.primary} /></View>
+      ) : loadError ? (
+        <View style={s.center} accessibilityRole="alert">
+          <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
+          <Text style={s.errorText}>{loadError}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={requests}
@@ -190,43 +305,56 @@ export default function AdminWalletScreen({ navigation }: any) {
         />
       )}
 
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => !processing && setModalVisible(false)} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
           <View style={s.modalBox}>
             <View style={s.modalHeader}>
-               <Text style={s.modalTitle}>{modalAction === 'approved' ? 'تأكيد الموافقة على السحب' : 'تأكيد رفض السحب'}</Text>
-               <TouchableOpacity onPress={() => setModalVisible(false)} style={s.closeBtn}>
+               <Text style={s.modalTitle}>{currentAction.title}</Text>
+               <TouchableOpacity onPress={() => setModalVisible(false)} style={s.closeBtn} disabled={!!processing}>
                   <Ionicons name="close" size={20} color={UI.textMuted} />
                </TouchableOpacity>
             </View>
-            <Text style={s.modalSub}>
-              {modalAction === 'approved'
-                ? `هل أنت متأكد من الموافقة على سحب مبلغ ${selectedRequest?.amount.toFixed(2)} ر.ي؟`
-                : `سيتم رفض طلب سحب مبلغ ${selectedRequest?.amount.toFixed(2)} ر.ي، هل أنت متأكد؟`}
-            </Text>
+            <Text style={s.modalSub}>{currentAction.detail} المبلغ: {selectedRequest?.amount.toFixed(2)} ر.ي.</Text>
             
             <View style={s.inputWrapper}>
               <TextInput
                 style={s.modalInput}
-                placeholder="إضافة ملاحظات (اختياري)..."
+                placeholder={modalAction === 'rejected' || modalAction === 'failed' ? 'سبب القرار (مطلوب)...' : 'ملاحظات المعالجة (اختياري)...'}
                 placeholderTextColor={UI.textMuted}
                 value={notes}
                 onChangeText={setNotes}
                 multiline
+                maxLength={2000}
                 textAlign="right"
+                accessibilityLabel="ملاحظات معالجة طلب السحب"
               />
             </View>
+            {modalAction === 'paid' && (
+              <View style={s.inputWrapper}>
+                <TextInput
+                  style={s.referenceInput}
+                  placeholder="مرجع التحويل الخارجي (مطلوب)"
+                  placeholderTextColor={UI.textMuted}
+                  value={externalReference}
+                  onChangeText={setExternalReference}
+                  maxLength={200}
+                  textAlign="right"
+                  accessibilityLabel="مرجع التحويل الخارجي"
+                />
+              </View>
+            )}
             
             <View style={s.modalActions}>
-              <TouchableOpacity style={s.modalCancel} onPress={() => setModalVisible(false)} activeOpacity={0.8}>
+              <TouchableOpacity style={s.modalCancel} onPress={() => setModalVisible(false)} activeOpacity={0.8} disabled={!!processing}>
                 <Text style={s.modalCancelText}>تراجع</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[s.modalConfirm, modalAction === 'rejected' && s.modalConfirmReject]}
+                style={[s.modalConfirm, (modalAction === 'rejected' || modalAction === 'failed') && s.modalConfirmReject]}
                 onPress={handleProcess}
                 activeOpacity={0.8}
+                disabled={!!processing}
               >
-                <Text style={s.modalConfirmText}>{modalAction === 'approved' ? 'تأكيد الموافقة' : 'تأكيد الرفض'}</Text>
+                {processing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.modalConfirmText}>{currentAction.confirm}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -260,6 +388,9 @@ const s = StyleSheet.create({
   list: { padding: 20, paddingTop: 6, gap: 16, paddingBottom: 60 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 16, color: UI.textMuted, fontWeight: '700' },
+  errorText: { color: UI.danger, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
+  retryBtn: { backgroundColor: UI.primary, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
   card: { backgroundColor: UI.card, borderRadius: 24, padding: 20, gap: 14, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
   cardTop: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between' },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
@@ -274,6 +405,12 @@ const s = StyleSheet.create({
   dateText: { fontSize: 12, color: UI.textMuted, fontWeight: '600' },
   notesBox: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: UI.border },
   notesText: { fontSize: 13, color: UI.text, textAlign: 'right', flex: 1, lineHeight: 20 },
+  destinationBox: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: UI.border, gap: 5 },
+  destinationTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
+  destinationTitle: { color: UI.text, fontSize: 12, fontWeight: '900', textAlign: 'right' },
+  destinationLine: { color: '#334155', fontSize: 12, fontWeight: '600', textAlign: 'right' },
+  missingDestination: { color: '#B45309', fontSize: 12, fontWeight: '700', lineHeight: 19, textAlign: 'right' },
+  auditText: { color: UI.textMuted, fontSize: 11.5, fontWeight: '700', textAlign: 'right', lineHeight: 18 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 4 },
   actionsRow: { flexDirection: 'row-reverse', gap: 12, alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 },
   approveBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: 14, paddingVertical: 12, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
@@ -288,6 +425,7 @@ const s = StyleSheet.create({
   modalSub: { fontSize: 15, color: UI.textMuted, textAlign: 'right', lineHeight: 24, marginBottom: 20 },
   inputWrapper: { marginBottom: 24 },
   modalInput: { borderWidth: 1, borderColor: UI.border, borderRadius: 16, padding: 16, fontSize: 15, color: UI.text, minHeight: 100, textAlignVertical: 'top', backgroundColor: '#F8FAFC' },
+  referenceInput: { borderWidth: 1, borderColor: UI.border, borderRadius: 16, paddingHorizontal: 16, height: 52, fontSize: 15, color: UI.text, backgroundColor: '#F8FAFC' },
   modalActions: { flexDirection: 'row-reverse', gap: 12 },
   modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
   modalCancelText: { fontSize: 15, fontWeight: '800', color: UI.textMuted },

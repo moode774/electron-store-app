@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, TextInput, Platform, KeyboardAvoidingView, ScrollView
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { sendBroadcastNotification, useAuthStore } from '@marketplace/shared-hooks';
+import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 
 const UI = {
   primary: '#1E3A8A',
@@ -19,18 +19,18 @@ const UI = {
 };
 
 const AUDIENCES = [
-  { id: 'all', label: 'الجميع', icon: 'people' },
-  { id: 'customers', label: 'العملاء فقط', icon: 'person' },
-  { id: 'merchants', label: 'التجار فقط', icon: 'storefront' },
-  { id: 'drivers', label: 'السائقين فقط', icon: 'bicycle' },
-];
+  { id: '', label: 'الجميع', icon: 'people' },
+  { id: 'customer', label: 'العملاء فقط', icon: 'person' },
+  { id: 'merchant', label: 'التجار فقط', icon: 'storefront' },
+  { id: 'delivery', label: 'السائقين فقط', icon: 'bicycle' },
+] as const;
 
 export default function AdminBroadcastScreen({ navigation }: any) {
-  const { user } = useAuthStore();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [audience, setAudience] = useState('all');
+  const [audience, setAudience] = useState<'' | 'customer' | 'merchant' | 'delivery'>('');
   const [sending, setSending] = useState(false);
+  const pendingCampaign = useRef<{ fingerprint: string; idempotencyKey: string } | null>(null);
 
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
@@ -43,13 +43,21 @@ export default function AdminBroadcastScreen({ navigation }: any) {
       { text: 'إرسال الآن', onPress: async () => {
         setSending(true);
         try {
-          await sendBroadcastNotification({
+          const fingerprint = JSON.stringify({ title: title.trim(), body: body.trim(), audience });
+          if (pendingCampaign.current?.fingerprint !== fingerprint) {
+            pendingCampaign.current = { fingerprint, idempotencyKey: createIdempotencyKey() };
+          }
+          const result = await broadcastNotification({
             title: title.trim(),
             body: body.trim(),
-            target_audience: audience,
-            user_id: user?.id || ''
+            role: audience || undefined,
+            channel: 'in_app',
+            idempotencyKey: pendingCampaign.current.idempotencyKey,
           });
-          Alert.alert('نجاح', 'تم إرسال حملة الإشعارات بنجاح!');
+          pendingCampaign.current = null;
+          Alert.alert(result.sent > 0 ? 'تم إنشاء الإشعارات' : 'لا يوجد مستلمون', result.sent > 0
+            ? `تم إنشاء ${result.sent} إشعار داخل التطبيق من أصل ${result.matched} مستلم مطابق. لا يؤكد هذا وصول Push إلى الهاتف.`
+            : 'لم يوجد مستخدمون مطابقون للجمهور المحدد، ولم يُنشأ أي إشعار.');
           setTitle('');
           setBody('');
         } catch {
@@ -74,8 +82,8 @@ export default function AdminBroadcastScreen({ navigation }: any) {
 
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.card}>
-          <Text style={s.cardTitle}>إنشاء إشعار جديد (Push Notification)</Text>
-          <Text style={s.cardDesc}>سيتم إرسال هذا الإشعار فوراً كرسالة تنبيه للهواتف (Push Notification) بالإضافة لظهوره داخل التطبيق.</Text>
+          <Text style={s.cardTitle}>إنشاء إشعار داخل التطبيق</Text>
+          <Text style={s.cardDesc}>يُنشئ هذا الإجراء إشعاراً في صندوق المستخدم. إرسال Push للهاتف يحتاج جهازاً مسجلاً ونتيجة منفصلة من خدمة الإرسال.</Text>
           
           <View style={s.formGroup}>
             <Text style={s.label}>الجمهور المستهدف</Text>

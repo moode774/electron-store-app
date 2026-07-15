@@ -21,6 +21,9 @@ export default function SearchScreen({ navigation, route }: any) {
   const [showSort, setShowSort] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<ProductSummary[]>([]);
+  const [searchError, setSearchError] = useState('');
+  const [categoriesError, setCategoriesError] = useState('');
+  const [retryVersion, setRetryVersion] = useState(0);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function SearchScreen({ navigation, route }: any) {
         ALL_CATEGORY,
         ...cats.map((c) => ({ id: c.id, name: c.name_ar ?? c.name })),
       ]))
-      .catch(() => {});
+      .catch(() => setCategoriesError('تعذّر تحميل التصنيفات؛ البحث العام ما زال متاحاً.'));
   }, []);
 
   useEffect(() => {
@@ -42,11 +45,12 @@ export default function SearchScreen({ navigation, route }: any) {
         if (sort === 'priceDesc') list.sort((a, b) => (b.sale_price ?? b.base_price) - (a.sale_price ?? a.base_price));
         if (sort === 'rating') list.sort((a, b) => b.rating - a.rating);
         setResults(list);
-      } catch { setResults([]); }
+        setSearchError('');
+      } catch (error) { setSearchError(error instanceof Error && error.message ? error.message : 'تعذّر تنفيذ البحث.'); }
       finally { setIsSearching(false); }
     }, 350);
     return () => clearTimeout(t);
-  }, [query, category, sort]);
+  }, [query, category, sort, retryVersion]);
 
   return (
     <View style={styles.container}>
@@ -118,6 +122,13 @@ export default function SearchScreen({ navigation, route }: any) {
           ))}
         </View>
       )}
+
+      {categoriesError ? <Text style={styles.inlineWarning}>{categoriesError}</Text> : null}
+      {searchError ? (
+        <TouchableOpacity style={styles.errorBanner} onPress={() => setRetryVersion((value) => value + 1)} accessibilityRole="button" accessibilityLabel="إعادة البحث">
+          <Text style={styles.errorText}>{searchError} اضغط لإعادة المحاولة.</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Results */}
       {isSearching ? (
@@ -195,6 +206,9 @@ const styles = StyleSheet.create({
   },
   sortItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   sortItemText: { fontSize: 13.5, color: '#4B5563', fontWeight: '600' },
+  inlineWarning: { marginHorizontal: 20, marginBottom: 8, color: '#92400E', fontSize: 11.5, textAlign: 'right' },
+  errorBanner: { marginHorizontal: 20, marginBottom: 8, backgroundColor: '#FEF2F2', borderRadius: 11, padding: 11, borderWidth: 1, borderColor: '#FECACA' },
+  errorText: { color: '#991B1B', fontSize: 12, textAlign: 'right' },
   listContent: { padding: 20, gap: 12, paddingBottom: 100 },
   resultsCount: { fontSize: 12.5, color: '#9CA3AF', fontWeight: '600', marginBottom: 4 },
   card: {

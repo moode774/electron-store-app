@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useAuthStore, getMerchantStats, getMerchantOrders, getMerchantSalesChart, OrderSummary } from '@marketplace/shared-hooks';
+import { useNavigation } from '@react-navigation/native';
+import { useAuthStore, getMerchantStats, getMerchantSalesChart } from '@marketplace/shared-hooks';
+import { useMerchantOrderFeed } from './useMerchantOrderFeed';
+import { getMerchantOrderStatusInfo } from './merchantOrderState';
 
 // ---- Constants & Colors ----
 const UI = {
@@ -29,13 +31,6 @@ const softShadow = {
   shadowRadius: 16,
   elevation: 3,
 } as const;
-
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  delivered: { label: 'مكتمل', color: '#059669', bg: '#D1FAE5', icon: 'ellipse' },
-  shipping: { label: 'قيد الشحن', color: '#3B82F6', bg: '#DBEAFE', icon: 'ellipse' },
-  pending: { label: 'في الانتظار', color: '#D97706', bg: '#FEF3C7', icon: 'ellipse' },
-  cancelled: { label: 'ملغي', color: '#DC2626', bg: '#FEE2E2', icon: 'ellipse' },
-};
 
 function LineChart({ w, h, points, color }: { w: number; h: number; points: number[]; color: string }) {
   const data = points && points.length > 1 ? points : [0, 0];
@@ -101,24 +96,31 @@ export default function MerchantDashboardScreen() {
   const isDesktop = width >= 1024;
   
   const [stats, setStats] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
-  const [recentOrders, setRecentOrders] = useState<OrderSummary[]>([]);
   const [chart, setChart] = useState<number[]>([0, 0, 0, 0, 0, 0]);
-  const [profile, setProfile] = useState<any>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const { orders, merchantProfile: profile, error: ordersError, realtimeError, refresh } = useMerchantOrderFeed(user?.id, 'dashboard');
+  const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
 
-  useFocusEffect(useCallback(() => {
-    if (!user?.id) return;
-    import('@marketplace/shared-hooks').then(({ getMerchantProfile }) => {
-      getMerchantProfile(user.id).then(setProfile).catch(() => {});
-    });
-    getMerchantStats(user.id).then(setStats).catch(() => {});
-    getMerchantOrders(user.id).then((o) => setRecentOrders(o.slice(0, 5))).catch(() => {});
-    getMerchantSalesChart(user.id, 6).then(setChart).catch(() => {});
-  }, [user?.id]));
-
-  const statusStyleFor = (status: string) =>
-    STATUS_STYLE[status === 'delivered' ? 'delivered'
-      : status === 'on_the_way' || status === 'ready' || status === 'assigned' ? 'shipping'
-      : status === 'cancelled' ? 'cancelled' : 'pending'];
+  useEffect(() => {
+    if (!profile?.id) return;
+    let cancelled = false;
+    setMetricsLoading(true);
+    Promise.all([getMerchantStats(profile.id), getMerchantSalesChart(profile.id, 6)])
+      .then(([nextStats, nextChart]) => {
+        if (cancelled) return;
+        setStats(nextStats);
+        setChart(nextChart);
+        setMetricsError(null);
+      })
+      .catch(() => {
+        if (!cancelled) setMetricsError('تعذر تحديث مؤشرات المتجر.');
+      })
+      .finally(() => {
+        if (!cancelled) setMetricsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [orders, profile?.id]);
 
   const containerStyle = [styles.container, { backgroundColor: isDesktop ? UI.bg : UI.bgMobile }];
 
@@ -148,20 +150,31 @@ export default function MerchantDashboardScreen() {
           </View>
         )}
 
+        {(ordersError || metricsError || realtimeError) && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="cloud-offline-outline" size={20} color="#B45309" />
+            <Text style={styles.errorBannerText}>{ordersError ?? metricsError ?? realtimeError}</Text>
+            <TouchableOpacity onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل لوحة التاجر">
+              <Text style={styles.errorRetryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* ===== Welcome Section ===== */}
         <View style={styles.welcomeRow}>
           <Text style={styles.welcomeText}>مرحباً بك، <Text style={styles.welcomeName}>{user?.full_name ?? 'التاجر'}</Text></Text>
           <View style={styles.welcomeActions}>
             <View style={styles.datePicker}>
               <Ionicons name="calendar-outline" size={16} color={UI.textDark} />
-              <Text style={styles.dateText}>الشهر الحالي</Text>
-              <Ionicons name="chevron-down" size={14} color={UI.textDark} />
+              <Text style={styles.dateText}>آخر 6 أيام</Text>
             </View>
             {isDesktop && (
               <TouchableOpacity
                 style={styles.addBtn}
                 onPress={() => navigation.navigate('MerchantProducts', { screen: 'AddProduct' })}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="إضافة منتج جديد"
               >
                 <Ionicons name="add" size={18} color={UI.textDark} />
                 <Text style={styles.addBtnText}>منتج جديد</Text>
@@ -177,11 +190,11 @@ export default function MerchantDashboardScreen() {
           <View style={[styles.column, { width: col3Width }]}>
             <View style={[styles.card, styles.visaCard]}>
               <View style={styles.visaTop}>
-                <Text style={styles.visaLogo}>رصيد المتجر</Text>
+                <Text style={styles.visaLogo}>قيمة طلبات اليوم</Text>
                 <Ionicons name="wifi" size={20} color="#FFF" style={{ transform: [{ rotate: '90deg' }] }} />
               </View>
-              <Text style={styles.visaSubtitle}>إجمالي المبيعات المتاحة</Text>
-              <Text style={styles.visaBalance}>$ {stats.todayRevenue.toLocaleString()}</Text>
+              <Text style={styles.visaSubtitle}>إجمالي قيمة الطلبات المسجلة اليوم</Text>
+              <Text style={styles.visaBalance}>{metricsLoading ? '...' : stats.todayRevenue.toLocaleString()} ر.ي</Text>
               <View style={styles.visaBottom}>
                 <Text style={styles.visaText}>الطلبات: {stats.todayOrders}</Text>
                 <Text style={styles.visaText}>المنتجات: {stats.totalProducts}</Text>
@@ -205,7 +218,7 @@ export default function MerchantDashboardScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                   <View style={styles.iconBox}><Ionicons name="bar-chart" size={16} color={UI.textDark} /></View>
-                  <Text style={styles.cardTitle}>معدل الطلبات</Text>
+                  <Text style={styles.cardTitle}>قيمة الطلبات</Text>
                 </View>
                 <View style={styles.togglePills}>
                   <Text style={styles.togglePill}>أسبوعي</Text>
@@ -228,9 +241,9 @@ export default function MerchantDashboardScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
-                  <Text style={styles.cardTitle}>نمو المبيعات</Text>
+                  <Text style={styles.cardTitle}>اتجاه قيمة الطلبات</Text>
                 </View>
-                <TouchableOpacity style={styles.iconBtn}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel="فتح التقارير"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
               </View>
               <Text style={styles.chartTotalValue}>{chart.reduce((s, v) => s + v, 0).toLocaleString()} ر.ي</Text>
               <View style={{ marginTop: 20, alignItems: 'center' }}>
@@ -258,7 +271,7 @@ export default function MerchantDashboardScreen() {
         <View style={styles.tableCard}>
           <View style={styles.tableHeader}>
             <Text style={styles.tableTitle}>سجل الطلبيات الأحدث</Text>
-            <TouchableOpacity style={styles.iconBtn}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
           </View>
 
           {isDesktop ? (
@@ -272,10 +285,10 @@ export default function MerchantDashboardScreen() {
                 <Text style={[styles.th, { flex: 2, textAlign: 'left' }]}>المبلغ</Text>
               </View>
               {recentOrders.map((order, i) => {
-                const st = statusStyleFor(order.status);
+                const st = getMerchantOrderStatusInfo(order.status);
                 const d = new Date(order.created_at);
                 return (
-                  <TouchableOpacity key={order.id} style={styles.tableRow} onPress={() => navigation.navigate('MerchantOrders')}>
+                  <TouchableOpacity key={order.id} style={styles.tableRow} onPress={() => navigation.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId: order.id } })} accessibilityRole="button" accessibilityLabel={`فتح الطلب ${order.order_number}`}>
                     <View style={[{ flex: 2, flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }]}>
                       <View style={styles.avatarMiniList}><Ionicons name="receipt" size={14} color={UI.textDark} /></View>
                       <View>
@@ -298,10 +311,10 @@ export default function MerchantDashboardScreen() {
             // Mobile List Layout
             <View style={styles.mobileList}>
               {recentOrders.map((order) => {
-                const st = statusStyleFor(order.status);
+                const st = getMerchantOrderStatusInfo(order.status);
                 const d = new Date(order.created_at);
                 return (
-                  <TouchableOpacity key={order.id} style={styles.mobileListItem} onPress={() => navigation.navigate('MerchantOrders')}>
+                  <TouchableOpacity key={order.id} style={styles.mobileListItem} onPress={() => navigation.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId: order.id } })} accessibilityRole="button" accessibilityLabel={`فتح الطلب ${order.order_number}`}>
                     <View style={styles.avatarMiniList}><Ionicons name="receipt" size={16} color={UI.textDark} /></View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.tdTextBold}>{order.order_number}</Text>
@@ -330,6 +343,9 @@ export default function MerchantDashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 24, paddingBottom: 100 },
+  errorBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: '#FFFBEB', borderColor: '#FDE68A', borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 18 },
+  errorBannerText: { flex: 1, color: '#92400E', fontSize: 13, fontWeight: '700', textAlign: 'right' },
+  errorRetryText: { color: '#92400E', fontSize: 13, fontWeight: '900', padding: 4 },
   
   // Desktop Header
   topHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32, position: 'relative' },

@@ -1,14 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
-  Platform, Image, useWindowDimensions, Share, Alert,
+  Platform, Image, useWindowDimensions, Share, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Path, Defs, LinearGradient, Stop, Rect, Circle } from 'react-native-svg';
 import {
-  useAuthStore, getMerchantSalesChart, getMerchantTopProducts, getMerchantPeriodStats,
+  useAuthStore, getMerchantProfile, getMerchantSalesChart, getMerchantTopProducts, getMerchantPeriodStats,
 } from '@marketplace/shared-hooks';
+import { Alert } from '../../components/appAlert';
 
 const PERIODS = [
   { label: 'اليوم', days: 1 },
@@ -113,14 +114,19 @@ export default function MerchantReportsScreen({ navigation }: any) {
     deliveredCount: 0, cancelledCount: 0, inProgressCount: 0,
   });
   const [exporting, setExporting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (days: number) => {
     if (!user?.id) return;
+    setLoading(true);
     try {
+      const merchant = await getMerchantProfile(user.id);
+      if (!merchant?.id) throw new Error('MERCHANT_PROFILE_NOT_FOUND');
       const [chart, top, ps] = await Promise.all([
-        getMerchantSalesChart(user.id, days === 1 ? 1 : days),
-        getMerchantTopProducts(user.id, 5),
-        getMerchantPeriodStats(user.id, days),
+        getMerchantSalesChart(merchant.id, days === 1 ? 1 : days),
+        getMerchantTopProducts(merchant.id, 5),
+        getMerchantPeriodStats(merchant.id, days),
       ]);
       setChartData(chart);
       setChartLabels(
@@ -132,14 +138,18 @@ export default function MerchantReportsScreen({ navigation }: any) {
       );
       setTopProducts(top);
       setPeriodStats(ps);
-    } catch { /* silent */ }
+      setError(null);
+    } catch {
+      setError('تعذر تحميل التقرير. تحقق من الاتصال ثم أعد المحاولة.');
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   useFocusEffect(useCallback(() => { load(period.days); }, [load, period.days]));
 
   const handlePeriodChange = (idx: number) => {
     setPeriodIndex(idx);
-    load(PERIODS[idx].days);
   };
 
   const revenueTrend = calcTrend(periodStats.currentRevenue, periodStats.previousRevenue);
@@ -163,8 +173,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
       const lines = [
         `تقرير ${period.label} — ${new Date().toLocaleDateString('ar-SA')}`,
         '',
-        'المبيعات والطلبات',
-        `إجمالي المبيعات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
+        'قيمة الطلبات والعدد',
+        `إجمالي قيمة الطلبات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
         `إجمالي الطلبات,${periodStats.currentOrders}`,
         `متوسط قيمة الطلب,${avgValue.toFixed(2)} ر.ي`,
         `مكتملة,${periodStats.deliveredCount} (${deliveredPct}%)`,
@@ -239,8 +249,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
         <View style={styles.pageHeaderRow}>
           <View>
-            <Text style={styles.pageTitle}>لوحة الأداء المالي</Text>
-            <Text style={styles.pageSubtitle}>نظرة شاملة ومفصلة على أداء ومبيعات متجرك</Text>
+            <Text style={styles.pageTitle}>لوحة أداء الطلبات</Text>
+            <Text style={styles.pageSubtitle}>القيم المعروضة هي قيمة الطلبات المسجلة وليست رصيدًا ماليًا مسوّى</Text>
           </View>
           <View style={styles.periodRow}>
             {PERIODS.map((p, idx) => (
@@ -249,22 +259,35 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 style={[styles.periodChip, periodIndex === idx && styles.periodChipActive]}
                 onPress={() => handlePeriodChange(idx)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`عرض تقرير ${p.label}`}
+                accessibilityState={{ selected: periodIndex === idx }}
               >
                 <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{p.label}</Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.downloadBtn} onPress={handleExportCSV} activeOpacity={0.8} disabled={exporting}>
+            <TouchableOpacity style={styles.downloadBtn} onPress={handleExportCSV} activeOpacity={0.8} disabled={exporting || loading} accessibilityRole="button" accessibilityLabel="تصدير التقرير بصيغة CSV" accessibilityState={{ disabled: exporting || loading, busy: exporting }}>
               <Ionicons name={exporting ? 'hourglass-outline' : 'download-outline'} size={16} color={UI.textDark} />
               <Text style={styles.downloadText}>تصدير CSV</Text>
             </TouchableOpacity>
           </View>
         </View>
 
+        {loading && <ActivityIndicator size="large" color={UI.primary} style={{ marginVertical: 24 }} />}
+        {!!error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={() => void load(period.days)} accessibilityRole="button" accessibilityLabel="إعادة تحميل التقرير">
+              <Text style={styles.errorRetry}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* KPIs */}
         <View style={[styles.row, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
           <View style={{ flex: 1 }}>
             <KPICard
-              title="إجمالي المبيعات"
+              title="إجمالي قيمة الطلبات"
               value={`${periodStats.currentRevenue.toLocaleString()} ر.ي`}
               icon="wallet-outline"
               trend={revenueTrend.text}
@@ -449,6 +472,9 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark, flex: 1, textAlign: 'center' },
   scrollContent: { padding: 24, paddingBottom: 100 },
+  errorBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 18 },
+  errorText: { flex: 1, color: '#991B1B', fontSize: 13, fontWeight: '700', textAlign: 'right' },
+  errorRetry: { color: '#991B1B', fontSize: 13, fontWeight: '900' },
 
   pageHeaderRow: {
     flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end',

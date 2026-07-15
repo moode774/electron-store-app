@@ -4,7 +4,9 @@ import {
   ActivityIndicator, RefreshControl, StatusBar, Platform, TextInput
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
-import * as FileSystem from 'expo-file-system';
+// Expo 54 keeps the URI-based helpers used by CSV export in the legacy module.
+// Importing them from the main entrypoint compiles incorrectly and throws at runtime.
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminStats, AdminStats, useAuthStore, getAdminOrders } from '@marketplace/shared-hooks';
@@ -24,21 +26,28 @@ const UI = {
 
 export default function AdminDashboardScreen({ navigation }: any) {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const { user } = useAuthStore();
 
   const load = useCallback(async () => {
+    setError(null);
     try {
       const [s, orders] = await Promise.all([
         getAdminStats(),
         getAdminOrders()
       ]);
       setStats(s);
+      setOrders(orders);
       setRecentOrders(orders.slice(0, 5));
-    } catch { /* silent */ }
+    } catch (e) {
+      console.error('Failed to load the admin dashboard:', e);
+      setError('تعذر تحميل بيانات لوحة الإدارة. تحقق من الاتصال ثم أعد المحاولة.');
+    }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -47,22 +56,37 @@ export default function AdminDashboardScreen({ navigation }: any) {
   const onRefresh = () => { setRefreshing(true); load(); };
 
   const exportReport = async () => {
-    if (!stats || !recentOrders.length) {
+    if (!stats || !orders.length) {
       Alert.alert('خطأ', 'لا توجد بيانات كافية للتصدير');
       return;
     }
     try {
       const header = 'Order ID,Date,Amount,Status,Merchant,Customer,Driver\n';
-      const rows = recentOrders.map(o => {
+      const csvCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const rows = orders.map(o => {
         const date = new Date(o.created_at).toLocaleDateString('en-US');
         const merchant = o.merchant_profiles?.store_name ?? '';
-        const customer = (o.users as any)?.full_name ?? '';
-        const driver = o.drivers?.full_name ?? '';
-        return `${o.order_number ?? o.id},${date},${o.total_amount ?? 0},${o.status},${merchant},${customer},${driver}`;
+        const customer = o.customer?.full_name ?? o.users?.full_name ?? '';
+        const driver = o.delivery_profiles?.users?.full_name ?? o.drivers?.full_name ?? '';
+        return [o.order_number ?? o.id, date, o.total_amount ?? 0, o.status, merchant, customer, driver].map(csvCell).join(',');
       }).join('\n');
       
-      const csv = header + rows;
-      const uri = (FileSystem as any).documentDirectory + `orders_report_${new Date().getTime()}.csv`;
+      const csv = '\uFEFF' + header + rows;
+      const filename = `orders_report_${new Date().getTime()}.csv`;
+      if (Platform.OS === 'web') {
+        const WebBlob = (globalThis as any).Blob;
+        const blob = new WebBlob([csv], { type: 'text/csv;charset=utf-8' });
+        const webUrl = (globalThis as any).URL.createObjectURL(blob);
+        const anchor = (globalThis as any).document.createElement('a');
+        anchor.href = webUrl;
+        anchor.download = filename;
+        anchor.click();
+        (globalThis as any).URL.revokeObjectURL(webUrl);
+        return;
+      }
+      const documentDirectory = (FileSystem as any).documentDirectory;
+      if (!documentDirectory) throw new Error('Document directory is unavailable');
+      const uri = documentDirectory + filename;
       await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 });
       
       if (await Sharing.isAvailableAsync()) {
@@ -81,16 +105,22 @@ export default function AdminDashboardScreen({ navigation }: any) {
     const statusColor = item.status === 'delivered' ? '#10B981' : item.status === 'cancelled' ? '#EF4444' : '#F59E0B';
     const date = new Date(item.created_at).toLocaleDateString('ar-SA');
     return (
-      <View key={item.id} style={s.tableRow}>
+      <TouchableOpacity
+        key={item.id}
+        style={s.tableRow}
+        onPress={() => navigation.navigate('AdminOrders', { initialSearch: item.order_number ?? item.id })}
+        accessibilityRole="button"
+        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number ?? item.id}`}
+      >
          <Text style={s.tdAction}><Ionicons name="ellipsis-horizontal" size={20} color="#9CA3AF" /></Text>
          <Text style={s.td}>{date}</Text>
          <Text style={s.td}>{item.total_amount?.toFixed(2)} ر.ي</Text>
          <Text style={[s.td, { color: statusColor, fontWeight: '700' }]}>{statusLabel}</Text>
-         <Text style={s.td}>{item.drivers?.full_name ?? '—'}</Text>
+         <Text style={s.td}>{item.delivery_profiles?.users?.full_name ?? item.drivers?.full_name ?? '—'}</Text>
          <Text style={s.td}>{item.merchant_profiles?.store_name ?? '—'}</Text>
-         <Text style={s.td}>{(item.users as any)?.full_name ?? '—'}</Text>
+         <Text style={s.td}>{item.customer?.full_name ?? item.users?.full_name ?? '—'}</Text>
          <Text style={s.tdBold}>#{item.order_number ?? item.id.slice(0, 6)}</Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -102,7 +132,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     return (
       <View style={s.trendRow}>
         <Ionicons name={icon} size={14} color={color} />
-        <Text style={[s.trendText, {color}]}>{Math.abs(val).toFixed(1)}% عن الشهر الماضي</Text>
+        <Text style={[s.trendText, {color}]}>{Math.abs(val).toFixed(1)}% عن الأسبوع السابق</Text>
       </View>
     );
   };
@@ -118,7 +148,12 @@ export default function AdminDashboardScreen({ navigation }: any) {
       {/* Top Header */}
       <View style={s.header}>
         <View style={s.headerLeft}>
-          <TouchableOpacity style={s.iconBtn} onPress={() => navigation.navigate('AdminNotifications')}>
+          <TouchableOpacity
+            style={s.iconBtn}
+            onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })}
+            accessibilityRole="button"
+            accessibilityLabel="فتح إشعارات الإدارة"
+          >
             <Ionicons name="notifications-outline" size={20} color="#6B7280" />
           </TouchableOpacity>
           <View style={s.searchWrap}>
@@ -131,9 +166,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={() => {
-                if (search.trim()) navigation.navigate('AdminOrders');
+                if (search.trim()) navigation.navigate('AdminOrders', { initialSearch: search.trim() });
               }}
               returnKeyType="search"
+              accessibilityLabel="البحث في الطلبات"
             />
           </View>
         </View>
@@ -152,7 +188,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         <View style={s.pageTitleRow}>
-          <TouchableOpacity style={s.exportBtn} onPress={exportReport}>
+          <TouchableOpacity style={s.exportBtn} onPress={exportReport} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
             <Ionicons name="download-outline" size={16} color={UI.primary} />
             <Text style={s.exportBtnText}>تصدير التقرير</Text>
           </TouchableOpacity>
@@ -168,6 +204,14 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
         {loading ? (
           <View style={s.center}><ActivityIndicator size="large" color={UI.primary} /></View>
+        ) : error ? (
+          <View style={s.errorCard} accessibilityRole="alert">
+            <Ionicons name="cloud-offline-outline" size={36} color="#DC2626" />
+            <Text style={s.errorText}>{error}</Text>
+            <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button">
+              <Text style={s.retryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <>
             {/* Stat Cards */}
@@ -202,11 +246,11 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
               <View style={s.statCard}>
                 <View style={s.statCardTop}>
-                   <Text style={s.statValue}>{stats?.totalRevenue.toLocaleString() ?? 0}</Text>
+                   <Text style={s.statValue}>{stats?.netSettledGmv.toLocaleString() ?? 0}</Text>
                    <View style={[s.statIcon, { backgroundColor: UI.orangeLight }]}><Ionicons name="cash" size={24} color="#F59E0B" /></View>
                 </View>
-                <Text style={s.statLabel}>إجمالي الإيرادات</Text>
-                {renderTrend(stats?.trends?.revenue)}
+                <Text style={s.statLabel}>صافي قيمة الطلبات المسوّاة</Text>
+                {renderTrend(stats?.trends?.netSettledGmv)}
               </View>
             </View>
 
@@ -214,7 +258,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             <View style={s.middleSection}>
               <View style={s.chartCard}>
                 <View style={s.chartHeader}>
-                  <Text style={s.sectionTitle}>الإحصائيات العامة</Text>
+                  <Text style={s.sectionTitle}>طلبات آخر 7 أيام</Text>
                   <View style={s.chartFilter}><Text style={s.chartFilterText}>آخر 7 أيام</Text><Ionicons name="chevron-down" size={14} color="#6B7280" /></View>
                 </View>
                 <View style={s.chartArea}>
@@ -222,19 +266,23 @@ export default function AdminDashboardScreen({ navigation }: any) {
                     {yAxisLabels.map(t => <Text key={t} style={s.chartLabel}>{t}</Text>)}
                   </View>
                   <View style={s.chartPlot}>
-                    {[1,2,3,4,5,6].map(i => <View key={i} style={s.gridLine} />)}
-                    {/* Simulated SVG Path */}
-                    <View style={{position: 'absolute', bottom: '20%', left: 0, right: 0, height: 100, borderBottomWidth: 2, borderBottomColor: UI.primary, borderRadius: 100, transform: [{scaleY: 1.5}]}} />
-                    {stats?.chartData && stats.chartData.length > 0 && (
-                      <View style={s.chartTooltip}>
-                         <Text style={s.tooltipDate}>{stats.chartData[0].date}</Text>
-                         <Text style={s.tooltipVal}>{stats.chartData[0].count} طلب</Text>
-                      </View>
-                    )}
+                    {[1,2,3,4,5].map(i => <View key={i} style={s.gridLine} />)}
+                    <View style={s.barRow}>
+                      {stats?.chartData?.map((point, index) => (
+                        <View key={`${point.date}-${index}`} style={s.barColumn} accessibilityLabel={`${point.date}: ${point.count} طلب`}>
+                          <Text style={s.barValue}>{point.count}</Text>
+                          <View style={[s.bar, { height: `${Math.max(4, (point.count / yAxisMax) * 100)}%` as any }]} />
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 </View>
                 <View style={s.xAxis}>
-                  {stats?.chartData?.map(d => <Text key={d.date} style={s.chartLabel}>{d.date}</Text>)}
+                  {stats?.chartData?.map(d => (
+                    <Text key={d.date} style={s.chartLabel}>
+                      {new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString('ar-SA', { weekday: 'short' })}
+                    </Text>
+                  ))}
                 </View>
               </View>
 
@@ -254,7 +302,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <View style={s.quickDivider} />
                 <View style={s.quickRow}>
                    <View style={[s.quickIcon, { backgroundColor: '#ECFDF5' }]}><Ionicons name="stats-chart" size={16} color="#10B981" /></View>
-                   <Text style={s.quickLabel}>متوسط قيمة الطلب</Text>
+                   <Text style={s.quickLabel}>متوسط صافي التسوية</Text>
                    <Text style={s.quickValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} ر.ي</Text>
                 </View>
                 <View style={s.quickDivider} />
@@ -269,7 +317,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             {/* Recent Orders Table */}
             <View style={s.tableCard}>
               <View style={s.tableHeaderWrap}>
-                <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('AdminOrders')}><Text style={s.viewAllText}>عرض الكل</Text></TouchableOpacity>
+                <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button"><Text style={s.viewAllText}>عرض الكل</Text></TouchableOpacity>
                 <Text style={s.sectionTitle}>آخر الطلبات</Text>
               </View>
               <View style={s.table}>
@@ -309,6 +357,10 @@ const s = StyleSheet.create({
   
   scroll: { padding: 24, paddingBottom: 60 },
   center: { height: 300, alignItems: 'center', justifyContent: 'center' },
+  errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#FECACA', padding: 24 },
+  errorText: { maxWidth: 520, color: '#991B1B', fontSize: 15, fontWeight: '700', textAlign: 'center', lineHeight: 24 },
+  retryBtn: { backgroundColor: UI.primary, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 },
+  retryText: { color: '#FFFFFF', fontWeight: '800' },
   
   pageTitleRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, gap: 12 },
   exportBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#E0E7FF' },
@@ -338,6 +390,10 @@ const s = StyleSheet.create({
   chartLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
   chartPlot: { flex: 1, position: 'relative' },
   gridLine: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flex: 1 },
+  barRow: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'space-around', paddingHorizontal: 8 },
+  barColumn: { width: '10%', height: '100%', alignItems: 'center', justifyContent: 'flex-end' },
+  bar: { width: '100%', maxWidth: 30, minHeight: 4, backgroundColor: UI.primary, borderTopLeftRadius: 6, borderTopRightRadius: 6 },
+  barValue: { color: UI.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 4 },
   chartTooltip: { position: 'absolute', top: '25%', left: '45%', backgroundColor: '#FFFFFF', padding: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5, alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6' },
   tooltipDate: { fontSize: 10, color: UI.textMuted, marginBottom: 2 },
   tooltipVal: { fontSize: 12, fontWeight: '800', color: UI.text },

@@ -1,0 +1,4 @@
+interface:
+  display_name: "إصلاح عمليات السوق"
+  short_description: "تدقيق وإصلاح دورة السوق كاملة"
+  default_prompt: "استخدم $marketplace-operations-repair لتدقيق وإصلاح دورة السوق كاملة عبر جميع الأدوار وقاعدة البيانات."

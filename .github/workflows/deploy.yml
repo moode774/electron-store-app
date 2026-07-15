@@ -21,17 +21,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v2.1.1
+        with:
+          version: 2.109.1
+
+      - name: Start clean PostgreSQL 17 database
+        run: supabase db start
+
+      - name: Run database contract tests
+        run: supabase test db
+
+      - name: Stop disposable database
+        if: always()
+        continue-on-error: true
+        run: supabase stop --no-backup
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: npm
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Type Check
+        run: npm run type-check
+
+      - name: Check Database RPC Contract
+        run: npm run check:rpc-contract
+
+      - name: Check SQL Migration Safety
+        run: npm run check:sql-migrations
+
+      - name: Check Edge API Contracts
+        run: npm run check:edge-contract
 
       - name: Build Web App
-        run: npx expo export -p web
-        working-directory: apps/customer
+        run: npm run build:web
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
