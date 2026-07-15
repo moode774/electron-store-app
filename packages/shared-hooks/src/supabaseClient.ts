@@ -11,14 +11,16 @@ const supabaseUrl: string =
   Constants.expoConfig?.extra?.supabaseUrl ??
   '';
 
-const supabaseAnonKey: string =
+const supabasePublishableKey: string =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+  Constants.expoConfig?.extra?.supabasePublishableKey ??
   Constants.expoConfig?.extra?.supabaseAnonKey ??
   '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabasePublishableKey) {
   console.error(
-    '[Supabase] Missing config! Make sure .env has EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY. Restart with: npm run dev -- -c',
+    '[Supabase] Missing config! Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or legacy EXPO_PUBLIC_SUPABASE_ANON_KEY). Restart with: npm run dev -- -c',
   );
 }
 
@@ -103,7 +105,7 @@ export const appStorage = createStorageAdapter();
 // ---- Typed Supabase client ----------------------------------
 export const supabase: SupabaseClient = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  supabasePublishableKey || 'placeholder-key',
   {
     auth: {
       storage: appStorage,

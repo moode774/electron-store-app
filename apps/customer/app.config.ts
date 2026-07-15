@@ -1,4 +1,16 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
+import {
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  PUBLIC_SUPABASE_URL,
+} from './public-config';
+
+const supabaseUrl =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ?? PUBLIC_SUPABASE_URL;
+
+const supabasePublishableKey =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -50,8 +62,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   extra: {
     supportsRTL: true,
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabasePublishableKey,
+    // Backward compatibility for older mobile bundles.
+    supabaseAnonKey: supabasePublishableKey,
     easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
   }
 });
