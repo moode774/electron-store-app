@@ -1853,8 +1853,13 @@ export async function uploadImageToStorage(
 ): Promise<string> {
   const response = await fetch(uri);
   const blob = await response.blob();
-  const ext = (uri.split('.').pop()?.split('?')[0] ?? 'jpg').toLowerCase();
-  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+  // Web image pickers return blob: URLs such as
+  // blob:https://example.app/<uuid>; the domain suffix is not a file extension.
+  const uriExt = uri.match(/\.([a-z0-9]+)(?:[?#]|$)/i)?.[1]?.toLowerCase();
+  const isPng = blob.type.toLowerCase() === 'image/png'
+    || (!blob.type && uriExt === 'png');
+  const ext = isPng ? 'png' : 'jpg';
+  const contentType = isPng ? 'image/png' : 'image/jpeg';
   const { data, error } = await supabase.storage
     .from(bucket)
     .upload(`${filePath}.${ext}`, blob, { contentType, upsert: true });
