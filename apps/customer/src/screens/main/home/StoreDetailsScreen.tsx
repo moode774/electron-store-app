@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, ActivityIndicator, Image, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishlist, addToWishlist, removeFromWishlist, isFollowingStore, followStore, unfollowStore, getStoreFollowersCount, getWorkingHours, getOrCreateConversation, getReviews, WorkingHour, Review, StoreSummary, ProductSummary, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -16,11 +17,15 @@ interface Props {
   route: ScreenRouteProp;
 }
 
-const { width } = Dimensions.get('window');
-const CARD_W = (width - 48 - 16) / 2;
 const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
 export default function StoreDetailsScreen({ navigation, route }: Props) {
+  const { width } = useWindowDimensions();
+  const productsContentWidth = Math.min(width, 1120);
+  const productGutter = width < 430 ? 16 : 24;
+  const productGap = width < 430 ? 10 : 16;
+  const productColumns = width < 720 ? 2 : width < 1024 ? 3 : 4;
+  const productCardWidth = (productsContentWidth - productGutter * 2 - productGap * (productColumns - 1)) / productColumns;
   const { storeId } = route.params;
   const [activeTab, setActiveTab] = useState<'products' | 'about'>('products');
   const [store, setStore] = useState<StoreSummary | null>(null);
@@ -255,45 +260,28 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 
         {/* Products Grid */}
         {activeTab === 'products' && (
-          <View style={styles.productsGrid}>
+          <View style={[styles.productsGrid, { maxWidth: 1120, padding: productGutter, gap: productGap }]}>
             {products.length === 0 ? (
               <View style={{ width: '100%', alignItems: 'center', paddingVertical: 40 }}>
                 <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد منتجات حتى الآن</Text>
               </View>
-            ) : products.map((product) => (
-              <TouchableOpacity
+            ) : products.map((product) => {
+              const needsOptions = (product.product_variants ?? []).some((variant) => variant.is_active !== false);
+              const quickActionDisabled = !needsOptions && Number(product.stock_quantity ?? 0) <= 0;
+              return (
+              <CustomerProductCard
                 key={product.id}
-                style={styles.productCard}
-                activeOpacity={0.9}
+                product={product}
+                style={{ width: productCardWidth }}
+                favorite={wishedIds.has(product.id)}
                 onPress={() => navigation.navigate('ProductDetails', { productId: product.id })}
-              >
-                <View style={styles.productImageWrap}>
-                  {product.og_image_url ? (
-                    <Image source={{ uri: product.og_image_url }} style={styles.productThumb} resizeMode="cover" />
-                  ) : (
-                    <Ionicons name="cube-outline" size={48} color="#9CA3AF" />
-                  )}
-                  <TouchableOpacity style={styles.wishBtn} activeOpacity={0.7} onPress={() => toggleWish(product.id)}>
-                    <Ionicons name={wishedIds.has(product.id) ? 'heart' : 'heart-outline'} size={18} color={wishedIds.has(product.id) ? '#EF4444' : '#6B7280'} />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                  <View style={styles.ratingRow}>
-                    <Ionicons name="star" size={12} color="#FBBF24" />
-                    <Text style={styles.ratingText}>{product.rating}</Text>
-                    <Text style={styles.soldText}>({product.total_sold})</Text>
-                  </View>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.price}>{product.sale_price ?? product.base_price} <Text style={styles.currency}>ر.ي</Text></Text>
-                    {product.sale_price && <Text style={styles.oldPrice}>{product.base_price}</Text>}
-                  </View>
-                </View>
-                <TouchableOpacity style={styles.addCartBtn} activeOpacity={0.8} onPress={() => quickAdd(product)}>
-                  <Ionicons name="add" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
+                onToggleFavorite={() => void toggleWish(product.id)}
+                onQuickAction={() => quickAdd(product)}
+                quickActionNeedsOptions={needsOptions}
+                quickActionDisabled={quickActionDisabled}
+              />
+              );
+            })}
           </View>
         )}
 
@@ -531,101 +519,8 @@ const styles = StyleSheet.create({
   productsGrid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    gap: 16, 
-    padding: 24 
-  },
-  productCard: {
-    width: CARD_W,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#F3F4F6',
-    overflow: 'hidden',
-  },
-  productImageWrap: {
-    height: 140,
-    backgroundColor: '#F9FAFB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  productThumb: { width: '100%', height: '100%' },
-  wishBtn: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  productInfo: {
-    padding: 12,
-    paddingBottom: 16,
-  },
-  productName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#111827',
-    lineHeight: 18,
-    height: 36,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 8,
-  },
-  ratingText: {
-    fontSize: 11,
-    color: '#4B5563',
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  soldText: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    marginLeft: 4,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  currency: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginBottom: 2,
-    marginLeft: 2,
-  },
-  oldPrice: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    textDecorationLine: 'line-through',
-    marginLeft: 6,
-    marginBottom: 2,
-  },
-  addCartBtn: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: '100%',
+    alignSelf: 'center',
   },
   aboutSection: { 
     padding: 24, 

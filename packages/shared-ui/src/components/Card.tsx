@@ -19,11 +19,11 @@ export const Card: React.FC<CardProps> = ({
       case 'elevated':
         return {
           backgroundColor: COLORS.surface,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 8,
-          elevation: 3,
+          shadowColor: COLORS.primaryDark,
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.07,
+          shadowRadius: 24,
+          elevation: 4,
         };
       case 'outlined':
         return {
@@ -33,7 +33,7 @@ export const Card: React.FC<CardProps> = ({
         };
       case 'flat':
         return {
-          backgroundColor: COLORS.background,
+          backgroundColor: COLORS.surfaceMuted,
         };
     }
   };
@@ -47,8 +47,8 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     overflow: 'hidden',
   },
 });

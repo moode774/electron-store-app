@@ -1,7 +1,9 @@
 import React from 'react';
+import { useWindowDimensions, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import MerchantDashboardScreen from '../screens/merchant/MerchantDashboardScreen';
@@ -127,7 +129,6 @@ export type MerchantTabParamList = {
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
-import { useWindowDimensions, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 
@@ -157,7 +158,7 @@ function DesktopSidebar() {
   return (
     <View style={sidebarStyles.container}>
       <View style={sidebarStyles.logoArea}>
-        <Ionicons name="storefront" size={28} color="#FFFFFF" />
+        <Ionicons name="storefront" size={24} color={COLORS.textPrimary} />
       </View>
 
       <View style={sidebarStyles.menu}>
@@ -173,7 +174,7 @@ function DesktopSidebar() {
               accessibilityLabel={tab.label}
               accessibilityState={{ selected: isActive }}
             >
-              <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={22} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+              <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={21} color={isActive ? COLORS.surface : COLORS.textMuted} />
             </TouchableOpacity>
           );
         })}
@@ -181,7 +182,7 @@ function DesktopSidebar() {
 
       <View style={sidebarStyles.footer}>
         <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
-          <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
+          <Ionicons name="log-out-outline" size={22} color={COLORS.textMuted} />
         </TouchableOpacity>
       </View>
     </View>
@@ -191,49 +192,45 @@ function DesktopSidebar() {
 const sidebarStyles = StyleSheet.create({
   container: {
     width: 80,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 24,
+    backgroundColor: COLORS.surface,
+    paddingVertical: 22,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderLeftWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     zIndex: 10,
   },
   logoArea: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: '#111827', // Primary Color
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: COLORS.secondary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    marginBottom: 34,
+    transform: [{ rotate: '-4deg' }],
   },
   menu: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    gap: 16,
+    gap: 10,
   },
   menuItem: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
   menuItemActive: {
-    backgroundColor: '#111827',
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: COLORS.primary,
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 5,
   },
   footer: {
     width: '100%',
@@ -244,31 +241,32 @@ const sidebarStyles = StyleSheet.create({
 
 export default function MerchantTabNavigator() {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const content = (
     <Tab.Navigator
       initialRouteName="MerchantDashboard"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#111827',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: isDesktop ? { display: 'none' } : {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: COLORS.surface,
           borderTopWidth: 0,
-          elevation: 12,
-          shadowColor: '#111827',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.04,
-          shadowRadius: 16,
-          height: 62,
-          paddingBottom: 9,
-          paddingTop: 9,
-          borderTopLeftRadius: 22,
-          borderTopRightRadius: 22,
+          elevation: 14,
+          shadowColor: COLORS.primaryDark,
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.08,
+          shadowRadius: 24,
+          height: 72,
+          paddingBottom: 10,
+          paddingTop: 10,
+          borderTopLeftRadius: RADIUS.xl,
+          borderTopRightRadius: RADIUS.xl,
           position: 'absolute',
         },
-        tabBarLabelStyle: { fontSize: 11.5, fontWeight: '700' },
+        tabBarItemStyle: { borderRadius: RADIUS.lg, marginHorizontal: 2 },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold },
       }}
     >
       <Tab.Screen
@@ -348,11 +346,11 @@ export default function MerchantTabNavigator() {
 
   if (isDesktop) {
     return (
-      <View style={{ flex: 1, flexDirection: 'row-reverse', backgroundColor: '#F3F4F6' }}>
+      <View style={{ flex: 1, flexDirection: 'row-reverse', backgroundColor: COLORS.background }}>
         <DesktopSidebar />
         <View style={{ flex: 1, padding: 24, paddingBottom: 0 }}>
           <DesktopTopHeader />
-          <View style={{ flex: 1, borderRadius: 24, overflow: 'hidden' }}>
+          <View style={{ flex: 1, borderRadius: RADIUS.xl, overflow: 'hidden' }}>
             {content}
           </View>
         </View>
@@ -364,21 +362,23 @@ export default function MerchantTabNavigator() {
 }
 
 const UI = {
-  textDark: '#111827',
-  textGrey: '#6B7280',
-  primary: '#111827',
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  primary: COLORS.primary,
 };
 
 const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 10,
-  elevation: 2,
+  shadowColor: COLORS.primaryDark,
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.07,
+  shadowRadius: 20,
+  elevation: 3,
 };
 
 function DesktopTopHeader() {
   const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
+  const showFullNavigation = width >= BREAKPOINTS.wide;
   const routeName = useNavigationState((state) => {
     if (!state) return 'MerchantDashboard';
     const currentRoute = state.routes[state.index];
@@ -393,34 +393,61 @@ function DesktopTopHeader() {
     return isActive ? topHeaderStyles.navLinkActive : topHeaderStyles.navLink;
   };
 
+  const currentLabel = ({
+    MerchantDashboard: 'نظرة عامة',
+    MerchantOrders: 'الطلبات',
+    MerchantProducts: 'المنتجات',
+    MerchantHistory: 'سجل الطلبات',
+    MerchantAccount: 'الحساب',
+    MerchantWallet: 'المحفظة',
+    MerchantSupport: 'الدعم',
+    MerchantStoreSettings: 'بيانات المتجر',
+  } as Record<string, string>)[routeName] ?? 'مساحة التاجر';
+
   return (
     <View style={topHeaderStyles.topHeader}>
-      <View style={topHeaderStyles.navLinks}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
-          <Text style={getStyle('MerchantDashboard')}>الرئيسية</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel="التقارير">
-          <Text style={getStyle('MerchantAccount', 'Reports')}>التقارير</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantProducts')} accessibilityRole="button" accessibilityLabel="المنتجات">
-          <Text style={getStyle('MerchantProducts')}>المنتجات</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
-          <Text style={getStyle('MerchantOrders')}>الطلبات</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel="سجل الطلبات">
-          <Text style={getStyle('MerchantHistory')}>السجل</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantWallet')} accessibilityRole="button" accessibilityLabel="المحفظة">
-          <Text style={getStyle('MerchantWallet')}>المحفظة</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantSupport')} accessibilityRole="button" accessibilityLabel="الدعم">
-          <Text style={getStyle('MerchantSupport')}>الدعم</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantStoreSettings')} accessibilityRole="button" accessibilityLabel="بيانات المتجر">
-          <Text style={getStyle('MerchantStoreSettings')}>المعلومات</Text>
-        </TouchableOpacity>
+      <View style={topHeaderStyles.workspaceIdentity}>
+        <View style={topHeaderStyles.workspaceMark}><Text style={topHeaderStyles.workspaceMarkText}>م</Text></View>
+        <View style={topHeaderStyles.workspaceCopy}>
+          <Text style={topHeaderStyles.workspaceTitle}>مساحة التاجر</Text>
+          <Text style={topHeaderStyles.workspaceSubtitle}>إدارة المتجر</Text>
+        </View>
       </View>
+
+      {showFullNavigation ? (
+        <View style={topHeaderStyles.navLinks}>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
+            <Text style={getStyle('MerchantDashboard')}>الرئيسية</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel="التقارير">
+            <Text style={getStyle('MerchantAccount', 'Reports')}>التقارير</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantProducts')} accessibilityRole="button" accessibilityLabel="المنتجات">
+            <Text style={getStyle('MerchantProducts')}>المنتجات</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
+            <Text style={getStyle('MerchantOrders')}>الطلبات</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel="سجل الطلبات">
+            <Text style={getStyle('MerchantHistory')}>السجل</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantWallet')} accessibilityRole="button" accessibilityLabel="المحفظة">
+            <Text style={getStyle('MerchantWallet')}>المحفظة</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantSupport')} accessibilityRole="button" accessibilityLabel="الدعم">
+            <Text style={getStyle('MerchantSupport')}>الدعم</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantStoreSettings')} accessibilityRole="button" accessibilityLabel="بيانات المتجر">
+            <Text style={getStyle('MerchantStoreSettings')}>المعلومات</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={topHeaderStyles.currentContext}>
+          <View style={topHeaderStyles.currentContextDot} />
+          <Text style={topHeaderStyles.currentContextText}>{currentLabel}</Text>
+        </View>
+      )}
+
       <View style={topHeaderStyles.headerRight}>
         <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="فتح الطلبات">
           <Ionicons name="search-outline" size={20} color={UI.textDark} />
@@ -429,7 +456,7 @@ function DesktopTopHeader() {
           <Ionicons name="notifications-outline" size={20} color={UI.textDark} />
         </TouchableOpacity>
         <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('MerchantAccount')} accessibilityRole="button" accessibilityLabel="حساب التاجر">
-          <Ionicons name="person" size={16} color="#FFF" />
+          <Ionicons name="person" size={16} color={COLORS.surface} />
         </TouchableOpacity>
       </View>
     </View>
@@ -437,11 +464,41 @@ function DesktopTopHeader() {
 }
 
 const topHeaderStyles = StyleSheet.create({
-  topHeader: { flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', marginBottom: 24, position: 'relative' },
-  navLinks: { flexDirection: 'row-reverse', backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 8, paddingVertical: 6, ...softShadow },
-  navLink: { fontSize: 13, fontWeight: '600', color: UI.textGrey, paddingHorizontal: 16, paddingVertical: 8 },
-  navLinkActive: { fontSize: 13, fontWeight: '700', color: UI.textDark, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#F3F4F6', borderRadius: 16 },
-  headerRight: { position: 'absolute', left: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  headerIconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...softShadow },
-  avatarMini: { width: 36, height: 36, borderRadius: 18, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center' },
+  topHeader: {
+    minHeight: 54, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: 20, gap: 18,
+  },
+  workspaceIdentity: { minWidth: 160, flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  workspaceMark: {
+    width: 40, height: 40, borderRadius: 13, backgroundColor: COLORS.secondary,
+    alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-4deg' }],
+  },
+  workspaceMarkText: { color: COLORS.textPrimary, fontSize: 18, fontFamily: FONTS.bold },
+  workspaceCopy: { alignItems: 'flex-end' },
+  workspaceTitle: { color: COLORS.textPrimary, fontSize: 13, fontFamily: FONTS.bold },
+  workspaceSubtitle: { color: COLORS.textMuted, fontSize: 10, fontFamily: FONTS.regular, marginTop: 2 },
+  navLinks: {
+    flexDirection: 'row-reverse', backgroundColor: COLORS.surface, borderRadius: RADIUS.full,
+    paddingHorizontal: 7, paddingVertical: 6, borderWidth: 1, borderColor: COLORS.border, ...softShadow,
+  },
+  navLink: { fontSize: 11, fontFamily: FONTS.medium, color: UI.textGrey, paddingHorizontal: 11, paddingVertical: 8 },
+  navLinkActive: {
+    fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, paddingHorizontal: 11,
+    paddingVertical: 8, backgroundColor: COLORS.primarySoft, borderRadius: RADIUS.full,
+  },
+  currentContext: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 16, minHeight: 40,
+  },
+  currentContextDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
+  currentContextText: { color: COLORS.textPrimary, fontSize: 13, fontFamily: FONTS.semiBold },
+  headerRight: { minWidth: 160, flexDirection: 'row-reverse', justifyContent: 'flex-start', alignItems: 'center', gap: 9 },
+  headerIconBtn: {
+    width: 40, height: 40, borderRadius: 14, backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', ...softShadow,
+  },
+  avatarMini: {
+    width: 40, height: 40, borderRadius: 14, backgroundColor: UI.primary,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

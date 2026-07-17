@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { Alert } from '../../../components/appAlert';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '@marketplace/shared-utils';
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
 
@@ -128,23 +128,23 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.background },
   backIcon: { fontSize: 24, color: COLORS.textPrimary },
-  headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: COLORS.textPrimary, fontFamily: 'El Messiri' },
+  headerTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontFamily: FONTS.bold },
   scrollContent: { paddingBottom: 100 },
   mapContainer: { height: 200, backgroundColor: '#E3F2FD', alignItems: 'center', justifyContent: 'center' },
   mapEmoji: { fontSize: 40, opacity: 0.5 },
   mapText: { color: '#1976D2', marginTop: 10, fontWeight: '600' },
   formCard: { margin: SPACING.md, padding: SPACING.md, marginTop: -20 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.primary, marginBottom: 16, fontFamily: 'El Messiri' },
-  inputLabel: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, marginBottom: 8, fontWeight: '500', fontFamily: 'IBM Plex Sans Arabic' },
+  sectionTitle: { fontSize: 16, color: COLORS.primary, marginBottom: 16, fontFamily: FONTS.bold },
+  inputLabel: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, marginBottom: 8, fontFamily: FONTS.medium },
   labelsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   labelChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   labelChipActive: { backgroundColor: `${COLORS.primary}15`, borderColor: COLORS.primary },
-  labelChipText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: 'IBM Plex Sans Arabic', fontWeight: '500' },
+  labelChipText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: FONTS.medium },
   labelChipTextActive: { color: COLORS.primary, fontWeight: '700' },
   areasRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   areaChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   areaChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  areaChipText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: 'IBM Plex Sans Arabic', fontWeight: '500' },
+  areaChipText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: FONTS.medium },
   areaChipTextActive: { color: COLORS.surface },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, padding: SPACING.md, paddingBottom: 30, borderTopWidth: 1, borderTopColor: COLORS.border },
 });

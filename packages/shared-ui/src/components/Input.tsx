@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, TextInputProps, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, RADIUS, SPACING, FONT_SIZE } from '@marketplace/shared-utils';
+import { COLORS, RADIUS, SPACING, FONT_SIZE, FONTS } from '@marketplace/shared-utils';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -61,21 +61,22 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
-    fontWeight: '500',
-    fontFamily: 'IBM Plex Sans Arabic',
+    fontFamily: FONTS.medium,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surface,
-    minHeight: 48,
-    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.surfaceRaised,
+    minHeight: 54,
+    paddingHorizontal: SPACING.md,
   },
   inputFocused: {
     borderColor: COLORS.primary,
+    borderWidth: 2,
+    backgroundColor: COLORS.surface,
   },
   inputError: {
     borderColor: COLORS.error,
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FONT_SIZE.md,
     color: COLORS.textPrimary,
-    fontFamily: 'IBM Plex Sans Arabic',
+    fontFamily: FONTS.regular,
     paddingVertical: SPACING.sm,
     textAlign: 'right', // For Arabic RTL
   },
@@ -95,6 +96,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xs,
     color: COLORS.error,
     marginTop: SPACING.xs,
-    fontFamily: 'IBM Plex Sans Arabic',
+    fontFamily: FONTS.regular,
   },
 });

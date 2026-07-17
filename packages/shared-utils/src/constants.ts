@@ -6,20 +6,29 @@ export const APP_NAME = 'متجر اليمن' as const;
 
 // ---- Colors ------------------------------------------------
 export const COLORS = {
-  primary: '#1B2B4B',
-  primaryLight: '#2A3F6F',
-  primaryDark: '#0F1A2E',
-  secondary: '#C9A84C',
-  background: '#F5F5F7',
+  primary: '#5B4BFF',
+  primaryLight: '#7C6EFF',
+  primaryDark: '#3828D6',
+  primarySoft: '#EEEAFE',
+  secondary: '#C8F169',
+  secondarySoft: '#F3FBCF',
+  accentCoral: '#FF6B66',
+  accentCoralSoft: '#FFE8E6',
+  accentMint: '#4AD9B0',
+  accentMintSoft: '#DDF8F0',
+  background: '#F8F7FB',
   surface: '#FFFFFF',
-  border: '#E8E8E8',
-  textPrimary: '#1A1A1A',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  success: '#2ECC71',
+  surfaceRaised: '#FCFBFF',
+  surfaceMuted: '#F0EEF6',
+  border: '#E8E5F0',
+  borderStrong: '#D7D2E3',
+  textPrimary: '#17151F',
+  textSecondary: '#625D6E',
+  textMuted: '#918B9E',
+  success: '#109B76',
   warning: '#F59E0B',
-  error: '#EF4444',
-  info: '#3B82F6',
+  error: '#E84E4A',
+  info: '#5B4BFF',
   overlay: 'rgba(0,0,0,0.5)',
 } as const;
 
@@ -42,15 +51,35 @@ export const FONT_SIZE = {
   xl: 20,
   xxl: 24,
   xxxl: 30,
+  display: 40,
+} as const;
+
+// ---- Typography --------------------------------------------
+// Use explicit families so native platforms render the intended weight instead
+// of synthesizing bold glyphs from the regular Arabic font file.
+export const FONTS = {
+  regular: 'IBMPlexSansArabic_400Regular',
+  medium: 'IBMPlexSansArabic_500Medium',
+  semiBold: 'IBMPlexSansArabic_600SemiBold',
+  bold: 'IBMPlexSansArabic_700Bold',
 } as const;
 
 // ---- Border Radius -----------------------------------------
 export const RADIUS = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
+  xxl: 36,
   full: 9999,
+} as const;
+
+// ---- Responsive layout -------------------------------------
+export const BREAKPOINTS = {
+  compact: 430,
+  tablet: 768,
+  desktop: 1024,
+  wide: 1440,
 } as const;
 
 // ---- User Roles --------------------------------------------

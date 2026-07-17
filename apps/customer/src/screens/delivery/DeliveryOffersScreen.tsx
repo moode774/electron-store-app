@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import {
   supabase,
   useAuthStore,
 } from '@marketplace/shared-hooks';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 import IncomingOrderModal from '../../components/IncomingOrderModal';
 import {
@@ -34,6 +36,8 @@ const errorMessage = (error: unknown, fallback: string) =>
 
 export default function DeliveryOffersScreen({ navigation }: any) {
   const user = useAuthStore((state) => state.user);
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(Math.max(width - 32, 288), 560);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [profile, setProfile] = useState<DeliveryRuntimeProfile | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -264,9 +268,13 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
       <View style={styles.radarArea}>
+        <View style={styles.radarBadge}>
+          <Ionicons name="navigate-circle" size={16} color={COLORS.primary} />
+          <Text style={styles.radarBadgeText}>نطاق العمل المباشر</Text>
+        </View>
         <View style={[styles.centerPulseOuter, !isOnline && styles.centerPulseOffline]}>
           <View style={[styles.centerPulseInner, !isOnline && styles.centerPulseInnerOffline]}>
-            <Ionicons name={isOnline ? 'navigate' : 'pause'} size={32} color={isOnline ? '#059669' : '#9CA3AF'} />
+            <Ionicons name={isOnline ? 'navigate' : 'pause'} size={32} color={isOnline ? COLORS.primary : COLORS.textMuted} />
           </View>
         </View>
         <Text style={[styles.radarTitle, !isOnline && styles.offlineText]}>
@@ -280,7 +288,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       </View>
 
       <View style={styles.topSafeArea}>
-        <View style={styles.headerRow}>
+        <View style={[styles.topPanel, { width: contentWidth }]}>
+          <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.menuBtn}
             onPress={openDeliveryAccount}
@@ -288,7 +297,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             accessibilityRole="button"
             accessibilityLabel="فتح حساب المندوب"
           >
-            <Ionicons name="menu" size={24} color="#111827" />
+            <Ionicons name="menu" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.centerStatus} accessibilityLiveRegion="polite">
@@ -297,68 +306,69 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           </View>
 
           <View style={styles.avatarWrap}>
-            <Ionicons name="person" size={24} color="#9CA3AF" />
+            <Ionicons name="person" size={22} color={COLORS.primary} />
             {isOnline && <View style={styles.avatarOnlineDot} />}
           </View>
-        </View>
+          </View>
 
-        <View style={styles.earningsPillWrap}>
-          <View style={styles.earningsPill}>
-            <View style={styles.walletIconWrap}>
-              <Ionicons name="wallet" size={18} color="#2563EB" />
-            </View>
-            <View style={styles.earningsTexts}>
-              <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-              <Text style={styles.earningsValue}>{todayEarnings.toLocaleString()} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
+          <View style={styles.earningsPillWrap}>
+            <View style={styles.earningsPill}>
+              <View style={styles.walletIconWrap}>
+                <Ionicons name="wallet" size={18} color={COLORS.primary} />
+              </View>
+              <View style={styles.earningsTexts}>
+                <Text style={styles.earningsLabel}>أرباح اليوم</Text>
+                <Text style={styles.earningsValue}>{todayEarnings.toLocaleString()} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.connectionDropdownWrap}>
-          <TouchableOpacity
-            style={[styles.connectionDropdown, !isOnline && styles.connectionDropdownOffline]}
-            activeOpacity={0.7}
-            onPress={handleToggleOnline}
-            disabled={onlineUpdating || initialLoading}
-            accessibilityRole="switch"
-            accessibilityLabel="استقبال طلبات التوصيل"
-            accessibilityState={{ checked: isOnline, disabled: onlineUpdating || initialLoading, busy: onlineUpdating }}
-          >
-            {onlineUpdating ? (
-              <ActivityIndicator size="small" color="#2563EB" />
-            ) : (
-              <View style={[styles.connectionDotLarge, !isOnline && styles.statusDotOffline]} />
-            )}
-            <Text style={styles.connectionText}>{isOnline ? 'متصل بالطلبات' : 'اضغط للاتصال'}</Text>
-          </TouchableOpacity>
+          <View style={styles.connectionDropdownWrap}>
+            <TouchableOpacity
+              style={[styles.connectionDropdown, !isOnline && styles.connectionDropdownOffline]}
+              activeOpacity={0.7}
+              onPress={handleToggleOnline}
+              disabled={onlineUpdating || initialLoading}
+              accessibilityRole="switch"
+              accessibilityLabel="استقبال طلبات التوصيل"
+              accessibilityState={{ checked: isOnline, disabled: onlineUpdating || initialLoading, busy: onlineUpdating }}
+            >
+              {onlineUpdating ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <View style={[styles.connectionDotLarge, !isOnline && styles.statusDotOffline]} />
+              )}
+              <Text style={[styles.connectionText, isOnline && styles.connectionTextOnline]}>{isOnline ? 'متصل بالطلبات' : 'اضغط للاتصال'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
       <View style={styles.bottomCardWrap}>
-        <View style={styles.orderCard}>
+        <View style={[styles.orderCard, { width: contentWidth }]}>
           {initialLoading ? (
-            <ActivityIndicator size="large" color="#2563EB" accessibilityLabel="جاري تحميل عروض التوصيل" />
+            <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="جاري تحميل عروض التوصيل" />
           ) : loadError ? (
             <>
-              <Ionicons name="cloud-offline-outline" size={38} color="#DC2626" />
+              <Ionicons name="cloud-offline-outline" size={38} color={COLORS.error} />
               <Text style={styles.cardTitle}>تعذّر تحديث العروض</Text>
               <Text style={styles.errorText}>{loadError}</Text>
             </>
           ) : !isApproved ? (
             <>
-              <Ionicons name="shield-checkmark-outline" size={40} color="#D97706" />
+              <Ionicons name="shield-checkmark-outline" size={40} color={COLORS.warning} />
               <Text style={styles.cardTitle}>الحساب بانتظار الاعتماد</Text>
               <Text style={styles.cardSubtitle}>ستتمكن من استقبال الطلبات بعد اعتماد بيانات المندوب.</Text>
             </>
           ) : !isOnline ? (
             <>
-              <Ionicons name="notifications-off-outline" size={40} color="#9CA3AF" />
+              <Ionicons name="notifications-off-outline" size={40} color={COLORS.textMuted} />
               <Text style={styles.cardTitle}>أنت غير متصل</Text>
               <Text style={styles.cardSubtitle}>فعّل استقبال الطلبات من الزر أعلاه.</Text>
             </>
           ) : (
             <>
-              <Ionicons name="radio-outline" size={40} color="#2563EB" />
+              <Ionicons name="radio-outline" size={40} color={COLORS.primary} />
               <Text style={styles.cardTitle}>
                 {current ? 'وصل عرض توصيل جديد' : 'جاري البحث عن طلبات جاهزة...'}
               </Text>
@@ -379,7 +389,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             accessibilityState={{ busy: refreshing, disabled: refreshing }}
           >
             {refreshing
-              ? <ActivityIndicator size="small" color="#2563EB" />
+              ? <ActivityIndicator size="small" color={COLORS.primary} />
               : <Text style={styles.refreshText}>تحديث الآن</Text>}
           </TouchableOpacity>
         </View>
@@ -471,4 +481,8 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 12.5, color: '#DC2626', marginTop: 6, textAlign: 'center', lineHeight: 19 },
   refreshBtn: { marginTop: 14, minHeight: 38, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   refreshText: { color: '#2563EB', fontWeight: '800', fontSize: 13 },
+  radarBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, position: 'absolute', top: Platform.OS === 'ios' ? 110 : 90, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  radarBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  topPanel: { alignSelf: 'center' },
+  connectionTextOnline: { color: COLORS.success },
 });

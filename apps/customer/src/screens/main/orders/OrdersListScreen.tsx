@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS, FONTS } from '@marketplace/shared-utils';
 import { Card, Badge } from '@marketplace/shared-ui';
 import { useAuthStore, useCartStore, getOrders, getReorderItems, OrderSummary, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
@@ -154,7 +154,7 @@ export default function OrdersListScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerTitle: { fontSize: FONT_SIZE.xl, fontWeight: '800', color: COLORS.textPrimary, fontFamily: 'El Messiri', textAlign: 'center' },
+  headerTitle: { fontSize: FONT_SIZE.xl, color: COLORS.textPrimary, fontFamily: FONTS.bold, textAlign: 'center' },
   listContent: { padding: SPACING.md, paddingBottom: 100 },
   orderCard: { marginBottom: SPACING.md },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, TouchableOpacityProps, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, RADIUS, SPACING, FONT_SIZE } from '@marketplace/shared-utils';
+import { COLORS, RADIUS, SPACING, FONT_SIZE, FONTS } from '@marketplace/shared-utils';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -26,11 +26,20 @@ export const Button: React.FC<ButtonProps> = ({
   const getContainerStyle = (): ViewStyle => {
     switch (variant) {
       case 'primary':
-        return { backgroundColor: COLORS.primary, borderColor: COLORS.primary, borderWidth: 1 };
+        return {
+          backgroundColor: COLORS.primary,
+          borderColor: COLORS.primary,
+          borderWidth: 1,
+          shadowColor: COLORS.primary,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.18,
+          shadowRadius: 16,
+          elevation: 4,
+        };
       case 'secondary':
         return { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary, borderWidth: 1 };
       case 'outline':
-        return { backgroundColor: 'transparent', borderColor: COLORS.primary, borderWidth: 1 };
+        return { backgroundColor: COLORS.surface, borderColor: COLORS.borderStrong, borderWidth: 1 };
       case 'ghost':
         return { backgroundColor: 'transparent', borderColor: 'transparent', borderWidth: 0 };
     }
@@ -39,8 +48,9 @@ export const Button: React.FC<ButtonProps> = ({
   const getTextStyle = (): TextStyle => {
     switch (variant) {
       case 'primary':
-      case 'secondary':
         return { color: COLORS.surface };
+      case 'secondary':
+        return { color: COLORS.textPrimary };
       case 'outline':
       case 'ghost':
         return { color: COLORS.primary };
@@ -59,6 +69,7 @@ export const Button: React.FC<ButtonProps> = ({
       ]}
       disabled={isDisabled}
       activeOpacity={0.8}
+      accessibilityRole="button"
       {...props}
     >
       {isLoading ? (
@@ -81,15 +92,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.md,
+    minHeight: 50,
+    paddingVertical: 12,
     paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.full,
     gap: SPACING.sm,
   },
   text: {
     fontSize: FONT_SIZE.md,
-    fontWeight: '600',
-    fontFamily: 'El Messiri', // Custom font as per design guidelines
+    fontFamily: FONTS.semiBold,
   },
   disabled: {
     opacity: 0.6,

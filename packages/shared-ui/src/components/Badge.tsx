@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, RADIUS, SPACING, FONT_SIZE } from '@marketplace/shared-utils';
+import { COLORS, RADIUS, SPACING, FONT_SIZE, FONTS } from '@marketplace/shared-utils';
 
 interface BadgeProps {
   label: string;
@@ -18,17 +18,17 @@ export const Badge: React.FC<BadgeProps> = ({
   const getColors = () => {
     switch (variant) {
       case 'primary':
-        return { bg: COLORS.primaryLight, text: COLORS.surface };
+        return { bg: COLORS.primarySoft, text: COLORS.primary };
       case 'secondary':
-        return { bg: COLORS.secondary, text: COLORS.surface };
+        return { bg: COLORS.secondarySoft, text: '#556B05' };
       case 'success':
-        return { bg: COLORS.success + '20', text: COLORS.success }; // 20% opacity
+        return { bg: COLORS.accentMintSoft, text: COLORS.success };
       case 'warning':
-        return { bg: COLORS.warning + '20', text: COLORS.warning };
+        return { bg: '#FFF4D7', text: '#A56300' };
       case 'error':
-        return { bg: COLORS.error + '20', text: COLORS.error };
+        return { bg: COLORS.accentCoralSoft, text: COLORS.error };
       case 'info':
-        return { bg: COLORS.info + '20', text: COLORS.info };
+        return { bg: COLORS.primarySoft, text: COLORS.info };
       default:
         return { bg: COLORS.border, text: COLORS.textSecondary };
     }
@@ -45,8 +45,9 @@ export const Badge: React.FC<BadgeProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
+    minHeight: 26,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: RADIUS.full,
     alignSelf: 'flex-start',
     justifyContent: 'center',
@@ -54,7 +55,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FONT_SIZE.xs,
-    fontWeight: '600',
-    fontFamily: 'IBM Plex Sans Arabic',
+    fontFamily: FONTS.semiBold,
   },
 });

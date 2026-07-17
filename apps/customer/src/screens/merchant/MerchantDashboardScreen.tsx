@@ -1,35 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore, getMerchantStats, getMerchantSalesChart } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import { getMerchantOrderStatusInfo } from './merchantOrderState';
 
-// ---- Constants & Colors ----
 const UI = {
-  bg: '#F4F6F8', // Slightly richer background
-  bgMobile: '#FFFFFF',
-  card: '#FFFFFF',
-  cardSoft: '#F8FAFC',
-  primary: '#0A1128', // Deeper rich navy
-  primaryLight: '#1E293B',
-  blue: '#2563EB',
-  green: '#059669',
-  greenLight: '#D1FAE5',
-  textDark: '#0F172A',
-  textGrey: '#475569',
-  textMuted: '#94A3B8',
-  border: '#E2E8F0',
+  bg: COLORS.background,
+  bgMobile: COLORS.background,
+  card: COLORS.surface,
+  cardSoft: COLORS.surfaceRaised,
+  primary: COLORS.primary,
+  primaryLight: COLORS.primaryLight,
+  blue: COLORS.primary,
+  green: COLORS.success,
+  greenLight: COLORS.accentMintSoft,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
 };
 
 const softShadow = {
-  shadowColor: '#0A1128', // Slightly deeper and integrated shadow
-  shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.06,
-  shadowRadius: 16,
-  elevation: 3,
+  shadowColor: COLORS.primaryDark,
+  shadowOffset: { width: 0, height: 12 },
+  shadowOpacity: 0.07,
+  shadowRadius: 24,
+  elevation: 4,
 } as const;
 
 function LineChart({ w, h, points, color }: { w: number; h: number; points: number[]; color: string }) {
@@ -80,7 +80,7 @@ function BarChart({ w, h, points, color }: { w: number; h: number; points: numbe
           <React.Fragment key={i}>
             <Rect
               x={x} y={y} width={barWidth} height={barH} rx={10}
-              fill={isMax ? color : '#9CA3AF'} opacity={isMax ? 1 : 0.4}
+              fill={isMax ? color : COLORS.borderStrong} opacity={isMax ? 1 : 0.55}
             />
           </React.Fragment>
         );
@@ -93,7 +93,9 @@ export default function MerchantDashboardScreen() {
   const navigation = useNavigation<any>();
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
   
   const [stats, setStats] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
   const [chart, setChart] = useState<number[]>([0, 0, 0, 0, 0, 0]);
@@ -125,27 +127,28 @@ export default function MerchantDashboardScreen() {
   const containerStyle = [styles.container, { backgroundColor: isDesktop ? UI.bg : UI.bgMobile }];
 
   // Responsive widths for columns
-  const tabNavPadding = isDesktop ? 48 : 0; // 24 left + 24 right in TabNavigator
-  const screenPadding = 48; // 24 left + 24 right in Dashboard ScrollView
+  const tabNavPadding = isDesktop ? 48 : 0;
+  const screenPadding = isCompact ? 32 : 48;
   const sidebarWidth = 80;
   const usableWidth = isDesktop ? width - sidebarWidth - tabNavPadding - screenPadding : width - screenPadding;
   const gap = 20;
-  const col3Width = isDesktop ? (usableWidth - (gap * 2)) / 3 : usableWidth;
+  const columns = isDesktop ? 3 : isTablet ? 2 : 1;
+  const col3Width = (usableWidth - (gap * (columns - 1))) / columns;
 
   return (
     <View style={containerStyle}>
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact]} showsVerticalScrollIndicator={false}>
 
         {profile && profile.is_active === false && (
-          <View style={{ backgroundColor: '#FEF2F2', padding: 16, marginHorizontal: isDesktop ? 0 : 24, borderRadius: 16, borderWidth: 1, borderColor: '#FCA5A5', marginBottom: 20, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="warning" size={20} color="#DC2626" />
+          <View style={styles.pausedBanner}>
+            <View style={styles.pausedIcon}>
+              <Ionicons name="warning" size={20} color={COLORS.error} />
             </View>
-            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#DC2626', marginBottom: 4 }}>تم إيقاف متجرك</Text>
-              <Text style={{ fontSize: 13, color: '#991B1B', textAlign: 'right' }}>السبب: {profile.pause_reason || 'غير محدد'}. يرجى التواصل مع الإدارة.</Text>
+            <View style={styles.pausedCopy}>
+              <Text style={styles.pausedTitle}>تم إيقاف متجرك</Text>
+              <Text style={styles.pausedText}>السبب: {profile.pause_reason || 'غير محدد'}. يرجى التواصل مع الإدارة.</Text>
             </View>
           </View>
         )}
@@ -162,7 +165,11 @@ export default function MerchantDashboardScreen() {
 
         {/* ===== Welcome Section ===== */}
         <View style={styles.welcomeRow}>
-          <Text style={styles.welcomeText}>مرحباً بك، <Text style={styles.welcomeName}>{user?.full_name ?? 'التاجر'}</Text></Text>
+          <View style={styles.welcomeCopy}>
+            <Text style={styles.welcomeOverline}>لوحة المتجر</Text>
+            <Text style={styles.welcomeText}>مرحباً، <Text style={styles.welcomeName}>{user?.full_name ?? 'التاجر'}</Text></Text>
+            <Text style={styles.welcomeSubtitle}>كل ما تحتاجه لإدارة الطلبات والأداء في مكان واحد.</Text>
+          </View>
           <View style={styles.welcomeActions}>
             <View style={styles.datePicker}>
               <Ionicons name="calendar-outline" size={16} color={UI.textDark} />
@@ -184,14 +191,14 @@ export default function MerchantDashboardScreen() {
         </View>
 
         {/* ===== Top Widgets Grid ===== */}
-        <View style={[styles.gridRow, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
+        <View style={[styles.gridRow, { flexDirection: isTablet ? 'row-reverse' : 'column', flexWrap: isTablet ? 'wrap' : 'nowrap' }]}>
           
           {/* Column 1: VISA Card + Small Stat */}
           <View style={[styles.column, { width: col3Width }]}>
             <View style={[styles.card, styles.visaCard]}>
               <View style={styles.visaTop}>
                 <Text style={styles.visaLogo}>قيمة طلبات اليوم</Text>
-                <Ionicons name="wifi" size={20} color="#FFF" style={{ transform: [{ rotate: '90deg' }] }} />
+                <View style={styles.heroIcon}><Ionicons name="sparkles" size={18} color={COLORS.textPrimary} /></View>
               </View>
               <Text style={styles.visaSubtitle}>إجمالي قيمة الطلبات المسجلة اليوم</Text>
               <Text style={styles.visaBalance}>{metricsLoading ? '...' : stats.todayRevenue.toLocaleString()} ر.ي</Text>
@@ -342,79 +349,129 @@ export default function MerchantDashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 24, paddingBottom: 100 },
-  errorBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: '#FFFBEB', borderColor: '#FDE68A', borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 18 },
-  errorBannerText: { flex: 1, color: '#92400E', fontSize: 13, fontWeight: '700', textAlign: 'right' },
-  errorRetryText: { color: '#92400E', fontSize: 13, fontWeight: '900', padding: 4 },
-  
-  // Desktop Header
-  topHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32, position: 'relative' },
-  navLinks: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 8, paddingVertical: 6, ...softShadow },
-  navLink: { fontSize: 13, fontWeight: '600', color: UI.textGrey, paddingHorizontal: 16, paddingVertical: 8 },
-  navLinkActive: { fontSize: 13, fontWeight: '700', color: UI.textDark, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#F3F4F6', borderRadius: 16 },
-  headerRight: { position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerIconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...softShadow },
-  avatarMini: { width: 36, height: 36, borderRadius: 18, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center' },
+  scrollContent: { padding: 24, paddingBottom: 112 },
+  scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
+  pausedBanner: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: COLORS.accentCoralSoft,
+    borderWidth: 1, borderColor: '#FFC8C5', borderRadius: RADIUS.lg, padding: 16, marginBottom: 20,
+  },
+  pausedIcon: {
+    width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.surface,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pausedCopy: { flex: 1, alignItems: 'flex-end' },
+  pausedTitle: { color: COLORS.error, fontSize: 15, fontFamily: FONTS.bold, marginBottom: 3, textAlign: 'right' },
+  pausedText: { color: '#9F3734', fontSize: 13, fontFamily: FONTS.regular, textAlign: 'right', lineHeight: 20 },
+  errorBanner: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: '#FFF8E8',
+    borderColor: '#FFE1A4', borderWidth: 1, borderRadius: RADIUS.lg, padding: 14, marginBottom: 18,
+  },
+  errorBannerText: { flex: 1, color: '#8A5400', fontSize: 13, fontFamily: FONTS.semiBold, textAlign: 'right' },
+  errorRetryText: { color: COLORS.primary, fontSize: 13, fontFamily: FONTS.bold, padding: 4 },
 
-  // Welcome Section
-  welcomeRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 },
-  welcomeText: { fontSize: 24, color: UI.textDark, textAlign: 'right' },
-  welcomeName: { fontWeight: '300', color: UI.textGrey },
-  welcomeActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  datePicker: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, ...softShadow },
-  dateText: { fontSize: 13, fontWeight: '600', color: UI.textDark },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, ...softShadow },
-  addBtnText: { fontSize: 13, fontWeight: '600', color: UI.textDark },
+  welcomeRow: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 26, flexWrap: 'wrap', gap: 18,
+  },
+  welcomeCopy: { alignItems: 'flex-end', flexShrink: 1 },
+  welcomeOverline: {
+    color: COLORS.primary, fontSize: 12, fontFamily: FONTS.bold, marginBottom: 5,
+    backgroundColor: COLORS.primarySoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full,
+  },
+  welcomeText: { fontSize: 28, color: UI.textDark, textAlign: 'right', fontFamily: FONTS.regular },
+  welcomeName: { fontFamily: FONTS.bold, color: UI.textDark },
+  welcomeSubtitle: { fontSize: 13, color: UI.textGrey, textAlign: 'right', fontFamily: FONTS.regular, marginTop: 5 },
+  welcomeActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  datePicker: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: COLORS.surface,
+    paddingHorizontal: 16, minHeight: 44, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.border,
+  },
+  dateText: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textDark },
+  addBtn: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 7, backgroundColor: COLORS.secondary,
+    paddingHorizontal: 18, minHeight: 44, borderRadius: RADIUS.full,
+  },
+  addBtnText: { fontSize: 13, fontFamily: FONTS.bold, color: UI.textDark },
 
-  // Grid
-  gridRow: { gap: 20, marginBottom: 20, flexDirection: 'row-reverse' },
+  gridRow: { gap: 20, marginBottom: 20 },
   column: { gap: 20 },
-  
-  // Cards
-  card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, ...softShadow },
-  visaCard: { backgroundColor: UI.primary, padding: 24 },
+  card: {
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: 21,
+    borderWidth: 1, borderColor: COLORS.border, ...softShadow,
+  },
+  visaCard: {
+    backgroundColor: UI.primary, padding: 24, borderColor: UI.primary,
+    shadowColor: COLORS.primaryDark, shadowOpacity: 0.22,
+  },
   visaTop: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  visaLogo: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1 },
-  visaSubtitle: { fontSize: 12, color: '#9CA3AF', marginBottom: 4, textAlign: 'right' },
-  visaBalance: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', marginBottom: 24, textAlign: 'right' },
+  visaLogo: { fontSize: 17, fontFamily: FONTS.bold, color: COLORS.surface },
+  heroIcon: {
+    width: 38, height: 38, borderRadius: 13, backgroundColor: COLORS.secondary,
+    alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-5deg' }],
+  },
+  visaSubtitle: { fontSize: 12, color: '#D8D2FF', marginBottom: 4, textAlign: 'right', fontFamily: FONTS.regular },
+  visaBalance: { fontSize: 34, fontFamily: FONTS.bold, color: COLORS.surface, marginBottom: 24, textAlign: 'right' },
   visaBottom: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
-  visaText: { fontSize: 13, color: '#D1D5DB', fontWeight: '500' },
+  visaText: { fontSize: 12, color: '#E9E6FF', fontFamily: FONTS.medium },
 
   cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  cardHeaderLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
-  iconBox: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: UI.textDark },
-  cardTitleSoft: { fontSize: 13, fontWeight: '600', color: UI.textGrey, marginBottom: 12 },
-  iconBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  cardHeaderLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 9 },
+  iconBox: {
+    width: 32, height: 32, borderRadius: 11, backgroundColor: COLORS.primarySoft,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cardTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textDark },
+  cardTitleSoft: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textGrey, marginBottom: 12 },
+  iconBtn: {
+    width: 34, height: 34, borderRadius: 12, backgroundColor: COLORS.surfaceMuted,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
-  togglePills: { flexDirection: 'row-reverse', backgroundColor: '#F3F4F6', borderRadius: 16, padding: 4 },
-  togglePill: { fontSize: 11, fontWeight: '600', color: UI.textGrey, paddingHorizontal: 12, paddingVertical: 6 },
-  togglePillActive: { fontSize: 11, fontWeight: '700', color: '#FFFFFF', backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  togglePills: { flexDirection: 'row-reverse', backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.full, padding: 4 },
+  togglePill: { fontSize: 10, fontFamily: FONTS.medium, color: UI.textGrey, paddingHorizontal: 10, paddingVertical: 6 },
+  togglePillActive: {
+    fontSize: 10, fontFamily: FONTS.semiBold, color: COLORS.surface, backgroundColor: UI.primary,
+    borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 6,
+  },
 
   chartAreaCentered: { alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   chartLabelsX: { flexDirection: 'row-reverse', justifyContent: 'space-between', width: '100%', marginTop: 12, paddingHorizontal: 10 },
-  chartLabel: { fontSize: 10, color: UI.textMuted, fontWeight: '600' },
-  chartTotalValue: { fontSize: 28, fontWeight: '800', color: UI.textDark },
+  chartLabel: { fontSize: 10, color: UI.textMuted, fontFamily: FONTS.medium },
+  chartTotalValue: { fontSize: 30, fontFamily: FONTS.bold, color: UI.textDark },
 
   statRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
-  statValue: { fontSize: 24, fontWeight: '700', color: UI.textDark },
-  statValueLarge: { fontSize: 32, fontWeight: '800', color: UI.textDark },
-  badgeGreen: { backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  badgeGreenText: { fontSize: 11, fontWeight: '700', color: '#059669' },
+  statValue: { fontSize: 26, fontFamily: FONTS.bold, color: UI.textDark },
+  statValueLarge: { fontSize: 34, fontFamily: FONTS.bold, color: UI.textDark },
+  badgeGreen: { backgroundColor: COLORS.accentMintSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.full },
+  badgeGreenText: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.success },
 
-  // Table
-  tableCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, ...softShadow },
+  tableCard: {
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: 24,
+    borderWidth: 1, borderColor: COLORS.border, ...softShadow,
+  },
   tableHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  tableTitle: { fontSize: 16, fontWeight: '800', color: UI.textDark },
-  tableRowHeader: { flexDirection: 'row-reverse', paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  th: { fontSize: 12, color: UI.textGrey, fontWeight: '600', flex: 1, textAlign: 'right' },
-  tableRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F9FAFB' },
-  td: { fontSize: 13, color: UI.textGrey, textAlign: 'right' },
-  tdTextBold: { fontSize: 13, fontWeight: '700', color: UI.textDark, textAlign: 'right' },
-  tdSub: { fontSize: 11, color: UI.textGrey, marginTop: 4, textAlign: 'right' },
-  avatarMiniList: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  tableTitle: { fontSize: 17, fontFamily: FONTS.bold, color: UI.textDark },
+  tableRowHeader: {
+    flexDirection: 'row-reverse', paddingVertical: 13, paddingHorizontal: 12,
+    backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.md, marginBottom: 3,
+  },
+  th: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.semiBold, flex: 1, textAlign: 'right' },
+  tableRow: {
+    flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  },
+  td: { fontSize: 13, color: UI.textGrey, textAlign: 'right', fontFamily: FONTS.regular },
+  tdTextBold: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark, textAlign: 'right' },
+  tdSub: { fontSize: 11, fontFamily: FONTS.regular, color: UI.textGrey, marginTop: 4, textAlign: 'right' },
+  avatarMiniList: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.primarySoft,
+    alignItems: 'center', justifyContent: 'center',
+  },
   tableWrapper: { width: '100%' },
 
-  mobileList: { gap: 16 },
-  mobileListItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F9FAFB' },
+  mobileList: { gap: 0 },
+  mobileListItem: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 15,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  },
 });

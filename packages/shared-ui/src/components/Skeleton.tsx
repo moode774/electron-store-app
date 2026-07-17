@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Animated, ViewStyle, DimensionValue } from 'react-native';
 import { COLORS, RADIUS } from '@marketplace/shared-utils';
 
@@ -15,10 +15,10 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   borderRadius = RADIUS.sm,
   style,
 }) => {
-  const animatedValue = new Animated.Value(0);
+  const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(animatedValue, {
           toValue: 1,
@@ -31,8 +31,10 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           useNativeDriver: true,
         }),
       ])
-    ).start();
-  }, []);
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [animatedValue]);
 
   const opacity = animatedValue.interpolate({
     inputRange: [0, 1],
@@ -52,7 +54,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.surfaceMuted,
     overflow: 'hidden',
   },
 });

@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 
 import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
@@ -25,7 +27,13 @@ import AdminPhysicalReturnsScreen from '../screens/admin/AdminPhysicalReturnsScr
 import AdminFinancialReconciliationScreen from '../screens/admin/AdminFinancialReconciliationScreen';
 import AdminCodCollectionsScreen from '../screens/admin/AdminCodCollectionsScreen';
 
-const A = { purple: '#7C3AED', purpleLight: '#EDE9FE', bg: '#F5F3FF', dark: '#111827' };
+const softShadow = {
+  shadowColor: COLORS.primaryDark,
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.08,
+  shadowRadius: 24,
+  elevation: 4,
+};
 
 export type AdminMoreStackParamList = {
   AdminMoreMain: undefined;
@@ -78,40 +86,39 @@ export type AdminTabParamList = {
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
+// ---- Sidebar Tabs ----
 const SIDEBAR_TABS = [
-  { name: 'AdminDashboard', label: 'الرئيسية', icon: 'home-outline', activeIcon: 'home' },
+  { name: 'AdminDashboard', label: 'الرئيسية', icon: 'grid-outline', activeIcon: 'grid' },
   { name: 'AdminMerchants', label: 'المتاجر', icon: 'storefront-outline', activeIcon: 'storefront' },
   { name: 'AdminOrders', label: 'الطلبات', icon: 'receipt-outline', activeIcon: 'receipt' },
   { name: 'AdminUsers', label: 'المستخدمون', icon: 'people-outline', activeIcon: 'people' },
   { name: 'AdminDelivery', label: 'السائقون', icon: 'bicycle-outline', activeIcon: 'bicycle', isMore: true },
   { name: 'AdminWallet', label: 'طلبات السحب', icon: 'wallet-outline', activeIcon: 'wallet', isMore: true },
-  { name: 'AdminPhysicalReturns', label: 'الإرجاعات المادية', icon: 'return-down-back-outline', activeIcon: 'return-down-back', isMore: true },
-  { name: 'AdminCodCollections', label: 'تحصيلات الدفع', icon: 'cash-outline', activeIcon: 'cash', isMore: true },
-  { name: 'AdminFinancialReconciliation', label: 'المطابقة المالية', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
+  { name: 'AdminPhysicalReturns', label: 'الإرجاعات', icon: 'return-down-back-outline', activeIcon: 'return-down-back', isMore: true },
+  { name: 'AdminCodCollections', label: 'التحصيلات', icon: 'cash-outline', activeIcon: 'cash', isMore: true },
+  { name: 'AdminFinancialReconciliation', label: 'المطابقة', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
   { name: 'AdminSettings', label: 'الإعدادات', icon: 'settings-outline', activeIcon: 'settings', isMore: true },
-  { name: 'AdminSupport', label: 'الدعم الفني', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
+  { name: 'AdminSupport', label: 'الدعم', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
 ];
 
-function AdminSidebar({ navigation, state }: any) {
-  let routeName = 'AdminDashboard';
-  if (state) {
-    const route = state.routes[state.index];
-    if (route.name === 'AdminMore') {
-      const moreState = route.state as any;
+// ---- Desktop floating rail ----
+function DesktopSidebar() {
+  const navigation = useNavigation<any>();
+  const routeName = useNavigationState((state) => {
+    if (!state) return 'AdminDashboard';
+    const currentRoute = state.routes[state.index];
+    if (currentRoute.name === 'AdminMore') {
+      const moreState = currentRoute.state as any;
       if (moreState && moreState.routes) {
-        routeName = moreState.routes[moreState.index].name;
-      } else {
-        routeName = 'AdminMoreMain';
+        return moreState.routes[moreState.index].name;
       }
-    } else {
-      routeName = route.name;
+      return 'AdminMoreMain';
     }
-  }
-
+    return currentRoute.name;
+  });
   const signOut = useAuthStore((s) => s.signOut);
 
   const handleNavigate = (tab: any) => {
-    if (!navigation) return;
     if (tab.isMore) {
       navigation.navigate('AdminMore', { screen: tab.name });
     } else {
@@ -120,121 +127,279 @@ function AdminSidebar({ navigation, state }: any) {
   };
 
   return (
-    <View style={ss.sidebar}>
-      <View style={ss.logoArea}>
-        <View style={ss.logoIconWrap}>
-          <Ionicons name="shield-half" size={24} color="#FFFFFF" />
-        </View>
-        <View>
-          <Text style={ss.logoText}>لوحة التحكم</Text>
-          <Text style={ss.logoSubText}>إدارة التطبيق</Text>
-        </View>
+    <View style={sidebarStyles.container}>
+      <View style={sidebarStyles.logoArea}>
+        <Ionicons name="shield-checkmark" size={28} color="#FFFFFF" />
+        <View style={sidebarStyles.logoAccent} />
       </View>
 
-      <View style={ss.menu}>
+      <View style={sidebarStyles.menu}>
         {SIDEBAR_TABS.map((tab) => {
-          const active = routeName === tab.name || (tab.name === 'AdminMore' && routeName === 'AdminMoreMain');
+          const isActive = routeName === tab.name || (tab.name === 'AdminMore' && routeName === 'AdminMoreMain');
           return (
             <TouchableOpacity
               key={tab.name}
-              style={[ss.menuItem, active && ss.menuItemActive]}
+              style={[sidebarStyles.menuItem, isActive && sidebarStyles.menuItemActive]}
               onPress={() => handleNavigate(tab)}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={`الانتقال إلى ${tab.label}`}
-              accessibilityState={{ selected: active }}
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: isActive }}
             >
-              {active && <View style={ss.activeIndicator} />}
-              <Text style={[ss.menuLabel, active && ss.menuLabelActive]}>{tab.label}</Text>
-              <Ionicons name={(active ? tab.activeIcon : tab.icon) as any} size={22} color={active ? '#1E3A8A' : '#9CA3AF'} />
+              <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={22} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+              {isActive ? <View style={sidebarStyles.activeDot} /> : null}
             </TouchableOpacity>
           );
         })}
       </View>
 
-      <View style={ss.bottomMenu}>
-        <TouchableOpacity
-          style={ss.logoutBtn}
-          onPress={signOut}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="تسجيل الخروج من لوحة الإدارة"
-        >
-           <Text style={ss.logoutText}>تسجيل الخروج</Text>
-           <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
+      <View style={sidebarStyles.footer}>
+        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+          <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const ss = StyleSheet.create({
-  sidebar: { width: 260, backgroundColor: '#FFFFFF', paddingVertical: 24, borderLeftWidth: 1, borderLeftColor: '#F3F4F6' },
-  logoArea: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingHorizontal: 24, marginBottom: 40 },
-  logoIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#1E3A8A', alignItems: 'center', justifyContent: 'center', shadowColor: '#1E3A8A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
-  logoText: { fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'right' },
-  logoSubText: { fontSize: 12, color: '#6B7280', textAlign: 'right', marginTop: 2, fontWeight: '500' },
-  menu: { flex: 1, gap: 4, paddingHorizontal: 12 },
-  menuItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, position: 'relative' },
-  menuItemActive: { backgroundColor: '#EFF6FF' },
-  activeIndicator: { position: 'absolute', right: 0, top: '25%', bottom: '25%', width: 4, backgroundColor: '#1E3A8A', borderTopLeftRadius: 4, borderBottomLeftRadius: 4 },
-  menuLabel: { fontSize: 15, fontWeight: '700', color: '#6B7280', flex: 1, textAlign: 'right' },
-  menuLabelActive: { color: '#1E3A8A', fontWeight: '900' },
-  bottomMenu: { paddingHorizontal: 12, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6', marginHorizontal: 12 },
-  logoutBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12 },
-  logoutText: { fontSize: 15, fontWeight: '700', color: '#6B7280', flex: 1, textAlign: 'right' },
+const sidebarStyles = StyleSheet.create({
+  container: {
+    width: 72,
+    marginVertical: 16,
+    marginRight: 16,
+    backgroundColor: COLORS.surface,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.xl,
+    zIndex: 10,
+    ...softShadow,
+  },
+  logoArea: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.24,
+    shadowRadius: 12,
+    elevation: 5,
+    position: 'relative',
+  },
+  logoAccent: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.secondary,
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+    left: -2,
+    top: -2,
+  },
+  menu: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    gap: 6,
+  },
+  menuItem: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    position: 'relative',
+  },
+  menuItemActive: {
+    backgroundColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  activeDot: {
+    position: 'absolute',
+    left: -5,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: COLORS.secondary,
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+  },
+  footer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 16,
+  },
 });
 
+// ---- Desktop command header ----
+function DesktopTopHeader() {
+  const navigation = useNavigation<any>();
+  const routeName = useNavigationState((state) => {
+    if (!state) return 'AdminDashboard';
+    const currentRoute = state.routes[state.index];
+    if (currentRoute.name === 'AdminMore') {
+      const moreState = currentRoute.state as any;
+      if (moreState && moreState.routes) {
+        return moreState.routes[moreState.index].name;
+      }
+      return 'AdminMoreMain';
+    }
+    return currentRoute.name;
+  });
+
+  const getStyle = (targetRoute: string, alias?: string) => {
+    const isActive = routeName === targetRoute || routeName === alias;
+    return isActive ? topHeaderStyles.navLinkActive : topHeaderStyles.navLink;
+  };
+
+  return (
+    <View style={topHeaderStyles.topHeader}>
+      <View style={topHeaderStyles.navLinks}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
+          <Text style={getStyle('AdminDashboard')}>الرئيسية</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
+          <Text style={getStyle('AdminOrders')}>الطلبات</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMerchants')} accessibilityRole="button" accessibilityLabel="المتاجر">
+          <Text style={getStyle('AdminMerchants')}>المتاجر</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminUsers')} accessibilityRole="button" accessibilityLabel="المستخدمون">
+          <Text style={getStyle('AdminUsers')}>المستخدمون</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminDelivery' })} accessibilityRole="button" accessibilityLabel="السائقون">
+          <Text style={getStyle('AdminDelivery')}>السائقون</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminWallet' })} accessibilityRole="button" accessibilityLabel="السحب">
+          <Text style={getStyle('AdminWallet')}>السحب</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel="الإعدادات">
+          <Text style={getStyle('AdminSettings')}>الإعدادات</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSupport' })} accessibilityRole="button" accessibilityLabel="الدعم">
+          <Text style={getStyle('AdminSupport')}>الدعم</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={topHeaderStyles.headerRight}>
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="البحث">
+          <Ionicons name="search-outline" size={20} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })} accessibilityRole="button" accessibilityLabel="الإشعارات">
+          <Ionicons name="notifications-outline" size={20} color={COLORS.textPrimary} />
+          <View style={topHeaderStyles.notificationDot} />
+        </TouchableOpacity>
+        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel="حساب المدير">
+          <Ionicons name="person" size={17} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const topHeaderStyles = StyleSheet.create({
+  topHeader: { minHeight: 56, flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', marginBottom: 14, position: 'relative' },
+  navLinks: { flexDirection: 'row-reverse', backgroundColor: COLORS.surface, borderRadius: RADIUS.full, paddingHorizontal: 7, paddingVertical: 6, borderWidth: 1, borderColor: COLORS.border, ...softShadow },
+  navLink: { fontSize: 13, fontFamily: FONTS.medium, color: COLORS.textSecondary, paddingHorizontal: 14, paddingVertical: 8 },
+  navLinkActive: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.primarySoft, borderRadius: RADIUS.full },
+  headerRight: { position: 'absolute', left: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  headerIconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', position: 'relative', ...softShadow },
+  notificationDot: { position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.accentCoral, top: 7, right: 7, borderWidth: 2, borderColor: COLORS.surface },
+  avatarMini: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#B5DB55' },
+});
+
+// ---- Main Navigator ----
 export default function AdminTabNavigator() {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const [desktopTabs, setDesktopTabs] = React.useState<{ navigation: any; state: any } | null>(null);
-  const updateDesktopTabs = React.useCallback((next: { navigation: any; state: any }) => setDesktopTabs(next), []);
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const content = (
     <Tab.Navigator
       initialRouteName="AdminDashboard"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: A.purple,
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: isDesktop ? { display: 'none' } : {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#F3F4F6',
+          left: 14,
+          right: 14,
+          bottom: Platform.OS === 'ios' ? 14 : 10,
+          backgroundColor: COLORS.surface,
+          borderTopWidth: 1,
+          borderWidth: 1,
+          borderColor: COLORS.border,
           elevation: 10,
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
+          shadowColor: COLORS.primaryDark,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.12,
+          shadowRadius: 24,
+          height: Platform.OS === 'ios' ? 72 : 66,
+          paddingBottom: Platform.OS === 'ios' ? 14 : 9,
+          paddingTop: 9,
+          borderRadius: RADIUS.xl,
+          position: 'absolute',
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 11.5, fontFamily: FONTS.semiBold },
       }}
-      tabBar={isDesktop ? (props) => <DesktopTabBridge {...props} onUpdate={updateDesktopTabs} /> : undefined}
     >
       <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen}
-        options={{ tabBarLabel: 'الرئيسية', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: 'الرئيسية', tabBarAccessibilityLabel: 'الرئيسية', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMerchants" component={AdminMerchantsScreen}
-        options={{ tabBarLabel: 'التجار', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: 'التجار', tabBarAccessibilityLabel: 'التجار', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminOrders" component={AdminOrdersScreen}
-        options={{ tabBarLabel: 'الطلبات', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: 'الطلبات', tabBarAccessibilityLabel: 'الطلبات', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminUsers" component={AdminUsersScreen}
-        options={{ tabBarLabel: 'المستخدمون', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: 'المستخدمون', tabBarAccessibilityLabel: 'المستخدمون', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMore" component={MoreNavigator}
-        options={{ tabBarLabel: 'المزيد', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: 'المزيد', tabBarAccessibilityLabel: 'المزيد', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
     </Tab.Navigator>
   );
 
   if (isDesktop) {
     return (
-      <View style={{ flex: 1, flexDirection: 'row-reverse', backgroundColor: '#F3F4F6' }}>
-        <AdminSidebar navigation={desktopTabs?.navigation} state={desktopTabs?.state} />
-        <View style={{ flex: 1 }}>{content}</View>
+      <View style={layoutStyles.desktopRoot}>
+        <DesktopSidebar />
+        <View style={layoutStyles.desktopMain}>
+          <DesktopTopHeader />
+          <View style={layoutStyles.desktopFrame}>
+            {content}
+          </View>
+        </View>
       </View>
     );
   }
+
   return content;
 }
 
-function DesktopTabBridge({ navigation, state, onUpdate }: any) {
-  React.useEffect(() => { onUpdate({ navigation, state }); }, [navigation, onUpdate, state]);
-  return null;
-}
+const layoutStyles = StyleSheet.create({
+  desktopRoot: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    backgroundColor: COLORS.background,
+  },
+  desktopMain: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  desktopFrame: {
+    flex: 1,
+    borderRadius: RADIUS.xl,
+    overflow: 'hidden',
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+});

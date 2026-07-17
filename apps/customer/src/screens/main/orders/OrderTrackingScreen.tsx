@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, ORDER_STATUS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getOrderById, createReview, getCancellationReasons, cancelOrder, createRefundRequest, getMyRefundRequests, createSupportTicket, getOrCreateConversation, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
 
 const TRACKING_STEPS = [
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, zIndex: 10 },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.background },
   backIcon: { fontSize: 24, color: COLORS.textPrimary },
-  headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: COLORS.textPrimary, fontFamily: 'El Messiri' },
+  headerTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontFamily: FONTS.bold },
   reviewCard: { backgroundColor: COLORS.surface, margin: SPACING.md, padding: 20, borderRadius: RADIUS.lg, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
   reviewTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 14 },
   starsRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
   supportInput: { minHeight: 90, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, color: '#0F172A', textAlignVertical: 'top' },
   submitSupportBtn: { marginTop: 10, backgroundColor: '#0F172A', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   submitSupportText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
-  orderId: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4, fontFamily: 'El Messiri' },
+  orderId: { fontSize: 16, color: COLORS.textPrimary, marginBottom: 4, fontFamily: FONTS.bold },
   estimatedTime: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },
   timelineContainer: { padding: SPACING.md, backgroundColor: COLORS.surface, marginHorizontal: SPACING.md, borderRadius: RADIUS.lg },
   timelineStep: { flexDirection: 'row', minHeight: 70 },
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   linePending: { backgroundColor: COLORS.border },
   timelineContent: { flex: 1, paddingTop: 6 },
   stepLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
-  stepLabelCurrent: { color: COLORS.primary, fontSize: 15, fontFamily: 'El Messiri' },
+  stepLabelCurrent: { color: COLORS.primary, fontSize: 15, fontFamily: FONTS.semiBold },
   stepLabelPending: { color: COLORS.textMuted, fontWeight: '500' },
   stepDesc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4, lineHeight: 18 },
 });

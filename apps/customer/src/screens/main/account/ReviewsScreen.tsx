@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, SPACING, FONT_SIZE, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-utils';
 import { Card } from '@marketplace/shared-ui';
 import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
 
@@ -112,11 +112,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.background },
   backIcon: { fontSize: 24, color: COLORS.textPrimary },
-  headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: COLORS.textPrimary, fontFamily: 'El Messiri' },
+  headerTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontFamily: FONTS.bold },
   tabsContainer: { flexDirection: 'row', padding: SPACING.md, backgroundColor: COLORS.surface },
   tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: COLORS.border },
   tabBtnActive: { borderBottomColor: COLORS.primary },
-  tabText: { fontSize: 14, fontWeight: '600', color: COLORS.textMuted, fontFamily: 'IBM Plex Sans Arabic' },
+  tabText: { fontSize: 14, color: COLORS.textMuted, fontFamily: FONTS.semiBold },
   tabTextActive: { color: COLORS.primary, fontWeight: '700' },
   listContent: { padding: SPACING.md },
   reviewCard: { marginBottom: SPACING.md, padding: SPACING.md },

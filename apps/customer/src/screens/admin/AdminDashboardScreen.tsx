@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, StatusBar, Platform, TextInput
+  ActivityIndicator, RefreshControl, StatusBar, Platform, TextInput,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 // Expo 54 keeps the URI-based helpers used by CSV export in the legacy module.
@@ -9,20 +10,98 @@ import { Alert } from '../../components/appAlert';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect, Line } from 'react-native-svg';
 import { getAdminStats, AdminStats, useAuthStore, getAdminOrders } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
+// Admin semantic aliases keep the operational data contract separate from presentation.
 const UI = {
-  primary: '#1E3A8A',
-  bg: '#FAFAFA',
-  card: '#FFFFFF',
-  text: '#111827',
-  textMuted: '#6B7280',
-  border: '#F3F4F6',
-  blueLight: '#EFF6FF',
-  greenLight: '#ECFDF5',
-  purpleLight: '#F5F3FF',
-  orangeLight: '#FFF7ED',
-};
+  bg: COLORS.background,
+  bgMobile: COLORS.background,
+  card: COLORS.surface,
+  cardSoft: COLORS.surfaceMuted,
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  lime: COLORS.secondary,
+  limeSoft: COLORS.secondarySoft,
+  coral: COLORS.accentCoral,
+  coralSoft: COLORS.accentCoralSoft,
+  mint: COLORS.accentMint,
+  mintSoft: COLORS.accentMintSoft,
+  green: COLORS.success,
+  greenLight: COLORS.accentMintSoft,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+} as const;
+
+const softShadow = {
+  shadowColor: COLORS.primaryDark,
+  shadowOffset: { width: 0, height: 12 },
+  shadowOpacity: 0.07,
+  shadowRadius: 24,
+  elevation: 4,
+} as const;
+
+// ---- SVG Line Chart (matching Merchant) ----
+function LineChart({ w, h, points, color }: { w: number; h: number; points: number[]; color: string }) {
+  const data = points && points.length > 1 ? points : [0, 0];
+  const max = Math.max(...data, 1) * 1.15;
+  const stepX = w / (data.length - 1);
+  const pts = data.map((v, i) => ({ x: i * stepX, y: h - (v / max) * h }));
+
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const p0 = pts[i - 1];
+    const p1 = pts[i];
+    const cx = (p0.x + p1.x) / 2;
+    d += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
+  }
+  const dFill = `${d} L ${pts[pts.length - 1].x} ${h} L 0 ${h} Z`;
+  const last = pts[pts.length - 1];
+
+  return (
+    <Svg width={w} height={h}>
+      <Defs>
+        <LinearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={color} stopOpacity="0.15" />
+          <Stop offset="1" stopColor={color} stopOpacity="0" />
+        </LinearGradient>
+      </Defs>
+      <Path d={dFill} fill="url(#fill)" />
+      <Path d={d} stroke={color} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      <Circle cx={last.x} cy={last.y} r={4} fill={color} />
+    </Svg>
+  );
+}
+
+// ---- SVG Bar Chart (matching Merchant) ----
+function BarChart({ w, h, points, color }: { w: number; h: number; points: number[]; color: string }) {
+  const data = points && points.length > 0 ? points : [0, 0, 0, 0, 0, 0, 0];
+  const max = Math.max(...data, 1);
+  const barWidth = 30;
+  const gap = (w - (data.length * barWidth)) / (data.length - 1 || 1);
+
+  return (
+    <Svg width={w} height={h}>
+      {data.map((val, i) => {
+        const barH = Math.max((val / max) * h, 10);
+        const x = i * (barWidth + gap);
+        const y = h - barH;
+        const isMax = val === max && max > 0;
+        return (
+          <React.Fragment key={i}>
+            <Rect
+              x={x} y={y} width={barWidth} height={barH} rx={10}
+              fill={isMax ? color : '#9CA3AF'} opacity={isMax ? 1 : 0.4}
+            />
+          </React.Fragment>
+        );
+      })}
+    </Svg>
+  );
+}
 
 export default function AdminDashboardScreen({ navigation }: any) {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -33,6 +112,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const { user } = useAuthStore();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= BREAKPOINTS.desktop;
+  const isCompact = width < BREAKPOINTS.compact;
 
   const load = useCallback(async () => {
     setError(null);
@@ -70,7 +152,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
         const driver = o.delivery_profiles?.users?.full_name ?? o.drivers?.full_name ?? '';
         return [o.order_number ?? o.id, date, o.total_amount ?? 0, o.status, merchant, customer, driver].map(csvCell).join(',');
       }).join('\n');
-      
+
       const csv = '\uFEFF' + header + rows;
       const filename = `orders_report_${new Date().getTime()}.csv`;
       if (Platform.OS === 'web') {
@@ -88,7 +170,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       if (!documentDirectory) throw new Error('Document directory is unavailable');
       const uri = documentDirectory + filename;
       await FileSystem.writeAsStringAsync(uri, csv, { encoding: FileSystem.EncodingType.UTF8 });
-      
+
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { UTI: 'public.comma-separated-values-text', mimeType: 'text/csv' });
       } else {
@@ -100,26 +182,69 @@ export default function AdminDashboardScreen({ navigation }: any) {
     }
   };
 
-  const renderOrderRow = (item: any) => {
+  // ── Responsive widths ──
+  // Desktop chrome = floating rail (72 + 16) + main horizontal padding (32).
+  const desktopChromeWidth = 120;
+  const screenPadding = isCompact ? 32 : 48;
+  const usableWidth = Math.max(
+    isDesktop ? width - desktopChromeWidth - screenPadding : width - screenPadding,
+    288,
+  );
+  const gap = 20;
+  const col3Width = isDesktop ? (usableWidth - (gap * 2)) / 3 : usableWidth;
+
+  // ── Chart data ──
+  const chartPoints = stats?.chartData?.map(d => d.count) ?? [];
+  const chartLabels = stats?.chartData?.map(d =>
+    new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString('ar-SA', { weekday: 'short' })
+  ) ?? [];
+  const chartTotal = chartPoints.reduce((s, v) => s + v, 0);
+
+  // ── Order row render ──
+  const renderOrderRow = (item: any, index: number) => {
     const statusLabel = item.status === 'delivered' ? 'مكتمل' : item.status === 'cancelled' ? 'ملغي' : 'جاري التوصيل';
-    const statusColor = item.status === 'delivered' ? '#10B981' : item.status === 'cancelled' ? '#EF4444' : '#F59E0B';
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA');
+    const statusColor = item.status === 'delivered' ? UI.green : item.status === 'cancelled' ? '#EF4444' : '#F59E0B';
+    const d = new Date(item.created_at);
     return (
       <TouchableOpacity
         key={item.id}
-        style={s.tableRow}
+        style={styles.tableRow}
         onPress={() => navigation.navigate('AdminOrders', { initialSearch: item.order_number ?? item.id })}
         accessibilityRole="button"
         accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number ?? item.id}`}
       >
-         <Text style={s.tdAction}><Ionicons name="ellipsis-horizontal" size={20} color="#9CA3AF" /></Text>
-         <Text style={s.td}>{date}</Text>
-         <Text style={s.td}>{item.total_amount?.toFixed(2)} ر.ي</Text>
-         <Text style={[s.td, { color: statusColor, fontWeight: '700' }]}>{statusLabel}</Text>
-         <Text style={s.td}>{item.delivery_profiles?.users?.full_name ?? item.drivers?.full_name ?? '—'}</Text>
-         <Text style={s.td}>{item.merchant_profiles?.store_name ?? '—'}</Text>
-         <Text style={s.td}>{item.customer?.full_name ?? item.users?.full_name ?? '—'}</Text>
-         <Text style={s.tdBold}>#{item.order_number ?? item.id.slice(0, 6)}</Text>
+        {isDesktop ? (
+          <>
+            <View style={[{ flex: 2, flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }]}>
+              <View style={styles.avatarMiniList}><Ionicons name="receipt" size={14} color={UI.textDark} /></View>
+              <View>
+                <Text style={styles.tdTextBold}>#{item.order_number ?? item.id.slice(0, 8)}</Text>
+                <Text style={styles.tdSub}>طلب جديد</Text>
+              </View>
+            </View>
+            <Text style={[styles.td, { flex: 2 }]}>{d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+            <Text style={[styles.td, { flex: 2 }]}>{d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</Text>
+            <Text style={[styles.td, { flex: 2 }]}>{item.merchant_profiles?.store_name ?? '—'}</Text>
+            <Text style={[styles.td, { flex: 2 }]}>{item.customer?.full_name ?? item.users?.full_name ?? 'عميل جديد'}</Text>
+            <View style={[{ flex: 2, flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }]}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
+              <Text style={[styles.tdTextBold, { color: UI.textDark }]}>{statusLabel}</Text>
+            </View>
+            <Text style={[styles.td, styles.tdTextBold, { flex: 2, textAlign: 'left' }]}>{item.total_amount?.toLocaleString()} ر.ي</Text>
+          </>
+        ) : (
+          <>
+            <View style={styles.avatarMiniList}><Ionicons name="receipt" size={16} color={UI.textDark} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.tdTextBold}>#{item.order_number ?? item.id.slice(0, 8)}</Text>
+              <Text style={styles.tdSub}>{d.toLocaleDateString('en-GB')} • {item.merchant_profiles?.store_name ?? '—'}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-start' }}>
+              <Text style={styles.tdTextBold}>{item.total_amount?.toLocaleString()} ر.ي</Text>
+              <Text style={[styles.tdSub, { color: statusColor }]}>{statusLabel}</Text>
+            </View>
+          </>
+        )}
       </TouchableOpacity>
     );
   };
@@ -127,294 +252,343 @@ export default function AdminDashboardScreen({ navigation }: any) {
   const renderTrend = (val?: number) => {
     if (val === undefined || val === null) return null;
     const isUp = val >= 0;
-    const color = isUp ? '#10B981' : '#EF4444';
+    const color = isUp ? UI.green : '#EF4444';
     const icon = isUp ? 'trending-up' : 'trending-down';
     return (
-      <View style={s.trendRow}>
+      <View style={styles.trendRow}>
         <Ionicons name={icon} size={14} color={color} />
-        <Text style={[s.trendText, {color}]}>{Math.abs(val).toFixed(1)}% عن الأسبوع السابق</Text>
+        <Text style={[styles.trendText, { color }]}>{Math.abs(val).toFixed(1)}% عن الأسبوع السابق</Text>
       </View>
     );
   };
 
-  const yAxisMax = stats?.chartData?.length ? Math.max(...stats.chartData.map(d => d.count), 5) : 10;
-  const yAxisStep = Math.ceil(yAxisMax / 5);
-  const yAxisLabels = [5, 4, 3, 2, 1, 0].map(i => i * yAxisStep);
+  const containerStyle = [styles.container, { backgroundColor: isDesktop ? UI.bg : UI.bgMobile }];
 
   return (
-    <View style={s.root}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Top Header */}
-      <View style={s.header}>
-        <View style={s.headerLeft}>
-          <TouchableOpacity
-            style={s.iconBtn}
-            onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })}
-            accessibilityRole="button"
-            accessibilityLabel="فتح إشعارات الإدارة"
-          >
-            <Ionicons name="notifications-outline" size={20} color="#6B7280" />
-          </TouchableOpacity>
-          <View style={s.searchWrap}>
-            <Ionicons name="search" size={18} color="#9CA3AF" style={s.searchIcon} />
-            <TextInput
-              style={s.searchInput}
-              placeholder="ابحث عن طلب، مستخدم، متجر..."
-              placeholderTextColor="#9CA3AF"
-              textAlign="right"
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => {
-                if (search.trim()) navigation.navigate('AdminOrders', { initialSearch: search.trim() });
-              }}
-              returnKeyType="search"
-              accessibilityLabel="البحث في الطلبات"
-            />
-          </View>
-        </View>
-        <View style={s.headerRight}>
-          <View style={s.profileText}>
-            <Text style={s.profileGreeting}>مرحباً بك،</Text>
-            <Text style={s.profileName}>{user?.full_name ?? 'المدير العام'}</Text>
-          </View>
-          <View style={s.avatar}><Ionicons name="person" size={24} color="#FFFFFF" /></View>
-        </View>
-      </View>
+    <View style={containerStyle}>
+      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
-      <ScrollView
-        contentContainerStyle={s.scroll}
+      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact]} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
-        showsVerticalScrollIndicator={false}
       >
-        <View style={s.pageTitleRow}>
-          <TouchableOpacity style={s.exportBtn} onPress={exportReport} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
-            <Ionicons name="download-outline" size={16} color={UI.primary} />
-            <Text style={s.exportBtnText}>تصدير التقرير</Text>
-          </TouchableOpacity>
-          <View style={s.datePickerBox}>
-            <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
-            <Text style={s.datePickerText}>{new Date().toLocaleDateString('ar-SA')}</Text>
+
+        {/* ===== Welcome Section ===== */}
+        <View style={styles.welcomeRow}>
+          <View style={styles.welcomeCopy}>
+            <Text style={styles.eyebrow}>مركز العمليات</Text>
+            <Text style={styles.welcomeText}>مرحباً بك، <Text style={styles.welcomeName}>{user?.full_name ?? 'المدير العام'}</Text></Text>
           </View>
-          <View style={{ flex: 1, alignItems: 'flex-end' }}>
-            <Text style={s.pageTitle}>نظرة عامة</Text>
-            <Text style={s.pageSub}>ملخص الأداء العام للتطبيق وإحصائياته الرئيسية</Text>
+          <View style={styles.welcomeActions}>
+            <TouchableOpacity style={styles.exportBtn} onPress={exportReport} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
+              <Ionicons name="download-outline" size={16} color={UI.primary} />
+              <Text style={styles.addBtnText}>تصدير التقرير</Text>
+            </TouchableOpacity>
+            <View style={styles.datePicker}>
+              <Ionicons name="calendar-outline" size={16} color={UI.textDark} />
+              <Text style={styles.dateText}>{new Date().toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+            </View>
           </View>
         </View>
 
         {loading ? (
-          <View style={s.center}><ActivityIndicator size="large" color={UI.primary} /></View>
+          <View style={styles.loadingCenter}>
+            <ActivityIndicator size="large" color={UI.primary} />
+            <Text style={{ color: UI.textMuted, marginTop: 12, fontWeight: '600' }}>جاري تحميل البيانات...</Text>
+          </View>
         ) : error ? (
-          <View style={s.errorCard} accessibilityRole="alert">
+          <View style={styles.errorCard} accessibilityRole="alert">
             <Ionicons name="cloud-offline-outline" size={36} color="#DC2626" />
-            <Text style={s.errorText}>{error}</Text>
-            <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button">
-              <Text style={s.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button">
+              <Text style={styles.retryText}>إعادة المحاولة</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            {/* Stat Cards */}
-            <View style={s.statsGrid}>
-              <View style={s.statCard}>
-                <View style={s.statCardTop}>
-                   <Text style={s.statValue}>{stats?.pendingMerchants ?? 0}</Text>
-                   <View style={[s.statIcon, { backgroundColor: UI.blueLight }]}><Ionicons name="storefront" size={24} color="#3B82F6" /></View>
-                </View>
-                <Text style={s.statLabel}>تجار قيد الانتظار</Text>
-                {/* No trend for pending merchants, just showing 0 */}
-                <View style={s.trendRow}><Text style={[s.trendText, {color: UI.textMuted}]}>الطلبات الحالية</Text></View>
-              </View>
+            {/* ===== Top Widgets Grid ===== */}
+            <View style={[styles.gridRow, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
 
-              <View style={s.statCard}>
-                <View style={s.statCardTop}>
-                   <Text style={s.statValue}>{stats?.totalOrders.toLocaleString() ?? 0}</Text>
-                   <View style={[s.statIcon, { backgroundColor: UI.greenLight }]}><Ionicons name="receipt" size={24} color="#10B981" /></View>
-                </View>
-                <Text style={s.statLabel}>إجمالي الطلبات</Text>
-                {renderTrend(stats?.trends?.orders)}
-              </View>
-
-              <View style={s.statCard}>
-                <View style={s.statCardTop}>
-                   <Text style={s.statValue}>{stats?.totalUsers.toLocaleString() ?? 0}</Text>
-                   <View style={[s.statIcon, { backgroundColor: UI.purpleLight }]}><Ionicons name="people" size={24} color="#8B5CF6" /></View>
-                </View>
-                <Text style={s.statLabel}>إجمالي المستخدمين</Text>
-                {renderTrend(stats?.trends?.users)}
-              </View>
-
-              <View style={s.statCard}>
-                <View style={s.statCardTop}>
-                   <Text style={s.statValue}>{stats?.netSettledGmv.toLocaleString() ?? 0}</Text>
-                   <View style={[s.statIcon, { backgroundColor: UI.orangeLight }]}><Ionicons name="cash" size={24} color="#F59E0B" /></View>
-                </View>
-                <Text style={s.statLabel}>صافي قيمة الطلبات المسوّاة</Text>
-                {renderTrend(stats?.trends?.netSettledGmv)}
-              </View>
-            </View>
-
-            {/* Middle Section */}
-            <View style={s.middleSection}>
-              <View style={s.chartCard}>
-                <View style={s.chartHeader}>
-                  <Text style={s.sectionTitle}>طلبات آخر 7 أيام</Text>
-                  <View style={s.chartFilter}><Text style={s.chartFilterText}>آخر 7 أيام</Text><Ionicons name="chevron-down" size={14} color="#6B7280" /></View>
-                </View>
-                <View style={s.chartArea}>
-                  <View style={s.yAxis}>
-                    {yAxisLabels.map(t => <Text key={t} style={s.chartLabel}>{t}</Text>)}
+              {/* Column 1: Hero Card + Quick Stat */}
+              <View style={[styles.column, { width: col3Width }]}>
+                <View style={[styles.card, styles.heroCard]}>
+                  <View pointerEvents="none" style={styles.heroOrbLime} />
+                  <View pointerEvents="none" style={styles.heroOrbCoral} />
+                  <View style={styles.heroContent}>
+                    <View style={styles.heroTop}>
+                      <Text style={styles.heroLogo}>لوحة الإدارة</Text>
+                      <View style={styles.heroIconWrap}>
+                        <Ionicons name="shield-checkmark" size={20} color={UI.primary} />
+                      </View>
+                    </View>
+                    <Text style={styles.heroSubtitle}>إجمالي صافي قيمة الطلبات المسدّدة</Text>
+                    <Text style={styles.heroBalance}>{stats?.netSettledGmv.toLocaleString() ?? 0} ر.ي</Text>
+                    <View style={styles.heroBottom}>
+                      <Text style={styles.heroText}>المستخدمين: {stats?.totalUsers.toLocaleString()}</Text>
+                      <Text style={styles.heroText}>الطلبات: {stats?.totalOrders.toLocaleString()}</Text>
+                    </View>
                   </View>
-                  <View style={s.chartPlot}>
-                    {[1,2,3,4,5].map(i => <View key={i} style={s.gridLine} />)}
-                    <View style={s.barRow}>
-                      {stats?.chartData?.map((point, index) => (
-                        <View key={`${point.date}-${index}`} style={s.barColumn} accessibilityLabel={`${point.date}: ${point.count} طلب`}>
-                          <Text style={s.barValue}>{point.count}</Text>
-                          <View style={[s.bar, { height: `${Math.max(4, (point.count / yAxisMax) * 100)}%` as any }]} />
-                        </View>
+                </View>
+
+                <View style={[styles.card, styles.limeCard]}>
+                  <Text style={styles.cardTitleSoft}>تجار قيد الانتظار</Text>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statValue}>+{stats?.pendingMerchants ?? 0}</Text>
+                    <View style={styles.badgeOrange}>
+                      <Text style={styles.badgeOrangeText}>بانتظار المراجعة</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Column 2: Bar Chart */}
+              <View style={[styles.column, { width: col3Width }]}>
+                <View style={[styles.card, { flex: 1 }]}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardHeaderLeft}>
+                      <View style={styles.iconBox}><Ionicons name="bar-chart" size={16} color={UI.textDark} /></View>
+                      <Text style={styles.cardTitle}>طلبات آخر 7 أيام</Text>
+                    </View>
+                    <View style={styles.togglePills}>
+                      <Text style={styles.togglePill}>أسبوعي</Text>
+                      <Text style={styles.togglePillActive}>شهري</Text>
+                    </View>
+                  </View>
+                  <View style={styles.chartAreaCentered}>
+                    <BarChart w={col3Width - 48} h={160} points={chartPoints} color={UI.primary} />
+                    <View style={styles.chartLabelsX}>
+                      {chartLabels.map((lbl, i) => (
+                        <Text key={i} style={styles.chartLabel}>{lbl}</Text>
                       ))}
                     </View>
                   </View>
                 </View>
-                <View style={s.xAxis}>
-                  {stats?.chartData?.map(d => (
-                    <Text key={d.date} style={s.chartLabel}>
-                      {new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString('ar-SA', { weekday: 'short' })}
-                    </Text>
-                  ))}
+              </View>
+
+              {/* Column 3: Line Chart + Quick Stats */}
+              <View style={[styles.column, { width: col3Width }]}>
+                <View style={[styles.card, styles.mintCard]}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardHeaderLeft}>
+                      <Text style={styles.cardTitle}>اتجاه الطلبات</Text>
+                    </View>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+                  </View>
+                  <Text style={styles.chartTotalValue}>{chartTotal.toLocaleString()} طلب</Text>
+                  <View style={{ marginTop: 20, alignItems: 'center' }}>
+                    <LineChart w={col3Width - 48} h={80} points={chartPoints} color={UI.primary} />
+                  </View>
+                </View>
+
+                <View style={styles.card}>
+                  <View style={styles.cardHeaderLeft}>
+                    <View style={styles.iconBox}><Ionicons name="analytics-outline" size={16} color={UI.textDark} /></View>
+                    <Text style={styles.cardTitleSoft}>نظرة سريعة</Text>
+                  </View>
+                  <View style={{ marginTop: 14, gap: 10 }}>
+                    <View style={styles.quickStatRow}>
+                      <Text style={styles.quickStatLabel}>طلبات نشطة</Text>
+                      <Text style={styles.quickStatValue}>{stats?.activeOrders ?? 0}</Text>
+                    </View>
+                    <View style={styles.quickStatRow}>
+                      <Text style={styles.quickStatLabel}>سائقين متصلين</Text>
+                      <Text style={styles.quickStatValue}>{stats?.onlineDrivers ?? 0}</Text>
+                    </View>
+                    <View style={styles.quickStatRow}>
+                      <Text style={styles.quickStatLabel}>متوسط صافي التسوية</Text>
+                      <Text style={styles.quickStatValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} ر.ي</Text>
+                    </View>
+                    <View style={styles.quickStatRow}>
+                      <Text style={styles.quickStatLabel}>معدل إتمام الطلبات</Text>
+                      <View style={styles.completionWrap}>
+                        <Text style={styles.quickStatValue}>{stats?.completionRate?.toFixed(1) ?? '0.0'}%</Text>
+                        <View style={styles.progressBar}>
+                          <View style={[styles.progressFill, { width: `${Math.min(stats?.completionRate ?? 0, 100)}%` as any }]} />
+                        </View>
+                      </View>
+                    </View>
+                  </View>
                 </View>
               </View>
 
-              <View style={s.quickStatsCard}>
-                <Text style={[s.sectionTitle, { marginBottom: 20 }]}>نظرة عامة سريعة</Text>
-                <View style={s.quickRow}>
-                   <View style={[s.quickIcon, { backgroundColor: '#EFF6FF' }]}><Ionicons name="flash" size={16} color="#3B82F6" /></View>
-                   <Text style={s.quickLabel}>طلبات نشطة</Text>
-                   <Text style={s.quickValue}>{stats?.activeOrders ?? 0}</Text>
+            </View>
+
+            {/* ===== Stat Summary Cards ===== */}
+            <View style={[styles.statCardsRow, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
+              <View style={styles.statSummaryCard}>
+                <View style={[styles.statSummaryIcon, { backgroundColor: UI.coralSoft }]}>
+                  <Ionicons name="flash" size={20} color={UI.coral} />
                 </View>
-                <View style={s.quickDivider} />
-                <View style={s.quickRow}>
-                   <View style={[s.quickIcon, { backgroundColor: '#F5F3FF' }]}><Ionicons name="navigate" size={16} color="#8B5CF6" /></View>
-                   <Text style={s.quickLabel}>سائقين متصلين</Text>
-                   <Text style={s.quickValue}>{stats?.onlineDrivers ?? 0}</Text>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <Text style={styles.statSummaryValue}>{stats?.activeOrders ?? 0}</Text>
+                  <Text style={styles.statSummaryLabel}>طلبات نشطة</Text>
                 </View>
-                <View style={s.quickDivider} />
-                <View style={s.quickRow}>
-                   <View style={[s.quickIcon, { backgroundColor: '#ECFDF5' }]}><Ionicons name="stats-chart" size={16} color="#10B981" /></View>
-                   <Text style={s.quickLabel}>متوسط صافي التسوية</Text>
-                   <Text style={s.quickValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} ر.ي</Text>
+              </View>
+
+              <View style={styles.statSummaryCard}>
+                <View style={[styles.statSummaryIcon, { backgroundColor: UI.mintSoft }]}>
+                  <Ionicons name="receipt" size={20} color={UI.green} />
                 </View>
-                <View style={s.quickDivider} />
-                <View style={s.quickRow}>
-                   <View style={[s.quickIcon, { backgroundColor: '#FFF7ED' }]}><Ionicons name="pie-chart" size={16} color="#F59E0B" /></View>
-                   <Text style={s.quickLabel}>معدل إتمام الطلبات</Text>
-                   <Text style={s.quickValue}>{stats?.completionRate?.toFixed(1) ?? '0.0'}%</Text>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <Text style={styles.statSummaryValue}>{stats?.totalOrders.toLocaleString() ?? 0}</Text>
+                  <Text style={styles.statSummaryLabel}>إجمالي الطلبات</Text>
+                </View>
+                {renderTrend(stats?.trends?.orders)}
+              </View>
+
+              <View style={styles.statSummaryCard}>
+                <View style={[styles.statSummaryIcon, { backgroundColor: UI.primaryLight }]}>
+                  <Ionicons name="people" size={20} color={UI.primary} />
+                </View>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <Text style={styles.statSummaryValue}>{stats?.totalUsers.toLocaleString() ?? 0}</Text>
+                  <Text style={styles.statSummaryLabel}>إجمالي المستخدمين</Text>
+                </View>
+                {renderTrend(stats?.trends?.users)}
+              </View>
+
+              <View style={styles.statSummaryCard}>
+                <View style={[styles.statSummaryIcon, { backgroundColor: UI.limeSoft }]}>
+                  <Ionicons name="navigate" size={20} color="#617A0C" />
+                </View>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <Text style={styles.statSummaryValue}>{stats?.onlineDrivers ?? 0}</Text>
+                  <Text style={styles.statSummaryLabel}>سائقين متصلين</Text>
                 </View>
               </View>
             </View>
 
-            {/* Recent Orders Table */}
-            <View style={s.tableCard}>
-              <View style={s.tableHeaderWrap}>
-                <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button"><Text style={s.viewAllText}>عرض الكل</Text></TouchableOpacity>
-                <Text style={s.sectionTitle}>آخر الطلبات</Text>
+            {/* ===== Orders Table ===== */}
+            <View style={styles.tableCard}>
+              <View style={styles.tableHeader}>
+                <Text style={styles.tableTitle}>سجل الطلبات الأحدث</Text>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
               </View>
-              <View style={s.table}>
-                <View style={s.thRow}>
-                  <Text style={s.th}>الإجراءات</Text>
-                  <Text style={s.th}>التاريخ</Text>
-                  <Text style={s.th}>المبلغ</Text>
-                  <Text style={s.th}>الحالة</Text>
-                  <Text style={s.th}>السائق</Text>
-                  <Text style={s.th}>المتجر</Text>
-                  <Text style={s.th}>العميل</Text>
-                  <Text style={s.th}>رقم الطلب</Text>
+
+              {isDesktop ? (
+                <View style={styles.tableWrapper}>
+                  <View style={styles.tableRowHeader}>
+                    <Text style={[styles.th, { flex: 2 }]}>رقم الطلب</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>التاريخ</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>الوقت</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>المتجر</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>العميل</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>الحالة</Text>
+                    <Text style={[styles.th, { flex: 2, textAlign: 'left' }]}>المبلغ</Text>
+                  </View>
+                  {recentOrders.map(renderOrderRow)}
                 </View>
-                {recentOrders.map(renderOrderRow)}
-              </View>
+              ) : (
+                <View style={styles.mobileList}>
+                  {recentOrders.map(renderOrderRow)}
+                </View>
+              )}
+
+              {recentOrders.length === 0 && (
+                <Text style={{ textAlign: 'center', color: UI.textMuted, padding: 30 }}>لا يوجد طلبات بعد</Text>
+              )}
             </View>
           </>
         )}
+
       </ScrollView>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: UI.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 24, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: UI.border, zIndex: 10 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  profileText: { alignItems: 'flex-end' },
-  profileGreeting: { fontSize: 11, color: UI.textMuted },
-  profileName: { fontSize: 14, fontWeight: '800', color: UI.text },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBtn: { width: 40, height: 40, borderRadius: 10, borderWidth: 1, borderColor: UI.border, alignItems: 'center', justifyContent: 'center' },
-  searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 10, paddingHorizontal: 12, height: 40, width: 280, borderWidth: 1, borderColor: UI.border },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 13, color: UI.text },
-  
-  scroll: { padding: 24, paddingBottom: 60 },
-  center: { height: 300, alignItems: 'center', justifyContent: 'center' },
-  errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#FECACA', padding: 24 },
-  errorText: { maxWidth: 520, color: '#991B1B', fontSize: 15, fontWeight: '700', textAlign: 'center', lineHeight: 24 },
-  retryBtn: { backgroundColor: UI.primary, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
-  
-  pageTitleRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, gap: 12 },
-  exportBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#E0E7FF' },
-  exportBtnText: { fontSize: 13, fontWeight: '700', color: UI.primary },
-  datePickerBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: UI.border },
-  datePickerText: { fontSize: 13, color: UI.textMuted, fontWeight: '600' },
-  pageTitle: { fontSize: 24, fontWeight: '900', color: UI.text, textAlign: 'right' },
-  pageSub: { fontSize: 14, color: UI.textMuted, marginTop: 4, textAlign: 'right' },
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  scrollContent: { padding: 24, paddingBottom: 112 },
+  scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
+  loadingCenter: { height: 300, alignItems: 'center', justifyContent: 'center' },
+  errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
+  errorText: { maxWidth: 520, color: COLORS.error, fontSize: 15, fontFamily: FONTS.semiBold, textAlign: 'center', lineHeight: 24 },
+  retryBtn: { backgroundColor: UI.primary, borderRadius: RADIUS.full, paddingHorizontal: 22, paddingVertical: 12, minHeight: 46, minWidth: 160, alignItems: 'center', justifyContent: 'center' },
+  retryText: { color: '#FFFFFF', fontFamily: FONTS.semiBold },
 
-  statsGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 16, marginBottom: 24, justifyContent: 'space-between' },
-  statCard: { flex: 1, minWidth: '22%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, borderWidth: 1, borderColor: UI.border },
-  statCardTop: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  statIcon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  statValue: { fontSize: 24, fontWeight: '900', color: UI.text },
-  statLabel: { fontSize: 13, fontWeight: '700', color: UI.textMuted, textAlign: 'right', marginBottom: 12 },
-  trendRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, justifyContent: 'flex-end' },
-  trendText: { fontSize: 11, fontWeight: '700' },
+  // Welcome Section
+  welcomeRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 },
+  welcomeCopy: { alignItems: 'flex-end', gap: 3 },
+  eyebrow: { fontSize: 11, fontFamily: FONTS.semiBold, color: UI.primary, textAlign: 'right', letterSpacing: 0.8 },
+  welcomeText: { fontSize: 27, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right' },
+  welcomeName: { fontFamily: FONTS.medium, color: UI.textGrey },
+  welcomeActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  exportBtn: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 7, backgroundColor: UI.card, paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.full, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  addBtnText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark },
+  datePicker: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: UI.card, paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.full, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  dateText: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textDark },
 
-  middleSection: { flexDirection: 'row-reverse', gap: 16, marginBottom: 24 },
-  chartCard: { flex: 2, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: UI.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
-  chartHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: UI.text, textAlign: 'right' },
-  chartFilter: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: UI.border },
-  chartFilterText: { fontSize: 12, color: UI.textMuted, fontWeight: '600' },
-  chartArea: { flexDirection: 'row', height: 220 },
-  yAxis: { justifyContent: 'space-between', paddingRight: 12, alignItems: 'flex-end' },
-  chartLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
-  chartPlot: { flex: 1, position: 'relative' },
-  gridLine: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6', flex: 1 },
-  barRow: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'space-around', paddingHorizontal: 8 },
-  barColumn: { width: '10%', height: '100%', alignItems: 'center', justifyContent: 'flex-end' },
-  bar: { width: '100%', maxWidth: 30, minHeight: 4, backgroundColor: UI.primary, borderTopLeftRadius: 6, borderTopRightRadius: 6 },
-  barValue: { color: UI.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 4 },
-  chartTooltip: { position: 'absolute', top: '25%', left: '45%', backgroundColor: '#FFFFFF', padding: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5, alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6' },
-  tooltipDate: { fontSize: 10, color: UI.textMuted, marginBottom: 2 },
-  tooltipVal: { fontSize: 12, fontWeight: '800', color: UI.text },
-  xAxis: { flexDirection: 'row-reverse', justifyContent: 'space-between', paddingLeft: 40, marginTop: 12 },
+  // Trend
+  trendRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 4 },
+  trendText: { fontSize: 11, fontFamily: FONTS.semiBold },
 
-  quickStatsCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
-  quickRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  quickIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  quickLabel: { fontSize: 14, color: UI.textMuted, fontWeight: '600', flex: 1, textAlign: 'right' },
-  quickValue: { fontSize: 16, fontWeight: '900', color: UI.text },
-  quickDivider: { height: 1, backgroundColor: UI.border, marginVertical: 16 },
+  // Grid
+  gridRow: { gap: 20, marginBottom: 20, flexDirection: 'row-reverse' },
+  column: { gap: 20 },
 
-  tableCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: UI.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
-  tableHeaderWrap: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  viewAllBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: UI.border },
-  viewAllText: { fontSize: 12, color: UI.textMuted, fontWeight: '600' },
-  table: { width: '100%' },
-  thRow: { flexDirection: 'row-reverse', borderBottomWidth: 1, borderBottomColor: UI.border, paddingBottom: 12, marginBottom: 12 },
-  th: { flex: 1, fontSize: 12, fontWeight: '700', color: '#9CA3AF', textAlign: 'right' },
-  tableRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F9FAFB' },
-  td: { flex: 1, fontSize: 13, color: UI.text, fontWeight: '500', textAlign: 'right' },
-  tdBold: { flex: 1, fontSize: 13, fontWeight: '800', color: UI.text, textAlign: 'right' },
-  tdAction: { flex: 1, textAlign: 'right' },
+  // Bento cards
+  card: { backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  limeCard: { backgroundColor: UI.limeSoft, borderColor: '#DDEFA9' },
+  mintCard: { backgroundColor: UI.mintSoft, borderColor: '#BEEBDD' },
+  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary },
+  heroContent: { zIndex: 2 },
+  heroOrbLime: { position: 'absolute', width: 132, height: 132, borderRadius: 66, backgroundColor: UI.lime, left: -45, top: -52, opacity: 0.92 },
+  heroOrbCoral: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: UI.coral, right: -24, bottom: -24, opacity: 0.85 },
+  heroTop: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  heroIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: UI.lime, alignItems: 'center', justifyContent: 'center' },
+  heroLogo: { fontSize: 18, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  heroSubtitle: { fontSize: 12, fontFamily: FONTS.regular, color: '#DDD8FF', marginBottom: 4, textAlign: 'right' },
+  heroBalance: { fontSize: 34, fontFamily: FONTS.bold, color: '#FFFFFF', marginBottom: 24, textAlign: 'right' },
+  heroBottom: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  heroText: { fontSize: 12.5, color: '#F0EDFF', fontFamily: FONTS.medium },
+
+  cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  cardHeaderLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  iconBox: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  cardTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textDark },
+  cardTitleSoft: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textGrey, marginBottom: 12 },
+  iconBtn: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, alignItems: 'center', justifyContent: 'center' },
+
+  togglePills: { flexDirection: 'row-reverse', backgroundColor: UI.cardSoft, borderRadius: RADIUS.full, padding: 4 },
+  togglePill: { fontSize: 11, fontFamily: FONTS.medium, color: UI.textGrey, paddingHorizontal: 12, paddingVertical: 6 },
+  togglePillActive: { fontSize: 11, fontFamily: FONTS.semiBold, color: '#FFFFFF', backgroundColor: UI.primary, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6 },
+
+  chartAreaCentered: { alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  chartLabelsX: { flexDirection: 'row-reverse', justifyContent: 'space-between', width: '100%', marginTop: 12, paddingHorizontal: 10 },
+  chartLabel: { fontSize: 10, color: UI.textMuted, fontFamily: FONTS.medium },
+  chartTotalValue: { fontSize: 29, fontFamily: FONTS.bold, color: UI.textDark },
+
+  statRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  statValue: { fontSize: 27, fontFamily: FONTS.bold, color: UI.textDark },
+  badgeOrange: { backgroundColor: UI.coralSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.full },
+  badgeOrangeText: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.error },
+
+  // Quick Stats inside card
+  quickStatRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  quickStatLabel: { fontSize: 13, color: UI.textGrey, fontFamily: FONTS.medium },
+  quickStatValue: { fontSize: 14, fontFamily: FONTS.bold, color: UI.textDark },
+  completionWrap: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  progressBar: { width: 60, height: 5, borderRadius: 3, backgroundColor: COLORS.borderStrong, overflow: 'hidden' },
+  progressFill: { height: 5, borderRadius: 3, backgroundColor: UI.mint },
+
+  // Stat Summary Cards Row
+  statCardsRow: { gap: 16, marginBottom: 20 },
+  statSummaryCard: { flex: 1, minHeight: 104, flexDirection: 'row-reverse', alignItems: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 18, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  statSummaryIcon: { width: 46, height: 46, borderRadius: RADIUS.lg, alignItems: 'center', justifyContent: 'center' },
+  statSummaryValue: { fontSize: 21, fontFamily: FONTS.bold, color: UI.textDark },
+  statSummaryLabel: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, marginTop: 2 },
+
+  // Orders table
+  tableCard: { backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  tableHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  tableTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.textDark },
+  tableRowHeader: { flexDirection: 'row-reverse', paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: UI.border },
+  th: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, flex: 1, textAlign: 'right' },
+  tableRow: { minHeight: 58, flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: UI.border },
+  td: { fontSize: 13, color: UI.textGrey, fontFamily: FONTS.regular, textAlign: 'right' },
+  tdTextBold: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark, textAlign: 'right' },
+  tdSub: { fontSize: 11, color: UI.textGrey, fontFamily: FONTS.regular, marginTop: 4, textAlign: 'right' },
+  avatarMiniList: { width: 34, height: 34, borderRadius: RADIUS.sm, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  tableWrapper: { width: '100%' },
+
+  mobileList: { gap: 14 },
 });

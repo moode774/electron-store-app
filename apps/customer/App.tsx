@@ -11,7 +11,13 @@ enableScreens(false);
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreenExpo from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
-import { IBMPlexSansArabic_400Regular, useFonts } from '@expo-google-fonts/ibm-plex-sans-arabic';
+import {
+  IBMPlexSansArabic_400Regular,
+  IBMPlexSansArabic_500Medium,
+  IBMPlexSansArabic_600SemiBold,
+  IBMPlexSansArabic_700Bold,
+  useFonts,
+} from '@expo-google-fonts/ibm-plex-sans-arabic';
 import { Ionicons } from '@expo/vector-icons';
 
 // Use the bundled font on web and native; do not request Google Fonts at runtime.
@@ -256,7 +262,13 @@ export default function App(): React.JSX.Element | null {
 
   // Preload the Arabic text font and the Ionicons font together.  Ionicons are
   // glyphs, so this prevents their late "pop in" on the web.
-  useFonts({ IBMPlexSansArabic_400Regular, ...Ionicons.font });
+  useFonts({
+    IBMPlexSansArabic_400Regular,
+    IBMPlexSansArabic_500Medium,
+    IBMPlexSansArabic_600SemiBold,
+    IBMPlexSansArabic_700Bold,
+    ...Ionicons.font,
+  });
 
   // Reset to home screen when app comes to foreground from a hidden merchant tab
   useEffect(() => {
