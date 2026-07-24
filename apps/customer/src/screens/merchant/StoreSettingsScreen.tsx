@@ -5,21 +5,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, getMerchantProfile, updateMerchantProfileByUser } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 
 // ─── Design System ──────────────────────────────────────────────────────────
 const UI = {
-  primary:   '#111827',
-  bg:        '#F3F4F6',
-  bgMobile:  '#F9FAFB',
-  white:     '#FFFFFF',
-  textDark:  '#111827',
-  textGrey:  '#4B5563',
-  textMuted: '#9CA3AF',
-  border:    '#E5E7EB',
-  green:     '#10B981',
-  red:       '#EF4444',
-  blue:      '#3B82F6',
+  primary:   COLORS.primary,
+  bg:        COLORS.background,
+  bgMobile:  COLORS.background,
+  white:     COLORS.surface,
+  textDark:  COLORS.textPrimary,
+  textGrey:  COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border:    COLORS.border,
+  green:     COLORS.success,
+  red:       COLORS.error,
+  blue:      COLORS.info,
 };
 
 const softShadow = {
@@ -80,7 +81,8 @@ function InputField({ label, value, onChangeText, multiline = false, placeholder
 export default function StoreSettingsScreen({ navigation }: any) {
   const user     = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   // Basic
   const [storeName,    setStoreName]    = useState('');
@@ -180,7 +182,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: isDesktop ? UI.bg : UI.bgMobile }} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={44} color={UI.red} />
         <Text style={{ color: UI.red, textAlign: 'center', lineHeight: 21 }}>{loadError}</Text>
-        <TouchableOpacity style={{ backgroundColor: UI.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10 }} onPress={() => setLoadAttempt((value) => value + 1)} accessibilityRole="button">
+        <TouchableOpacity style={{ minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 11, paddingHorizontal: 18 }} onPress={() => setLoadAttempt((value) => value + 1)} accessibilityRole="button">
           <Text style={{ color: UI.white, fontWeight: '800' }}>إعادة المحاولة</Text>
         </TouchableOpacity>
       </View>
@@ -193,17 +195,17 @@ export default function StoreSettingsScreen({ navigation }: any) {
 
       {/* Mobile Header */}
       {!isDesktop && (
-        <View style={s.headerMobile}>
+        <View style={[s.headerMobile, isCompact && s.headerMobileCompact]}>
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={s.headerTitleMobile}>معلومات المتجر</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
       <ScrollView
-        contentContainerStyle={[s.scrollContent, isDesktop && s.scrollContentDesktop]}
+        contentContainerStyle={[s.scrollContent, isCompact && s.scrollContentCompact, isDesktop && s.scrollContentDesktop]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -221,7 +223,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
           <View style={[s.mainCol, isDesktop && { flex: 3 }]}>
 
             {/* حالة المتجر */}
-            <Card style={[s.statusCard, { borderColor: isOpen ? UI.green : UI.red }]}>
+            <Card style={[s.statusCard, isCompact && s.statusCardCompact, { borderColor: isOpen ? UI.green : UI.red }]}>
               <View style={s.statusCardLeft}>
                 <View style={[s.statusIconBox, { backgroundColor: isOpen ? '#D1FAE5' : '#FEE2E2' }]}>
                   <Ionicons name={isOpen ? 'storefront' : 'lock-closed'} size={26} color={isOpen ? UI.green : UI.red} />
@@ -244,7 +246,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
             {/* البيانات الأساسية */}
             <Card>
               <SectionHeader title="البيانات الأساسية" icon="business-outline" />
-              <View style={s.formGrid}>
+              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
                 <InputField label="الاسم التجاري للمتجر" value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
                 <InputField label="تصنيف المتجر" value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: مطاعم وطعام" />
               </View>
@@ -258,11 +260,11 @@ export default function StoreSettingsScreen({ navigation }: any) {
                 <Ionicons name="lock-closed-outline" size={16} color="#1D4ED8" />
                 <Text style={s.infoText}>لتعديل الوثائق الرسمية يرجى التواصل مع فريق الدعم المتقدم.</Text>
               </View>
-              <View style={s.formGrid}>
+              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
                 <InputField label="اسم صاحب المتجر" value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" />
                 <InputField label="رقم الهوية الوطنية" value={nationalId} onChangeText={setNationalId} placeholder="رقم الهوية" keyboardType="numeric" />
               </View>
-              <View style={s.formGrid}>
+              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
                 <InputField label="رقم السجل التجاري" value={commercialRegister} onChangeText={setCommercialRegister} placeholder="رقم السجل" keyboardType="numeric" />
                 <InputField label="الرقم الضريبي (VAT)" value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" />
               </View>
@@ -276,7 +278,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
             {/* الموقع والتواصل */}
             <Card>
               <SectionHeader title="الموقع والتواصل" icon="location-outline" />
-              <View style={s.formGrid}>
+              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
                 <InputField label="المدينة / المحافظة" value={city} onChangeText={setCity} placeholder="مثال: صنعاء" />
                 <InputField label="رقم هاتف المتجر" value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
               </View>
@@ -288,7 +290,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
             <Card>
               <SectionHeader title="البيانات البنكية لاستلام الأرباح" icon="wallet-outline" />
               <InputField label="اسم البنك" value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
-              <View style={s.formGrid}>
+              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
                 <InputField label="اسم صاحب الحساب" value={bankAccountName} onChangeText={setBankAccountName} placeholder="الاسم في الحساب" />
                 <InputField label="رقم الحساب" value={bankAccount} onChangeText={setBankAccount} placeholder="رقم الحساب" keyboardType="numeric" />
               </View>
@@ -305,7 +307,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
       {/* Save Button */}
       <View style={[s.footer, isDesktop && s.footerDesktop]}>
         <TouchableOpacity
-          style={[s.saveBtn, saving && { opacity: 0.7 }]}
+          style={[s.saveBtn, isDesktop && s.saveBtnDesktop, saving && { opacity: 0.7 }]}
           onPress={handleSave}
           disabled={saving}
           activeOpacity={0.85}
@@ -333,11 +335,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     borderBottomWidth: 1, borderBottomColor: UI.border, backgroundColor: UI.white,
   },
-  backBtn:         { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn:         { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
 
   scrollContent:        { padding: 20, paddingBottom: 120 },
-  scrollContentDesktop: { padding: 40, paddingBottom: 100 },
+  scrollContentCompact: { paddingHorizontal: 14 },
+  scrollContentDesktop: { width: '100%', maxWidth: 1280, alignSelf: 'center', padding: 40, paddingBottom: 100 },
 
   pageHeaderRow: { marginBottom: 28 },
   pageTitle:     { fontSize: 26, fontWeight: '900', color: UI.textDark, marginBottom: 6, textAlign: 'right', letterSpacing: -0.5 },
@@ -347,9 +351,10 @@ const s = StyleSheet.create({
   mainCol: { gap: 20 },
   sideCol: { gap: 20 },
 
-  card: { backgroundColor: UI.white, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  card: { backgroundColor: UI.white, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
 
   statusCard:    { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderWidth: 2 },
+  statusCardCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 16 },
   statusCardLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14 },
   statusIconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   statusTitle:   { fontSize: 16, fontWeight: '800', color: UI.textDark, marginBottom: 4 },
@@ -359,6 +364,7 @@ const s = StyleSheet.create({
   sectionTitle:  { fontSize: 17, fontWeight: '800', color: UI.textDark },
 
   formGrid:   { flexDirection: 'row-reverse', gap: 14, flexWrap: 'wrap' },
+  formGridCompact: { flexDirection: 'column', gap: 0 },
   inputGroup: { flex: 1, minWidth: '45%', marginBottom: 16 },
   inputLabel: { fontSize: 12, fontWeight: '700', color: UI.textGrey, marginBottom: 7, textAlign: 'right' },
   inputBox: {
@@ -389,5 +395,6 @@ const s = StyleSheet.create({
     height: 54, borderRadius: 14, alignItems: 'center',
     justifyContent: 'center', paddingHorizontal: 32,
   },
+  saveBtnDesktop: { width: '100%', maxWidth: 1200, alignSelf: 'center' },
   saveBtnText: { color: UI.white, fontWeight: '800', fontSize: 16 },
 });

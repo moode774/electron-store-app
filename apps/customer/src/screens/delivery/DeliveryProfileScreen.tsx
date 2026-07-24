@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, VEHICLE_TYPE } from '@marketplace/shared-utils';
 import { Input, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getDeliveryProfile, updateDeliveryProfileByUser, updateUserProfile } from '@marketplace/shared-hooks';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const VEHICLES = [
   { key: VEHICLE_TYPE.MOTORCYCLE, label: 'دراجة نارية', icon: 'bicycle-outline' },
@@ -14,6 +15,7 @@ const VEHICLES = [
 ];
 
 export default function DeliveryProfileScreen({ navigation }: any) {
+  const layout = useResponsiveLayout(820);
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const [name, setName] = useState(user?.full_name ?? '');
@@ -75,7 +77,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
@@ -83,7 +85,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} keyboardShouldPersistTaps="handled">
         {profileLoading ? <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 20 }} accessibilityLabel="جاري تحميل بيانات المندوب" /> : null}
         {profileError ? (
           <View style={styles.errorCard}>
@@ -97,13 +99,13 @@ export default function DeliveryProfileScreen({ navigation }: any) {
         <Input label="الاسم الكامل" placeholder="اسمك" value={name} onChangeText={setName} />
 
         <Text style={styles.label}>نوع المركبة</Text>
-        <View style={styles.vehiclesRow}>
+        <View style={[styles.vehiclesRow, layout.compact && styles.vehiclesRowCompact]}>
           {VEHICLES.map((v) => {
             const active = vehicle === v.key;
             return (
               <TouchableOpacity
                 key={v.key}
-                style={[styles.vehicleCard, active && styles.vehicleCardActive]}
+                style={[styles.vehicleCard, layout.compact && styles.vehicleCardCompact, active && styles.vehicleCardActive]}
                 onPress={() => setVehicle(v.key)}
                 activeOpacity={0.7}
                 accessibilityRole="radio"
@@ -157,19 +159,22 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    width: '100%', maxWidth: 820, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  scrollContent: { padding: 24 },
+  scrollContent: { padding: 24, width: '100%', maxWidth: 820, alignSelf: 'center', paddingBottom: 80 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 18, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   label: { fontSize: 13, color: '#111827', marginBottom: 10, fontWeight: '600' },
   vehiclesRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  vehiclesRowCompact: { flexWrap: 'wrap' },
   vehicleCard: {
     flex: 1, alignItems: 'center', gap: 8, paddingVertical: 16, borderRadius: 14,
     backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E5E7EB',
   },
+  vehicleCardCompact: { flexBasis: '46%', flexGrow: 1 },
   vehicleCardActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   vehicleLabel: { fontSize: 11.5, fontWeight: '700', color: '#6B7280' },
   docCard: {

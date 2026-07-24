@@ -1,21 +1,23 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, TextInput, Platform, KeyboardAvoidingView, ScrollView
+  ActivityIndicator, TextInput, Platform, KeyboardAvoidingView, ScrollView,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
 };
 
 const AUDIENCES = [
@@ -26,6 +28,10 @@ const AUDIENCES = [
 ] as const;
 
 export default function AdminBroadcastScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 920);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [audience, setAudience] = useState<'' | 'customer' | 'merchant' | 'delivery'>('');
@@ -72,7 +78,7 @@ export default function AdminBroadcastScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
@@ -80,8 +86,8 @@ export default function AdminBroadcastScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll}>
-        <View style={s.card}>
+      <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} keyboardShouldPersistTaps="handled">
+        <View style={[s.card, { width: contentWidth }]}>
           <Text style={s.cardTitle}>إنشاء إشعار داخل التطبيق</Text>
           <Text style={s.cardDesc}>يُنشئ هذا الإجراء إشعاراً في صندوق المستخدم. إرسال Push للهاتف يحتاج جهازاً مسجلاً ونتيجة منفصلة من خدمة الإرسال.</Text>
           
@@ -144,28 +150,28 @@ export default function AdminBroadcastScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: UI.bg },
-  header: { padding: 24, paddingTop: 60, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: UI.text },
-  scroll: { padding: 20 },
+  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, backgroundColor: UI.card, borderBottomWidth: 1, borderBottomColor: UI.border },
+  headerContent: { maxWidth: 920, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 20, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
+  scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
   
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border },
-  cardTitle: { fontSize: 18, fontWeight: '900', color: UI.text, textAlign: 'right', marginBottom: 8 },
-  cardDesc: { fontSize: 13, color: UI.textMuted, textAlign: 'right', marginBottom: 24, lineHeight: 20 },
+  card: { maxWidth: 920, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border },
+  cardTitle: { fontSize: 18, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 8 },
+  cardDesc: { fontSize: 13, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'right', marginBottom: 24, lineHeight: 22 },
   
   formGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '800', color: UI.text, textAlign: 'right', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: UI.border, borderRadius: 12, paddingHorizontal: 16, height: 50, backgroundColor: '#F8FAFC', fontSize: 15, color: UI.text },
+  label: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.text, textAlign: 'right', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: UI.border, borderRadius: RADIUS.md, paddingHorizontal: 16, minHeight: 50, backgroundColor: COLORS.surfaceMuted, fontSize: 15, fontFamily: FONTS.regular, color: UI.text },
   inputArea: { height: 120, paddingTop: 16, textAlignVertical: 'top' },
-  charCount: { fontSize: 12, color: UI.textMuted, textAlign: 'left', marginTop: 8 },
+  charCount: { fontSize: 12, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'left', marginTop: 8 },
   
   audienceRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12 },
-  audBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: UI.border, backgroundColor: '#FFFFFF' },
+  audBtn: { minHeight: 44, flexGrow: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: UI.border, backgroundColor: UI.card },
   audBtnActive: { borderColor: UI.primary, backgroundColor: UI.primaryLight },
-  audText: { fontSize: 14, fontWeight: '700', color: UI.textMuted },
+  audText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   audTextActive: { color: UI.primary },
   
-  sendBtn: { flexDirection: 'row-reverse', height: 56, backgroundColor: UI.primary, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 12, gap: 12 },
-  sendBtnText: { color: '#FFF', fontSize: 18, fontWeight: '800' },
+  sendBtn: { flexDirection: 'row-reverse', minHeight: 56, backgroundColor: UI.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 12, gap: 12 },
+  sendBtnText: { color: UI.card, fontSize: 18, fontFamily: FONTS.bold },
 });

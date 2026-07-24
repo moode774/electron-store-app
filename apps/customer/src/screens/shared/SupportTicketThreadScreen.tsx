@@ -10,6 +10,7 @@ import {
   supabase, useAuthStore,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'مفتوحة',
@@ -20,6 +21,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function SupportTicketThreadScreen({ navigation, route }: any) {
+  const layout = useResponsiveLayout(960);
   const ticketId: string | undefined = route?.params?.ticketId;
   const user = useAuthStore((state) => state.user);
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
@@ -93,7 +95,8 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <View style={styles.header}>
+      <View style={[styles.threadShell, layout.desktop && styles.threadShellDesktop]}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
@@ -130,7 +133,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
           <FlatList
             data={messages}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.messageList}
+            contentContainerStyle={[styles.messageList, { paddingHorizontal: layout.gutter }]}
             renderItem={({ item }) => {
               const mine = item.sender_id === user?.id;
               return (
@@ -176,12 +179,15 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
           </View>
         )
       ) : null}
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
+  threadShell: { flex: 1, width: '100%', maxWidth: 960, alignSelf: 'center', backgroundColor: '#F8FAFC', overflow: 'hidden' },
+  threadShellDesktop: { marginVertical: 20, borderRadius: 24, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' },
   headerText: { flex: 1, alignItems: 'center', paddingHorizontal: 10 },

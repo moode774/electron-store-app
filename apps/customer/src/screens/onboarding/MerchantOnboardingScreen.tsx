@@ -100,6 +100,8 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
+  const pageGutter = width < 430 ? 16 : isTablet ? 28 : 20;
 
   // Form State
   const [storeName,          setStoreName]          = useState('');
@@ -219,7 +221,15 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
   const currentMeta = STEP_META[step - 1];
 
   const stepContent = (
-    <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={[
+        s.scrollContent,
+        { paddingHorizontal: pageGutter },
+        isTablet && s.scrollContentWide,
+      ]}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
 
       {/* Step Header */}
       <View style={s.stepHeaderBox}>
@@ -459,7 +469,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <StatusBar barStyle="dark-content" backgroundColor={UI.bg} />
 
         {/* Left Panel — Sidebar */}
-        <View style={s.sidebar}>
+        <View style={[s.sidebar, { width: Math.min(300, Math.max(244, width * 0.24)) }]}>
           <TouchableOpacity 
             onPress={() => useAuthStore.getState().signOut()} 
             style={{position: 'absolute', top: 20, right: 20, flexDirection: 'row-reverse', alignItems: 'center', gap: 6}}
@@ -540,7 +550,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor={UI.white} />
 
       {/* Mobile Header */}
-      <View style={s.mobileHeader}>
+      <View style={[s.mobileHeader, { paddingHorizontal: pageGutter }]}>
         {step > 1 ? (
           <TouchableOpacity style={s.mobileBackBtn} onPress={() => setStep((s) => s - 1)} activeOpacity={0.7}>
             <Ionicons name="arrow-forward" size={22} color={UI.textDark} />
@@ -565,7 +575,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         {stepContent}
 
         {/* Mobile Bottom Bar */}
-        <View style={s.mobileBottomBar}>
+        <View style={[s.mobileBottomBar, { paddingHorizontal: pageGutter }]}>
           {step < TOTAL_STEPS ? (
             <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
               <Text style={s.nextBtnText}>التالي</Text>
@@ -616,7 +626,7 @@ const s = StyleSheet.create({
   sidebarStepLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.5)', flex: 1, textAlign: 'right' },
   sidebarStepLabelActive: { color: UI.white, fontWeight: '800' },
 
-  desktopMain: { flex: 1 },
+  desktopMain: { flex: 1, minWidth: 0 },
   desktopBottomBar: {
     flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 40,
     paddingVertical: 20, borderTopWidth: 1, borderTopColor: UI.border, backgroundColor: UI.white,
@@ -628,6 +638,7 @@ const s = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 58 : 40, paddingBottom: 14,
     borderBottomWidth: 1, borderBottomColor: UI.border,
+    width: '100%', maxWidth: 860, alignSelf: 'center',
   },
   mobileBackBtn:    { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   mobileHeaderCenter: { flex: 1, alignItems: 'center' },
@@ -637,10 +648,12 @@ const s = StyleSheet.create({
   mobileBottomBar:  {
     paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 20, paddingTop: 14,
     borderTopWidth: 1, borderTopColor: UI.border, backgroundColor: UI.white,
+    width: '100%', maxWidth: 860, alignSelf: 'center',
   },
 
   // Shared Content
   scrollContent: { padding: 32, paddingBottom: 20 },
+  scrollContentWide: { width: '100%', maxWidth: 860, alignSelf: 'center' },
   stepHeaderBox: { marginBottom: 32 },
   stepIconBox: {
     width: 60, height: 60, borderRadius: 18, backgroundColor: '#F0F2F5',

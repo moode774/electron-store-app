@@ -1,6 +1,6 @@
 {
-  "installCommand": "cd ../.. && npm ci",
-  "buildCommand": "cd ../.. && npm run build:web",
+  "installCommand": "cd ../.. && yarn install",
+  "buildCommand": "cd ../.. && yarn run build:web",
   "outputDirectory": "dist",
   "rewrites": [
     {

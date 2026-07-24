@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import {
   reviewAdminProduct,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 type Filter = ProductApprovalStatus | 'all';
 
@@ -36,6 +38,12 @@ const STATUS_META: Record<ProductApprovalStatus, { label: string; color: string;
 };
 
 export default function AdminProductsScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.tablet ? 2 : 1;
+  const pagePadding = compact ? 12 : 20;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
+  const cardWidth = columns === 2 ? (contentWidth - 12) / 2 : contentWidth;
   const [filter, setFilter] = useState<Filter>('pending');
   const [products, setProducts] = useState<AdminProductReview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +113,7 @@ export default function AdminProductsScreen({ navigation }: any) {
 
   return (
     <View style={s.root}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={22} color="#0F172A" />
         </TouchableOpacity>
@@ -116,7 +124,7 @@ export default function AdminProductsScreen({ navigation }: any) {
         <View style={s.headerButton} />
       </View>
 
-      <View style={s.filters}>
+      <View style={[s.filters, { width: contentWidth }]}>
         {FILTERS.map((item) => (
           <TouchableOpacity
             key={item.value}
@@ -142,7 +150,7 @@ export default function AdminProductsScreen({ navigation }: any) {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} />}
         >
           {products.length === 0 ? (
@@ -156,7 +164,7 @@ export default function AdminProductsScreen({ navigation }: any) {
             const busy = processingId === product.id;
             const rejecting = rejectingId === product.id;
             return (
-              <View key={product.id} style={s.card}>
+              <View key={product.id} style={[s.card, { width: cardWidth }]}>
                 <View style={s.productRow}>
                   {product.primary_image ? (
                     <Image source={{ uri: product.primary_image }} style={s.image} />
@@ -242,26 +250,26 @@ export default function AdminProductsScreen({ navigation }: any) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { backgroundColor: '#FFFFFF', paddingTop: 48, paddingHorizontal: 18, paddingBottom: 16, flexDirection: 'row-reverse', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  headerButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: COLORS.background },
+  header: { backgroundColor: COLORS.surface, paddingTop: 48, paddingBottom: 16, flexDirection: 'row-reverse', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerButton: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   headerCopy: { flex: 1, alignItems: 'center' },
-  title: { color: '#0F172A', fontSize: 20, fontWeight: '900' },
-  subtitle: { color: '#64748B', fontSize: 11, marginTop: 3 },
-  filters: { flexDirection: 'row-reverse', gap: 7, padding: 12, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  filterButton: { flex: 1, minHeight: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' },
-  filterButtonActive: { backgroundColor: '#1E3A8A' },
-  filterText: { color: '#475569', fontSize: 12, fontWeight: '800' },
+  title: { color: COLORS.textPrimary, fontSize: 20, fontFamily: FONTS.bold },
+  subtitle: { color: COLORS.textMuted, fontSize: 11, fontFamily: FONTS.regular, marginTop: 3 },
+  filters: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 7, padding: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  filterButton: { flexGrow: 1, minWidth: 100, minHeight: 44, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceMuted },
+  filterButtonActive: { backgroundColor: COLORS.primary },
+  filterText: { color: COLORS.textSecondary, fontSize: 12, fontFamily: FONTS.semiBold },
   filterTextActive: { color: '#FFFFFF' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 },
   errorText: { color: '#991B1B', textAlign: 'center', lineHeight: 21 },
-  retryButton: { backgroundColor: '#1E3A8A', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 11 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
-  list: { padding: 14, paddingBottom: 50, gap: 12 },
+  retryButton: { minHeight: 44, justifyContent: 'center', backgroundColor: COLORS.primary, borderRadius: RADIUS.sm, paddingHorizontal: 20, paddingVertical: 11 },
+  retryText: { color: COLORS.surface, fontFamily: FONTS.semiBold },
+  list: { alignSelf: 'center', flexDirection: 'row-reverse', flexWrap: 'wrap', paddingTop: 14, paddingBottom: 112, gap: 12 },
   empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 24 },
   emptyTitle: { color: '#0F172A', fontWeight: '900', fontSize: 17, marginTop: 14 },
   emptyText: { color: '#64748B', fontSize: 13, textAlign: 'center', marginTop: 6 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 17, padding: 15, borderWidth: 1, borderColor: '#E2E8F0', gap: 11 },
+  card: { minWidth: 0, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 15, borderWidth: 1, borderColor: COLORS.border, gap: 11 },
   productRow: { flexDirection: 'row-reverse', gap: 12 },
   image: { width: 82, height: 82, borderRadius: 13, backgroundColor: '#F1F5F9' },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
@@ -279,7 +287,7 @@ const s = StyleSheet.create({
   rejectBox: { gap: 9 },
   input: { minHeight: 88, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 11, padding: 11, color: '#0F172A', textAlignVertical: 'top', backgroundColor: '#FFFFFF' },
   actions: { flexDirection: 'row-reverse', gap: 9 },
-  actionButton: { flex: 1, minHeight: 43, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  actionButton: { flex: 1, minHeight: 44, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center' },
   approveButton: { backgroundColor: '#15803D' },
   approveButtonText: { color: '#FFFFFF', fontWeight: '900' },
   outlineRejectButton: { borderWidth: 1, borderColor: '#DC2626', backgroundColor: '#FFFFFF' },

@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Modal, ScrollView, Platform, TextInput
+  ActivityIndicator, RefreshControl, Modal, ScrollView, Platform, TextInput,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,18 +10,19 @@ import {
   getAdminSupportTickets, getAdminSupportTicketThread, replyToSupportTicket,
   updateSupportTicketStatus, SupportMessage,
 } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  warning: '#D97706',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  warning: COLORS.warning,
 };
 
 const STATUS_FILTERS = [
@@ -60,6 +62,11 @@ const NEXT_STATUSES = [
 ];
 
 export default function AdminSupportScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -177,7 +184,7 @@ export default function AdminSupportScreen({ navigation }: any) {
     <View style={s.root}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
@@ -214,9 +221,12 @@ export default function AdminSupportScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={tickets}
+          key={`support-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderTicket}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -229,8 +239,8 @@ export default function AdminSupportScreen({ navigation }: any) {
       )}
 
       <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)} accessibilityViewIsModal>
-        <View style={s.modalOverlay}>
-          <View style={s.modalBox}>
+        <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
+          <View style={[s.modalBox, !compact && s.modalBoxDesktop, { width: Math.min(Math.max(width - 24, 280), 760) }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>تفاصيل التذكرة</Text>
               <TouchableOpacity onPress={() => setSelected(null)} style={s.closeBtn}>
@@ -335,23 +345,24 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text },
-  backBtn: { padding: 4 },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bg },
   headerCount: { fontSize: 13, color: UI.primary, fontWeight: '700', backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden' },
   filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
   filterScroll: { paddingHorizontal: 20, gap: 10 },
-  filterBtn: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  filterBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { padding: 20, paddingTop: 6, gap: 16, paddingBottom: 60 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
+  columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 14 },
   emptyText: { fontSize: 16, color: UI.textMuted, fontWeight: '700' },
   errorText: { fontSize: 14, color: UI.danger, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
   retryBtn: { backgroundColor: UI.primary, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-  card: { backgroundColor: UI.card, borderRadius: 24, padding: 20, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
   cardTop: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 12 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   statusText: { fontSize: 12, fontWeight: '800' },
@@ -364,11 +375,13 @@ const s = StyleSheet.create({
   userAvatar: { width: 24, height: 24, borderRadius: 12, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   userName: { fontSize: 13, color: UI.text, fontWeight: '700' },
   dateText: { fontSize: 12, color: UI.textMuted, fontWeight: '500' },
-  modalOverlay: { flex: 1, backgroundColor: '#0F172A66', justifyContent: 'flex-end' },
-  modalBox: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, maxHeight: '85%' },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end', alignItems: 'center' },
+  modalOverlayDesktop: { justifyContent: 'center', padding: 24 },
+  modalBox: { backgroundColor: UI.card, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, maxHeight: '90%' },
+  modalBoxDesktop: { borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   modalTitle: { fontSize: 20, fontWeight: '900', color: UI.text },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  closeBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   detailBlock: { alignItems: 'flex-end' },
   detailBlockHalf: { flex: 1, alignItems: 'flex-end', backgroundColor: '#F8FAFC', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: UI.border },
   detailLabel: { fontSize: 13, color: UI.textMuted, fontWeight: '700', marginBottom: 6 },
@@ -388,7 +401,7 @@ const s = StyleSheet.create({
   actionsContainer: { marginTop: 10, borderTopWidth: 1, borderTopColor: UI.border, paddingTop: 20 },
   actionLabel: { fontSize: 15, fontWeight: '800', color: UI.text, textAlign: 'right', marginBottom: 16 },
   statusActionsRow: { flexDirection: 'row-reverse', gap: 12, flexWrap: 'wrap' },
-  statusActionBtn: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  statusActionBtn: { minHeight: 44, paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.md, borderWidth: 1.5, backgroundColor: UI.card, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   statusActionText: { fontSize: 14, fontWeight: '800' },
   replySection: { borderTopWidth: 1, borderTopColor: UI.border, paddingTop: 20 },
   replyInput: { minHeight: 100, borderWidth: 1, borderColor: UI.border, borderRadius: 14, backgroundColor: '#F8FAFC', padding: 14, textAlignVertical: 'top', color: UI.text },

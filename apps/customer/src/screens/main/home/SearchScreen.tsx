@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   filterChip: {
-    minHeight: 38,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 15,

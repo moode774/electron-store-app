@@ -10,6 +10,7 @@ import {
   useAuthStore, getMerchantProfile, getMerchantSalesChart, getMerchantTopProducts, getMerchantPeriodStats,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const PERIODS = [
   { label: 'اليوم', days: 1 },
@@ -19,15 +20,15 @@ const PERIODS = [
 const DAY_LABELS = ['سبت', 'أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'];
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#FFFFFF',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  red: '#EF4444',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.surface,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  red: COLORS.error,
 };
 
 const softShadow = {
@@ -100,7 +101,9 @@ function MiniBarChart({ w, h, points, color }: { w: number; h: number; points: n
 export default function MerchantReportsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const [periodIndex, setPeriodIndex] = useState(1);
   const period = PERIODS[periodIndex];
@@ -165,6 +168,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
   const donutDelivered = total > 0 ? (periodStats.deliveredCount / total) * 251 : 0;
   const donutInProgress = total > 0 ? (periodStats.inProgressCount / total) * 251 : 0;
+  const chartWidth = Math.min(Math.max(width - (isCompact ? 56 : 112), 280), 900);
 
   const handleExportCSV = async () => {
     if (exporting) return;
@@ -236,23 +240,23 @@ export default function MerchantReportsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
       {!isDesktop && (
-        <View style={styles.headerMobile}>
+        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>التقارير المتقدمة</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isTablet && styles.scrollContentWide]} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.pageHeaderRow}>
+        <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
           <View>
             <Text style={styles.pageTitle}>لوحة أداء الطلبات</Text>
             <Text style={styles.pageSubtitle}>القيم المعروضة هي قيمة الطلبات المسجلة وليست رصيدًا ماليًا مسوّى</Text>
           </View>
-          <View style={styles.periodRow}>
+          <View style={[styles.periodRow, isCompact && styles.periodRowCompact]}>
             {PERIODS.map((p, idx) => (
               <TouchableOpacity
                 key={p.label}
@@ -284,8 +288,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
         )}
 
         {/* KPIs */}
-        <View style={[styles.row, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
-          <View style={{ flex: 1 }}>
+        <View style={[styles.row, { flexDirection: isTablet ? 'row-reverse' : 'column', flexWrap: isTablet ? 'wrap' : 'nowrap' }]}>
+          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
               title="إجمالي قيمة الطلبات"
               value={`${periodStats.currentRevenue.toLocaleString()} ر.ي`}
@@ -295,7 +299,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
               showChart
             />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
               title="إجمالي الطلبات"
               value={periodStats.currentOrders.toString()}
@@ -305,7 +309,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
               showChart
             />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
               title="متوسط قيمة الطلب"
               value={`${avgValue.toFixed(2)} ر.ي`}
@@ -315,7 +319,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
               showChart={false}
             />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
               title="معدل الإتمام"
               value={`${deliveredPct}%`}
@@ -337,7 +341,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={{ height: 260, marginTop: 32, alignItems: 'center' }}>
             <SmoothLineChart
-              w={isDesktop ? Math.min(width - 240, 900) : width - 80}
+              w={chartWidth}
               h={260}
               points={chartData}
               color={UI.primary}
@@ -362,6 +366,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
               </View>
             </View>
 
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
+            <View style={[styles.tableViewport, isCompact && styles.tableViewportCompact]}>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 3 }]}>المنتج</Text>
               <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>الكمية</Text>
@@ -399,6 +405,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 </View>
               );
             })}
+            </View>
+            </ScrollView>
           </View>
 
           {/* Order Status Donut */}
@@ -469,9 +477,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', padding: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 40, borderBottomWidth: 1, borderBottomColor: UI.border,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark, flex: 1, textAlign: 'center' },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark, flex: 1, textAlign: 'center' },
   scrollContent: { padding: 24, paddingBottom: 100 },
+  scrollContentCompact: { paddingHorizontal: 14 },
+  scrollContentWide: { width: '100%', maxWidth: 1240, alignSelf: 'center' },
   errorBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 18 },
   errorText: { flex: 1, color: '#991B1B', fontSize: 13, fontWeight: '700', textAlign: 'right' },
   errorRetry: { color: '#991B1B', fontSize: 13, fontWeight: '900' },
@@ -480,6 +491,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end',
     marginBottom: 28, flexWrap: 'wrap', gap: 16,
   },
+  pageHeaderCompact: { flexDirection: 'column', alignItems: 'stretch' },
   pageTitle: { fontSize: 26, fontWeight: '800', color: UI.textDark, marginBottom: 6, textAlign: 'right', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
 
@@ -488,22 +500,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', padding: 4, borderRadius: 12,
     ...softShadow, borderWidth: 1, borderColor: UI.border,
   },
-  periodChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  periodRowCompact: { flexWrap: 'wrap', justifyContent: 'center' },
+  periodChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 8 },
   periodChipActive: { backgroundColor: UI.primary },
   periodText: { fontSize: 13, fontWeight: '600', color: UI.textGrey },
   periodTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   downloadBtn: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8,
+    minHeight: 44, paddingHorizontal: 14,
     borderLeftWidth: 1, borderLeftColor: UI.border, marginLeft: 4,
   },
   downloadText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
 
   row: { gap: 20, marginBottom: 20 },
+  kpiColumn: { width: '48%', flexGrow: 1 },
+  kpiColumnMobile: { width: '100%' },
 
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 24,
     ...softShadow, borderWidth: 1, borderColor: '#F3F4F6', marginBottom: 20,
   },
   cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -528,6 +543,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: UI.border, marginBottom: 4, marginTop: 20,
   },
+  tableScrollContent: { minWidth: '100%' },
+  tableViewport: { width: '100%', minWidth: 620 },
+  tableViewportCompact: { minWidth: 680 },
   th: { fontSize: 11, color: UI.textMuted, fontWeight: '700', textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.5 },
   tableRow: {
     flexDirection: 'row-reverse', alignItems: 'center',

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView,
-  ActivityIndicator, RefreshControl, TextInput, Platform
+  ActivityIndicator, RefreshControl, TextInput, Platform, useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,19 +10,20 @@ import {
   getAdminUserDetails, AdminUserDetails,
   adminBlockUser, adminUnblockUser, adminSetUserActive, adminUpdateUser,
 } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  warning: '#D97706',
-  info: '#2563EB',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  warning: COLORS.warning,
+  info: COLORS.info,
 };
 
 const ROLE_FILTERS = [
@@ -83,6 +84,11 @@ const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 export default function AdminUsersScreen() {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -208,8 +214,8 @@ export default function AdminUsersScreen() {
 
     return (
       <Modal visible transparent animationType="slide" onRequestClose={closeModal}>
-        <View style={s.modalOverlay}>
-          <View style={s.modalSheet}>
+        <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
+          <View style={[s.modalSheet, !compact && s.modalSheetDesktop, { width: Math.min(Math.max(width - 24, 280), 820) }]}>
             {/* Header */}
             <View style={s.modalHeader}>
               <TouchableOpacity onPress={closeModal} style={s.modalClose}>
@@ -443,13 +449,13 @@ export default function AdminUsersScreen() {
     <View style={s.root}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <Text style={s.headerCount}>{users.length} مستخدم</Text>
           <Text style={s.headerTitle}>المستخدمين</Text>
         </View>
 
         {/* Search Input */}
-        <View style={s.searchBox}>
+        <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
@@ -496,9 +502,12 @@ export default function AdminUsersScreen() {
       ) : (
         <FlatList
           data={filtered}
+          key={`users-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderUser}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -569,14 +578,14 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text },
-  headerCount: { fontSize: 13, color: UI.primary, fontWeight: '700', backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden' },
-  searchBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, marginHorizontal: 20, paddingHorizontal: 16, borderRadius: 16, height: 50, borderWidth: 1, borderColor: UI.border },
-  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontWeight: '600' },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
+  headerCount: { fontSize: 13, color: UI.primary, fontFamily: FONTS.semiBold, backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.full, overflow: 'hidden' },
+  searchBox: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, paddingHorizontal: 16, borderRadius: RADIUS.md, minHeight: 50, borderWidth: 1, borderColor: UI.border },
+  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontFamily: FONTS.medium },
   filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
   filterRow: { paddingHorizontal: 20, gap: 10 },
-  filterBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  filterBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
@@ -584,10 +593,11 @@ const s = StyleSheet.create({
   filterCountActive: { backgroundColor: '#FFFFFF33' },
   filterCountText: { fontSize: 11, fontWeight: '800', color: UI.text },
   filterCountTextActive: { color: '#FFFFFF' },
-  list: { padding: 20, paddingTop: 6, gap: 14, paddingBottom: 60 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 14, paddingBottom: 112 },
+  columnRow: { gap: 14 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 15, color: UI.textMuted, fontWeight: '600' },
-  card: { backgroundColor: UI.card, borderRadius: 24, padding: 16, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 16, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
   cardRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14 },
   avatar: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   userInfo: { flex: 1, alignItems: 'flex-end' },
@@ -600,10 +610,12 @@ const s = StyleSheet.create({
   roleText: { fontSize: 12, fontWeight: '800' },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: '#0F172A88', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: UI.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '92%', minHeight: '60%' },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end', alignItems: 'center' },
+  modalOverlayDesktop: { justifyContent: 'center', padding: 24 },
+  modalSheet: { backgroundColor: UI.bg, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, maxHeight: '92%', minHeight: '60%' },
+  modalSheetDesktop: { borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl },
   modalHeader: { flexDirection: 'row', alignItems: 'center', padding: 20, backgroundColor: UI.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderBottomWidth: 1, borderColor: UI.border, gap: 12 },
-  modalClose: { width: 40, height: 40, borderRadius: 14, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  modalClose: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   modalTitle: { fontSize: 18, fontWeight: '800', color: UI.text, textAlign: 'right' },
   modalStatus: { fontSize: 13, fontWeight: '700', marginTop: 2, textAlign: 'right' },
 

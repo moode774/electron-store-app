@@ -6,11 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   TouchableWithoutFeedback,
-  Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-const { width } = Dimensions.get('window');
 
 interface CustomAlertProps {
   visible: boolean;
@@ -63,7 +59,8 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   alertBox: {
-    width: width - 48,
+    width: '100%',
+    maxWidth: 420,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 24,

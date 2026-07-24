@@ -4,6 +4,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const UI = {
   primary: '#111827',
@@ -41,6 +42,7 @@ const FAQS = [
 ];
 
 export default function DeliverySupportScreen({ navigation }: any) {
+  const layout = useResponsiveLayout(1000);
   const user = useAuthStore((s) => s.user);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [subject, setSubject] = useState('');
@@ -95,7 +97,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={UI.bgMobile} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color={UI.textDark} />
         </TouchableOpacity>
@@ -103,10 +105,10 @@ export default function DeliverySupportScreen({ navigation }: any) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} showsVerticalScrollIndicator={false}>
 
         {/* Contact Channels */}
-        <View style={styles.channelsRow}>
+        <View style={[styles.channelsRow, layout.compact && styles.channelsRowCompact]}>
           <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: '#DCFCE7' }]}>
               <Ionicons name="logo-whatsapp" size={28} color="#059669" />
@@ -250,11 +252,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: UI.border,
+    width: '100%', maxWidth: 1000, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
-  scrollContent: { padding: 20, paddingBottom: 100, gap: 16 },
+  scrollContent: { padding: 20, paddingBottom: 100, gap: 16, width: '100%', maxWidth: 1000, alignSelf: 'center' },
   channelsRow: { flexDirection: 'row', gap: 12 },
+  channelsRowCompact: { flexDirection: 'column' },
   channelCard: {
     flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, alignItems: 'center',
     borderWidth: 1.5, borderColor: UI.border,

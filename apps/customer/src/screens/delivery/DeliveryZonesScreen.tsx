@@ -4,10 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { getServiceAreas } from '@marketplace/shared-hooks';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 type Zone = { id: string; name: string; orders: string; available: boolean };
 
 export default function DeliveryZonesScreen({ navigation }: any) {
+  const layout = useResponsiveLayout(900);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -39,7 +41,7 @@ export default function DeliveryZonesScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
@@ -47,7 +49,7 @@ export default function DeliveryZonesScreen({ navigation }: any) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]}>
         <View style={styles.infoCard}>
           <Ionicons name="map-outline" size={20} color={COLORS.primary} />
           <Text style={styles.infoText}>
@@ -91,10 +93,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    width: '100%', maxWidth: 900, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  scrollContent: { padding: 20, gap: 10 },
+  scrollContent: { padding: 20, gap: 10, width: '100%', maxWidth: 900, alignSelf: 'center', paddingBottom: 80 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },

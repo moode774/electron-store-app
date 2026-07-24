@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Dimensions, Platform, ActivityIndicator, Image, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image, Share } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, getReviews, ProductDetail } from '@marketplace/shared-hooks';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
@@ -18,12 +19,11 @@ interface Props {
   route: ScreenRouteProp;
 }
 
-const { width } = Dimensions.get('window');
-
 // بيانات افتراضية عند التحميل
 const FALLBACK_COLORS = ['#111827', '#F3F4F6', '#1E3A8A'];
 
 export default function ProductDetailsScreen({ navigation, route }: Props) {
+  const layout = useCustomerLayout(1180);
   const { productId } = route.params;
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +93,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         <TouchableOpacity style={styles.retryButton} onPress={() => void loadProduct()} accessibilityRole="button">
           <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button">
+        <TouchableOpacity style={styles.backLinkButton} onPress={() => navigation.goBack()} accessibilityRole="button">
           <Text style={styles.backLink}>العودة</Text>
         </TouchableOpacity>
       </View>
@@ -131,8 +131,11 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.page, layout.desktop && { paddingHorizontal: layout.gutter }]}>
+        <View style={[styles.productLayout, layout.desktop && styles.productLayoutDesktop]}>
+        <View style={[styles.mediaPanel, layout.desktop && styles.mediaPanelDesktop]}>
         {/* Header Options */}
-        <View style={styles.header}>
+        <View style={[styles.header, layout.desktop && styles.headerDesktop]}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
@@ -159,9 +162,10 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <View style={styles.dot} />
           </View>
         </View>
+        </View>
 
         {/* Product Info */}
-        <View style={styles.infoContainer}>
+        <View style={[styles.infoContainer, layout.desktop && styles.infoContainerDesktop]}>
           <View style={styles.storeRow}>
             <TouchableOpacity
               style={styles.storePill}
@@ -245,10 +249,13 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           <Text style={styles.description}>{PRODUCT.description}</Text>
           
         </View>
+        </View>
+        </View>
       </ScrollView>
 
       {/* Bottom Sticky Action Bar */}
       <View style={styles.bottomBar}>
+        <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }, layout.compact && styles.bottomBarInnerCompact]}>
         <View style={styles.quantityWrap}>
           <TouchableOpacity 
             style={styles.qtyBtn} 
@@ -309,6 +316,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.ي</Text>
           </View>
         </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -325,9 +333,15 @@ const styles = StyleSheet.create({
   retryButton: { marginTop: 8, minWidth: 150, minHeight: 46, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
   retryButtonText: { color: '#FFFFFF', fontWeight: '800' },
   backLink: { color: COLORS.primary, fontWeight: '700', padding: 10 },
+  backLinkButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { 
-    paddingBottom: 120 
+    paddingBottom: 132,
   },
+  page: { width: '100%', maxWidth: 1180, alignSelf: 'center' },
+  productLayout: { width: '100%' },
+  productLayoutDesktop: { flexDirection: 'row-reverse', alignItems: 'stretch', gap: 24, paddingTop: 28 },
+  mediaPanel: { width: '100%', position: 'relative' },
+  mediaPanelDesktop: { flex: 1, minWidth: 0, overflow: 'hidden', borderRadius: RADIUS.xl, backgroundColor: COLORS.background },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -339,6 +353,7 @@ const styles = StyleSheet.create({
     right: 0, 
     zIndex: 10 
   },
+  headerDesktop: { paddingTop: 20 },
   headerRight: { 
     flexDirection: 'row', 
     gap: 12 
@@ -357,8 +372,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   imageContainer: {
-    width,
-    height: width,
+    width: '100%',
+    aspectRatio: 1,
+    maxHeight: 620,
     backgroundColor: '#F9FAFB',
     alignItems: 'center',
     justifyContent: 'center',
@@ -392,6 +408,7 @@ const styles = StyleSheet.create({
     marginTop: -32,
     paddingBottom: 40,
   },
+  infoContainerDesktop: { flex: 1, minWidth: 0, marginTop: 0, borderRadius: RADIUS.xl, padding: 32, paddingBottom: 32 },
   storeRow: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -399,6 +416,7 @@ const styles = StyleSheet.create({
     marginBottom: 16 
   },
   storePill: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F0F4FF',
@@ -433,13 +451,15 @@ const styles = StyleSheet.create({
   },
   productName: { 
     fontSize: 20, 
-    fontWeight: '800', 
+    fontFamily: FONTS.bold,
     color: '#111827', 
     lineHeight: 30 
   },
   priceRow: { 
     flexDirection: 'row', 
     alignItems: 'center', 
+    flexWrap: 'wrap',
+    gap: 8,
     marginTop: 16 
   },
   price: { 
@@ -455,14 +475,14 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     color: '#9CA3AF', 
     textDecorationLine: 'line-through',
-    marginLeft: 10,
+    marginLeft: 0,
   },
   discountBadge: { 
     backgroundColor: '#EF4444', 
     paddingHorizontal: 8, 
     paddingVertical: 4, 
     borderRadius: 6,
-    marginLeft: 12,
+    marginLeft: 0,
   },
   discountText: { 
     color: '#FFFFFF', 
@@ -521,7 +541,7 @@ const styles = StyleSheet.create({
     marginBottom: 16 
   },
   variantsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  variantChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB' },
+  variantChip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB' },
   variantChipActive: { borderColor: COLORS.primary, backgroundColor: '#F0F4FF' },
   variantDot: { width: 16, height: 16, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
   variantLabel: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
@@ -561,15 +581,12 @@ const styles = StyleSheet.create({
     left: 0, 
     right: 0, 
     backgroundColor: '#FFFFFF', 
-    flexDirection: 'row', 
-    paddingHorizontal: 24, 
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24, 
     borderTopWidth: 1.5, 
     borderTopColor: '#F3F4F6', 
-    alignItems: 'center', 
-    gap: 16 
+    alignItems: 'center',
   },
+  bottomBarInner: { width: '100%', maxWidth: 820, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 16, paddingTop: 12, paddingBottom: Platform.OS === 'ios' ? 32 : 16 },
+  bottomBarInnerCompact: { gap: 8 },
   quantityWrap: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -594,6 +611,7 @@ const styles = StyleSheet.create({
   },
   addToCartBtn: { 
     flex: 1, 
+    minWidth: 0,
     backgroundColor: COLORS.primary, 
     height: 52, 
     borderRadius: 14, 
@@ -608,12 +626,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  addToCartText: { 
+  addToCartText: {
+    flexShrink: 1,
     color: '#FFFFFF', 
     fontSize: 15, 
     fontWeight: '800',
   },
   addToCartPriceBox: { 
+    flexShrink: 1,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -622,6 +642,7 @@ const styles = StyleSheet.create({
   addToCartPrice: {
     color: '#FFFFFF', 
     fontSize: 13, 
-    fontWeight: '700'
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

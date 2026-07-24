@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, TextInput, Platform, Modal, Image, Linking
+  ActivityIndicator, RefreshControl, TextInput, Platform, Modal, Image, Linking,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,18 +12,19 @@ import {
   AdminDriver,
   getDeliveryOnboardingDocumentLinks,
 } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  warning: '#D97706',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  warning: COLORS.warning,
 };
 
 const FILTERS = [
@@ -57,6 +59,11 @@ function reviewErrorMessage(error: unknown): string {
 }
 
 export default function AdminDeliveryScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [drivers, setDrivers] = useState<AdminDriver[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -232,7 +239,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
     <View style={s.root}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
@@ -242,7 +249,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           <Text style={s.headerCount}>{drivers.length} سائق</Text>
         </View>
 
-        <View style={s.searchBox}>
+        <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
@@ -289,9 +296,12 @@ export default function AdminDeliveryScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={filtered}
+          key={`delivery-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderDriver}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -305,7 +315,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
 
       <Modal visible={reviewModal.visible} transparent animationType="fade" onRequestClose={() => !processing && closeReview()} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
-          <View style={s.modalBox}>
+          <View style={[s.modalBox, { width: Math.min(Math.max(width - 24, 280), 460) }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>{reviewModal.approve ? 'مراجعة واعتماد المندوب' : 'رفض طلب اعتماد المندوب'}</Text>
               <TouchableOpacity onPress={closeReview} disabled={!!processing} accessibilityRole="button" accessibilityLabel="إغلاق مراجعة المندوب"><Ionicons name="close" size={22} color={UI.textMuted} /></TouchableOpacity>
@@ -378,67 +388,68 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text },
-  backBtn: { padding: 4 },
-  headerCount: { fontSize: 13, color: UI.primary, fontWeight: '700', backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden' },
-  searchBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, marginHorizontal: 20, paddingHorizontal: 16, borderRadius: 16, height: 50, borderWidth: 1, borderColor: UI.border },
-  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontWeight: '600' },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bg },
+  headerCount: { fontSize: 13, color: UI.primary, fontFamily: FONTS.semiBold, backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.full, overflow: 'hidden' },
+  searchBox: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, paddingHorizontal: 16, borderRadius: RADIUS.md, minHeight: 50, borderWidth: 1, borderColor: UI.border },
+  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontFamily: FONTS.medium },
   filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
   filterRow: { paddingHorizontal: 20, gap: 10 },
-  filterBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  filterBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
-  filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
+  filterText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { padding: 20, paddingTop: 6, gap: 16, paddingBottom: 60 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
+  columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
-  emptyText: { fontSize: 15, color: UI.textMuted, fontWeight: '600' },
-  errorText: { color: UI.danger, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
+  emptyText: { fontSize: 15, color: UI.textMuted, fontFamily: FONTS.medium },
+  errorText: { color: UI.danger, fontFamily: FONTS.semiBold, textAlign: 'center', lineHeight: 22 },
   retryBtn: { backgroundColor: UI.primary, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12 },
-  retryText: { color: '#FFF', fontWeight: '800' },
-  card: { backgroundColor: UI.card, borderRadius: 24, padding: 18, gap: 14, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
+  retryText: { color: '#FFF', fontFamily: FONTS.bold },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 18, gap: 14, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
   cardHeader: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 14 },
   avatar: { width: 56, height: 56, borderRadius: 18, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   cardInfo: { flex: 1, alignItems: 'flex-end' },
-  driverName: { fontSize: 16, fontWeight: '800', color: UI.text, textAlign: 'right', marginBottom: 6 },
+  driverName: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 6 },
   infoRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginBottom: 4 },
-  phoneText: { fontSize: 13, color: UI.textMuted, marginTop: 2, textAlign: 'right', fontWeight: '600' },
+  phoneText: { fontSize: 13, color: UI.textMuted, marginTop: 2, textAlign: 'right', fontFamily: FONTS.medium },
   vehicleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 4 },
-  vehicleText: { fontSize: 13, color: UI.textMuted, fontWeight: '600' },
-  plateText: { fontSize: 11, color: UI.text, backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, fontWeight: '800' },
+  vehicleText: { fontSize: 13, color: UI.textMuted, fontFamily: FONTS.medium },
+  plateText: { fontSize: 11, color: UI.text, backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, fontFamily: FONTS.bold },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  statusText: { fontSize: 12, fontWeight: '800' },
+  statusText: { fontSize: 12, fontFamily: FONTS.bold },
   statsRow: { flexDirection: 'row-reverse', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: UI.border },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: '900', color: UI.text },
-  statLabel: { fontSize: 12, color: UI.textMuted, marginTop: 4, fontWeight: '600' },
+  statValue: { fontSize: 20, fontFamily: FONTS.bold, color: UI.text },
+  statLabel: { fontSize: 12, color: UI.textMuted, marginTop: 4, fontFamily: FONTS.medium },
   statDivider: { width: 1, backgroundColor: UI.border, marginVertical: 4 },
   actionsRow: { flexDirection: 'row-reverse', gap: 12, alignItems: 'center', justifyContent: 'center' },
-  approveBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: 16, paddingVertical: 12, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
-  approveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+  approveBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: RADIUS.md, paddingVertical: 10, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  approveBtnText: { fontSize: 14, fontFamily: FONTS.semiBold, color: '#FFFFFF' },
   rejectBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 16, paddingVertical: 12, borderWidth: 1, borderColor: '#FEE2E2' },
-  rejectBtnText: { fontSize: 14, fontWeight: '700', color: UI.danger },
+  rejectBtnText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.danger },
   approvedRow: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#ECFDF5', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: '#D1FAE5' },
-  approvedText: { fontSize: 14, fontWeight: '800', color: UI.success },
+  approvedText: { fontSize: 14, fontFamily: FONTS.bold, color: UI.success },
   modalOverlay: { flex: 1, backgroundColor: '#0F172A80', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modalBox: { width: '100%', maxWidth: 460, backgroundColor: '#FFF', borderRadius: 22, padding: 22 },
+  modalBox: { maxWidth: 460, maxHeight: '90%', backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 22 },
   modalHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  modalTitle: { color: UI.text, fontSize: 18, fontWeight: '900', textAlign: 'right', flex: 1 },
+  modalTitle: { color: UI.text, fontSize: 18, fontFamily: FONTS.bold, textAlign: 'right', flex: 1 },
   verificationBox: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: UI.border, borderRadius: 14, padding: 14, gap: 7 },
-  verificationTitle: { color: UI.text, fontSize: 16, fontWeight: '900', textAlign: 'right', marginBottom: 3 },
-  verificationRow: { color: '#334155', fontSize: 13, fontWeight: '600', textAlign: 'right' },
+  verificationTitle: { color: UI.text, fontSize: 16, fontFamily: FONTS.bold, textAlign: 'right', marginBottom: 3 },
+  verificationRow: { color: '#334155', fontSize: 13, fontFamily: FONTS.medium, textAlign: 'right' },
   evidenceWarning: { flexDirection: 'row-reverse', gap: 7, alignItems: 'flex-start', backgroundColor: '#FFFBEB', padding: 10, borderRadius: 10, marginTop: 5 },
-  evidenceWarningText: { flex: 1, color: '#92400E', fontSize: 12, lineHeight: 19, textAlign: 'right', fontWeight: '700' },
+  evidenceWarningText: { flex: 1, color: '#92400E', fontSize: 12, lineHeight: 19, textAlign: 'right', fontFamily: FONTS.semiBold },
   documentsRow: { flexDirection: 'row-reverse', gap: 10, marginTop: 6 },
   documentCard: { flex: 1, borderWidth: 1, borderColor: UI.border, borderRadius: 10, overflow: 'hidden', backgroundColor: '#FFFFFF' },
   documentImage: { width: '100%', height: 92, backgroundColor: '#E2E8F0' },
-  documentLabel: { color: UI.primary, fontSize: 12, fontWeight: '800', padding: 8, textAlign: 'center' },
-  documentsError: { color: UI.danger, fontSize: 12, fontWeight: '700', textAlign: 'right' },
+  documentLabel: { color: UI.primary, fontSize: 12, fontFamily: FONTS.bold, padding: 8, textAlign: 'center' },
+  documentsError: { color: UI.danger, fontSize: 12, fontFamily: FONTS.semiBold, textAlign: 'right' },
   reviewInput: { minHeight: 100, borderWidth: 1, borderColor: UI.border, borderRadius: 14, backgroundColor: '#F8FAFC', color: UI.text, padding: 14, textAlignVertical: 'top', marginTop: 14 },
   reviewHint: { color: UI.textMuted, fontSize: 11, lineHeight: 17, textAlign: 'right', marginTop: 6 },
   modalActions: { flexDirection: 'row-reverse', gap: 10, marginTop: 16 },
   modalCancel: { flex: 1, backgroundColor: '#F1F5F9', borderRadius: 12, padding: 13, alignItems: 'center' },
-  modalCancelText: { color: UI.textMuted, fontWeight: '800' },
+  modalCancelText: { color: UI.textMuted, fontFamily: FONTS.bold },
   modalConfirm: { flex: 2, backgroundColor: UI.success, borderRadius: 12, padding: 13, alignItems: 'center' },
-  modalConfirmText: { color: '#FFF', fontWeight: '900' },
+  modalConfirmText: { color: '#FFF', fontFamily: FONTS.bold },
 });

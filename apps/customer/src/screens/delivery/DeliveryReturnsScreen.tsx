@@ -22,6 +22,7 @@ import { supabase, useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 
 import { Alert } from '../../components/appAlert';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 import {
   completeDeliveryReturnStep,
   createDeliveryReturnIdempotencyKey,
@@ -107,6 +108,7 @@ function hasReachedTarget(current: string | null, target: DeliveryReturnTargetSt
 }
 
 export default function DeliveryReturnsScreen({ navigation }: any) {
+  const layout = useResponsiveLayout(1120);
   const user = useAuthStore((state) => state.user);
   const [jobs, setJobs] = useState<DeliveryReturnJob[]>([]);
   const [filter, setFilter] = useState<JobFilter>('active');
@@ -526,7 +528,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -552,7 +554,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.filters}>
+      <View style={[styles.filters, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity
           style={[styles.filterButton, filter === 'active' && styles.filterButtonActive]}
           onPress={() => setFilter('active')}
@@ -580,10 +582,13 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
+          key={`delivery-returns-${layout.desktop ? 2 : 1}`}
           data={visibleJobs}
           keyExtractor={(item) => item.id}
           renderItem={renderJob}
-          contentContainerStyle={styles.listContent}
+          numColumns={layout.desktop ? 2 : 1}
+          columnWrapperStyle={layout.desktop ? styles.jobColumns : undefined}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter }]}
           refreshControl={(
             <RefreshControl refreshing={refreshing} onRefresh={() => void loadJobs(true)} />
           )}
@@ -614,8 +619,8 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
 
       <Modal visible={Boolean(selectedJob && targetStatus)} transparent animationType="fade" onRequestClose={closeStep}>
         <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={styles.modalScroll}>
-            <View style={styles.modalCard}>
+          <ScrollView contentContainerStyle={[styles.modalScroll, { padding: layout.gutter }]}>
+            <View style={[styles.modalCard, layout.compact && styles.modalCardCompact]}>
               <View style={styles.modalHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modalTitle}>
@@ -644,7 +649,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               </View>
 
               <TouchableOpacity
-                style={styles.captureBox}
+                style={[styles.captureBox, layout.compact && styles.captureBoxCompact]}
                 onPress={() => void captureProof()}
                 disabled={capturing || submitting}
                 accessibilityRole="button"
@@ -742,17 +747,18 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12, width: '100%', maxWidth: 1120, alignSelf: 'center' },
   backButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: '#111827', fontSize: 19, fontWeight: '900', textAlign: 'right' },
   headerSubtitle: { color: '#6B7280', fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
   refreshButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  filters: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 10 },
+  filters: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 10, width: '100%', maxWidth: 1120, alignSelf: 'center' },
   filterButton: { flex: 1, minHeight: 40, borderRadius: 12, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
   filterButtonActive: { backgroundColor: '#111827' },
   filterText: { color: '#6B7280', fontSize: 12, fontWeight: '800' },
   filterTextActive: { color: '#FFFFFF' },
-  listContent: { padding: 20, gap: 12, paddingBottom: 110 },
+  listContent: { padding: 20, gap: 12, paddingBottom: 110, width: '100%', maxWidth: 1120, alignSelf: 'center' },
+  jobColumns: { gap: 14 },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   centerText: { color: '#6B7280', fontSize: 12.5, fontWeight: '600' },
   errorCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 12, marginBottom: 2 },
@@ -761,12 +767,12 @@ const styles = StyleSheet.create({
   emptyCard: { marginTop: 50, alignItems: 'center', padding: 24 },
   emptyTitle: { color: '#374151', fontSize: 14, fontWeight: '800', marginTop: 10 },
   emptyText: { color: '#9CA3AF', fontSize: 11, fontWeight: '600', textAlign: 'center', marginTop: 4 },
-  jobCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, borderWidth: 1, borderColor: '#E5E7EB', gap: 11 },
-  jobHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  jobCard: { flex: 1, minWidth: 0, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, borderWidth: 1, borderColor: '#E5E7EB', gap: 11 },
+  jobHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   jobIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   orderNumber: { color: '#111827', fontSize: 14, fontWeight: '900', textAlign: 'right' },
   reason: { color: '#6B7280', fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
-  jobStatus: { fontSize: 9.5, fontWeight: '800', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5, overflow: 'hidden' },
+  jobStatus: { fontSize: 9.5, fontWeight: '800', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5, overflow: 'hidden', flexShrink: 1 },
   timeline: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 4, paddingVertical: 4 },
   timelineStep: { width: 66, alignItems: 'center' },
   timelineDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#E5E7EB', borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
@@ -792,6 +798,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(17,24,39,0.6)' },
   modalScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 440, alignSelf: 'center', borderRadius: 22, padding: 20, backgroundColor: '#FFFFFF' },
+  modalCardCompact: { padding: 15, borderRadius: 18 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 13 },
   modalTitle: { color: '#111827', fontSize: 18, fontWeight: '900', textAlign: 'right' },
   modalSubtitle: { color: '#6B7280', fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'right' },
@@ -799,6 +806,7 @@ const styles = StyleSheet.create({
   instructionBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, backgroundColor: '#EFF6FF', padding: 11, marginBottom: 12 },
   instructionText: { flex: 1, color: '#1D4ED8', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
   captureBox: { height: 210, borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderColor: '#BFDBFE', backgroundColor: '#EFF6FF', marginBottom: 12 },
+  captureBoxCompact: { height: 180 },
   capturePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   captureTitle: { color: '#1F2937', fontSize: 13, fontWeight: '800', marginTop: 8 },
   captureSubtitle: { color: '#6B7280', fontSize: 10, fontWeight: '600', marginTop: 3 },

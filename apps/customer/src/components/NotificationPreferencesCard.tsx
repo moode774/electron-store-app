@@ -228,6 +228,6 @@ const styles = StyleSheet.create({
   deviceButtonText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
   errorBox: { alignItems: 'center', gap: 9, backgroundColor: '#FEF2F2', borderRadius: 11, padding: 12 },
   errorText: { color: '#991B1B', textAlign: 'center', fontSize: 12 },
-  retryButton: { backgroundColor: '#991B1B', borderRadius: 9, paddingHorizontal: 13, paddingVertical: 7 },
+  retryButton: { minHeight: 44, justifyContent: 'center', backgroundColor: '#991B1B', borderRadius: 9, paddingHorizontal: 13, paddingVertical: 7 },
   retryText: { color: '#FFFFFF', fontWeight: '800', fontSize: 12 },
 });

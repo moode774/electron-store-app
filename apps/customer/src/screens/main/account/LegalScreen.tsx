@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 const CONTENT = {
   privacy: {
@@ -27,6 +29,7 @@ const CONTENT = {
 } as const;
 
 export default function LegalScreen({ navigation, route }: any) {
+  const layout = useCustomerLayout(820);
   const type: 'privacy' | 'terms' = route?.params?.type ?? 'terms';
   const content = CONTENT[type];
 
@@ -34,14 +37,16 @@ export default function LegalScreen({ navigation, route }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{content.title}</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{content.title}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.updated}>آخر تحديث: يونيو 2026</Text>
         {content.sections.map((s, i) => (
           <View key={i} style={styles.section}>
@@ -57,15 +62,14 @@ export default function LegalScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  scrollContent: { padding: 24 },
+  header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
+  headerInner: { width: '100%', maxWidth: 820, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
+  scrollContent: { width: '100%', maxWidth: 820, alignSelf: 'center', paddingTop: 24, paddingBottom: 48 },
   updated: { fontSize: 12, color: '#9CA3AF', marginBottom: 20, fontWeight: '600' },
   section: { marginBottom: 22 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  sectionBody: { fontSize: 13.5, color: '#4B5563', lineHeight: 23 },
+  sectionTitle: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.textPrimary, marginBottom: 8 },
+  sectionBody: { fontSize: 13.5, fontFamily: FONTS.regular, color: COLORS.textSecondary, lineHeight: 23, textAlign: 'right' },
 });

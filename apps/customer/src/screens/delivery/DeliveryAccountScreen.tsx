@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
@@ -25,6 +26,7 @@ const MENU_ITEMS = [
 ];
 
 export default function DeliveryAccountScreen({ navigation }: any) {
+  const layout = useResponsiveLayout(960);
   const { user, signOut } = useAuthStore();
   const [info, setInfo] = useState({ balance: 0, totalDeliveries: 0, count: 0 });
   const [loadError, setLoadError] = useState('');
@@ -54,7 +56,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')} accessibilityRole="button" accessibilityLabel="إعدادات بيانات المندوب">
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
@@ -64,7 +66,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]}>
 
         {/* Profile Card */}
         <ImageBackground
@@ -103,9 +105,9 @@ export default function DeliveryAccountScreen({ navigation }: any) {
         ) : null}
 
         {/* Stats Row */}
-        <View style={styles.statsCardContainer}>
+        <View style={[styles.statsCardContainer, layout.compact && styles.statsCardCompact]}>
           {STATS.map((stat, index) => (
-            <View key={stat.id} style={styles.statWrapper}>
+            <View key={stat.id} style={[styles.statWrapper, layout.compact && styles.statWrapperCompact]}>
               <View style={styles.statItem} accessibilityLabel={`${stat.title}: ${stat.value}`}>
                 <View style={styles.statIconCircle}>
                   <Ionicons name={stat.icon as any} size={18} color="#111827" />
@@ -175,6 +177,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16,
     backgroundColor: '#F9FAFB',
+    width: '100%', maxWidth: 960, alignSelf: 'center',
   },
   iconBtn: {
     padding: 8,
@@ -188,6 +191,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 100,
+    width: '100%', maxWidth: 960, alignSelf: 'center',
   },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 16, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
@@ -270,11 +274,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  statsCardCompact: { flexWrap: 'wrap', alignItems: 'stretch', paddingVertical: 6 },
   statWrapper: {
     flex: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
   },
+  statWrapperCompact: { flexBasis: '50%', flexGrow: 0, paddingVertical: 8 },
   statItem: {
     flex: 1,
     alignItems: 'center',
@@ -352,11 +358,14 @@ const styles = StyleSheet.create({
   menuItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
   },
   menuItemText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#111827',
+    flexShrink: 1,
   },
   menuItemIcon: {
     marginEnd: 12,

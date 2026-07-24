@@ -1,25 +1,26 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWindowDimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AdminMoreStackParamList } from '../../navigation/AdminTabNavigator';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  warning: '#D97706',
-  info: '#2563EB',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  warning: COLORS.warning,
+  info: COLORS.info,
 };
 
 type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
@@ -134,12 +135,18 @@ const MENU_ITEMS = [
 export default function AdminMoreScreen() {
   const navigation = useNavigation<Nav>();
   const { user, signOut } = useAuthStore();
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const desktop = width >= BREAKPOINTS.desktop;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
+  const cardWidth = desktop ? (contentWidth - 16) / 2 : contentWidth;
 
   return (
     <View style={s.root}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.profileSection}>
+        <View style={[s.profileSection, { width: contentWidth }]}>
           <View style={s.avatar}>
             <Ionicons name="shield-checkmark" size={26} color="#FFFFFF" />
           </View>
@@ -152,14 +159,15 @@ export default function AdminMoreScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} showsVerticalScrollIndicator={false}>
+        <View style={[s.content, { width: contentWidth }]}>
         <Text style={s.sectionTitle}>الوصول السريع للأدوات</Text>
         
         <View style={s.menuGrid}>
           {MENU_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.screen}
-              style={s.menuCard}
+              style={[s.menuCard, { width: cardWidth }, compact && s.menuCardCompact]}
               onPress={() => navigation.navigate(item.screen)}
               activeOpacity={0.8}
             >
@@ -185,6 +193,7 @@ export default function AdminMoreScreen() {
         </TouchableOpacity>
 
         <Text style={s.versionText}>منصة الإدارة الذكية — الإصدار 1.0.0</Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -201,23 +210,25 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  profileSection: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16 },
-  avatar: { width: 64, height: 64, borderRadius: 20, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center', shadowColor: UI.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  profileSection: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 16 },
+  avatar: { width: 64, height: 64, borderRadius: RADIUS.lg, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center', shadowColor: UI.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   profileInfo: { alignItems: 'flex-end', gap: 4 },
-  profileName: { fontSize: 22, fontWeight: '900', color: UI.text, textAlign: 'right' },
-  roleBadge: { backgroundColor: UI.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  profileRole: { fontSize: 13, color: UI.primary, fontWeight: '800', textAlign: 'right' },
-  scroll: { padding: 20, paddingBottom: 60, gap: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '900', color: UI.text, marginBottom: 8, textAlign: 'right' },
-  menuGrid: { gap: 14 },
-  menuCard: { backgroundColor: UI.card, borderRadius: 20, padding: 18, flexDirection: 'row-reverse', alignItems: 'center', gap: 16, shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
-  menuIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  profileName: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
+  roleBadge: { backgroundColor: UI.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.sm },
+  profileRole: { fontSize: 13, color: UI.primary, fontFamily: FONTS.semiBold, textAlign: 'right' },
+  scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
+  content: { maxWidth: 1280, gap: 16 },
+  sectionTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, marginBottom: 8, textAlign: 'right' },
+  menuGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 16 },
+  menuCard: { minHeight: 112, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 18, flexDirection: 'row-reverse', alignItems: 'center', gap: 16, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: UI.border },
+  menuCardCompact: { paddingHorizontal: 14, gap: 12 },
+  menuIcon: { width: 56, height: 56, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   menuTextGroup: { flex: 1, alignItems: 'flex-end' },
-  menuTitle: { fontSize: 16, fontWeight: '900', color: UI.text, textAlign: 'right', marginBottom: 4 },
-  menuDesc: { fontSize: 13, color: UI.textMuted, textAlign: 'right', fontWeight: '500', lineHeight: 18 },
-  menuArrowWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  menuTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 4 },
+  menuDesc: { fontSize: 13, color: UI.textMuted, textAlign: 'right', fontFamily: FONTS.regular, lineHeight: 20 },
+  menuArrowWrap: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 12 },
-  logoutBtn: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 16, paddingVertical: 18, borderWidth: 1, borderColor: '#FEE2E2' },
-  logoutText: { fontSize: 16, fontWeight: '900', color: UI.danger },
-  versionText: { fontSize: 12, color: UI.textMuted, textAlign: 'center', marginTop: 24, fontWeight: '600', letterSpacing: 0.5 },
+  logoutBtn: { minHeight: 52, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: COLORS.accentCoralSoft, borderRadius: RADIUS.md, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.accentCoralSoft },
+  logoutText: { fontSize: 16, fontFamily: FONTS.bold, color: UI.danger },
+  versionText: { fontSize: 12, color: UI.textMuted, textAlign: 'center', marginTop: 24, fontFamily: FONTS.medium, letterSpacing: 0.5 },
 });

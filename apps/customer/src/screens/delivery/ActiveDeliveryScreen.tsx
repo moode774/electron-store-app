@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
 import {
   getDeliveryOrders,
   getOrderById,
@@ -73,7 +73,9 @@ const errorMessage = (error: unknown, fallback: string) =>
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 900;
+  const isDesktop = width >= BREAKPOINTS.desktop;
+  const isCompact = width < BREAKPOINTS.compact;
+  const pageGutter = isDesktop ? 32 : width >= BREAKPOINTS.tablet ? 24 : isCompact ? 16 : 20;
   const paramOrderId: string | undefined = route?.params?.orderId;
   const user = useAuthStore((state) => state.user);
   const [order, setOrder] = useState<OrderDetail | null>(null);
@@ -496,7 +498,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingHorizontal: pageGutter }]}>
           <View style={{ width: 40 }} />
           <Text style={styles.headerTitle}>توصيلة نشطة</Text>
           <View style={{ width: 40 }} />
@@ -523,7 +525,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   return (
     <View style={[styles.container, isDesktop && styles.containerDesktop]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: pageGutter }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={goBack}
@@ -537,7 +539,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: pageGutter }, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
         <View style={styles.mapContainer}>
           <View style={styles.mapPlaceholder} accessibilityLiveRegion="polite">
             <Ionicons name="location" size={44} color={location ? '#059669' : '#9CA3AF'} />
@@ -603,7 +605,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           </View>
 
           {order.payment_method === 'cash' && (
-            <View style={styles.codBox}>
+            <View style={[styles.codBox, isCompact && styles.codBoxCompact]}>
               <Text style={styles.codLabel}>المبلغ المطلوب تحصيله نقدًا</Text>
               <Text style={styles.codValue}>{orderView.codAmount.toLocaleString()} ر.ي</Text>
             </View>
@@ -613,6 +615,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
       {!terminalOrder && (
         <View style={styles.bottomBar}>
+          <View style={[styles.bottomBarInner, { paddingHorizontal: pageGutter }]}>
           <TouchableOpacity
             style={[styles.actionBtn, advancing && styles.disabledAction]}
             onPress={() => void advanceStep()}
@@ -626,6 +629,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               ? <ActivityIndicator color="#FFFFFF" size="small" />
               : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
           </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -635,8 +639,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         animationType="slide"
         onRequestClose={() => !completingDelivery && setProofVisible(false)}
       >
-        <View style={styles.proofModalOverlay}>
-          <View style={styles.proofModalSheet}>
+        <View style={[styles.proofModalOverlay, isDesktop && styles.proofModalOverlayDesktop]}>
+          <View style={[styles.proofModalSheet, isDesktop && styles.proofModalSheetDesktop]}>
             <View style={styles.proofModalHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.proofModalTitle}>إثبات تسليم الطلب</Text>
@@ -789,6 +793,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    width: '100%', maxWidth: 900, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
@@ -797,7 +802,7 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 13, color: '#9CA3AF', marginTop: 5, textAlign: 'center', lineHeight: 20 },
   retryBtn: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, backgroundColor: '#EFF6FF' },
   retryText: { color: COLORS.primary, fontSize: 13, fontWeight: '800' },
-  scrollContent: { padding: 20, paddingBottom: 120 },
+  scrollContent: { padding: 20, paddingBottom: 120, width: '100%', maxWidth: 900, alignSelf: 'center' },
   scrollContentDesktop: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingTop: 28, paddingHorizontal: 32 },
   mapContainer: { minHeight: 150, borderRadius: 16, overflow: 'hidden', marginBottom: 16, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#D1FAE5' },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5, padding: 20 },
@@ -824,21 +829,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: '#FEF3C7', borderRadius: 12, padding: 14, marginTop: 4,
   },
+  codBoxCompact: { flexDirection: 'column', alignItems: 'flex-start', gap: 5 },
   codLabel: { fontSize: 12.5, fontWeight: '700', color: '#B45309' },
   codValue: { fontSize: 16, fontWeight: '800', color: '#B45309' },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF',
-    padding: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    paddingTop: 20, paddingHorizontal: 0, paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     borderTopWidth: 1.5, borderTopColor: '#F3F4F6',
   },
+  bottomBarInner: { width: '100%', maxWidth: 900, alignSelf: 'center' },
   actionBtn: { backgroundColor: COLORS.primary, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   actionBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   disabledAction: { opacity: 0.55 },
   proofModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(17,24,39,0.55)' },
+  proofModalOverlayDesktop: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   proofModalSheet: {
     maxHeight: '92%', backgroundColor: '#F9FAFB', borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingTop: 20, overflow: 'hidden',
   },
+  proofModalSheetDesktop: { width: '100%', maxWidth: 720, borderRadius: 24 },
   proofModalHeader: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 20,
     paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB',

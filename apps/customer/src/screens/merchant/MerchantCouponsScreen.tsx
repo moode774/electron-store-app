@@ -25,18 +25,19 @@ import {
   MerchantCoupon,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#FFFFFF',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  red: '#EF4444',
-  yellow: '#F59E0B',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.surface,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  red: COLORS.error,
+  yellow: COLORS.warning,
 };
 
 const softShadow = {
@@ -61,7 +62,9 @@ function isExpired(end_date: string | null) {
 export default function MerchantCouponsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const [merchantProfileId, setMerchantProfileId] = useState<string | null>(null);
   const [coupons, setCoupons] = useState<MerchantCoupon[]>([]);
@@ -252,18 +255,18 @@ export default function MerchantCouponsScreen({ navigation }: any) {
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
       {/* Mobile Header */}
       {!isDesktop && (
-        <View style={styles.headerMobile}>
+        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>كوبونات المتجر</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
-      <View style={[styles.pageContent, isDesktop && styles.pageContentDesktop]}>
+      <View style={[styles.pageContent, isTablet && styles.pageContentWide]}>
         {/* Page Header Row */}
-        <View style={styles.pageHeaderRow}>
+        <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
           <View>
             <Text style={styles.pageTitle}>الكوبونات</Text>
             <Text style={styles.pageSubtitle}>أنشئ وأدر كوبونات الخصم لمتجرك</Text>
@@ -315,9 +318,9 @@ export default function MerchantCouponsScreen({ navigation }: any) {
             keyExtractor={(item) => item.id}
             renderItem={renderCoupon}
             contentContainerStyle={styles.listContent}
-            numColumns={isDesktop ? 2 : 1}
-            key={isDesktop ? 'desktop' : 'mobile'}
-            columnWrapperStyle={isDesktop ? { gap: 16 } : undefined}
+            numColumns={isTablet ? 2 : 1}
+            key={isTablet ? 'grid' : 'list'}
+            columnWrapperStyle={isTablet ? styles.columnWrapper : undefined}
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
                 <Ionicons name="pricetag-outline" size={52} color={UI.textMuted} />
@@ -334,9 +337,9 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
       {/* Create Modal */}
       <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}>
-        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={[styles.modalOverlay, isTablet && styles.modalOverlayWide]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <TouchableOpacity style={styles.modalBackdrop} onPress={() => setShowModal(false)} activeOpacity={1} />
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, isTablet && styles.modalSheetWide, isCompact && styles.modalSheetCompact]}>
             {/* Handle */}
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>كوبون جديد</Text>
@@ -464,11 +467,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: UI.border,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: UI.textDark },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
 
   pageContent: { flex: 1 },
-  pageContentDesktop: { padding: 32 },
+  pageContentWide: { width: '100%', maxWidth: 1180, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 16 },
 
   pageHeaderRow: {
     flexDirection: 'row-reverse',
@@ -478,6 +482,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     marginBottom: 20,
   },
+  pageHeaderCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14, paddingHorizontal: 14 },
   pageTitle: { fontSize: 26, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
   pageSubtitle: { fontSize: 13, color: UI.textGrey, textAlign: 'right', marginTop: 4 },
 
@@ -492,6 +497,7 @@ const styles = StyleSheet.create({
     ...softShadow,
     shadowOpacity: 0.2,
     shadowColor: UI.primary,
+    minHeight: 44,
   },
   addBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 
@@ -516,6 +522,7 @@ const styles = StyleSheet.create({
   retryText: { color: '#FFFFFF', fontWeight: '800' },
 
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  columnWrapper: { gap: 16 },
 
   card: {
     flex: 1,
@@ -531,8 +538,8 @@ const styles = StyleSheet.create({
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   statusPillText: { fontSize: 11, fontWeight: '700' },
   cardActions: { flexDirection: 'row-reverse', gap: 8 },
-  toggleBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  deleteBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: `${UI.red}12`, alignItems: 'center', justifyContent: 'center' },
+  toggleBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: `${UI.red}12`, alignItems: 'center', justifyContent: 'center' },
 
   cardDetails: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
   detailChip: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, backgroundColor: UI.bg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
@@ -541,11 +548,12 @@ const styles = StyleSheet.create({
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark, marginTop: 16, marginBottom: 8 },
   emptySubtitle: { fontSize: 14, color: UI.textMuted, textAlign: 'center', lineHeight: 22 },
-  emptyBtn: { marginTop: 24, backgroundColor: UI.primary, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14 },
+  emptyBtn: { minHeight: 44, justifyContent: 'center', marginTop: 24, backgroundColor: UI.primary, paddingHorizontal: 28, borderRadius: 14 },
   emptyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
   // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalOverlayWide: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   modalSheet: {
     backgroundColor: '#FFFFFF',
@@ -554,7 +562,10 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     maxHeight: '90%',
+    width: '100%',
   },
+  modalSheetCompact: { paddingHorizontal: 16 },
+  modalSheetWide: { maxWidth: 620, borderRadius: RADIUS.xl, paddingBottom: 24 },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: UI.border, alignSelf: 'center', marginBottom: 20 },
   sheetTitle: { fontSize: 20, fontWeight: '800', color: UI.textDark, textAlign: 'right', marginBottom: 20 },
 

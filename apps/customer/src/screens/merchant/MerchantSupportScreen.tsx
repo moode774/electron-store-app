@@ -4,17 +4,18 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#F9FAFB',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  blue: '#3B82F6',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.background,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  blue: COLORS.info,
 };
 
 const softShadow = {
@@ -59,7 +60,8 @@ export default function MerchantSupportScreen({ navigation }: any) {
   const [ticketsLoading, setTicketsLoading] = useState(true);
   const [ticketsError, setTicketsError] = useState('');
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const loadTickets = useCallback(async () => {
     if (!user?.id) { setTicketsLoading(false); return; }
@@ -98,16 +100,16 @@ export default function MerchantSupportScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
       
       {!isDesktop && (
-        <View style={styles.headerMobile}>
+        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={styles.headerTitleMobile}>الدعم الفني للشركاء</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
         
         {isDesktop && (
           <View style={styles.pageHeaderRow}>
@@ -123,7 +125,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
         )}
 
         {/* Contact Channels */}
-        <View style={styles.channelsRow}>
+        <View style={[styles.channelsRow, isCompact && styles.channelsRowCompact]}>
           <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: '#DCFCE7' }]}>
               <Ionicons name="logo-whatsapp" size={28} color="#059669" />
@@ -146,7 +148,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
            
            <View style={[styles.mainCol, isDesktop && { flex: 3 }]}>
               {/* Ticket Form */}
-              <View style={styles.card}>
+              <View style={[styles.card, isCompact && styles.cardCompact]}>
                 <Text style={styles.sectionTitle}>فتح تذكرة دعم فني</Text>
                 <Text style={styles.sectionDesc}>وضّح المشكلة والطلب المرتبط بها إن وجد، ثم تابع حالة التذكرة والردود من القائمة أدناه:</Text>
                 
@@ -182,7 +184,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
                 </View>
               ) : null}
               {tickets.length > 0 && (
-                <View style={styles.card}>
+                <View style={[styles.card, isCompact && styles.cardCompact]}>
                   <Text style={styles.sectionTitle}>تذاكري السابقة</Text>
                   {tickets.map((t, i) => {
                     const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
@@ -204,7 +206,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
 
            <View style={[styles.sideCol, isDesktop && { flex: 2 }]}>
               {/* FAQs */}
-              <View style={styles.card}>
+              <View style={[styles.card, isCompact && styles.cardCompact]}>
                 <Text style={styles.sectionTitle}>الأسئلة الشائعة للتجار</Text>
                 {FAQS.map((faq, index) => {
                   const isOpen = expandedId === faq.id;
@@ -232,34 +234,38 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
   
   headerMobile: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border, backgroundColor: '#FFFFFF' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
   
   scrollContent: { padding: 20, paddingBottom: 100 },
+  scrollContentCompact: { paddingHorizontal: 14 },
   scrollContentDesktop: { padding: 40, alignItems: 'center' },
   
-  pageHeaderRow: { width: '100%', maxWidth: 1000, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
+  pageHeaderRow: { width: '100%', maxWidth: 1200, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
   pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-  backBtnDesktop: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow },
+  backBtnDesktop: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow },
   backBtnText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
 
-  channelsRow: { flexDirection: 'row-reverse', gap: 16, marginBottom: 24, width: '100%', maxWidth: 1000 },
+  channelsRow: { flexDirection: 'row-reverse', gap: 16, marginBottom: 24, width: '100%', maxWidth: 1200 },
+  channelsRowCompact: { flexDirection: 'column' },
   channelCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: UI.border, ...softShadow },
   channelIcon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   channelTitle: { fontSize: 16, fontWeight: '800', color: UI.textDark },
   channelSub: { fontSize: 12, color: UI.textGrey, marginTop: 4, fontWeight: '600' },
 
-  gridContainer: { width: '100%', maxWidth: 1000, gap: 24, flexDirection: 'column' },
+  gridContainer: { width: '100%', maxWidth: 1200, gap: 24, flexDirection: 'column' },
   mainCol: { gap: 24 },
   sideCol: { gap: 24 },
 
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  cardCompact: { padding: 14, borderRadius: RADIUS.md },
   sectionTitle: { fontSize: 18, fontWeight: '900', color: UI.textDark, marginBottom: 8, textAlign: 'right' },
   sectionDesc: { fontSize: 13, color: UI.textGrey, marginBottom: 20, textAlign: 'right', lineHeight: 20 },
 
   catRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  catChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
+  catChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: RADIUS.full, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
   catChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   catChipText: { fontSize: 13, fontWeight: '700', color: UI.textGrey },
   catChipTextActive: { color: '#FFFFFF' },
@@ -270,18 +276,18 @@ const styles = StyleSheet.create({
   submitBtn: { flexDirection: 'row-reverse', backgroundColor: UI.primary, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   submitBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
 
-  ticketRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
+  ticketRow: { flexDirection: 'row-reverse', alignItems: 'center', minHeight: 56, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: UI.border },
   ticketSubject: { fontSize: 14, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
   ticketDate: { fontSize: 12, color: UI.textMuted, marginTop: 4, textAlign: 'right', fontWeight: '600' },
   ticketStatusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   ticketStatusText: { fontSize: 12, fontWeight: '800' },
   ticketErrorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 16, alignItems: 'center', gap: 10, marginBottom: 12 },
   ticketErrorText: { color: '#B91C1C', fontSize: 12.5, textAlign: 'center', lineHeight: 19, fontWeight: '600' },
-  retryBtn: { backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14 },
   retryText: { color: UI.blue, fontSize: 12.5, fontWeight: '800' },
 
   faqItem: { borderBottomWidth: 1, borderBottomColor: UI.border, paddingVertical: 4 },
-  faqHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16 },
+  faqHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingVertical: 12 },
   faqQuestion: { flex: 1, fontSize: 14, fontWeight: '800', color: UI.textDark, marginRight: 12, textAlign: 'right' },
   faqAnswer: { fontSize: 13, color: UI.textGrey, lineHeight: 24, paddingBottom: 20, textAlign: 'right', fontWeight: '600' },
 });

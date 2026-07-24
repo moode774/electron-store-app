@@ -6,8 +6,10 @@ import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
 
 import CodRemittancePanel from './CodRemittancePanel';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 export default function DeliveryWalletScreen({ navigation }: any) {
+  const layout = useResponsiveLayout(960);
   const user = useAuthStore((s) => s.user);
   const [earnings, setEarnings] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
@@ -41,7 +43,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
@@ -57,7 +59,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter }]}
         ListHeaderComponent={
           <>
             {loadError ? (
@@ -68,7 +70,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             ) : null}
-            <View style={styles.cardsRow}>
+            <View style={[styles.cardsRow, layout.compact && styles.cardsRowCompact]}>
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
                 <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
@@ -120,14 +122,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    width: '100%', maxWidth: 960, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  listContent: { padding: 20, gap: 10, paddingBottom: 100 },
+  listContent: { padding: 20, gap: 10, paddingBottom: 100, width: '100%', maxWidth: 960, alignSelf: 'center' },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 4 },
+  cardsRowCompact: { flexDirection: 'column' },
   summaryCard: { flex: 1, borderRadius: 18, padding: 18, gap: 6 },
   summaryValue: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
   summaryLabel: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
@@ -140,9 +144,10 @@ const styles = StyleSheet.create({
   txCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
     borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
+    minWidth: 0,
   },
   txIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   txTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
   txDate: { fontSize: 11, color: '#9CA3AF', marginTop: 3 },
-  txAmount: { fontSize: 13.5, fontWeight: '800' },
+  txAmount: { fontSize: 13.5, fontWeight: '800', flexShrink: 1 },
 });

@@ -130,7 +130,10 @@ export default function MerchantDashboardScreen() {
   const tabNavPadding = isDesktop ? 48 : 0;
   const screenPadding = isCompact ? 32 : 48;
   const sidebarWidth = 80;
-  const usableWidth = isDesktop ? width - sidebarWidth - tabNavPadding - screenPadding : width - screenPadding;
+  const usableWidth = Math.min(
+    isDesktop ? width - sidebarWidth - tabNavPadding - screenPadding : width - screenPadding,
+    1392,
+  );
   const gap = 20;
   const columns = isDesktop ? 3 : isTablet ? 2 : 1;
   const col3Width = (usableWidth - (gap * (columns - 1))) / columns;
@@ -349,7 +352,7 @@ export default function MerchantDashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 24, paddingBottom: 112 },
+  scrollContent: { width: '100%', maxWidth: 1440, alignSelf: 'center', padding: 24, paddingBottom: 112 },
   scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
   pausedBanner: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: COLORS.accentCoralSoft,
@@ -423,7 +426,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textDark },
   cardTitleSoft: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textGrey, marginBottom: 12 },
   iconBtn: {
-    width: 34, height: 34, borderRadius: 12, backgroundColor: COLORS.surfaceMuted,
+    width: 44, height: 44, borderRadius: 14, backgroundColor: COLORS.surfaceMuted,
     alignItems: 'center', justifyContent: 'center',
   },
 

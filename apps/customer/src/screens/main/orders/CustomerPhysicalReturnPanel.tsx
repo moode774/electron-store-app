@@ -13,7 +13,7 @@ import {
   supabase,
   uploadPrivateFileToStorage,
 } from '@marketplace/shared-hooks';
-import { ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../../components/appAlert';
 
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -351,7 +351,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
             <View key={file.id} style={styles.evidenceRow}>
               <Ionicons name={file.path ? 'cloud-done-outline' : 'image-outline'} size={18} color={file.path ? '#059669' : '#475569'} />
               <Text style={styles.evidenceName}>صورة {index + 1}{file.path ? ' · تم رفعها بأمان' : ''}</Text>
-              {!file.path ? <TouchableOpacity onPress={() => setEvidence((current) => current.filter((item) => item.id !== file.id))} accessibilityLabel={`حذف صورة الإثبات ${index + 1}`}><Ionicons name="trash-outline" size={18} color="#DC2626" /></TouchableOpacity> : null}
+              {!file.path ? <TouchableOpacity style={styles.removeEvidenceBtn} onPress={() => setEvidence((current) => current.filter((item) => item.id !== file.id))} accessibilityRole="button" accessibilityLabel={`حذف صورة الإثبات ${index + 1}`}><Ionicons name="trash-outline" size={18} color="#DC2626" /></TouchableOpacity> : null}
             </View>
           ))}
           <View style={styles.notice}><Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" /><Text style={styles.noticeText}>المبلغ لا يُنفذ الآن. بعد الاستلام والفحص تحسبه قاعدة البيانات من الكميات المقبولة والتسوية المثبتة، ولا تعيد رسوم التوصيل تلقائيًا.</Text></View>
@@ -368,43 +368,44 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
 const styles = StyleSheet.create({
   loading: { marginHorizontal: 16, marginTop: 12, padding: 14, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   loadingText: { color: '#64748B', fontSize: 12 },
-  sectionIntro: { marginHorizontal: 16, marginTop: 18, padding: 14, borderRadius: 14, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
-  sectionTitle: { color: '#1E3A8A', fontWeight: '900', fontSize: 15, textAlign: 'right' },
+  sectionIntro: { marginHorizontal: 16, marginTop: 18, padding: 14, borderRadius: RADIUS.md, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
+  sectionTitle: { color: '#1E3A8A', fontFamily: FONTS.bold, fontSize: 15, textAlign: 'right' },
   sectionText: { color: '#1D4ED8', fontSize: 12, lineHeight: 19, textAlign: 'right', marginTop: 4 },
   statusCard: { marginHorizontal: 16, marginTop: 10, padding: 15, borderRadius: 14, borderWidth: 1 },
   statusTitle: { fontWeight: '900', fontSize: 15, textAlign: 'right' },
   statusText: { fontSize: 12.5, lineHeight: 19, textAlign: 'right', marginTop: 4 },
-  cancelRequestBtn: { alignSelf: 'flex-end', marginTop: 10, borderWidth: 1, borderColor: '#DC2626', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  cancelRequestBtn: { minHeight: 44, alignSelf: 'flex-end', justifyContent: 'center', marginTop: 10, borderWidth: 1, borderColor: '#DC2626', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   cancelRequestText: { color: '#B91C1C', fontSize: 12, fontWeight: '800' },
   errorCard: { marginHorizontal: 16, marginTop: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
   errorText: { color: '#991B1B', fontSize: 12, lineHeight: 19, textAlign: 'right' },
-  openBtn: { marginHorizontal: 16, marginTop: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#2563EB', flexDirection: 'row-reverse', gap: 7, alignItems: 'center', justifyContent: 'center' },
+  openBtn: { minHeight: 48, marginHorizontal: 16, marginTop: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#2563EB', flexDirection: 'row-reverse', gap: 7, alignItems: 'center', justifyContent: 'center' },
   openBtnText: { color: '#1D4ED8', fontWeight: '900', fontSize: 14 },
   formCard: { margin: 16, padding: 16, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#CBD5E1' },
   formTitle: { color: '#0F172A', fontWeight: '900', fontSize: 14, textAlign: 'right', marginBottom: 7 },
-  itemRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  itemInfo: { flex: 1 },
+  itemRow: { minHeight: 68, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
+  itemInfo: { flex: 1, minWidth: 180 },
   itemName: { color: '#0F172A', fontWeight: '800', fontSize: 13, textAlign: 'right' },
   itemSub: { color: '#64748B', fontSize: 11, textAlign: 'right', marginTop: 3 },
   counter: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
-  counterBtn: { width: 32, height: 32, borderRadius: 9, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
+  counterBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
   counterText: { color: '#1D4ED8', fontSize: 19, fontWeight: '900' },
   quantity: { minWidth: 22, textAlign: 'center', color: '#0F172A', fontWeight: '900' },
-  choiceRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  choiceRow: { minHeight: 52, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   choiceSelected: { backgroundColor: '#EFF6FF', borderRadius: 10, borderBottomColor: '#BFDBFE' },
   choiceText: { color: '#334155', fontSize: 13, fontWeight: '700' },
   choiceTextSelected: { color: '#1D4ED8' },
   input: { minHeight: 105, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12, padding: 12, color: '#0F172A', textAlignVertical: 'top', marginTop: 14 },
-  evidenceHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginTop: 16 },
+  evidenceHeader: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginTop: 16 },
   evidenceHint: { color: '#64748B', fontSize: 10.5, textAlign: 'right' },
-  addEvidenceBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5, backgroundColor: '#EFF6FF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
+  addEvidenceBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#EFF6FF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
   addEvidenceText: { color: '#1D4ED8', fontWeight: '900', fontSize: 12 },
   evidenceRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   evidenceName: { flex: 1, color: '#475569', fontSize: 12, textAlign: 'right' },
+  removeEvidenceBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   notice: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 7, backgroundColor: '#EFF6FF', borderRadius: 11, padding: 11, marginTop: 10 },
   noticeText: { flex: 1, color: '#1E40AF', fontSize: 11.5, lineHeight: 18, textAlign: 'right' },
-  submitBtn: { backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12 },
+  submitBtn: { minHeight: 48, backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   submitText: { color: '#FFFFFF', fontWeight: '900' },
-  dismissBtn: { paddingVertical: 11, alignItems: 'center' },
+  dismissBtn: { minHeight: 44, paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
   dismissText: { color: '#64748B', fontWeight: '800' },
 });

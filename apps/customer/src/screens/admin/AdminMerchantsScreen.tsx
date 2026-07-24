@@ -1,23 +1,25 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, TextInput, Platform, Modal
+  ActivityIndicator, RefreshControl, TextInput, Platform, Modal,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminMerchants, approveMerchant, toggleMerchantActive, AdminMerchant } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  warning: '#D97706',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  warning: COLORS.warning,
 };
 
 const FILTERS = [
@@ -27,6 +29,11 @@ const FILTERS = [
 ] as const;
 
 export default function AdminMerchantsScreen() {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -212,12 +219,12 @@ export default function AdminMerchantsScreen() {
     <View style={s.root}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <Text style={s.headerCount}>{merchants.length} متجر</Text>
           <Text style={s.headerTitle}>التجار</Text>
         </View>
         
-        <View style={s.searchBox}>
+        <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
@@ -258,9 +265,12 @@ export default function AdminMerchantsScreen() {
       ) : (
         <FlatList
           data={filtered}
+          key={`merchants-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderMerchant}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -275,7 +285,7 @@ export default function AdminMerchantsScreen() {
       {/* Pause Modal */}
       <Modal visible={pauseModal.visible} transparent animationType="fade">
         <View style={s.modalOverlay}>
-          <View style={s.modalContent}>
+          <View style={[s.modalContent, { width: Math.min(Math.max(width - 24, 280), 420) }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>إيقاف المتجر</Text>
               <TouchableOpacity onPress={() => setPauseModal(p => ({ ...p, visible: false }))}>
@@ -320,7 +330,7 @@ export default function AdminMerchantsScreen() {
 
       <Modal visible={reviewModal.visible} transparent animationType="fade" onRequestClose={() => !processing && setReviewModal((current) => ({ ...current, visible: false }))} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
-          <View style={s.modalContent}>
+          <View style={[s.modalContent, { width: Math.min(Math.max(width - 24, 280), 420) }]}>
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>{reviewModal.approve ? 'مراجعة واعتماد التاجر' : 'رفض طلب اعتماد التاجر'}</Text>
               <TouchableOpacity onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing} accessibilityRole="button" accessibilityLabel="إغلاق مراجعة التاجر">
@@ -376,21 +386,22 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text },
-  headerCount: { fontSize: 13, color: UI.primary, fontWeight: '700', backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden' },
-  searchBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, marginHorizontal: 20, paddingHorizontal: 16, borderRadius: 16, height: 50, borderWidth: 1, borderColor: UI.border },
-  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontWeight: '600' },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16 },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
+  headerCount: { fontSize: 13, color: UI.primary, fontFamily: FONTS.semiBold, backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.full, overflow: 'hidden' },
+  searchBox: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, paddingHorizontal: 16, borderRadius: RADIUS.md, minHeight: 50, borderWidth: 1, borderColor: UI.border },
+  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontFamily: FONTS.medium },
   filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
   filterRow: { paddingHorizontal: 20, gap: 10 },
-  filterBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  filterBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { padding: 20, paddingTop: 6, gap: 16, paddingBottom: 60 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
+  columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 15, color: UI.textMuted, fontWeight: '600' },
-  card: { backgroundColor: UI.card, borderRadius: 24, padding: 18, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 18, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
   cardHeader: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 14 },
   avatarCircle: { width: 56, height: 56, borderRadius: 18, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   cardInfo: { flex: 1, alignItems: 'flex-end' },
@@ -412,7 +423,7 @@ const s = StyleSheet.create({
   activePill: { backgroundColor: '#ECFDF5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: '#D1FAE5' },
   inactivePill: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' },
   actionsRow: { flexDirection: 'row-reverse', gap: 12, alignItems: 'center', justifyContent: 'center' },
-  approveBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: 16, paddingVertical: 12, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  approveBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: RADIUS.md, paddingVertical: 10, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
   approveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   rejectBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 16, paddingVertical: 12, borderWidth: 1, borderColor: '#FEE2E2' },
   rejectBtnText: { fontSize: 14, fontWeight: '700', color: UI.danger },
@@ -421,7 +432,7 @@ const s = StyleSheet.create({
   toggleBtnActive: { backgroundColor: UI.primaryLight },
   toggleBtnText: { fontSize: 14, fontWeight: '700' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { width: '100%', maxWidth: 400, backgroundColor: UI.card, borderRadius: 24, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
+  modalContent: { maxWidth: 420, maxHeight: '90%', backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
   modalHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: UI.danger },
   modalSubtitle: { fontSize: 13, color: UI.textMuted, textAlign: 'right', marginBottom: 20, lineHeight: 20 },

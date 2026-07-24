@@ -12,7 +12,8 @@ export type HomeStackParamList = {
 
 export type CartStackParamList = {
   CartMain: undefined;
-  Checkout: undefined;
+  AddressSelection: undefined;
+  Checkout: { selectedAddressId?: string; altPhone?: string } | undefined;
 };
 
 export type OrdersStackParamList = {

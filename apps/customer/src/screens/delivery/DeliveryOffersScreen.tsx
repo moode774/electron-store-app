@@ -36,7 +36,8 @@ const errorMessage = (error: unknown, fallback: string) =>
 
 export default function DeliveryOffersScreen({ navigation }: any) {
   const user = useAuthStore((state) => state.user);
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const isShort = height < 680;
   const contentWidth = Math.min(Math.max(width - 32, 288), 560);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [profile, setProfile] = useState<DeliveryRuntimeProfile | null>(null);
@@ -267,27 +268,27 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      <View style={styles.radarArea}>
-        <View style={styles.radarBadge}>
+      <View style={[styles.radarArea, isShort && styles.radarAreaShort]}>
+        <View style={[styles.radarBadge, isShort && styles.radarBadgeShort]}>
           <Ionicons name="navigate-circle" size={16} color={COLORS.primary} />
           <Text style={styles.radarBadgeText}>نطاق العمل المباشر</Text>
         </View>
-        <View style={[styles.centerPulseOuter, !isOnline && styles.centerPulseOffline]}>
-          <View style={[styles.centerPulseInner, !isOnline && styles.centerPulseInnerOffline]}>
+        <View style={[styles.centerPulseOuter, isShort && styles.centerPulseOuterShort, !isOnline && styles.centerPulseOffline]}>
+          <View style={[styles.centerPulseInner, isShort && styles.centerPulseInnerShort, !isOnline && styles.centerPulseInnerOffline]}>
             <Ionicons name={isOnline ? 'navigate' : 'pause'} size={32} color={isOnline ? COLORS.primary : COLORS.textMuted} />
           </View>
         </View>
-        <Text style={[styles.radarTitle, !isOnline && styles.offlineText]}>
+        <Text style={[styles.radarTitle, isShort && styles.radarTitleShort, !isOnline && styles.offlineText]}>
           {isOnline ? 'البحث عن عروض التوصيل مفعّل' : 'استقبال العروض متوقف'}
         </Text>
-        <Text style={styles.radarSubtitle}>
+        <Text style={[styles.radarSubtitle, isShort && styles.radarSubtitleShort]} numberOfLines={isShort ? 1 : undefined}>
           {location
             ? 'تم تحديد موقعك، وسيتم إرسال التحديثات أثناء التوصيلة النشطة فقط.'
             : locationMessage || 'جاري التحقق من الموقع...'}
         </Text>
       </View>
 
-      <View style={styles.topSafeArea}>
+      <View style={[styles.topSafeArea, isShort && styles.topSafeAreaShort]}>
         <View style={[styles.topPanel, { width: contentWidth }]}>
           <View style={styles.headerRow}>
           <TouchableOpacity
@@ -311,7 +312,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           </View>
           </View>
 
-          <View style={styles.earningsPillWrap}>
+          <View style={[styles.earningsPillWrap, isShort && styles.earningsPillWrapShort]}>
             <View style={styles.earningsPill}>
               <View style={styles.walletIconWrap}>
                 <Ionicons name="wallet" size={18} color={COLORS.primary} />
@@ -323,7 +324,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             </View>
           </View>
 
-          <View style={styles.connectionDropdownWrap}>
+          <View style={[styles.connectionDropdownWrap, isShort && styles.connectionDropdownWrapShort]}>
             <TouchableOpacity
               style={[styles.connectionDropdown, !isOnline && styles.connectionDropdownOffline]}
               activeOpacity={0.7}
@@ -344,8 +345,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={styles.bottomCardWrap}>
-        <View style={[styles.orderCard, { width: contentWidth }]}>
+      <View style={[styles.bottomCardWrap, isShort && styles.bottomCardWrapShort]}>
+        <View style={[styles.orderCard, { width: contentWidth }, isShort && styles.orderCardShort]}>
           {initialLoading ? (
             <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="جاري تحميل عروض التوصيل" />
           ) : loadError ? (
@@ -415,6 +416,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     paddingHorizontal: 36,
   },
+  radarAreaShort: { justifyContent: 'center', paddingTop: 46 },
   centerPulseOuter: {
     width: 120,
     height: 120,
@@ -423,6 +425,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  centerPulseOuterShort: { width: 76, height: 76, borderRadius: 38 },
   centerPulseOffline: { backgroundColor: 'rgba(156, 163, 175, 0.15)' },
   centerPulseInner: {
     width: 80,
@@ -434,11 +437,15 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#059669',
   },
+  centerPulseInnerShort: { width: 52, height: 52, borderRadius: 26, borderWidth: 2 },
   centerPulseInnerOffline: { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB' },
   radarTitle: { marginTop: 24, color: '#059669', fontWeight: '800', fontSize: 18, textAlign: 'center' },
+  radarTitleShort: { marginTop: 8, fontSize: 14 },
   radarSubtitle: { marginTop: 8, color: '#6B7280', fontWeight: '600', fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  radarSubtitleShort: { marginTop: 3, fontSize: 10.5, lineHeight: 15, maxWidth: 360 },
   offlineText: { color: '#6B7280' },
   topSafeArea: { paddingTop: Platform.OS === 'ios' ? 60 : 40, width: '100%', position: 'absolute', top: 0, zIndex: 10 },
+  topSafeAreaShort: { paddingTop: 10 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
   menuBtn: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
@@ -454,6 +461,7 @@ const styles = StyleSheet.create({
   },
   avatarOnlineDot: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#10B981', borderWidth: 2.5, borderColor: '#FFFFFF' },
   earningsPillWrap: { alignItems: 'center', marginTop: 12 },
+  earningsPillWrapShort: { marginTop: 4 },
   earningsPill: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 10,
     borderRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.04, shadowRadius: 16, elevation: 4, gap: 12,
@@ -464,6 +472,7 @@ const styles = StyleSheet.create({
   earningsCurrency: { fontSize: 11, fontWeight: '700' },
   walletIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
   connectionDropdownWrap: { alignItems: 'center', marginTop: 18 },
+  connectionDropdownWrapShort: { marginTop: 5 },
   connectionDropdown: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 12,
     borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 3, gap: 12,
@@ -472,16 +481,19 @@ const styles = StyleSheet.create({
   connectionText: { fontSize: 13, fontWeight: '700', color: '#111827' },
   connectionDotLarge: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981' },
   bottomCardWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Platform.OS === 'ios' ? 120 : 100 },
+  bottomCardWrapShort: { padding: 10, paddingBottom: 80 },
   orderCard: {
     backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, minHeight: 190, alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 10,
   },
+  orderCardShort: { minHeight: 138, padding: 14, borderRadius: 22 },
   cardTitle: { fontSize: 16, fontWeight: '800', color: '#111827', marginTop: 12, textAlign: 'center' },
   cardSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 6, textAlign: 'center', lineHeight: 20 },
   errorText: { fontSize: 12.5, color: '#DC2626', marginTop: 6, textAlign: 'center', lineHeight: 19 },
   refreshBtn: { marginTop: 14, minHeight: 38, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
   refreshText: { color: '#2563EB', fontWeight: '800', fontSize: 13 },
   radarBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, position: 'absolute', top: Platform.OS === 'ios' ? 110 : 90, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  radarBadgeShort: { display: 'none' },
   radarBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   topPanel: { alignSelf: 'center' },
   connectionTextOnline: { color: COLORS.success },

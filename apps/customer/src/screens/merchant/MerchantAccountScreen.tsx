@@ -8,10 +8,12 @@ import {
   Platform,
   Image,
   ImageBackground,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 
 const MENU_ITEMS = [
@@ -32,6 +34,9 @@ export default function MerchantAccountScreen({ navigation }: any) {
   const [stat, setStat] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
   const [profile, setProfile] = useState<Awaited<ReturnType<typeof getMerchantProfile>>>(null);
   const [loadError, setLoadError] = useState('');
+  const { width } = useWindowDimensions();
+  const isCompact = width < BREAKPOINTS.compact;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const loadAccount = useCallback(async () => {
     if (!user?.id) return;
@@ -58,7 +63,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, isCompact && styles.headerCompact, isDesktop && styles.headerDesktop]}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel="إعدادات المتجر">
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
@@ -69,7 +74,10 @@ export default function MerchantAccountScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]}
+      >
 
         {loadError ? (
           <TouchableOpacity style={styles.errorCard} onPress={() => void loadAccount()} accessibilityRole="button" accessibilityLabel="إعادة تحميل حساب التاجر">
@@ -105,9 +113,9 @@ export default function MerchantAccountScreen({ navigation }: any) {
         </ImageBackground>
 
         {/* Stats Row */}
-        <View style={styles.statsCardContainer}>
+        <View style={[styles.statsCardContainer, isCompact && styles.statsCardCompact]}>
           {STATS.map((stat, index) => (
-            <View key={stat.id} style={styles.statWrapper}>
+            <View key={stat.id} style={[styles.statWrapper, isCompact && styles.statWrapperCompact]}>
               <TouchableOpacity
                 style={styles.statItem}
                 activeOpacity={0.7}
@@ -121,7 +129,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
                 <Text style={styles.statValue}>{stat.value}</Text>
                 <Text style={styles.statTitle} numberOfLines={1} adjustsFontSizeToFit>{stat.title}</Text>
               </TouchableOpacity>
-              {index < STATS.length - 1 && <View style={styles.statDivider} />}
+              {index < STATS.length - 1 && !isCompact && <View style={styles.statDivider} />}
             </View>
           ))}
         </View>
@@ -184,7 +192,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
   },
   errorCard: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 13, padding: 12, marginBottom: 12 },
   errorText: { color: '#991B1B', fontSize: 12, lineHeight: 19, textAlign: 'right', fontWeight: '600' },
@@ -195,10 +203,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
+    width: '100%',
+    alignSelf: 'center',
   },
+  headerCompact: { paddingHorizontal: 14 },
+  headerDesktop: { maxWidth: 1120, paddingHorizontal: 24 },
   iconBtn: {
-    padding: 8,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
   },
   badge: {
@@ -214,15 +229,20 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
+    fontFamily: FONTS.bold,
+    color: COLORS.textPrimary,
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 100,
+    width: '100%',
+    maxWidth: 1120,
+    alignSelf: 'center',
   },
+  scrollContentCompact: { paddingHorizontal: 14 },
+  scrollContentDesktop: { paddingBottom: 64 },
   profileCard: {
-    borderRadius: 24,
+    borderRadius: RADIUS.xl,
     padding: 24,
     minHeight: 140,
     flexDirection: 'row',
@@ -287,8 +307,8 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   statsCardContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
     paddingVertical: 12,
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -299,15 +319,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  statsCardCompact: { flexWrap: 'wrap', alignItems: 'stretch', paddingVertical: 6 },
   statWrapper: {
     flex: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
   },
+  statWrapperCompact: { flexBasis: '50%', flexGrow: 0, minWidth: '50%', paddingVertical: 8 },
   statItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 76,
   },
   statDivider: {
     width: 1,
@@ -376,7 +399,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
+    minHeight: 52,
+    paddingVertical: 12,
   },
   menuItemRight: {
     flexDirection: 'row-reverse',
@@ -399,7 +423,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    minHeight: 56,
+    paddingVertical: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

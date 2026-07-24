@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { ORDER_STATUS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, updateOrderStatus, OrderSummary } from '@marketplace/shared-hooks';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import {
@@ -13,17 +13,17 @@ import {
 } from './merchantOrderState';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#F9FAFB',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  red: '#EF4444',
-  blue: '#3B82F6',
-  orange: '#F59E0B',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.background,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  red: COLORS.error,
+  blue: COLORS.info,
+  orange: COLORS.warning,
 };
 
 const softShadow = {
@@ -47,7 +47,9 @@ export default function MerchantOrdersScreen({ navigation }: any) {
   const [filter, setFilter] = useState('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
   const { orders: allOrders, loading, refreshing, error, realtimeError, refresh, reloadSilently } = useMerchantOrderFeed(user?.id, 'active');
 
   const orders = useMemo(
@@ -99,13 +101,13 @@ export default function MerchantOrdersScreen({ navigation }: any) {
 
     return (
       <TouchableOpacity
-        style={[styles.card, isDesktop && styles.cardDesktop]}
+        style={[styles.card, isCompact && styles.cardCompact, isDesktop && styles.cardDesktop]}
         activeOpacity={0.8}
         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
         accessibilityRole="button"
         accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
       >
-        <View style={styles.cardHeader}>
+        <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
           <View style={styles.customerInfo}>
              <View style={styles.avatar}>
                <Text style={styles.avatarText}>{customerName.substring(0, 1)}</Text>
@@ -125,7 +127,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         </View>
 
         {/* Location & Payment Quick Info */}
-        <View style={styles.quickInfoRow}>
+        <View style={[styles.quickInfoRow, isCompact && styles.quickInfoRowCompact]}>
            <View style={styles.quickInfoItem}>
              <Ionicons name={info.icon as any} size={16} color={UI.textGrey} />
              <Text style={styles.quickInfoText}>{info.label}</Text>
@@ -136,9 +138,9 @@ export default function MerchantOrdersScreen({ navigation }: any) {
            </View>
         </View>
 
-        <View style={styles.cardFooter}>
+        <View style={[styles.cardFooter, isCompact && styles.cardFooterCompact]}>
           <Text style={styles.total}>{item.total_amount ?? 0} <Text style={styles.currency}>ر.ي</Text></Text>
-          <View style={styles.actionsRow}>
+          <View style={[styles.actionsRow, isCompact && styles.actionsRowCompact]}>
             {action && (
               <TouchableOpacity
                 style={[styles.acceptBtn, isUpdating && styles.buttonDisabled]}
@@ -178,7 +180,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         </View>
       )}
 
-      <View style={[styles.pageContent, isDesktop && styles.pageContentDesktop]}>
+      <View style={[styles.pageContent, isTablet && styles.pageContentTablet, isDesktop && styles.pageContentDesktop]}>
         
         {isDesktop && (
           <View style={styles.pageHeaderRow}>
@@ -260,21 +262,22 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
   
   headerMobile: { paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerTitleMobile: { fontSize: 20, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
+  headerTitleMobile: { fontSize: 20, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right' },
   
   pageContent: { flex: 1 },
-  pageContentDesktop: { padding: 40, alignItems: 'center' },
+  pageContentTablet: { width: '100%', maxWidth: 1240, alignSelf: 'center', paddingHorizontal: 24 },
+  pageContentDesktop: { paddingTop: 40, paddingBottom: 40, alignItems: 'center' },
   
-  pageHeaderRow: { width: '100%', maxWidth: 1000, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
+  pageHeaderRow: { width: '100%', maxWidth: 1200, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
   pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
   
-  contentBox: { flex: 1, width: '100%', maxWidth: 1000 },
-  contentBoxDesktop: { backgroundColor: '#FFFFFF', borderRadius: 20, ...softShadow, borderWidth: 1, borderColor: '#FFFFFF', overflow: 'hidden' },
+  contentBox: { flex: 1, width: '100%', maxWidth: 1200 },
+  contentBoxDesktop: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, ...softShadow, borderWidth: 1, borderColor: COLORS.surface, overflow: 'hidden' },
   
   filtersWrap: { borderBottomWidth: 1, borderBottomColor: UI.border, backgroundColor: '#FFFFFF' },
   filtersContent: { paddingHorizontal: 20, paddingVertical: 16, gap: 10 },
-  filterChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 100, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
+  filterChip: { minHeight: 44, paddingHorizontal: 18, justifyContent: 'center', borderRadius: RADIUS.full, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
   filterChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontWeight: '700', color: UI.textGrey },
   filterTextActive: { color: '#FFFFFF' },
@@ -283,9 +286,11 @@ const styles = StyleSheet.create({
   
   listContent: { padding: 20, gap: 16, paddingBottom: 120 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: UI.border },
+  cardCompact: { padding: 14 },
   cardDesktop: { padding: 24, borderRadius: 16 },
   
   cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+  cardHeaderCompact: { flexDirection: 'column', gap: 12, alignItems: 'stretch' },
   customerInfo: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 18, fontWeight: '800', color: UI.textGrey },
@@ -299,15 +304,18 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 12, color: UI.textMuted, fontWeight: '600', alignSelf: 'flex-start' },
 
   quickInfoRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16, marginBottom: 16, paddingHorizontal: 4 },
+  quickInfoRowCompact: { flexWrap: 'wrap', gap: 10 },
   quickInfoItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
   quickInfoText: { fontSize: 12.5, color: UI.textGrey, fontWeight: '600' },
 
   cardFooter: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTopWidth: 1, borderTopColor: UI.border },
+  cardFooterCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14 },
   total: { fontSize: 20, fontWeight: '800', color: UI.primary },
   currency: { fontSize: 13, fontWeight: '600', color: UI.textGrey },
   
   actionsRow: { flexDirection: 'row-reverse', gap: 10 },
-  acceptBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: UI.primary },
+  actionsRowCompact: { width: '100%' },
+  acceptBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16, borderRadius: RADIUS.sm, backgroundColor: UI.primary },
   acceptBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
   buttonDisabled: { opacity: 0.6 },
   statusHint: { fontSize: 12, fontWeight: '700', color: UI.textGrey, textAlign: 'right' },
@@ -315,7 +323,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
   emptyText: { fontSize: 14, color: UI.textMuted, textAlign: 'center' },
-  retryBtn: { backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12 },
+  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22 },
   retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   inlineWarning: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#FFFBEB', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingHorizontal: 18, paddingVertical: 10 },
   inlineWarningText: { flex: 1, color: '#92400E', fontSize: 12.5, fontWeight: '700', textAlign: 'right' },

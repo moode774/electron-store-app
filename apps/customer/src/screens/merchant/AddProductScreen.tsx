@@ -6,18 +6,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore, createProduct, addProductImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#FFFFFF',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  error: '#EF4444',
-  green: '#10B981',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.surface,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  error: COLORS.error,
+  green: COLORS.success,
 };
 
 const softShadow = {
@@ -51,7 +52,9 @@ function FormInput({ label, icon, multiline, ...props }: any) {
 export default function AddProductScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -168,18 +171,18 @@ export default function AddProductScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
       {!isDesktop && (
-        <View style={styles.headerMobile}>
+        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={styles.headerTitleMobile}>إضافة منتج</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]}
+          contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -217,6 +220,7 @@ export default function AddProductScreen({ navigation }: any) {
                         style={styles.removeImageBtn}
                         onPress={() => removeImage(index)}
                         activeOpacity={0.8}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                       >
                         <Ionicons name="close" size={12} color="#FFFFFF" />
                       </TouchableOpacity>
@@ -253,7 +257,7 @@ export default function AddProductScreen({ navigation }: any) {
                 onChangeText={setName}
               />
 
-              <View style={[styles.row, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
+              <View style={[styles.row, { flexDirection: isTablet ? 'row-reverse' : 'column' }]}>
                 <View style={{ flex: 1 }}>
                   <FormInput
                     label="السعر (ر.ي) *"
@@ -315,7 +319,7 @@ export default function AddProductScreen({ navigation }: any) {
             </View>
 
             {/* Actions */}
-            <View style={[styles.actionsRow, !isDesktop && { flexDirection: 'column' }]}>
+            <View style={[styles.actionsRow, isCompact && styles.actionsRowCompact]}>
               <TouchableOpacity
                 style={[styles.btn, styles.btnPrimary, isLoading && { opacity: 0.7 }]}
                 onPress={handleSave}
@@ -359,14 +363,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     borderBottomWidth: 1, borderBottomColor: UI.border,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
 
   scrollContent: { padding: 24, paddingBottom: 100 },
+  scrollContentCompact: { paddingHorizontal: 14, paddingTop: 18 },
   scrollContentDesktop: { padding: 40, alignItems: 'center' },
 
   pageHeaderRow: {
-    width: '100%', maxWidth: 800, flexDirection: 'row-reverse',
+    width: '100%', maxWidth: 960, flexDirection: 'row-reverse',
     justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24,
   },
   pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
@@ -375,12 +381,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8,
     backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow,
+    minHeight: 44,
   },
   backBtnText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
 
-  formCard: { width: '100%', maxWidth: 800 },
+  formCard: { width: '100%', maxWidth: 960, alignSelf: 'center' },
   formCardDesktop: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 40,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 40,
     ...softShadow, borderWidth: 1, borderColor: '#F3F4F6',
   },
 
@@ -393,7 +400,7 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 13, fontWeight: '700', color: UI.textDark, marginBottom: 8, textAlign: 'right' },
   inputBox: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderWidth: 1, borderColor: UI.border, borderRadius: 12, paddingHorizontal: 16, height: 48,
+    borderWidth: 1, borderColor: UI.border, borderRadius: RADIUS.md, paddingHorizontal: 16, minHeight: 48,
   },
   inputBoxFocused: { borderColor: UI.primary, backgroundColor: '#F9FAFB' },
   inputIcon: { marginLeft: 12 },
@@ -432,7 +439,7 @@ const styles = StyleSheet.create({
   categoriesRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12 },
   catChip: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 100,
+    minHeight: 44, justifyContent: 'center', paddingHorizontal: 18, borderRadius: RADIUS.full,
     backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border,
   },
   catChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
@@ -440,6 +447,7 @@ const styles = StyleSheet.create({
   catChipTextActive: { color: '#FFFFFF' },
 
   actionsRow: { flexDirection: 'row-reverse', gap: 16, marginTop: 16 },
+  actionsRowCompact: { flexDirection: 'column' },
   btn: { flex: 1, height: 52, borderRadius: 12, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   btnPrimary: { backgroundColor: UI.primary, ...softShadow, shadowOpacity: 0.1, shadowColor: UI.primary },
   btnPrimaryText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },

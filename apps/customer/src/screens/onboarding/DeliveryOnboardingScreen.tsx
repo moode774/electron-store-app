@@ -16,6 +16,7 @@ import {
   uploadPrivateFileToStorage,
   useAuthStore,
 } from '@marketplace/shared-hooks';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const VEHICLE_TYPES = [
   { key: 'motorcycle', label: 'دراجة نارية', icon: 'bicycle-outline' },
@@ -36,6 +37,7 @@ type OnboardingImage = {
 };
 
 export default function DeliveryOnboardingScreen({ onComplete }: Props) {
+  const layout = useResponsiveLayout(820);
   const user = useAuthStore((s) => s.user);
 
   const [fullName, setFullName] = useState(user?.full_name ?? '');
@@ -146,13 +148,15 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }, layout.desktop && styles.headerDesktop]}>
         <TouchableOpacity 
-          style={{ position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, left: 20, zIndex: 10, padding: 8, backgroundColor: '#FEF2F2', borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          style={[styles.logoutButton, { left: layout.gutter }, layout.desktop && styles.logoutButtonDesktop]}
           onPress={() => useAuthStore.getState().signOut()}
+          accessibilityRole="button"
+          accessibilityLabel="تسجيل الخروج"
         >
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
-          <Text style={{color: '#DC2626', fontSize: 12, fontWeight: '700'}}>خروج</Text>
+          <Text style={[styles.logoutText, layout.compact && styles.logoutTextCompact]}>خروج</Text>
         </TouchableOpacity>
 
         <View style={styles.headerIcon}>
@@ -163,7 +167,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: layout.gutter }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -206,7 +210,11 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
           {VEHICLE_TYPES.map((v) => (
             <TouchableOpacity
               key={v.key}
-              style={[styles.vehicleCard, vehicleType === v.key && styles.vehicleCardActive]}
+              style={[
+                styles.vehicleCard,
+                { flexBasis: layout.compact ? '44%' : layout.tablet ? '22%' : '21%' },
+                vehicleType === v.key && styles.vehicleCardActive,
+              ]}
               onPress={() => setVehicleType(v.key)}
               activeOpacity={0.8}
             >
@@ -285,7 +293,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity
           style={[styles.submitBtn, (saving || !agreedToTerms) && styles.btnDisabled]}
           onPress={handleSubmit}
@@ -340,7 +348,17 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingTop: Platform.OS === 'ios' ? 64 : 48,
     paddingBottom: 24, paddingHorizontal: 24,
     borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    width: '100%', maxWidth: 820, alignSelf: 'center', position: 'relative',
   },
+  headerDesktop: { paddingTop: 32, marginTop: 20, borderWidth: 1, borderRadius: 24 },
+  logoutButton: {
+    position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, zIndex: 10,
+    minWidth: 44, minHeight: 44, paddingHorizontal: 10, backgroundColor: '#FEF2F2',
+    borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+  },
+  logoutButtonDesktop: { top: 20 },
+  logoutText: { color: '#DC2626', fontSize: 12, fontWeight: '700' },
+  logoutTextCompact: { display: 'none' },
   headerIcon: {
     width: 68, height: 68, borderRadius: 24,
     backgroundColor: `${COLORS.primary}12`,
@@ -349,7 +367,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 6 },
   headerSub: { fontSize: 13, color: '#6B7280', textAlign: 'center' },
 
-  scroll: { padding: 24, paddingBottom: 20 },
+  scroll: { padding: 24, paddingBottom: 20, width: '100%', maxWidth: 820, alignSelf: 'center' },
 
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
@@ -373,7 +391,7 @@ const styles = StyleSheet.create({
 
   vehicleGrid: { flexDirection: 'row', gap: 12, marginBottom: 20, flexWrap: 'wrap' },
   vehicleCard: {
-    flex: 1, minWidth: 70, alignItems: 'center', justifyContent: 'center',
+    flexGrow: 1, minWidth: 120, alignItems: 'center', justifyContent: 'center',
     paddingVertical: 16, borderRadius: 16,
     backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB', gap: 6,
   },
@@ -423,6 +441,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 20,
     paddingTop: 14, borderTopWidth: 1, borderTopColor: '#F3F4F6', backgroundColor: '#fff',
+    width: '100%', maxWidth: 820, alignSelf: 'center',
   },
   submitBtn: {
     height: 54, backgroundColor: COLORS.primary, borderRadius: 16,

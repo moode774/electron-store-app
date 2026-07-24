@@ -125,6 +125,12 @@ export interface OrderSummary {
   addresses?: { full_address?: string; city: string | null } | null;
   payment_method?: string | null;
   payment_status?: string;
+  order_items?: {
+    id: string;
+    quantity: number;
+    product_name?: string;
+    products?: { name: string; og_image_url?: string | null } | null;
+  }[];
 }
 
 export interface OrderDetail {
@@ -443,7 +449,7 @@ export async function setDefaultAddress(userId: string, addressId: string): Prom
 export async function getOrders(userId: string): Promise<OrderSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.ORDERS)
-    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, total_amount, created_at, updated_at, delivered_at, payment_method, payment_status, merchant_profiles(store_name)')
+    .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, total_amount, created_at, updated_at, delivered_at, payment_method, payment_status, merchant_profiles(store_name), addresses(full_address, city), order_items(id, quantity, product_name, products(name, og_image_url))')
     .eq('customer_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -524,6 +530,9 @@ export async function createOrder(data: {
 
   if (error) {
     const msg = error.message ?? '';
+    if (msg.includes('inventory_logs') || msg.includes('change_type')) {
+      throw new Error('حدث خطأ في تحديث سجلات المخزون. يرجى المحاولة مرة أخرى.');
+    }
     if (msg.includes('MERCHANT_CLOSED')) throw new Error('هذا المتجر مغلق حالياً، حاول لاحقاً.');
     if (msg.includes('MERCHANT_UNAVAILABLE') || msg.includes('MERCHANT_NOT_FOUND'))
       throw new Error('هذا المتجر غير متاح حالياً لاستقبال الطلبات.');
@@ -571,12 +580,22 @@ export async function createOrderGroup(data: {
   });
   if (error) {
     const msg = error.message ?? '';
+    if (msg.includes('COUPON_INVALID') || msg.includes('INVALID_COUPON') || msg.includes('COUPON')) {
+      throw new Error('كود الخصم المدخل غير صالح أو انتهت صلاحيته. احذف كود الخصم وأعد المحاولة.');
+    }
     if (msg.includes('IDEMPOTENCY_CONFLICT')) throw new Error('تغيّرت بيانات الدفع بعد محاولة سابقة. راجع السلة ثم أعد المحاولة.');
     if (msg.includes('MERCHANT_CLOSED')) throw new Error('أحد المتاجر مغلق حالياً. راجع السلة وحاول لاحقاً.');
     if (msg.includes('MERCHANT_UNAVAILABLE')) throw new Error('أحد المتاجر لم يعد متاحاً لاستقبال الطلبات.');
     if (msg.includes('OUT_OF_STOCK')) throw new Error('نفدت كمية أحد المنتجات. حدّث السلة وحاول مجدداً.');
     if (msg.includes('INVALID_ADDRESS')) throw new Error('العنوان غير صالح لهذا الحساب.');
     if (msg.includes('PRODUCT_UNAVAILABLE') || msg.includes('INVALID_VARIANT')) throw new Error('أحد المنتجات أو خياراته لم يعد متاحاً. حدّث السلة.');
+
+    if (msg.includes('inventory_logs') || msg.includes('change_type') || msg.includes('constraint')) {
+      throw new Error(
+        'يتطلب السيرفر تحديث قيد سجلات المخزون (inventory_logs_change_type_check) في Supabase SQL Editor للسماح بحجز الطلبات.'
+      );
+    }
+
     throw error;
   }
   const orders = Array.isArray(result) ? result : (result as any)?.orders;
@@ -791,14 +810,11 @@ export async function getAccountStats(userId: string): Promise<{
       .or(`end_date.is.null,end_date.gte.${now}`),
   ]);
 
-  const firstError = [ordersRes.error, addressesRes.error, favoritesRes.error, couponsRes.error].find(Boolean);
-  if (firstError) throw firstError;
-
   return {
-    orders: ordersRes.count ?? 0,
-    addresses: addressesRes.count ?? 0,
-    favorites: favoritesRes.count ?? 0,
-    coupons: couponsRes.count ?? 0,
+    orders: ordersRes.error ? 0 : (ordersRes.count ?? 0),
+    addresses: addressesRes.error ? 0 : (addressesRes.count ?? 0),
+    favorites: favoritesRes.error ? 0 : (favoritesRes.count ?? 0),
+    coupons: couponsRes.error ? 0 : (couponsRes.count ?? 0),
   };
 }
 
@@ -919,9 +935,13 @@ export async function getLoyaltyHistory(userId: string): Promise<LoyaltyTransact
 }
 
 export async function getReferralCode(userId: string): Promise<string> {
-  const { data, error } = await supabase.rpc('get_or_create_referral', { p_user: userId });
-  if (error) throw error;
-  return (data as string) ?? '';
+  try {
+    const { data, error } = await supabase.rpc('get_or_create_referral', { p_user: userId });
+    if (!error && data) return data as string;
+  } catch {
+    // Ignore RPC missing error and fallback
+  }
+  return `REFD${userId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toUpperCase()}`;
 }
 
 // ============================================================

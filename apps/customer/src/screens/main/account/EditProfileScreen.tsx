@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, updateUserProfile } from '@marketplace/shared-hooks';
 import { Input } from '@marketplace/shared-ui';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 export default function EditProfileScreen({ navigation }: any) {
+  const layout = useCustomerLayout(720);
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const [name, setName] = useState(user?.full_name ?? '');
@@ -40,19 +42,21 @@ export default function EditProfileScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>تعديل الملف الشخصي</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>تعديل الملف الشخصي</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} keyboardShouldPersistTaps="handled">
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{name.charAt(0) || 'م'}</Text>
-            <TouchableOpacity style={styles.cameraBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cameraBtn} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تغيير الصورة الشخصية">
               <Ionicons name="camera" size={14} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
@@ -90,13 +94,12 @@ export default function EditProfileScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  scrollContent: { padding: 24 },
+  header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
+  headerInner: { width: '100%', maxWidth: 720, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
+  scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingTop: 24, paddingBottom: 48 },
   avatarSection: { alignItems: 'center', marginBottom: 28 },
   avatar: {
     width: 88, height: 88, borderRadius: 44, backgroundColor: '#111827',
@@ -104,20 +107,20 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 30, fontWeight: '800', color: '#FFFFFF' },
   cameraBtn: {
-    position: 'absolute', bottom: 0, left: 0, width: 28, height: 28, borderRadius: 14,
+    position: 'absolute', bottom: -4, left: -4, width: 44, height: 44, borderRadius: 16,
     backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: '#F9FAFB',
   },
-  label: { fontSize: 13, color: '#111827', marginBottom: 8, fontWeight: '600' },
+  label: { fontSize: 13, color: COLORS.textPrimary, marginBottom: 8, fontFamily: FONTS.semiBold },
   phoneBox: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 16, height: 50, marginBottom: 24,
+    backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.md, paddingHorizontal: 16, minHeight: 52, marginBottom: 24,
   },
   phoneText: { fontSize: 14, color: '#6B7280', fontWeight: '600', letterSpacing: 1 },
   verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   verifiedText: { fontSize: 11.5, fontWeight: '700', color: '#059669' },
   saveBtn: {
-    backgroundColor: COLORS.primary, height: 52, borderRadius: 14,
+    backgroundColor: COLORS.primary, minHeight: 52, borderRadius: RADIUS.md,
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
   saveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },

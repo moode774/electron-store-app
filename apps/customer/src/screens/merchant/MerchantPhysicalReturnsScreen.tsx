@@ -11,6 +11,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,7 @@ import {
   useAuthStore,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 type Recommendation = 'approve' | 'reject';
 type Disposition = 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected';
@@ -138,6 +140,9 @@ function isActionable(item: MerchantPhysicalReturn): boolean {
 
 export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPhysicalReturnsScreenProps) {
   const user = useAuthStore((state) => state.user);
+  const { width } = useWindowDimensions();
+  const isCompact = width < BREAKPOINTS.compact;
+  const isDesktop = width >= BREAKPOINTS.desktop;
   const [returns, setReturns] = useState<MerchantPhysicalReturn[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -533,8 +538,8 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())[0];
 
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
+      <View style={[styles.card, isCompact && styles.cardCompact]}>
+        <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
           <View style={[styles.statusBadge, { backgroundColor: meta.background }]}>
             <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
           </View>
@@ -544,7 +549,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           </View>
         </View>
 
-        <View style={styles.infoGrid}>
+        <View style={[styles.infoGrid, isCompact && styles.infoGridCompact]}>
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>العميل</Text>
             <Text style={styles.infoValue}>{item.users?.full_name ?? 'عميل الطلب'}</Text>
@@ -563,7 +568,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         <View style={styles.itemsBox}>
           <Text style={styles.itemsTitle}>العناصر المرتجعة</Text>
           {(item.return_items ?? []).map((returnItem) => (
-            <View key={returnItem.id} style={styles.itemRow}>
+            <View key={returnItem.id} style={[styles.itemRow, isCompact && styles.itemRowCompact]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.itemName}>{itemName(returnItem)}</Text>
                 <Text style={styles.itemVariant}>{variantLabel(returnItem)}</Text>
@@ -648,7 +653,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 
   return (
     <View style={styles.page}>
-      <View style={styles.header}>
+      <View style={[styles.header, isCompact && styles.headerCompact, isDesktop && styles.headerWide]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
@@ -658,7 +663,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filters, isDesktop && styles.filtersWide]}>
         {FILTERS.map((option) => (
           <TouchableOpacity
             key={option.key}
@@ -688,6 +693,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           keyExtractor={(item) => item.id}
           renderItem={renderReturn}
           contentContainerStyle={styles.list}
+          numColumns={isDesktop ? 2 : 1}
+          key={isDesktop ? 'returns-grid' : 'returns-list'}
+          columnWrapperStyle={isDesktop ? styles.columnWrapper : undefined}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
           onEndReached={() => { if (hasMore) void load('more'); }}
           onEndReachedThreshold={0.35}
@@ -712,11 +720,16 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 
       <Modal visible={Boolean(responseTarget)} transparent animationType="fade" onRequestClose={closeResponse} accessibilityViewIsModal>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <ScrollView
+            style={styles.modalCard}
+            contentContainerStyle={[styles.modalCardContent, isCompact && styles.modalCardCompact]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.modalTitle}>توصية التاجر</Text>
             <Text style={styles.modalHint}>هذه توصية للإدارة وليست القرار النهائي. اذكر نتيجة مراجعة الطلب بوضوح.</Text>
             {renderEvidencePanel()}
-            <View style={styles.choiceRow}>
+            <View style={[styles.choiceRow, isCompact && styles.choiceRowCompact]}>
               {([
                 { value: 'approve' as Recommendation, label: 'أوصي بالموافقة', icon: 'checkmark-circle-outline' },
                 { value: 'reject' as Recommendation, label: 'أوصي بالرفض', icon: 'close-circle-outline' },
@@ -744,7 +757,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               placeholder="اشرح سبب توصيتك وحالة المنتج قبل التسليم..."
               placeholderTextColor="#94A3B8"
             />
-            <View style={styles.modalActions}>
+            <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeResponse} disabled={Boolean(actionId)}>
                 <Text style={styles.secondaryButtonText}>إلغاء</Text>
               </TouchableOpacity>
@@ -752,13 +765,18 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>إرسال التوصية</Text>}
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
       <Modal visible={Boolean(receiptTarget)} transparent animationType="fade" onRequestClose={closeReceipt} accessibilityViewIsModal>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <ScrollView
+            style={styles.modalCard}
+            contentContainerStyle={[styles.modalCardContent, isCompact && styles.modalCardCompact]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.modalTitle}>تأكيد استلام المرتجع</Text>
             <Text style={styles.modalHint}>راجع إثبات نقل العهدة وحالة الطرد، ثم سجل أي ملاحظة استلام قبل بدء الفحص.</Text>
             {renderEvidencePanel()}
@@ -773,7 +791,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               placeholder="ملاحظات حالة الطرد عند الوصول (اختياري)"
               placeholderTextColor="#94A3B8"
             />
-            <View style={styles.modalActions}>
+            <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeReceipt} disabled={Boolean(actionId)}>
                 <Text style={styles.secondaryButtonText}>تراجع</Text>
               </TouchableOpacity>
@@ -781,26 +799,30 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>تأكيد الاستلام</Text>}
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
       <Modal visible={Boolean(evidenceTarget)} transparent animationType="fade" onRequestClose={closeEvidence} accessibilityViewIsModal>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <ScrollView
+            style={styles.modalCard}
+            contentContainerStyle={[styles.modalCardContent, isCompact && styles.modalCardCompact]}
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.modalTitle}>أدلة المرتجع وإثباتات العهدة</Text>
             <Text style={styles.modalHint}>الروابط خاصة ومؤقتة. افتح الملف لمراجعته بالحجم الكامل.</Text>
             {renderEvidencePanel()}
             <TouchableOpacity style={styles.secondaryButton} onPress={closeEvidence} accessibilityRole="button">
               <Text style={styles.secondaryButtonText}>إغلاق</Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
       <Modal visible={Boolean(inspectionTarget)} animationType="slide" onRequestClose={() => !actionId && setInspectionTarget(null)} accessibilityViewIsModal>
         <View style={styles.inspectionPage}>
-          <View style={styles.inspectionHeader}>
+          <View style={[styles.inspectionHeader, isCompact && styles.inspectionHeaderCompact]}>
             <TouchableOpacity style={styles.backButton} onPress={() => setInspectionTarget(null)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="close" size={23} color="#111827" />
             </TouchableOpacity>
@@ -809,7 +831,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               <Text style={styles.subtitle}>حدد الكمية المقبولة ووجهتها لكل عنصر. لا يمكن تعديلها بعد إكمال الإدارة للاسترداد.</Text>
             </View>
           </View>
-          <ScrollView contentContainerStyle={styles.inspectionContent} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={[styles.inspectionContent, isCompact && styles.inspectionContentCompact]} keyboardShouldPersistTaps="handled">
             {(inspectionTarget?.return_items ?? []).map((item) => {
               const draft = inspectionDrafts[item.id];
               const approved = Number(item.approved_quantity ?? 0);
@@ -878,31 +900,38 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#F8FAFC' },
+  page: { flex: 1, backgroundColor: COLORS.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  title: { color: '#0F172A', fontSize: 21, fontWeight: '900', textAlign: 'right' },
+  headerCompact: { paddingHorizontal: 14 },
+  headerWide: { width: '100%', maxWidth: 1240, alignSelf: 'center' },
+  backButton: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  title: { color: COLORS.textPrimary, fontSize: 21, fontFamily: FONTS.bold, textAlign: 'right' },
   subtitle: { color: '#64748B', fontSize: 11.5, lineHeight: 18, textAlign: 'right', marginTop: 3 },
   filters: { flexDirection: 'row-reverse', padding: 14, gap: 8 },
-  filter: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
-  filterActive: { backgroundColor: '#111827', borderColor: '#111827' },
+  filtersWide: { width: '100%', maxWidth: 1240, alignSelf: 'center' },
+  filter: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: RADIUS.full, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   filterText: { color: '#64748B', fontWeight: '700' },
   filterTextActive: { color: '#FFFFFF' },
-  list: { padding: 16, paddingTop: 2, gap: 12, paddingBottom: 90 },
+  list: { width: '100%', maxWidth: 1240, alignSelf: 'center', padding: 16, paddingTop: 2, gap: 12, paddingBottom: 90 },
+  columnWrapper: { gap: 12 },
   listFooter: { alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 16 },
   center: { flex: 1, minHeight: 280, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   errorText: { color: '#B91C1C', textAlign: 'center', lineHeight: 21 },
   emptyText: { color: '#64748B', fontWeight: '700' },
-  retryButton: { backgroundColor: '#111827', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 11 },
+  retryButton: { minHeight: 44, justifyContent: 'center', backgroundColor: COLORS.primary, paddingHorizontal: 18, borderRadius: 11 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 17, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: RADIUS.lg, padding: 17, borderWidth: 1, borderColor: '#E2E8F0' },
+  cardCompact: { padding: 14, borderRadius: RADIUS.md },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  cardHeaderCompact: { flexDirection: 'column', alignItems: 'stretch' },
   statusBadge: { borderRadius: 9, paddingHorizontal: 9, paddingVertical: 6 },
   statusText: { fontSize: 10.5, fontWeight: '800' },
   orderInfo: { flex: 1, alignItems: 'flex-end' },
   orderNumber: { color: '#0F172A', fontWeight: '900', fontSize: 15 },
   date: { color: '#94A3B8', fontSize: 10.5, marginTop: 3 },
   infoGrid: { flexDirection: 'row-reverse', gap: 10, marginTop: 14 },
+  infoGridCompact: { flexDirection: 'column' },
   infoBlock: { flex: 1, backgroundColor: '#F8FAFC', borderRadius: 11, padding: 11, alignItems: 'flex-end' },
   infoLabel: { color: '#94A3B8', fontSize: 10.5, fontWeight: '700' },
   infoValue: { color: '#0F172A', fontSize: 12.5, fontWeight: '800', marginTop: 3, textAlign: 'right' },
@@ -913,6 +942,7 @@ const styles = StyleSheet.create({
   itemsBox: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 11, marginTop: 13 },
   itemsTitle: { color: '#475569', fontSize: 11.5, fontWeight: '900', textAlign: 'right', marginBottom: 3 },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#CBD5E1' },
+  itemRowCompact: { flexDirection: 'column', alignItems: 'stretch' },
   itemName: { color: '#0F172A', fontSize: 12.5, fontWeight: '800', textAlign: 'right' },
   itemVariant: { color: '#475569', fontSize: 10.5, lineHeight: 16, textAlign: 'right', marginTop: 2 },
   itemMeta: { color: '#64748B', fontSize: 10.5, lineHeight: 17, textAlign: 'right', marginTop: 2 },
@@ -926,12 +956,14 @@ const styles = StyleSheet.create({
   receiptBox: { backgroundColor: '#F0FDFA', borderRadius: 11, padding: 11, marginTop: 11 },
   latestEvent: { color: '#64748B', fontSize: 10.5, lineHeight: 17, textAlign: 'right', marginTop: 11 },
   actions: { marginTop: 14, gap: 8 },
-  primaryButton: { minHeight: 45, borderRadius: 11, backgroundColor: '#111827', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 14 },
+  primaryButton: { minHeight: 45, borderRadius: 11, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 14 },
   primaryButtonText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13 },
   outlineButton: { minHeight: 45, borderRadius: 11, backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 14 },
   outlineButtonText: { color: '#1E3A8A', fontWeight: '900', fontSize: 12.5 },
   modalOverlay: { flex: 1, backgroundColor: '#0F172A99', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modalCard: { width: '100%', maxWidth: 540, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20 },
+  modalCard: { width: '100%', maxWidth: 600, maxHeight: '92%', backgroundColor: '#FFFFFF', borderRadius: RADIUS.lg },
+  modalCardContent: { padding: 20 },
+  modalCardCompact: { padding: 14 },
   modalTitle: { color: '#0F172A', fontSize: 19, fontWeight: '900', textAlign: 'right' },
   modalHint: { color: '#64748B', fontSize: 12.5, lineHeight: 20, textAlign: 'right', marginTop: 6 },
   evidencePanel: { gap: 10, marginTop: 13, maxHeight: 280 },
@@ -945,29 +977,33 @@ const styles = StyleSheet.create({
   evidenceFileIcon: { width: 116, height: 84, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEF2FF' },
   evidenceLabel: { color: '#1E3A8A', fontSize: 10.5, fontWeight: '800', textAlign: 'center', padding: 7 },
   choiceRow: { flexDirection: 'row-reverse', gap: 9, marginTop: 15 },
+  choiceRowCompact: { flexDirection: 'column' },
   choice: { flex: 1, minHeight: 45, borderRadius: 11, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC', flexDirection: 'row-reverse', gap: 6, alignItems: 'center', justifyContent: 'center' },
-  choiceActive: { backgroundColor: '#111827', borderColor: '#111827' },
+  choiceActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   choiceText: { color: '#475569', fontSize: 11.5, fontWeight: '800' },
   choiceTextActive: { color: '#FFFFFF' },
   responseInput: { minHeight: 105, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12, backgroundColor: '#F8FAFC', color: '#0F172A', padding: 12, marginTop: 14 },
   modalActions: { flexDirection: 'row-reverse', gap: 10, marginTop: 15 },
+  modalActionsCompact: { flexDirection: 'column' },
   secondaryButton: { flex: 1, minHeight: 45, backgroundColor: '#F1F5F9', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   secondaryButtonText: { color: '#64748B', fontWeight: '800' },
-  submitButton: { flex: 2, minHeight: 45, backgroundColor: '#111827', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  submitButton: { flex: 2, minHeight: 45, backgroundColor: COLORS.primary, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   submitButtonText: { color: '#FFFFFF', fontWeight: '900' },
   disabled: { opacity: 0.5 },
   inspectionPage: { flex: 1, backgroundColor: '#F8FAFC' },
   inspectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  inspectionHeaderCompact: { paddingHorizontal: 14 },
   inspectionContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 16, paddingBottom: 60 },
+  inspectionContentCompact: { paddingHorizontal: 14 },
   inspectionItem: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, padding: 15, marginBottom: 12 },
   inspectionItemName: { color: '#0F172A', fontSize: 15, fontWeight: '900', textAlign: 'right' },
   fieldLabel: { color: '#475569', fontSize: 11.5, fontWeight: '800', textAlign: 'right', marginTop: 13, marginBottom: 6 },
   quantityInput: { minHeight: 44, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, backgroundColor: '#F8FAFC', color: '#0F172A', paddingHorizontal: 12, fontSize: 15, fontWeight: '800' },
   dispositions: { flexDirection: 'row-reverse', gap: 7, paddingVertical: 2 },
-  disposition: { paddingHorizontal: 11, paddingVertical: 8, borderRadius: 16, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' },
-  dispositionActive: { backgroundColor: '#111827', borderColor: '#111827' },
+  disposition: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 11, borderRadius: RADIUS.full, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' },
+  dispositionActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   dispositionText: { color: '#475569', fontSize: 10.5, fontWeight: '800' },
   dispositionTextActive: { color: '#FFFFFF' },
   itemNotesInput: { minHeight: 70, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, backgroundColor: '#F8FAFC', color: '#0F172A', padding: 11, marginTop: 12 },
-  submitInspection: { minHeight: 49, backgroundColor: '#111827', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  submitInspection: { minHeight: 49, backgroundColor: COLORS.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
 });

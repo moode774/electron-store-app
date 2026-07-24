@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Modal, RefreshControl, ScrollView, StyleSheet,
-  Image, Linking, Text, TextInput, TouchableOpacity, View,
+  Image, Linking, Text, TextInput, TouchableOpacity, View, useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -12,10 +12,11 @@ import {
   type RefundRequestStatus,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A', bg: '#F8FAFC', card: '#FFFFFF', text: '#0F172A',
-  muted: '#64748B', border: '#E2E8F0', success: '#059669', danger: '#DC2626', warning: '#D97706',
+  primary: COLORS.primary, bg: COLORS.background, card: COLORS.surface, text: COLORS.textPrimary,
+  muted: COLORS.textMuted, border: COLORS.border, success: COLORS.success, danger: COLORS.error, warning: COLORS.warning,
 };
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -56,6 +57,11 @@ const DECISION_COPY: Record<Decision, { title: string; detail: string; placehold
 };
 
 export default function AdminRefundsScreen() {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [items, setItems] = useState<AdminRefundRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -223,7 +229,7 @@ export default function AdminRefundsScreen() {
 
   return (
     <View style={s.page}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <Text style={s.title}>طلبات الاسترداد</Text>
         <Text style={s.sub}>قرار القبول منفصل عن تنفيذ رد المبلغ، وتظهر كل مرحلة بحالتها الفعلية.</Text>
       </View>
@@ -244,9 +250,12 @@ export default function AdminRefundsScreen() {
       ) : (
         <FlatList
           data={visibleItems}
+          key={`refunds-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={UI.primary} />}
           ListEmptyComponent={<View style={s.empty}><Ionicons name="refresh-circle-outline" size={48} color={UI.border} /><Text style={s.emptyText}>لا توجد طلبات بهذه الحالة</Text></View>}
         />
@@ -254,7 +263,7 @@ export default function AdminRefundsScreen() {
 
       <Modal visible={!!decision} transparent animationType="fade" onRequestClose={() => !processingId && setDecision(null)} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
-          <View style={s.modal}>
+          <View style={[s.modal, { width: Math.min(Math.max(width - 24, 280), 480) }]}>
             <Text style={s.modalTitle}>{decision ? DECISION_COPY[decision.status].title : ''}</Text>
             <Text style={s.modalText}>{decision ? DECISION_COPY[decision.status].detail : ''}</Text>
             <TextInput
@@ -296,15 +305,16 @@ export default function AdminRefundsScreen() {
 const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: UI.bg },
   header: { padding: 24, backgroundColor: UI.card, borderBottomWidth: 1, borderColor: UI.border },
-  title: { fontSize: 24, fontWeight: '900', textAlign: 'right', color: UI.text },
-  sub: { color: UI.muted, textAlign: 'right', marginTop: 6, lineHeight: 21 },
+  title: { fontSize: 24, fontFamily: FONTS.bold, textAlign: 'right', color: UI.text },
+  sub: { color: UI.muted, fontFamily: FONTS.regular, textAlign: 'right', marginTop: 6, lineHeight: 21 },
   filters: { paddingHorizontal: 18, paddingVertical: 14, gap: 8, flexDirection: 'row-reverse' },
-  filter: { backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 18 },
+  filter: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, paddingHorizontal: 15, paddingVertical: 9, borderRadius: RADIUS.full },
   filterActive: { backgroundColor: UI.primary, borderColor: UI.primary },
-  filterText: { color: UI.muted, fontWeight: '700' },
+  filterText: { color: UI.muted, fontFamily: FONTS.semiBold },
   filterTextActive: { color: '#FFF' },
-  list: { padding: 18, paddingTop: 4, gap: 12, paddingBottom: 60 },
-  card: { backgroundColor: UI.card, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: UI.border },
+  list: { alignSelf: 'center', paddingTop: 4, gap: 12, paddingBottom: 112 },
+  columnRow: { gap: 12 },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 18, borderWidth: 1, borderColor: UI.border },
   cardHeader: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   headingWrap: { flex: 1, alignItems: 'flex-end' },
   name: { fontWeight: '900', fontSize: 16, color: UI.text, textAlign: 'right' },
@@ -328,9 +338,9 @@ const s = StyleSheet.create({
   noteText: { color: UI.text, textAlign: 'right', marginTop: 4, lineHeight: 20 },
   date: { color: UI.muted, fontSize: 11, textAlign: 'left', marginTop: 12 },
   actions: { flexDirection: 'row-reverse', gap: 10, marginTop: 16, borderTopWidth: 1, borderTopColor: UI.border, paddingTop: 14 },
-  approve: { flex: 2, backgroundColor: UI.success, padding: 12, borderRadius: 11, alignItems: 'center' },
+  approve: { flex: 2, minHeight: 44, justifyContent: 'center', backgroundColor: UI.success, padding: 12, borderRadius: RADIUS.sm, alignItems: 'center' },
   approveText: { color: '#FFF', fontWeight: '900' },
-  reject: { flex: 1, borderWidth: 1, borderColor: UI.danger, padding: 11, borderRadius: 11, alignItems: 'center' },
+  reject: { flex: 1, minHeight: 44, justifyContent: 'center', borderWidth: 1, borderColor: UI.danger, padding: 11, borderRadius: RADIUS.sm, alignItems: 'center' },
   rejectText: { color: UI.danger, fontWeight: '800' },
   secondaryAction: { flex: 1, borderWidth: 1, borderColor: UI.primary, padding: 11, borderRadius: 11, alignItems: 'center' },
   processingText: { color: UI.primary, fontWeight: '800' },
@@ -339,16 +349,16 @@ const s = StyleSheet.create({
   errorText: { textAlign: 'center', color: UI.danger, fontWeight: '700', lineHeight: 22 },
   retry: { backgroundColor: UI.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10 },
   retryText: { color: '#FFF', fontWeight: '800' },
-  modalOverlay: { flex: 1, backgroundColor: '#0F172A80', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modal: { width: '100%', maxWidth: 480, backgroundColor: UI.card, borderRadius: 22, padding: 22 },
-  modalTitle: { color: UI.text, fontSize: 19, fontWeight: '900', textAlign: 'right' },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, alignItems: 'center', justifyContent: 'center', padding: 12 },
+  modal: { maxWidth: 480, maxHeight: '90%', backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 22 },
+  modalTitle: { color: UI.text, fontSize: 19, fontFamily: FONTS.bold, textAlign: 'right' },
   modalText: { color: UI.muted, fontSize: 14, lineHeight: 23, textAlign: 'right', marginTop: 10 },
   input: { minHeight: 100, borderWidth: 1, borderColor: UI.border, borderRadius: 13, backgroundColor: UI.bg, padding: 14, marginTop: 16, textAlignVertical: 'top', color: UI.text },
   referenceInput: { minHeight: 48, borderWidth: 1, borderColor: UI.border, borderRadius: 13, backgroundColor: UI.bg, paddingHorizontal: 14, marginTop: 10, color: UI.text },
   modalActions: { flexDirection: 'row-reverse', gap: 10, marginTop: 18 },
-  cancel: { flex: 1, backgroundColor: '#F1F5F9', padding: 13, borderRadius: 12, alignItems: 'center' },
+  cancel: { flex: 1, minHeight: 44, justifyContent: 'center', backgroundColor: COLORS.surfaceMuted, padding: 13, borderRadius: RADIUS.md, alignItems: 'center' },
   cancelText: { color: UI.muted, fontWeight: '800' },
-  confirm: { flex: 2, backgroundColor: UI.success, padding: 13, borderRadius: 12, alignItems: 'center' },
+  confirm: { flex: 2, minHeight: 44, justifyContent: 'center', backgroundColor: UI.success, padding: 13, borderRadius: RADIUS.md, alignItems: 'center' },
   confirmDanger: { backgroundColor: UI.danger },
   confirmText: { color: '#FFF', fontWeight: '900' },
 });

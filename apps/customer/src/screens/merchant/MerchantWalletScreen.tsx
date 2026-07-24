@@ -2,10 +2,11 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar,
   Platform, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView,
+  ScrollView, useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import {
   useAuthStore, getWalletTransactions, getMerchantWalletBalance,
   getMyWithdrawalRequests, requestWithdrawal, WalletTransaction, WithdrawalRequest, WithdrawalStatus,
@@ -40,6 +41,9 @@ export default function MerchantWalletScreen({ navigation }: any) {
   const [withdrawNotes, setWithdrawNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const withdrawLock = useRef(false);
+  const { width } = useWindowDimensions();
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
 
   const loadData = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
@@ -132,12 +136,12 @@ export default function MerchantWalletScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
 
-      <View style={styles.header}>
+      <View style={[styles.header, isCompact && styles.headerCompact, isTablet && styles.headerWide]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>المحفظة والمدفوعات</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       {loading ? (
@@ -148,7 +152,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
         <FlatList
           data={transactions}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, isCompact && styles.listContentCompact, isTablet && styles.listContentWide]}
           ListHeaderComponent={
             <>
               {loadError ? (
@@ -186,7 +190,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   {withdrawals.slice(0, 5).map((request) => {
                     const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
                     return (
-                      <View key={request.id} style={styles.withdrawalRow}>
+                      <View key={request.id} style={[styles.withdrawalRow, isCompact && styles.withdrawalRowCompact]}>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
                           <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-SA')}</Text>
@@ -218,7 +222,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
             const income = isIncome(item);
             const absoluteAmount = Math.abs(item.amount ?? 0);
             return (
-              <View style={styles.txCard}>
+              <View style={[styles.txCard, isCompact && styles.txCardCompact]}>
                 <View style={[styles.txIcon, { backgroundColor: income ? '#DCFCE7' : '#FEE2E2' }]}>
                   <Ionicons name={income ? 'arrow-down' : 'arrow-up'} size={18} color={income ? '#059669' : '#EF4444'} />
                 </View>
@@ -242,18 +246,24 @@ export default function MerchantWalletScreen({ navigation }: any) {
         animationType="slide"
         onRequestClose={() => !submitting && setShowWithdrawModal(false)}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.modalOverlay, isTablet && styles.modalOverlayWide]}>
           <TouchableOpacity
             style={StyleSheet.absoluteFillObject}
             activeOpacity={1}
             onPress={() => !submitting && setShowWithdrawModal(false)}
           />
-          <View style={styles.modalSheet}>
+          <ScrollView
+            style={[styles.modalSheet, isTablet && styles.modalSheetWide]}
+            contentContainerStyle={[styles.modalSheetContent, isCompact && styles.modalSheetCompact]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
               <TouchableOpacity
+                style={styles.modalCloseButton}
                 onPress={() => !submitting && setShowWithdrawModal(false)}
                 disabled={submitting}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -318,7 +328,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                 </>
               )}
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -326,21 +336,27 @@ export default function MerchantWalletScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-    backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    width: '100%', alignSelf: 'center',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  headerCompact: { paddingHorizontal: 14 },
+  headerWide: { maxWidth: 1120 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary },
 
   listContent: { padding: 20, gap: 10, paddingBottom: 100 },
+  listContentCompact: { paddingHorizontal: 14 },
+  listContentWide: { width: '100%', maxWidth: 1120, alignSelf: 'center', paddingTop: 28 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   withdrawalSection: { gap: 8, marginBottom: 6 },
   withdrawalRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  withdrawalRowCompact: { flexDirection: 'column', alignItems: 'stretch' },
   withdrawalAmount: { color: '#111827', fontSize: 13.5, fontWeight: '800' },
   withdrawalDate: { color: '#9CA3AF', fontSize: 10.5, marginTop: 3 },
   withdrawalStatus: { maxWidth: '52%', fontSize: 11, fontWeight: '700', textAlign: 'right', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, overflow: 'hidden' },
@@ -352,7 +368,7 @@ const styles = StyleSheet.create({
   minNote: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 8 },
   withdrawBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF',
-    paddingHorizontal: 28, paddingVertical: 12, borderRadius: 14,
+    minHeight: 44, paddingHorizontal: 28, borderRadius: 14,
   },
   withdrawBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.primary },
 
@@ -362,6 +378,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
     borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
   },
+  txCardCompact: { flexWrap: 'wrap', rowGap: 10 },
   txIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   txTitle: { fontSize: 13.5, fontWeight: '700', color: '#111827' },
   txDate: { fontSize: 11, color: '#9CA3AF', marginTop: 3 },
@@ -369,10 +386,14 @@ const styles = StyleSheet.create({
 
   // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  modalOverlayWide: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalSheet: {
     backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+    width: '100%', maxHeight: '92%',
   },
+  modalSheetContent: { padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 28 },
+  modalSheetCompact: { paddingHorizontal: 16 },
+  modalSheetWide: { maxWidth: 560, borderRadius: RADIUS.xl },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB',
     alignSelf: 'center', marginBottom: 20,
@@ -380,6 +401,7 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20,
   },
+  modalCloseButton: { width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceMuted },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
   modalBalanceRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

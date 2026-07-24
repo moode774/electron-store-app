@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   action: {
-    minHeight: 40,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

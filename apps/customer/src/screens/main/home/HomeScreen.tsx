@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,116 +20,143 @@ import {
   Category,
   getCategories,
   getFeaturedProducts,
-  getUnreadNotificationsCount,
+  getOrders,
+  getStores,
   getWishlist,
+  OrderSummary,
   ProductSummary,
   removeFromWishlist,
+  StoreSummary,
   supabase,
   useAuthStore,
   useCartStore,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { FONTS } from '@marketplace/shared-utils';
 import { HomeStackParamList } from '../../../navigation/types';
-import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
-import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
 
-const FALLBACK_CATEGORIES = [
-  { id: 'sports', name: 'الرياضة', icon: 'barbell-outline' },
-  { id: 'accessories', name: 'الإكسسوارات', icon: 'glasses-outline' },
-  { id: 'bags', name: 'الحقائب', icon: 'briefcase-outline' },
-  { id: 'shoes', name: 'الأحذية', icon: 'footsteps-outline' },
-  { id: 'clothing', name: 'الملابس', icon: 'shirt-outline' },
-  { id: 'perfumes', name: 'العطور', icon: 'color-wand-outline' },
+// Apple Design Tokens strictly from DESIGN-apple.md
+const APPLE_TOKENS = {
+  primary: '#0066cc', // Action Blue
+  primaryFocus: '#0071e3',
+  primaryOnDark: '#2997ff',
+  ink: '#1d1d1f', // Near-Black Ink
+  bodyMuted: '#7a7a7a',
+  hairline: '#e0e0e0',
+  dividerSoft: '#f0f0f0',
+  canvas: '#ffffff',
+  canvasParchment: '#f5f5f7',
+  surfacePearl: '#fafafc',
+  surfaceTileDark: '#1d1d1f',
+  surfaceTileDark2: '#272729',
+};
+
+// Fallback Stores
+const MOCKUP_STORES = [
+  { id: 'noon', store_name: 'نون', logo_bg: '#FEE500', logo_text: 'نون', is_verified: true },
+  { id: 'amazon', store_name: 'أمازون', logo_bg: '#FFFFFF', logo_text: 'amazon', is_verified: true },
+  { id: 'namshi', store_name: 'نمشي', logo_bg: '#FFFFFF', logo_text: 'NAMSHI', is_verified: true },
+  { id: 'shein', store_name: 'شي إن', logo_bg: '#000000', logo_text: 'SHEIN', logo_text_color: '#FFFFFF', is_verified: true },
+  { id: 'vogacloset', store_name: 'فوغا كلوسيت', logo_bg: '#FFFFFF', logo_text: 'VOGA', is_verified: true },
+];
+
+// Fallback Category Chips
+const CATEGORY_ITEMS = [
+  { id: 'all', name: 'الكل', icon: 'grid-outline' },
+  { id: 'offers', name: 'العروض 🔥', icon: 'pricetag-outline' },
+  { id: 'clothing', name: 'الأزياء', icon: 'shirt-outline' },
+  { id: 'beauty', name: 'الجمال والعناية', icon: 'sparkles-outline' },
+  { id: 'electronics', name: 'الإلكترونيات', icon: 'hardware-chip-outline' },
+  { id: 'perfumes', name: 'العطور', icon: 'flask-outline' },
   { id: 'watches', name: 'الساعات', icon: 'watch-outline' },
-  { id: 'electronics', name: 'الإلكترونيات', icon: 'headset-outline' },
-];
-
-const CATEGORY_TONES = [
-  { backgroundColor: COLORS.primarySoft, color: COLORS.primary },
-  { backgroundColor: COLORS.secondarySoft, color: '#596D1F' },
-  { backgroundColor: COLORS.accentCoralSoft, color: COLORS.accentCoral },
-  { backgroundColor: COLORS.accentMintSoft, color: COLORS.success },
-];
-
-const BENEFITS = [
-  { icon: 'cash-outline', title: 'الدفع عند الاستلام', detail: 'ادفع عند وصول طلبك', tone: COLORS.secondarySoft },
-  { icon: 'navigate-outline', title: 'تتبّع واضح', detail: 'تابع طلبك خطوة بخطوة', tone: COLORS.primarySoft },
-  { icon: 'refresh-outline', title: 'إرجاع منظّم', detail: 'حسب سياسة الإرجاع', tone: COLORS.accentCoralSoft },
-  { icon: 'headset-outline', title: 'دعم قريب', detail: 'مركز المساعدة داخل التطبيق', tone: COLORS.accentMintSoft },
 ];
 
 export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const layout = useCustomerLayout();
-  const productColumns = layout.width < 560 ? 2 : layout.width < 900 ? 3 : layout.width < 1240 ? 4 : 5;
-  const productGap = layout.compact ? 10 : 16;
-  const productWidth = (layout.usableWidth - productGap * (productColumns - 1)) / productColumns;
   const user = useAuthStore((state) => state.user);
   const addToCart = useCartStore((state) => state.addToCart);
+
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stores, setStores] = useState<StoreSummary[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
+  const [activeOrder, setActiveOrder] = useState<OrderSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [wished, setWished] = useState<Set<string>>(new Set());
-  const [unread, setUnread] = useState(0);
 
-  const openTab = (tab: 'More', screen: string) => {
-    (navigation.getParent() as any)?.navigate(tab, { screen });
+  const openTab = (tab: any, screen?: string, params?: any) => {
+    (navigation.getParent() as any)?.navigate(tab, screen ? { screen, params } : undefined);
   };
 
   const loadData = useCallback(async () => {
-    const [categoryResult, productResult] = await Promise.allSettled([
-      getCategories(),
-      getFeaturedProducts(8),
-    ]);
+    setLoading(true);
+    try {
+      const [categoryResult, storesResult] = await Promise.allSettled([
+        getCategories(),
+        getStores(undefined, 10),
+      ]);
 
-    if (categoryResult.status === 'fulfilled') setCategories(categoryResult.value);
-    if (productResult.status === 'fulfilled') {
-      const featured = productResult.value;
-      if (featured.length === 0) {
-        setProducts([]);
-      } else {
-        const { data: variantRows, error: variantError } = await supabase
-          .from('product_variants')
-          .select('id, product_id, is_active')
-          .in('product_id', featured.map((product) => product.id))
-          .eq('is_active', true);
+      if (categoryResult.status === 'fulfilled') setCategories(categoryResult.value);
+      if (storesResult.status === 'fulfilled') setStores(storesResult.value);
 
-        if (variantError) {
-          setProducts(featured);
-        } else {
-          const variantsByProduct = new Map<string, { id: string; is_active: boolean }[]>();
-          for (const row of variantRows ?? []) {
-            const current = variantsByProduct.get(row.product_id) ?? [];
-            current.push({ id: row.id, is_active: row.is_active !== false });
-            variantsByProduct.set(row.product_id, current);
-          }
-          setProducts(featured.map((product) => ({
-            ...product,
-            product_variants: variantsByProduct.get(product.id) ?? [],
-          })));
+      // Fetch featured products
+      let fetchedProducts: ProductSummary[] = [];
+      try {
+        fetchedProducts = await getFeaturedProducts(20);
+      } catch {
+        fetchedProducts = [];
+      }
+
+      if (!fetchedProducts || fetchedProducts.length === 0) {
+        const { data: dbProducts, error: dbError } = await supabase
+          .from('products')
+          .select(
+            'id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles(store_name)'
+          )
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (!dbError && dbProducts && dbProducts.length > 0) {
+          fetchedProducts = dbProducts as unknown as ProductSummary[];
         }
       }
-    }
 
-    if (user?.id) {
-      try {
-        const wishlist = await getWishlist(user.id);
-        setWished(new Set(wishlist.map((item) => item.product_id)));
-      } catch {
-        // Keep browsing available when wishlist loading fails.
+      setProducts(fetchedProducts);
+
+      if (user?.id) {
+        try {
+          const wishlist = await getWishlist(user.id);
+          setWished(new Set(wishlist.map((item) => item.product_id)));
+        } catch {
+          // ignore
+        }
+
+        try {
+          const userOrders = await getOrders(user.id);
+          const ongoing = userOrders.find(
+            (o) => o.status !== 'delivered' && o.status !== 'cancelled'
+          );
+          if (ongoing) setActiveOrder(ongoing);
+        } catch {
+          // ignore
+        }
       }
-      getUnreadNotificationsCount(user.id).then(setUnread).catch(() => undefined);
+    } catch (err) {
+      console.error('Error loading home data:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [user?.id]);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const refresh = async () => {
     setRefreshing(true);
@@ -140,7 +168,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
     if (!user?.id) return;
     const next = new Set(wished);
     const isSaved = next.has(id);
-    if (isSaved) next.delete(id); else next.add(id);
+    if (isSaved) next.delete(id);
+    else next.add(id);
     setWished(next);
     try {
       if (isSaved) await removeFromWishlist(user.id, id);
@@ -150,22 +179,15 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
     }
   };
 
-  const quickAdd = (product: ProductSummary) => {
-    if (
-      product.product_variants === undefined
-      || product.product_variants.some((variant) => variant.is_active !== false)
-    ) {
-      navigation.navigate('ProductDetails', { productId: product.id });
-      return;
-    }
-    if (Number(product.stock_quantity ?? 0) <= 0) {
-      Alert.alert('نفد المخزون', 'هذا المنتج غير متاح للإضافة حالياً.');
+  const quickAddToCart = (product: ProductSummary) => {
+    if ((product.stock_quantity ?? 1) <= 0) {
+      Alert.alert('نفد المخزون', 'هذا المنتج غير متاح حالياً.');
       return;
     }
     addToCart({
       id: product.id,
       productId: product.id,
-      name: product.name,
+      name: product.name_ar || product.name,
       price: product.sale_price ?? product.base_price,
       emoji: '🛍️',
       quantity: 1,
@@ -174,668 +196,711 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
       storeName: product.merchant_profiles?.store_name ?? '',
       image: product.og_image_url ?? product.product_images?.[0]?.url,
     });
+    Alert.alert('تمت الإضافة', 'تمت إضافة المنتج إلى سلة التسوق بنجاح.');
   };
 
-  const apiCategories = categories.map((category, index) => ({
-    id: category.id,
-    name: category.name_ar || category.name,
-    icon: FALLBACK_CATEGORIES[index % FALLBACK_CATEGORIES.length].icon,
-  }));
-  const visibleCategories = categories.length >= 8
-    ? apiCategories.slice(0, 8)
-    : [...apiCategories, ...FALLBACK_CATEGORIES.slice(apiCategories.length, 8)];
+  const authUser = user as any;
+  const userName =
+    authUser?.user_metadata?.full_name ||
+    authUser?.user_metadata?.name ||
+    authUser?.full_name ||
+    'عزيزنا العميل';
+
+  // Display stores
+  const displayStores =
+    stores.length > 0
+      ? stores.map((s) => ({
+          id: s.id,
+          store_name: s.store_name,
+          logo_url: s.store_logo_url,
+          is_verified: true,
+        }))
+      : MOCKUP_STORES;
+
+  // Categories bar
+  const displayCategories = [
+    ...CATEGORY_ITEMS.slice(0, 2),
+    ...categories.map((c) => ({
+      id: c.id,
+      name: c.name_ar || c.name,
+      icon: 'grid-outline',
+    })),
+  ];
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <CustomerResponsiveShell style={[styles.headerInner, !layout.tablet && styles.headerInnerMobile]}>
-          <View style={styles.headerMainRow}>
-            <TouchableOpacity
-              style={styles.brand}
-              onPress={() => navigation.navigate('HomeMain')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="الصفحة الرئيسية"
-            >
-              <View style={styles.brandMark}>
-                <Image source={require('../../../../assets/images/logo.png')} style={styles.logo} />
+      {/* Top Header Bar following DESIGN-apple.md */}
+      <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 12) }]}>
+        <CustomerResponsiveShell>
+          <View style={styles.headerRow}>
+            {/* User Avatar & Greeting (RTL Right side) */}
+            <View style={styles.userProfileSection}>
+              <View style={styles.avatarCircle}>
+                <Image
+                  source={{
+                    uri:
+                      authUser?.user_metadata?.avatar_url ||
+                      authUser?.avatar_url ||
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+                  }}
+                  style={styles.avatarImage}
+                />
               </View>
-              <View style={styles.brandCopy}>
-                <Text style={styles.brandName}>متجر اليمن</Text>
-                <Text style={styles.brandCaption}>اختياراتك في مكان واحد</Text>
+              <View style={styles.userGreetingText}>
+                <Text style={styles.userNameText}>أهلاً بك، {userName}</Text>
+                <Text style={styles.userSubText}>اكتشف أرقى المنتجات والعروض الحصرية</Text>
               </View>
-            </TouchableOpacity>
+            </View>
 
+            {/* Notification Bell Pill */}
             <TouchableOpacity
-              style={styles.notificationButton}
+              style={styles.bellButton}
               onPress={() => openTab('More', 'Notifications')}
-              accessibilityRole="button"
-              accessibilityLabel={`الإشعارات${unread > 0 ? `، ${unread} غير مقروءة` : ''}`}
+              activeOpacity={0.8}
             >
-              <Ionicons name="notifications-outline" size={21} color={COLORS.textPrimary} />
-              {unread > 0 ? (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>{unread > 99 ? '99+' : unread}</Text>
-                </View>
-              ) : null}
+              <Ionicons name="notifications-outline" size={20} color={APPLE_TOKENS.ink} />
+              <View style={styles.bellBadgeDot} />
             </TouchableOpacity>
           </View>
-
-          <CustomerSearchField
-            containerStyle={[styles.headerSearch, !layout.tablet && styles.headerSearchMobile]}
-            onPress={() => navigation.navigate('Search')}
-          />
         </CustomerResponsiveShell>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={COLORS.primary} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={APPLE_TOKENS.primary} />
+        }
       >
         <CustomerResponsiveShell>
-          <View style={[styles.hero, layout.desktop && styles.heroDesktop]}>
-            <View style={styles.heroOrbLarge} />
-            <View style={styles.heroOrbSmall} />
-            <View style={[styles.heroCopy, layout.desktop && styles.heroCopyDesktop]}>
-              <View style={styles.heroEyebrow}>
-                <Ionicons name="sparkles" size={14} color={COLORS.textPrimary} />
-                <Text style={styles.heroEyebrowText}>تجربة تسوّق أذكى</Text>
-              </View>
-              <Text style={[styles.heroTitle, layout.compact && styles.heroTitleCompact]}>
-                كل ما تحب،{`\n`}بأسلوب أبسط.
-              </Text>
-              <Text style={styles.heroDescription}>
-                اكتشف منتجات موثوقة، عروض حقيقية، وتتبع طلبك من مكان واحد.
-              </Text>
-              <TouchableOpacity
-                style={styles.heroButton}
-                onPress={() => navigation.navigate('Offers')}
-                activeOpacity={0.86}
-                accessibilityRole="button"
-              >
-                <Text style={styles.heroButtonText}>اكتشف العروض</Text>
-                <Ionicons name="arrow-back" size={17} color={COLORS.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            {layout.desktop ? (
-              <View style={styles.heroVisual} pointerEvents="none">
-                <View style={styles.heroVisualCardMain}>
-                  <View style={styles.heroBagIcon}>
-                    <Ionicons name="bag-handle" size={48} color={COLORS.surface} />
-                  </View>
-                  <Text style={styles.heroVisualLabel}>اختيارات اليوم</Text>
-                  <Text style={styles.heroVisualValue}>خصم حتى 50%</Text>
-                </View>
-                <View style={styles.heroFloatingCard}>
-                  <View style={styles.heroFloatingIcon}>
-                    <Ionicons name="flash" size={18} color={COLORS.accentCoral} />
-                  </View>
-                  <View>
-                    <Text style={styles.heroFloatingTitle}>توصيل أسرع</Text>
-                    <Text style={styles.heroFloatingSub}>وتتبّع لحظي</Text>
-                  </View>
-                </View>
-              </View>
-            ) : null}
+          {/* Apple Search Input Component ({component.search-input}) */}
+          <View style={styles.searchRow}>
+            <TouchableOpacity
+              style={styles.searchInput}
+              onPress={() => navigation.navigate('Search')}
+              activeOpacity={0.9}
+            >
+              <Ionicons name="search-outline" size={18} color={APPLE_TOKENS.bodyMuted} />
+              <Text style={styles.searchPlaceholder}>ابحث عن منتجات، ماركات، ومتاجر...</Text>
+            </TouchableOpacity>
           </View>
 
-          {layout.tablet ? (
-            <View style={styles.benefitsGrid}>
-              {BENEFITS.map((item) => <Benefit key={item.title} {...item} />)}
+          {/* Configurator Category Option Chips ({component.configurator-option-chip}) */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesScrollContent}
+          >
+            {displayCategories.map((item) => {
+              const isSelected = selectedCategory === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.configChip,
+                    isSelected && styles.configChipSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedCategory(item.id);
+                    if (item.id === 'offers') {
+                      navigation.navigate('Offers');
+                    } else if (item.id !== 'all') {
+                      navigation.navigate('StoresList', { categoryId: item.id, filter: item.name });
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.configChipText,
+                      isSelected && styles.configChipTextSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Hero Feature Banner Tile ({component.product-tile-dark}) */}
+          <View style={styles.heroTileDark}>
+            <View style={styles.heroTileTextCol}>
+              <Text style={styles.heroTileTagline}>تشكيلة الموسم الجديد</Text>
+              <Text style={styles.heroTileTitle}>الفخامة والجودة. في مكان واحد.</Text>
+              <Text style={styles.heroTileSub}>تسوق أفضل المنتجات مع خيارات التوصيل السريع.</Text>
+
+              <TouchableOpacity
+                style={styles.primaryPillBtn}
+                onPress={() => navigation.navigate('Offers')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.primaryPillBtnText}>استكشف العروض</Text>
+                <Ionicons name="arrow-back-outline" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.benefitsList}
-            >
-              {BENEFITS.map((item) => <Benefit key={item.title} {...item} compact />)}
-            </ScrollView>
+          </View>
+
+          {/* Active Order Stepper Banner ({component.store-utility-card}) */}
+          {activeOrder && (
+            <View style={styles.activeOrderCard}>
+              <View style={styles.activeOrderRow}>
+                <TouchableOpacity
+                  style={styles.trackPillBtn}
+                  onPress={() => openTab('Orders', 'OrderTracking', { orderId: activeOrder.id })}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.trackPillBtnText}>تتبع الطلب 🗺️</Text>
+                </TouchableOpacity>
+
+                <View style={styles.activeOrderInfo}>
+                  <Text style={styles.activeOrderTitle}>
+                    طلب رقم #{activeOrder.order_number}
+                  </Text>
+                  <Text style={styles.activeOrderSub}>جاري معالجة وتوصيل طلبك</Text>
+                </View>
+              </View>
+            </View>
           )}
 
-          <CustomerSectionHeader
-            eyebrow="استكشف بسهولة"
-            title="تسوّق حسب الفئة"
-            actionLabel="عرض الكل"
-            onActionPress={() => navigation.navigate('StoresList', {})}
-          />
+          {/* Featured Stores Horizontal Carousel */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitleText}>متاجر الشركاء المعتمدة</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('StoresList', {})}>
+              <Text style={styles.viewAllText}>عرض الكل</Text>
+            </TouchableOpacity>
+          </View>
 
-          {layout.tablet ? (
-            <View style={styles.categoryGrid}>
-              {visibleCategories.map((item, index) => (
-                <CategoryCard
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  onPress={() => navigation.navigate('StoresList', { categoryId: item.id, filter: item.name })}
-                />
-              ))}
-            </View>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryList}
-            >
-              {visibleCategories.map((item, index) => (
-                <CategoryCard
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  compact
-                  onPress={() => navigation.navigate('StoresList', { categoryId: item.id, filter: item.name })}
-                />
-              ))}
-            </ScrollView>
-          )}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.storesScrollContent}
+          >
+            {displayStores.map((store) => (
+              <TouchableOpacity
+                key={store.id}
+                style={styles.storeCircleCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate('StoreDetails', { storeId: store.id })}
+              >
+                <View style={styles.storeLogoCircle}>
+                  {(store as any).logo_url ? (
+                    <Image source={{ uri: (store as any).logo_url }} style={styles.storeLogoImg} />
+                  ) : (store as any).logo_bg ? (
+                    <View style={[styles.storeLogoFallback, { backgroundColor: (store as any).logo_bg }]}>
+                      <Text
+                        style={[
+                          styles.storeLogoFallbackText,
+                          (store as any).logo_text_color && { color: (store as any).logo_text_color },
+                        ]}
+                      >
+                        {(store as any).logo_text}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="storefront-outline" size={24} color={APPLE_TOKENS.primary} />
+                  )}
+                  {store.is_verified && (
+                    <View style={styles.verifiedCheckBadge}>
+                      <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.storeCircleName} numberOfLines={1}>
+                  {store.store_name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          <CustomerSectionHeader
-            eyebrow="الأكثر طلباً"
-            title="منتجات تستحق التجربة"
-            actionLabel="عرض الكل"
-            onActionPress={() => navigation.navigate('StoresList', {})}
-          />
+          {/* Section: Products Grid ({component.store-utility-card}) */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitleText}>منتجات مختارة لك</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Offers')}>
+              <Text style={styles.viewAllText}>عرض الكل</Text>
+            </TouchableOpacity>
+          </View>
 
           {loading ? (
-            <View style={styles.loadingState}>
-              <ActivityIndicator color={COLORS.primary} size="large" />
-            </View>
-          ) : products.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="bag-handle-outline" size={32} color={COLORS.primary} />
-              </View>
-              <Text style={styles.emptyTitle}>المنتجات قادمة قريباً</Text>
-              <Text style={styles.emptyText}>ستظهر هنا أفضل اختيارات المتاجر المتاحة.</Text>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color={APPLE_TOKENS.primary} size="large" />
             </View>
           ) : (
-            <View style={[styles.productGrid, { gap: productGap }]}>
-              {products.map((product) => {
-                const needsVariantSelection = product.product_variants === undefined
-                  || product.product_variants.some((variant) => variant.is_active !== false);
-                const quickAddDisabled = !needsVariantSelection && (product.stock_quantity ?? 0) <= 0;
+            <View style={styles.productsGridContainer}>
+              {products.map((item: any) => {
+                const isFavorite = wished.has(item.id);
+                const currentPrice = item.sale_price ?? item.base_price;
+                const oldPrice = item.sale_price ? item.base_price : null;
+                const imgUri = item.og_image_url || item.product_images?.[0]?.url;
+
                 return (
-                  <CustomerProductCard
-                    key={product.id}
-                    product={product}
-                    style={{ width: productWidth }}
-                    favorite={wished.has(product.id)}
-                    onPress={() => navigation.navigate('ProductDetails', { productId: product.id })}
-                    onToggleFavorite={() => void toggleWish(product.id)}
-                    onQuickAction={() => quickAdd(product)}
-                    quickActionNeedsOptions={needsVariantSelection}
-                    quickActionDisabled={quickAddDisabled}
-                  />
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.utilityProductCard}
+                    activeOpacity={0.9}
+                    onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}
+                  >
+                    {/* Favorite Button */}
+                    <TouchableOpacity
+                      style={styles.heartButton}
+                      onPress={() => void toggleWish(item.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons
+                        name={isFavorite ? 'heart' : 'heart-outline'}
+                        size={17}
+                        color={isFavorite ? '#DC2626' : APPLE_TOKENS.bodyMuted}
+                      />
+                    </TouchableOpacity>
+
+                    {/* Image Render resting on surface with single product shadow */}
+                    <View style={styles.productImageFrame}>
+                      {imgUri ? (
+                        <Image source={{ uri: imgUri }} style={styles.productImg} resizeMode="contain" />
+                      ) : (
+                        <Ionicons name="bag-handle-outline" size={38} color={APPLE_TOKENS.bodyMuted} />
+                      )}
+                    </View>
+
+                    {/* Store Title */}
+                    {item.merchant_profiles?.store_name && (
+                      <Text style={styles.storeNameText} numberOfLines={1}>
+                        {item.merchant_profiles.store_name}
+                      </Text>
+                    )}
+
+                    {/* Product Name */}
+                    <Text style={styles.productTitleText} numberOfLines={2}>
+                      {item.name_ar || item.name}
+                    </Text>
+
+                    {/* Price & Action Button */}
+                    <View style={styles.productPriceRow}>
+                      <View style={styles.priceCol}>
+                        <Text style={styles.currentPriceText}>
+                          {currentPrice}{' '}
+                          <Text style={styles.currencyText}>ر.س</Text>
+                        </Text>
+                        {oldPrice ? (
+                          <Text style={styles.oldPriceText}>{oldPrice} ر.س</Text>
+                        ) : null}
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.quickAddPillBtn}
+                        onPress={() => quickAddToCart(item)}
+                        activeOpacity={0.85}
+                      >
+                        <Ionicons name="cart-outline" size={15} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
           )}
+
+          {/* Apple Parchment Footer ({component.footer}) */}
+          <View style={styles.appleFooter}>
+            <Text style={styles.footerBrandText}>متجر • تصميم إلكتروني متكامل</Text>
+            <Text style={styles.footerSubText}>جميع الحقوق محفوظة © {new Date().getFullYear()}</Text>
+          </View>
         </CustomerResponsiveShell>
       </ScrollView>
     </View>
   );
 }
 
-function Benefit({
-  icon,
-  title,
-  detail,
-  tone,
-  compact = false,
-}: {
-  icon: string;
-  title: string;
-  detail: string;
-  tone: string;
-  compact?: boolean;
-}): React.JSX.Element {
-  return (
-    <View style={[styles.benefitCard, compact && styles.benefitCardCompact]}>
-      <View style={[styles.benefitIcon, { backgroundColor: tone }]}>
-        <Ionicons name={icon as any} size={21} color={COLORS.textPrimary} />
-      </View>
-      <View style={styles.benefitCopy}>
-        <Text style={styles.benefitTitle}>{title}</Text>
-        <Text style={styles.benefitDetail}>{detail}</Text>
-      </View>
-    </View>
-  );
-}
-
-function CategoryCard({
-  item,
-  index,
-  compact = false,
-  onPress,
-}: {
-  item: { id: string; name: string; icon: string };
-  index: number;
-  compact?: boolean;
-  onPress: () => void;
-}): React.JSX.Element {
-  const tone = CATEGORY_TONES[index % CATEGORY_TONES.length];
-  return (
-    <TouchableOpacity
-      style={[styles.categoryCard, compact && styles.categoryCardCompact]}
-      onPress={onPress}
-      activeOpacity={0.8}
-      accessibilityRole="button"
-      accessibilityLabel={`عرض فئة ${item.name}`}
-    >
-      <View style={[styles.categoryIcon, { backgroundColor: tone.backgroundColor }]}>
-        <Ionicons name={item.icon as any} size={25} color={tone.color} />
-      </View>
-      <Text style={styles.categoryName} numberOfLines={1}>{item.name}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: APPLE_TOKENS.canvas, // Pure White #ffffff
   },
-  header: {
-    zIndex: 4,
+  headerContainer: {
+    backgroundColor: APPLE_TOKENS.canvas,
+    paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: 'rgba(248,247,251,0.98)',
+    borderBottomColor: APPLE_TOKENS.dividerSoft,
+    zIndex: 10,
   },
-  headerInner: {
-    minHeight: 82,
+  headerRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
-  headerInnerMobile: {
-    minHeight: 130,
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  headerMainRow: {
+  userProfileSection: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
   },
-  brand: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandMark: {
-    width: 46,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: APPLE_TOKENS.hairline,
     overflow: 'hidden',
-    borderRadius: 16,
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: APPLE_TOKENS.canvasParchment,
   },
-  logo: {
-    width: 39,
-    height: 39,
-    resizeMode: 'contain',
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
-  brandCopy: {
+  userGreetingText: {
     alignItems: 'flex-end',
   },
-  brandName: {
-    color: COLORS.textPrimary,
+  userNameText: {
     fontFamily: FONTS.bold,
-    fontSize: 15,
+    fontSize: 16,
+    color: APPLE_TOKENS.ink,
   },
-  brandCaption: {
-    color: COLORS.textMuted,
+  userSubText: {
     fontFamily: FONTS.regular,
-    fontSize: 9.5,
-    marginTop: 1,
+    fontSize: 11.5,
+    color: APPLE_TOKENS.bodyMuted,
+    marginTop: 2,
   },
-  headerSearch: {
-    flex: 1,
-    maxWidth: 600,
-  },
-  headerSearchMobile: {
-    width: '100%',
-    maxWidth: undefined,
-  },
-  notificationButton: {
-    width: 46,
-    height: 46,
-    position: 'relative',
+  bellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: APPLE_TOKENS.canvasParchment,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 16,
-    backgroundColor: COLORS.surface,
+    borderColor: APPLE_TOKENS.hairline,
+    position: 'relative',
   },
-  notificationBadge: {
+  bellBadgeDot: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 2,
-    borderColor: COLORS.background,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.accentCoral,
-  },
-  notificationBadgeText: {
-    color: COLORS.surface,
-    fontFamily: FONTS.bold,
-    fontSize: 8,
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: APPLE_TOKENS.primary,
   },
   scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 44,
+    paddingBottom: 40,
   },
-  hero: {
-    minHeight: 330,
-    position: 'relative',
-    justifyContent: 'center',
-    overflow: 'hidden',
+  searchRow: {
+    marginTop: 14,
+    marginBottom: 12,
+  },
+  searchInput: {
+    height: 46,
+    borderRadius: 9999, // {rounded.pill}
+    backgroundColor: APPLE_TOKENS.canvasParchment,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: APPLE_TOKENS.hairline,
+    gap: 8,
+  },
+  searchPlaceholder: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: APPLE_TOKENS.bodyMuted,
+    textAlign: 'right',
+  },
+  categoriesScrollContent: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  configChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9999, // {rounded.pill}
+    backgroundColor: APPLE_TOKENS.canvasParchment,
+    borderWidth: 1,
+    borderColor: APPLE_TOKENS.hairline,
+  },
+  configChipSelected: {
+    backgroundColor: APPLE_TOKENS.primary, // Action Blue #0066cc
+    borderColor: APPLE_TOKENS.primary,
+  },
+  configChipText: {
+    fontFamily: FONTS.medium,
+    fontSize: 12.5,
+    color: APPLE_TOKENS.ink,
+  },
+  configChipTextSelected: {
+    fontFamily: FONTS.bold,
+    color: '#FFFFFF',
+  },
+  heroTileDark: {
+    backgroundColor: APPLE_TOKENS.surfaceTileDark, // #1d1d1f
+    borderRadius: 20,
     padding: 24,
-    borderRadius: RADIUS.xl,
-    backgroundColor: COLORS.primary,
+    marginTop: 16,
+    marginBottom: 20,
   },
-  heroDesktop: {
-    minHeight: 430,
-    paddingHorizontal: 58,
-  },
-  heroOrbLarge: {
-    position: 'absolute',
-    width: 350,
-    height: 350,
-    top: -170,
-    left: -80,
-    borderRadius: 175,
-    backgroundColor: 'rgba(200,241,105,0.30)',
-  },
-  heroOrbSmall: {
-    position: 'absolute',
-    width: 130,
-    height: 130,
-    right: -35,
-    bottom: -35,
-    borderRadius: 65,
-    backgroundColor: 'rgba(255,107,102,0.34)',
-  },
-  heroCopy: {
-    zIndex: 2,
-    maxWidth: 590,
+  heroTileTextCol: {
     alignItems: 'flex-end',
   },
-  heroCopyDesktop: {
-    width: '52%',
+  heroTileTagline: {
+    fontFamily: FONTS.bold,
+    fontSize: 12,
+    color: APPLE_TOKENS.primaryOnDark, // #2997ff
+    marginBottom: 6,
   },
-  heroEyebrow: {
-    minHeight: 34,
+  heroTileTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 22,
+    color: '#FFFFFF',
+    textAlign: 'right',
+  },
+  heroTileSub: {
+    fontFamily: FONTS.regular,
+    fontSize: 12.5,
+    color: '#A1A1A6',
+    marginTop: 6,
+    textAlign: 'right',
+  },
+  primaryPillBtn: {
+    backgroundColor: APPLE_TOKENS.primary, // #0066cc
+    borderRadius: 9999, // {rounded.pill}
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.secondary,
-  },
-  heroEyebrowText: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-  },
-  heroTitle: {
-    color: COLORS.surface,
-    fontFamily: FONTS.bold,
-    fontSize: 42,
-    lineHeight: 58,
-    textAlign: 'right',
-    marginTop: 17,
-  },
-  heroTitleCompact: {
-    fontSize: 31,
-    lineHeight: 43,
-  },
-  heroDescription: {
-    maxWidth: 520,
-    color: 'rgba(255,255,255,0.82)',
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 24,
-    textAlign: 'right',
-    marginTop: 9,
-  },
-  heroButton: {
-    minHeight: 48,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 19,
-    borderRadius: 16,
-    backgroundColor: COLORS.secondary,
-    marginTop: 21,
-  },
-  heroButtonText: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-  },
-  heroVisual: {
-    position: 'absolute',
-    left: 62,
-    top: 58,
-    bottom: 58,
-    width: '35%',
-  },
-  heroVisualCardMain: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    borderRadius: RADIUS.xxl,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    transform: [{ rotate: '-4deg' }],
-  },
-  heroBagIcon: {
-    width: 92,
-    height: 92,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 31,
-    backgroundColor: 'rgba(23,21,31,0.30)',
-  },
-  heroVisualLabel: {
-    color: 'rgba(255,255,255,0.78)',
-    fontFamily: FONTS.medium,
-    fontSize: 12,
-    marginTop: 18,
-  },
-  heroVisualValue: {
-    color: COLORS.surface,
-    fontFamily: FONTS.bold,
-    fontSize: 25,
-    marginTop: 3,
-  },
-  heroFloatingCard: {
-    position: 'absolute',
-    right: -26,
-    bottom: 26,
-    minWidth: 170,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderRadius: 18,
-    backgroundColor: COLORS.surface,
-    shadowColor: COLORS.primaryDark,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  heroFloatingIcon: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 13,
-    backgroundColor: COLORS.accentCoralSoft,
-  },
-  heroFloatingTitle: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.semiBold,
-    fontSize: 11,
-    textAlign: 'right',
-  },
-  heroFloatingSub: {
-    color: COLORS.textMuted,
-    fontFamily: FONTS.regular,
-    fontSize: 9.5,
-    textAlign: 'right',
-  },
-  benefitsGrid: {
-    flexDirection: 'row-reverse',
-    gap: 12,
     marginTop: 16,
   },
-  benefitsList: {
-    flexDirection: 'row-reverse',
-    gap: 10,
-    paddingTop: 14,
-    paddingBottom: 4,
+  primaryPillBtnText: {
+    fontFamily: FONTS.bold,
+    fontSize: 13,
+    color: '#FFFFFF',
   },
-  benefitCard: {
-    flex: 1,
-    minHeight: 88,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-    padding: 13,
+  activeOrderCard: {
+    backgroundColor: APPLE_TOKENS.canvasParchment,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
+    borderColor: APPLE_TOKENS.hairline,
   },
-  benefitCardCompact: {
-    width: 230,
-    flex: 0,
-  },
-  benefitIcon: {
-    width: 46,
-    height: 46,
+  activeOrderRow: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
+    justifyContent: 'space-between',
   },
-  benefitCopy: {
-    flex: 1,
+  activeOrderInfo: {
     alignItems: 'flex-end',
   },
-  benefitTitle: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    textAlign: 'right',
+  activeOrderTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: APPLE_TOKENS.ink,
   },
-  benefitDetail: {
-    color: COLORS.textMuted,
+  activeOrderSub: {
     fontFamily: FONTS.regular,
-    fontSize: 10,
-    textAlign: 'right',
+    fontSize: 11.5,
+    color: APPLE_TOKENS.bodyMuted,
     marginTop: 2,
   },
-  categoryGrid: {
+  trackPillBtn: {
+    backgroundColor: APPLE_TOKENS.primary,
+    borderRadius: 9999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  trackPillBtnText: {
+    fontFamily: FONTS.bold,
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 14,
+  },
+  sectionTitleText: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: APPLE_TOKENS.ink,
+    letterSpacing: -0.3,
+  },
+  viewAllText: {
+    fontFamily: FONTS.bold,
+    fontSize: 13,
+    color: APPLE_TOKENS.primary,
+  },
+  storesScrollContent: {
+    flexDirection: 'row-reverse',
+    gap: 14,
+    paddingBottom: 20,
+  },
+  storeCircleCard: {
+    alignItems: 'center',
+    width: 72,
+  },
+  storeLogoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: APPLE_TOKENS.canvasParchment,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: APPLE_TOKENS.hairline,
+    marginBottom: 6,
+    position: 'relative',
+  },
+  storeLogoImg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    resizeMode: 'contain',
+  },
+  storeLogoFallback: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storeLogoFallbackText: {
+    fontFamily: FONTS.bold,
+    fontSize: 11,
+    color: APPLE_TOKENS.ink,
+  },
+  verifiedCheckBadge: {
+    position: 'absolute',
+    bottom: -1,
+    left: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  storeCircleName: {
+    fontFamily: FONTS.medium,
+    fontSize: 11.5,
+    color: APPLE_TOKENS.ink,
+    textAlign: 'center',
+  },
+  productsGridContainer: {
     flexDirection: 'row-reverse',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    rowGap: 14,
+    paddingBottom: 24,
   },
-  categoryList: {
-    flexDirection: 'row-reverse',
-    gap: 10,
-    paddingBottom: 4,
-  },
-  categoryCard: {
-    width: 140,
-    minHeight: 124,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 11,
-    padding: 13,
+  utilityProductCard: {
+    width: '48.5%',
+    backgroundColor: APPLE_TOKENS.canvas,
+    borderRadius: 18, // {rounded.lg} 18px
+    padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
+    borderColor: APPLE_TOKENS.hairline,
+    position: 'relative',
   },
-  categoryCardCompact: {
-    width: 104,
-    minHeight: 110,
-  },
-  categoryIcon: {
-    width: 54,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 19,
-  },
-  categoryName: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  loadingState: {
-    minHeight: 240,
+  heartButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 5,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: APPLE_TOKENS.canvasParchment,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyState: {
-    minHeight: 240,
+  productImageFrame: {
+    width: '100%',
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 28,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.xl,
-    backgroundColor: COLORS.surface,
+    marginVertical: 10,
   },
-  emptyIcon: {
-    width: 68,
-    height: 68,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 24,
-    backgroundColor: COLORS.primarySoft,
+  productImg: {
+    width: '92%',
+    height: '92%',
   },
-  emptyTitle: {
-    color: COLORS.textPrimary,
+  storeNameText: {
+    fontFamily: FONTS.medium,
+    fontSize: 10.5,
+    color: APPLE_TOKENS.primary,
+    textAlign: 'right',
+    marginBottom: 2,
+  },
+  productTitleText: {
     fontFamily: FONTS.bold,
-    fontSize: 16,
-    marginTop: 14,
+    fontSize: 13,
+    color: APPLE_TOKENS.ink,
+    textAlign: 'right',
+    marginBottom: 8,
+    minHeight: 36,
   },
-  emptyText: {
-    color: COLORS.textMuted,
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    textAlign: 'center',
+  productPriceRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: 4,
   },
-  productGrid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    alignItems: 'flex-start',
+  priceCol: {
+    alignItems: 'flex-end',
+  },
+  currentPriceText: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    color: APPLE_TOKENS.ink,
+  },
+  currencyText: {
+    fontFamily: FONTS.regular,
+    fontSize: 10.5,
+    color: APPLE_TOKENS.bodyMuted,
+  },
+  oldPriceText: {
+    fontFamily: FONTS.regular,
+    fontSize: 10.5,
+    color: APPLE_TOKENS.bodyMuted,
+    textDecorationLine: 'line-through',
+  },
+  quickAddPillBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: APPLE_TOKENS.primary, // Action Blue #0066cc
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingContainer: {
+    height: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appleFooter: {
+    backgroundColor: APPLE_TOKENS.canvasParchment,
+    borderRadius: 18,
+    padding: 24,
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: APPLE_TOKENS.hairline,
+  },
+  footerBrandText: {
+    fontFamily: FONTS.bold,
+    fontSize: 13,
+    color: APPLE_TOKENS.ink,
+  },
+  footerSubText: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: APPLE_TOKENS.bodyMuted,
+    marginTop: 4,
   },
 });

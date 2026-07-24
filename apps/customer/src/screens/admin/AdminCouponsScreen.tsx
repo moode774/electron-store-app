@@ -1,25 +1,32 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, TextInput, Platform, KeyboardAvoidingView
+  ActivityIndicator, RefreshControl, TextInput, Platform, KeyboardAvoidingView,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminCoupons, createGlobalCoupon } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
 };
 
 export default function AdminCouponsScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1120);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -107,7 +114,7 @@ export default function AdminCouponsScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
@@ -117,14 +124,17 @@ export default function AdminCouponsScreen({ navigation }: any) {
 
       <FlatList
         data={coupons}
+        key={`coupons-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
         keyExtractor={i => i.id}
-        contentContainerStyle={s.list}
+        contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={s.addCard}>
             <Text style={s.addTitle}>إنشاء كوبون خصم عام للتطبيق</Text>
             
-            <View style={s.formRow}>
+            <View style={[s.formRow, compact && s.formColumn]}>
               <View style={s.inputWrap}>
                 <Text style={s.label}>كود الخصم</Text>
                 <TextInput style={s.input} placeholder="مثال: EID50" value={code} onChangeText={setCode} textAlign="right" autoCapitalize="characters" />
@@ -142,7 +152,7 @@ export default function AdminCouponsScreen({ navigation }: any) {
               </View>
             </View>
 
-            <View style={s.formRow}>
+            <View style={[s.formRow, compact && s.formColumn]}>
               <View style={s.inputWrap}>
                 <Text style={s.label}>الحد الأدنى للطلب</Text>
                 <TextInput style={s.input} placeholder="0" value={minAmount} onChangeText={setMinAmount} keyboardType="numeric" textAlign="right" />
@@ -167,44 +177,46 @@ export default function AdminCouponsScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: UI.bg },
-  header: { padding: 24, paddingTop: 60, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: UI.text },
-  list: { padding: 20, paddingBottom: 100 },
+  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, backgroundColor: UI.card, borderBottomWidth: 1, borderBottomColor: UI.border },
+  headerContent: { maxWidth: 1120, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 20, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
+  list: { alignSelf: 'center', paddingTop: 20, paddingBottom: 112 },
+  columnRow: { gap: 16 },
   
-  addCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: UI.border },
-  addTitle: { fontSize: 16, fontWeight: '900', color: UI.text, textAlign: 'right', marginBottom: 16 },
+  addCard: { backgroundColor: UI.card, padding: 20, borderRadius: RADIUS.lg, marginBottom: 20, borderWidth: 1, borderColor: UI.border },
+  addTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 16 },
   
   formRow: { flexDirection: 'row-reverse', gap: 12, marginBottom: 16 },
+  formColumn: { flexDirection: 'column', gap: 14 },
   inputWrap: { flex: 1 },
-  label: { fontSize: 13, fontWeight: '700', color: UI.textMuted, textAlign: 'right', marginBottom: 8 },
-  input: { height: 48, borderWidth: 1, borderColor: UI.border, borderRadius: 12, paddingHorizontal: 16, backgroundColor: '#F8FAFC', fontSize: 15, color: UI.text },
+  label: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textMuted, textAlign: 'right', marginBottom: 8 },
+  input: { minHeight: 48, borderWidth: 1, borderColor: UI.border, borderRadius: RADIUS.md, paddingHorizontal: 16, backgroundColor: COLORS.surfaceMuted, fontSize: 15, fontFamily: FONTS.regular, color: UI.text },
   
-  typeToggle: { flexDirection: 'row-reverse', height: 48, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: UI.border, overflow: 'hidden' },
+  typeToggle: { flexDirection: 'row-reverse', minHeight: 48, backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.md, borderWidth: 1, borderColor: UI.border, overflow: 'hidden' },
   typeBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   typeBtnActive: { backgroundColor: UI.primaryLight },
-  typeText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
+  typeText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textMuted },
   typeTextActive: { color: UI.primary },
 
-  saveBtn: { height: 48, backgroundColor: UI.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
-  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  saveBtn: { minHeight: 48, backgroundColor: UI.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  saveBtnText: { color: UI.card, fontSize: 16, fontFamily: FONTS.semiBold },
 
-  couponCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: UI.border },
+  couponCard: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: UI.border },
   couponTop: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   codeBox: { backgroundColor: '#F8FAFC', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: UI.border, borderStyle: 'dashed' },
-  codeText: { fontSize: 16, fontWeight: '900', color: UI.text, letterSpacing: 2 },
+  codeText: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, letterSpacing: 2 },
   
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   badgeGlobal: { backgroundColor: UI.primaryLight },
   badgeLocal: { backgroundColor: '#FEF2F2' },
-  badgeText: { fontSize: 11, fontWeight: '800' },
+  badgeText: { fontSize: 11, fontFamily: FONTS.semiBold },
   badgeTextGlobal: { color: UI.primary },
   badgeTextLocal: { color: UI.danger },
 
   detailsRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 8 },
-  detailLabel: { fontSize: 13, color: UI.textMuted, fontWeight: '600' },
-  detailValue: { fontSize: 14, color: UI.text, fontWeight: '800' },
+  detailLabel: { fontSize: 13, color: UI.textMuted, fontFamily: FONTS.medium },
+  detailValue: { fontSize: 14, color: UI.text, fontFamily: FONTS.semiBold },
   
-  emptyText: { textAlign: 'center', color: UI.textMuted, marginTop: 40, fontSize: 16 }
+  emptyText: { textAlign: 'center', color: UI.textMuted, marginTop: 40, fontSize: 16, fontFamily: FONTS.medium }
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { OrderSummary } from '@marketplace/shared-hooks';
@@ -13,6 +13,8 @@ interface Props {
 }
 
 export default function IncomingOrderModal({ visible, order, onAccept, onReject, accepting = false }: Props) {
+  const { height } = useWindowDimensions();
+  const isShort = height < 600;
   const [timeLeft, setTimeLeft] = useState(30);
   const [scaleAnim] = useState(new Animated.Value(0.8));
 
@@ -47,9 +49,9 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onReject}>
       <View style={styles.overlay}>
-        <Animated.View style={[styles.modalCard, { transform: [{ scale: scaleAnim }] }]}>
+        <Animated.View style={[styles.modalCard, isShort && styles.modalCardShort, { transform: [{ scale: scaleAnim }] }]}>
           
-          <View style={styles.bellRing}>
+          <View style={[styles.bellRing, isShort && styles.bellRingShort]}>
             <Ionicons name="notifications-outline" size={40} color="#FFFFFF" />
           </View>
           
@@ -122,13 +124,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 24, width: '100%',
     padding: 24, alignItems: 'center', shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10,
+    maxWidth: 480,
   },
+  modalCardShort: { padding: 16, borderRadius: 20 },
   bellRing: {
     width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center', marginTop: -60,
     borderWidth: 4, borderColor: '#FFFFFF', marginBottom: 16,
     shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
   },
+  bellRingShort: { width: 58, height: 58, borderRadius: 29, marginTop: -44, marginBottom: 8 },
   title: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8 },
   subtitle: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 20 },
   detailsBox: {

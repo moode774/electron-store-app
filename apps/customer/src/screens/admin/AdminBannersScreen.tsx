@@ -1,25 +1,32 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, TextInput, Platform, Image, KeyboardAvoidingView
+  ActivityIndicator, RefreshControl, TextInput, Platform, Image, KeyboardAvoidingView,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAppBanners, upsertAppBanner, deleteAppBanner, AppBanner } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  danger: '#DC2626',
-  info: '#2563EB',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  danger: COLORS.error,
+  info: COLORS.info,
 };
 
 export default function AdminBannersScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [banners, setBanners] = useState<AppBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,7 +94,7 @@ export default function AdminBannersScreen({ navigation }: any) {
   };
 
   const renderBanner = ({ item }: { item: AppBanner }) => (
-    <View style={s.bannerCard}>
+    <View style={[s.bannerCard, columns > 1 && s.gridCard]}>
       <Image source={{ uri: item.image_url }} style={s.bannerImg} resizeMode="cover" />
       <View style={s.bannerInfo}>
         <View style={s.bannerMeta}>
@@ -112,7 +119,7 @@ export default function AdminBannersScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
@@ -122,8 +129,11 @@ export default function AdminBannersScreen({ navigation }: any) {
 
       <FlatList
         data={banners}
+        key={`banners-${columns}`}
+        numColumns={columns}
+        columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
         keyExtractor={i => i.id}
-        contentContainerStyle={s.list}
+        contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={s.addCard}>
@@ -145,30 +155,32 @@ export default function AdminBannersScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: UI.bg },
-  header: { padding: 24, paddingTop: 60, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: UI.text },
-  list: { padding: 20, paddingBottom: 100 },
+  header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, backgroundColor: UI.card, borderBottomWidth: 1, borderBottomColor: UI.border },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 20, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
+  list: { alignSelf: 'center', paddingTop: 20, paddingBottom: 112 },
+  columnRow: { gap: 16 },
   
-  addCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: UI.border },
-  addTitle: { fontSize: 16, fontWeight: '900', color: UI.text, textAlign: 'right', marginBottom: 16 },
-  input: { height: 48, borderWidth: 1, borderColor: UI.border, borderRadius: 12, paddingHorizontal: 16, marginBottom: 12, backgroundColor: '#F8FAFC', fontSize: 14 },
-  saveBtn: { height: 48, backgroundColor: UI.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
-  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  addCard: { backgroundColor: UI.card, padding: 20, borderRadius: RADIUS.lg, marginBottom: 20, borderWidth: 1, borderColor: UI.border },
+  addTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 16 },
+  input: { minHeight: 48, borderWidth: 1, borderColor: UI.border, borderRadius: RADIUS.md, paddingHorizontal: 16, marginBottom: 12, backgroundColor: COLORS.surfaceMuted, fontSize: 14, fontFamily: FONTS.regular, color: UI.text },
+  saveBtn: { minHeight: 48, backgroundColor: UI.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  saveBtnText: { color: UI.card, fontSize: 16, fontFamily: FONTS.semiBold },
 
-  bannerCard: { backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: UI.border },
+  bannerCard: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.lg, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: UI.border },
+  gridCard: { maxWidth: 632 },
   bannerImg: { width: '100%', height: 160, backgroundColor: '#F1F5F9' },
   bannerInfo: { padding: 16, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   bannerMeta: { flex: 1, alignItems: 'flex-end', marginLeft: 16 },
-  bannerTitle: { fontSize: 16, fontWeight: '800', color: UI.text, marginBottom: 4 },
-  bannerLink: { fontSize: 12, color: UI.info, fontWeight: '600' },
+  bannerTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, marginBottom: 4, textAlign: 'right' },
+  bannerLink: { fontSize: 12, color: UI.info, fontFamily: FONTS.medium },
   actions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
-  toggleBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  toggleBtn: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, justifyContent: 'center' },
   toggleActive: { backgroundColor: UI.primaryLight, borderColor: UI.primaryLight },
   toggleInactive: { backgroundColor: '#F8FAFC', borderColor: UI.border },
-  toggleText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
+  toggleText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textMuted },
   toggleTextActive: { color: UI.primary },
-  delBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' },
-  emptyText: { textAlign: 'center', color: UI.textMuted, marginTop: 40, fontSize: 16 }
+  delBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.accentCoralSoft, alignItems: 'center', justifyContent: 'center' },
+  emptyText: { textAlign: 'center', color: UI.textMuted, marginTop: 40, fontSize: 16, fontFamily: FONTS.medium }
 });

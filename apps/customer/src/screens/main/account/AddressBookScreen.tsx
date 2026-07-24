@@ -3,8 +3,13 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Activity
 import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-utils';
 import { Card, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getAddresses, Address } from '@marketplace/shared-hooks';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 export default function AddressBookScreen({ navigation }: any) {
+  const layout = useCustomerLayout(1040);
+  const columns = layout.tablet ? 2 : 1;
+  const gap = layout.compact ? 12 : 16;
+  const cardWidth = columns === 1 ? layout.usableWidth : (layout.usableWidth - gap) / 2;
   const user = useAuthStore((s) => s.user);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,14 +23,14 @@ export default function AddressBookScreen({ navigation }: any) {
   useEffect(() => { load(); }, [load]);
 
   const renderAddress = ({ item }: { item: Address }) => (
-    <Card style={styles.addressCard} variant="outlined">
+    <Card style={{ ...styles.addressCard, width: cardWidth }} variant="outlined">
       <View style={styles.addressHeader}>
         <View style={styles.labelRow}>
           <Text style={styles.labelIcon}>{item.label === 'home' ? '🏠' : '🏢'}</Text>
           <Text style={styles.labelText}>{item.label === 'home' ? 'المنزل' : item.label}</Text>
           {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>الافتراضي</Text></View>}
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity style={styles.editButton} accessibilityRole="button" accessibilityLabel="تعديل العنوان">
           <Text style={styles.editIcon}>✏️</Text>
         </TouchableOpacity>
       </View>
@@ -42,11 +47,13 @@ export default function AddressBookScreen({ navigation }: any) {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>عناويني</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+            <Text style={styles.backIcon}>→</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>عناويني</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       {loading && (
@@ -55,10 +62,13 @@ export default function AddressBookScreen({ navigation }: any) {
         </View>
       )}
       <FlatList
+        key={`addresses-${columns}`}
         data={addresses}
+        numColumns={columns}
         keyExtractor={(item) => item.id}
         renderItem={renderAddress}
-        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={columns > 1 ? [styles.listRow, { gap }] : undefined}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter, gap }]}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyEmoji}>📍</Text>
@@ -69,10 +79,12 @@ export default function AddressBookScreen({ navigation }: any) {
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
-        <Button 
-          title="+ إضافة عنوان جديد" 
-          onPress={() => navigation.navigate('AddAddress')} 
-        />
+        <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
+          <Button
+            title="+ إضافة عنوان جديد"
+            onPress={() => navigation.navigate('AddAddress')}
+          />
+        </View>
       </View>
     </View>
   );
@@ -80,12 +92,15 @@ export default function AddressBookScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.background },
+  header: { paddingTop: 48, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerInner: { width: '100%', maxWidth: 1040, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: COLORS.background },
+  headerSpacer: { width: 44 },
   backIcon: { fontSize: 24, color: COLORS.textPrimary },
   headerTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontFamily: FONTS.bold },
-  listContent: { padding: SPACING.md, paddingBottom: 100 },
-  addressCard: { marginBottom: SPACING.md, padding: SPACING.md },
+  listContent: { width: '100%', maxWidth: 1040, alignSelf: 'center', paddingTop: SPACING.md, paddingBottom: 132 },
+  listRow: { flexDirection: 'row-reverse' },
+  addressCard: { padding: SPACING.md },
   addressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   labelIcon: { fontSize: 18 },
@@ -93,11 +108,13 @@ const styles = StyleSheet.create({
   defaultBadge: { backgroundColor: `${COLORS.success}15`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.sm },
   defaultText: { fontSize: 10, color: COLORS.success, fontWeight: '700' },
   editIcon: { fontSize: 18 },
+  editButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   addressBody: { gap: 6 },
   areaText: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   streetText: { fontSize: 13, color: COLORS.textSecondary, marginLeft: 22 },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
   emptyEmoji: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 16, color: COLORS.textMuted },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, padding: SPACING.md, paddingBottom: 30, borderTopWidth: 1, borderTopColor: COLORS.border },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
+  bottomBarInner: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingTop: 12, paddingBottom: 24 },
 });

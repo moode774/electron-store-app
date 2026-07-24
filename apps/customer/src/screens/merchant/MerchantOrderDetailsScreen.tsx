@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { ORDER_STATUS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { getOrderById, updateOrderStatus, OrderDetail, supabase } from '@marketplace/shared-hooks';
 import {
   getMerchantOrderStatusInfo,
@@ -12,17 +12,17 @@ import {
 } from './merchantOrderState';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#F9FAFB',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  red: '#EF4444',
-  blue: '#3B82F6',
-  orange: '#F59E0B',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.background,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  red: COLORS.error,
+  blue: COLORS.info,
+  orange: COLORS.warning,
 };
 
 const softShadow = {
@@ -42,7 +42,8 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const [deliveryId, setDeliveryId] = useState<string | null | undefined>(undefined);
   const [updating, setUpdating] = useState(false);
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const load = useCallback(async (showLoading = false) => {
     if (!orderId) {
@@ -175,16 +176,16 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
       
       {!isDesktop && (
-        <View style={styles.headerMobile}>
+        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={styles.headerTitleMobile}>تفاصيل الطلب</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
         
         {isDesktop && (
           <View style={styles.pageHeaderRow}>
@@ -206,8 +207,8 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           <View style={[styles.mainCol, isDesktop && { flex: 7 }]}>
             
             {/* Header Info */}
-            <View style={styles.card}>
-              <View style={styles.cardHeaderRow}>
+            <View style={[styles.card, isCompact && styles.cardCompact]}>
+              <View style={[styles.cardHeaderRow, isCompact && styles.cardHeaderCompact]}>
                 <View>
                   <Text style={styles.orderIdText}>{order.order_number}</Text>
                   <Text style={styles.dateText}>{dateStr}</Text>
@@ -225,9 +226,10 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
             </View>
 
             {/* Timeline */}
-            <View style={styles.card}>
+            <View style={[styles.card, isCompact && styles.cardCompact]}>
               <Text style={styles.sectionTitle}>مسار الطلب</Text>
-              <View style={styles.timelineRow}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timelineScrollContent}>
+              <View style={[styles.timelineRow, isCompact && styles.timelineRowCompact]}>
                 <View style={[styles.timelineStep, { flex: 1 }]}>
                   <View style={[styles.timelineDot, { backgroundColor: progress >= 1 ? UI.orange : UI.border }]} />
                   <Text style={[styles.timelineText, { color: UI.textDark }]}>جديد</Text>
@@ -253,20 +255,21 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                   <Text style={[styles.timelineText, { color: progress >= 5 ? UI.textDark : UI.textMuted }]}>مكتمل</Text>
                 </View>
               </View>
+              </ScrollView>
               {progress === 0 && (
                 <Text style={styles.terminalStatusNote}>الحالة الحالية: {info.label}</Text>
               )}
             </View>
 
             {/* Receipt (Items) */}
-            <View style={styles.card}>
-              <View style={styles.cardHeaderRow}>
+            <View style={[styles.card, isCompact && styles.cardCompact]}>
+              <View style={[styles.cardHeaderRow, isCompact && styles.cardHeaderCompact]}>
                 <Text style={styles.sectionTitle}>المنتجات المطلوبة</Text>
                 <Text style={styles.itemsCount}>{items.length} منتجات</Text>
               </View>
               <View style={styles.itemsWrapper}>
                 {items.map((item, i) => (
-                  <View key={item.id} style={[styles.itemRow, i < items.length - 1 && styles.borderBottom]}>
+                  <View key={item.id} style={[styles.itemRow, isCompact && styles.itemRowCompact, i < items.length - 1 && styles.borderBottom]}>
                     <View style={styles.itemImagePlaceholder}>
                       <Ionicons name="cube-outline" size={24} color={UI.textMuted} />
                     </View>
@@ -289,7 +292,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           <View style={[styles.sideCol, isDesktop && { flex: 3 }]}>
              
              {/* Customer Box */}
-             <View style={styles.card}>
+             <View style={[styles.card, isCompact && styles.cardCompact]}>
                <Text style={styles.sectionTitle}>معلومات العميل</Text>
                <View style={styles.customerRow}>
                  <View style={styles.avatarBig}>
@@ -325,7 +328,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
              </View>
 
              {/* Payment Summary */}
-             <View style={styles.card}>
+             <View style={[styles.card, isCompact && styles.cardCompact]}>
                <Text style={styles.sectionTitle}>ملخص الدفع</Text>
                
                 <View style={styles.paymentMethodBox}>
@@ -375,29 +378,33 @@ const styles = StyleSheet.create({
   loadErrorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bgMobile, padding: 24, gap: 14 },
   loadErrorTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
   loadErrorText: { fontSize: 14, color: UI.textGrey, textAlign: 'center', lineHeight: 21 },
-  retryBtn: { backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
+  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 24 },
   retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   backLinkText: { color: UI.textGrey, fontSize: 14, fontWeight: '700', padding: 8 },
   
   headerMobile: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
   
   scrollContent: { padding: 20, paddingBottom: 100 },
+  scrollContentCompact: { paddingHorizontal: 14 },
   scrollContentDesktop: { padding: 40, alignItems: 'center' },
   
   pageHeaderRow: { width: '100%', maxWidth: 1200, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
   pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-  backBtnDesktop: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow },
+  backBtnDesktop: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow },
   backBtnText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
 
-  gridContainer: { width: '100%', maxWidth: 1200, gap: 24, flexDirection: 'column' },
+  gridContainer: { width: '100%', maxWidth: 1280, gap: 24, flexDirection: 'column' },
   mainCol: { gap: 16 },
   sideCol: { gap: 16 },
 
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  cardCompact: { padding: 14, borderRadius: RADIUS.md },
   cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
+  cardHeaderCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 10 },
   
   orderIdText: { fontSize: 22, fontWeight: '900', color: UI.textDark, textAlign: 'right' },
   dateText: { fontSize: 13, color: UI.textGrey, marginTop: 4, textAlign: 'right' },
@@ -411,6 +418,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: '800', color: UI.textDark, marginBottom: 20, textAlign: 'right' },
   
   timelineRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  timelineScrollContent: { minWidth: '100%' },
+  timelineRowCompact: { minWidth: 480, paddingHorizontal: 4 },
   timelineStep: { alignItems: 'center', gap: 8 },
   timelineDot: { width: 14, height: 14, borderRadius: 7 },
   timelineText: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
@@ -420,6 +429,7 @@ const styles = StyleSheet.create({
   itemsCount: { fontSize: 13, fontWeight: '600', color: UI.textMuted },
   itemsWrapper: { marginTop: 8 },
   itemRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 16, gap: 16 },
+  itemRowCompact: { flexWrap: 'wrap', gap: 12 },
   borderBottom: { borderBottomWidth: 1, borderBottomColor: UI.border },
   itemImagePlaceholder: { width: 56, height: 56, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   itemName: { fontSize: 15, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
@@ -437,7 +447,7 @@ const styles = StyleSheet.create({
   infoIcon: { marginTop: 2 },
   infoLabel: { fontSize: 12, color: UI.textGrey, textAlign: 'right', marginBottom: 2 },
   infoValue: { fontSize: 14, fontWeight: '600', color: UI.textDark, textAlign: 'right', lineHeight: 20 },
-  callIconBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center' },
+  callIconBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center' },
 
   paymentMethodBox: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: UI.border, marginBottom: 20 },
   paymentMethodText: { fontSize: 14, fontWeight: '700', color: UI.textDark },

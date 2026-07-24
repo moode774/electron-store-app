@@ -3,20 +3,21 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProducts, getMerchantProfile, updateProduct } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#FFFFFF',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  amber: '#D97706',
-  blue: '#2563EB',
-  red: '#EF4444',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.surface,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  amber: COLORS.warning,
+  blue: COLORS.info,
+  red: COLORS.error,
 };
 
 const APPROVAL_META = {
@@ -42,7 +43,9 @@ export default function MerchantProductsScreen({ navigation }: any) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
 
   const load = useCallback(async (initial = false) => {
     if (initial) setLoading(true); else setRefreshing(true);
@@ -97,19 +100,19 @@ export default function MerchantProductsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
       
       {!isDesktop && (
-        <View style={styles.headerMobile}>
+        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
           <Text style={styles.headerTitleMobile}>إدارة المنتجات</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
       )}
 
-      <View style={[styles.pageContent, isDesktop && styles.pageContentDesktop]}>
+      <View style={[styles.pageContent, isTablet && styles.pageContentTablet, isDesktop && styles.pageContentDesktop]}>
         
         {/* Page Header */}
-        <View style={styles.pageHeaderRow}>
+        <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
           <View>
             <Text style={styles.pageTitle}>منتجاتي</Text>
             <Text style={styles.pageSubtitle}>إدارة منتجات متجرك ومتابعة حالة مراجعتها قبل ظهورها للعملاء</Text>
@@ -127,7 +130,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
         </View>
 
         {/* Content Box */}
-        <View style={[styles.contentBox, isDesktop && styles.contentBoxDesktop]}>
+          <View style={[styles.contentBox, isTablet && styles.contentBoxTablet, isDesktop && styles.contentBoxDesktop]}>
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={UI.primary} />
@@ -157,7 +160,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
               renderItem={({ item }) => {
                 const approval = APPROVAL_META[item.approval_status as keyof typeof APPROVAL_META] ?? APPROVAL_META.pending;
                 return (
-                <View style={[styles.cardRow, !item.is_active && styles.cardInactive]}>
+                <View style={[styles.cardRow, isCompact && styles.cardRowCompact, !item.is_active && styles.cardInactive]}>
                   {/* Product Info (Flex 3) */}
                   <View style={[styles.td, { flex: isDesktop ? 3 : 1, flexDirection: 'row-reverse', alignItems: 'center', gap: 16 }]}>
                     <View style={styles.imageWrap}>
@@ -199,7 +202,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
                   )}
 
                   {/* Actions (Flex 1.5) */}
-                  <View style={[styles.td, { flex: isDesktop ? 1.5 : undefined, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: isDesktop ? 'flex-end' : 'flex-end', gap: 12 }]}>
+                  <View style={[styles.td, styles.actionsCell, isCompact && styles.actionsCellCompact, { flex: isDesktop ? 1.5 : undefined }]}>
                     <View style={styles.statusWrap}>
                        <View style={[styles.statusDot, { backgroundColor: item.is_active ? UI.primary : UI.textMuted }]} />
                        <Text style={[styles.statusText, { color: item.is_active ? UI.textDark : UI.textMuted }]}>
@@ -231,29 +234,33 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
   
   headerMobile: { flexDirection: 'row-reverse', alignItems: 'center', padding: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, borderBottomWidth: 1, borderBottomColor: UI.border },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontWeight: '800', color: UI.textDark, flex: 1, textAlign: 'center' },
+  headerMobileCompact: { paddingHorizontal: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark, flex: 1, textAlign: 'center' },
   
   pageContent: { flex: 1 },
-  pageContentDesktop: { padding: 32 },
+  pageContentTablet: { width: '100%', maxWidth: 1180, alignSelf: 'center', paddingHorizontal: 24 },
+  pageContentDesktop: { paddingTop: 32, paddingBottom: 32 },
   
   pageHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
+  pageHeaderCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14, paddingHorizontal: 14 },
   pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
   
   addBtn: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
     backgroundColor: UI.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12,
-    ...softShadow, shadowOpacity: 0.2, shadowColor: UI.primary
+    ...softShadow, shadowOpacity: 0.2, shadowColor: UI.primary, minHeight: 44, justifyContent: 'center'
   },
   addBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 
   contentBox: { flex: 1 },
+  contentBoxTablet: { borderRadius: RADIUS.lg, overflow: 'hidden' },
   contentBoxDesktop: { backgroundColor: '#FFFFFF', borderRadius: 16, ...softShadow, borderWidth: 1, borderColor: '#F3F4F6', padding: 24 },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   
-  listContent: { paddingBottom: 100 },
+  listContent: { paddingHorizontal: 14, paddingBottom: 100 },
   
   tableHeaderRow: { flexDirection: 'row-reverse', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: UI.border, marginBottom: 12 },
   th: { fontSize: 12, color: UI.textMuted, fontWeight: '700', textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -262,8 +269,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
     paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: UI.bg,
   },
+  cardRowCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14, paddingVertical: 18 },
   cardInactive: { opacity: 0.5 },
   td: { },
+  actionsCell: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'flex-end', gap: 12 },
+  actionsCellCompact: { justifyContent: 'space-between', minHeight: 44 },
   
   imageWrap: { width: 56, height: 56, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   thumbImg: { width: '100%', height: '100%' },
@@ -283,6 +293,6 @@ const styles = StyleSheet.create({
 
   emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
   emptyText: { color: UI.textMuted, fontSize: 16, fontWeight: '600' },
-  retryBtn: { marginTop: 16, backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12 },
+  retryBtn: { minHeight: 44, justifyContent: 'center', marginTop: 16, backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22 },
   retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
 });

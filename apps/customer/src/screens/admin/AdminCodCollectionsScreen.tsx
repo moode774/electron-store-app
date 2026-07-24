@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,21 +28,22 @@ import {
   type CodRemittanceSubmission,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primarySoft: '#EEF2FF',
-  background: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  success: '#047857',
-  successSoft: '#ECFDF5',
-  warning: '#B45309',
-  warningSoft: '#FFFBEB',
-  danger: '#B91C1C',
-  dangerSoft: '#FEF2F2',
+  primary: COLORS.primary,
+  primarySoft: COLORS.primarySoft,
+  background: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  muted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  successSoft: COLORS.accentMintSoft,
+  warning: COLORS.warning,
+  warningSoft: COLORS.secondarySoft,
+  danger: COLORS.error,
+  dangerSoft: COLORS.accentCoralSoft,
   purple: '#7C3AED',
   purpleSoft: '#F5F3FF',
 };
@@ -109,6 +111,11 @@ function errorText(error: unknown): string {
 }
 
 export default function AdminCodCollectionsScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 20;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [collections, setCollections] = useState<CodCollection[]>([]);
   const [filter, setFilter] = useState<Filter>('needs_review');
   const [loading, setLoading] = useState(true);
@@ -326,7 +333,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
 
   return (
     <View style={s.root}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <View style={s.headerText}>
           <Text style={s.title}>تحصيلات الدفع عند الاستلام</Text>
           <Text style={s.subtitle}>مراجعة عهدة النقد وإثباتات تحويل المندوبين</Text>
@@ -344,6 +351,9 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={visibleCollections}
+          key={`cod-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={(item) => item.id}
           renderItem={renderCollection}
           ListHeaderComponent={renderSummary}
@@ -357,7 +367,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={UI.primary} />
           }
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={[s.listContent, { paddingHorizontal: pagePadding, width: contentWidth }]}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -368,8 +378,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
         animationType="slide"
         onRequestClose={closeDetails}
       >
-        <View style={s.modalOverlay}>
-          <View style={s.modalCard}>
+        <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
+          <View style={[s.modalCard, !compact && s.modalCardDesktop, { width: Math.min(Math.max(width - 24, 280), 760) }]}>
             <View style={s.modalHeader}>
               <TouchableOpacity style={s.closeButton} onPress={closeDetails} disabled={processing}>
                 <Ionicons name="close" size={22} color={UI.text} />
@@ -589,95 +599,98 @@ const s = StyleSheet.create({
     backgroundColor: UI.card, borderBottomWidth: 1, borderBottomColor: UI.border,
   },
   headerText: { flex: 1, alignItems: 'flex-end' },
-  title: { color: UI.text, fontSize: 22, fontWeight: '900', textAlign: 'right' },
+  title: { color: UI.text, fontSize: 22, fontFamily: FONTS.bold, textAlign: 'right' },
   subtitle: { color: UI.muted, fontSize: 13, marginTop: 4, textAlign: 'right' },
-  backButton: { width: 42, height: 42, borderRadius: 13, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginLeft: 14 },
-  listContent: { padding: 16, paddingBottom: 42, flexGrow: 1 },
+  backButton: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center', marginLeft: 14 },
+  listContent: { alignSelf: 'center', paddingTop: 16, paddingBottom: 112, flexGrow: 1 },
+  columnRow: { gap: 12 },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   stateText: { color: UI.muted, fontSize: 14 },
   summaryGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   summaryCard: { minWidth: 145, flexGrow: 1, flexBasis: 150, backgroundColor: UI.card, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: UI.border, alignItems: 'flex-end' },
   summaryIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  summaryValue: { color: UI.text, fontSize: 19, fontWeight: '900', textAlign: 'right' },
+  summaryValue: { color: UI.text, fontSize: 19, fontFamily: FONTS.bold, textAlign: 'right' },
   summaryLabel: { color: UI.muted, fontSize: 12, marginTop: 3, textAlign: 'right' },
   filters: { flexDirection: 'row-reverse', gap: 8, paddingBottom: 16 },
-  filterChip: { borderRadius: 999, borderWidth: 1, borderColor: UI.border, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9 },
+  filterChip: { minHeight: 44, justifyContent: 'center', borderRadius: RADIUS.full, borderWidth: 1, borderColor: UI.border, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9 },
   filterChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
-  filterText: { color: UI.muted, fontSize: 13, fontWeight: '700' },
+  filterText: { color: UI.muted, fontSize: 13, fontFamily: FONTS.semiBold },
   filterTextActive: { color: '#FFFFFF' },
   errorBox: { flexDirection: 'row-reverse', alignItems: 'flex-start', backgroundColor: UI.dangerSoft, borderWidth: 1, borderColor: '#FECACA', borderRadius: 14, padding: 14, marginBottom: 14, gap: 10 },
   errorContent: { flex: 1, alignItems: 'flex-end' },
   errorText: { color: UI.danger, fontSize: 13, lineHeight: 20, textAlign: 'right' },
-  retryText: { color: UI.primary, fontWeight: '800', marginTop: 7 },
-  collectionCard: { backgroundColor: UI.card, borderRadius: 18, borderWidth: 1, borderColor: UI.border, padding: 16, marginBottom: 12, ...Platform.select({ web: { boxShadow: '0 3px 12px rgba(15, 23, 42, 0.05)' } as any, default: { elevation: 1 } }) },
+  retryText: { color: UI.primary, fontFamily: FONTS.bold, marginTop: 7 },
+  collectionCard: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: UI.border, padding: 16, marginBottom: 12, ...Platform.select({ web: { boxShadow: '0 3px 12px rgba(15, 23, 42, 0.05)' } as any, default: { elevation: 1 } }) },
   cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
-  statusBadgeText: { fontSize: 11, fontWeight: '900' },
+  statusBadgeText: { fontSize: 11, fontFamily: FONTS.bold },
   orderInfo: { flex: 1, alignItems: 'flex-end' },
-  orderNumber: { color: UI.text, fontSize: 17, fontWeight: '900', textAlign: 'right' },
+  orderNumber: { color: UI.text, fontSize: 17, fontFamily: FONTS.bold, textAlign: 'right' },
   cardDate: { color: UI.muted, fontSize: 11, marginTop: 4, textAlign: 'right' },
   identityRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7, marginTop: 14 },
   identityText: { color: UI.muted, fontSize: 13, textAlign: 'right' },
   amountGrid: { flexDirection: 'row-reverse', gap: 8, marginTop: 14 },
   amountCell: { flex: 1, backgroundColor: '#F8FAFC', borderRadius: 11, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'flex-end' },
   amountLabel: { color: UI.muted, fontSize: 10, textAlign: 'right' },
-  amountValue: { color: UI.text, fontSize: 13, fontWeight: '900', marginTop: 4, textAlign: 'right' },
+  amountValue: { color: UI.text, fontSize: 13, fontFamily: FONTS.bold, marginTop: 4, textAlign: 'right' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', marginTop: 14, paddingTop: 13, gap: 8 },
   reviewPill: { backgroundColor: '#F1F5F9', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   reviewPillActive: { backgroundColor: UI.warningSoft },
-  reviewPillText: { color: UI.muted, fontSize: 11, fontWeight: '700' },
+  reviewPillText: { color: UI.muted, fontSize: 11, fontFamily: FONTS.semiBold },
   reviewPillTextActive: { color: UI.warning },
   detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  detailsLinkText: { color: UI.primary, fontSize: 12, fontWeight: '800' },
+  detailsLinkText: { color: UI.primary, fontSize: 12, fontFamily: FONTS.bold },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 70 },
-  emptyTitle: { color: UI.text, fontSize: 17, fontWeight: '900', marginTop: 12 },
+  emptyTitle: { color: UI.text, fontSize: 17, fontFamily: FONTS.bold, marginTop: 12 },
   emptyText: { color: UI.muted, fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.48)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: UI.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '94%', minHeight: '62%', overflow: 'hidden' },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end', alignItems: 'center' },
+  modalOverlayDesktop: { justifyContent: 'center', padding: 24 },
+  modalCard: { backgroundColor: UI.background, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, maxHeight: '94%', minHeight: '62%', overflow: 'hidden' },
+  modalCardDesktop: { borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: UI.card, padding: 17, borderBottomWidth: 1, borderBottomColor: UI.border },
-  closeButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  closeButton: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   modalHeaderText: { flex: 1, alignItems: 'flex-end', marginLeft: 12 },
-  modalTitle: { color: UI.text, fontSize: 18, fontWeight: '900', textAlign: 'right' },
+  modalTitle: { color: UI.text, fontSize: 18, fontFamily: FONTS.bold, textAlign: 'right' },
   modalSubtitle: { color: UI.muted, fontSize: 12, marginTop: 3, textAlign: 'right' },
   modalBody: { padding: 16, paddingBottom: 42 },
   overviewCard: { backgroundColor: UI.card, borderRadius: 16, borderWidth: 1, borderColor: UI.border, padding: 15 },
   overviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  overviewOrder: { color: UI.text, fontSize: 16, fontWeight: '900', textAlign: 'right' },
+  overviewOrder: { color: UI.text, fontSize: 16, fontFamily: FONTS.bold, textAlign: 'right' },
   infoLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, paddingVertical: 7 },
   infoLabel: { color: UI.muted, fontSize: 12, textAlign: 'right' },
-  infoValue: { flex: 1, color: UI.text, fontSize: 12, fontWeight: '700', textAlign: 'left' },
-  pendingNote: { color: UI.warning, backgroundColor: UI.warningSoft, borderRadius: 9, padding: 10, marginTop: 10, fontSize: 12, fontWeight: '800', textAlign: 'right' },
+  infoValue: { flex: 1, color: UI.text, fontSize: 12, fontFamily: FONTS.semiBold, textAlign: 'left' },
+  pendingNote: { color: UI.warning, backgroundColor: UI.warningSoft, borderRadius: 9, padding: 10, marginTop: 10, fontSize: 12, fontFamily: FONTS.bold, textAlign: 'right' },
   disputeBanner: { flexDirection: 'row-reverse', alignItems: 'flex-start', backgroundColor: UI.dangerSoft, borderRadius: 14, borderWidth: 1, borderColor: '#FECACA', padding: 13, marginTop: 13, gap: 9 },
   disputeBannerText: { flex: 1, alignItems: 'flex-end' },
-  disputeTitle: { color: UI.danger, fontWeight: '900', fontSize: 13, textAlign: 'right' },
+  disputeTitle: { color: UI.danger, fontFamily: FONTS.bold, fontSize: 13, textAlign: 'right' },
   disputeReason: { color: '#7F1D1D', fontSize: 12, marginTop: 4, lineHeight: 19, textAlign: 'right' },
   collectionActions: { alignItems: 'flex-end', marginTop: 12 },
   outlineAction: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 11, paddingHorizontal: 13, paddingVertical: 9, backgroundColor: UI.card },
-  outlineActionText: { fontSize: 12, fontWeight: '900' },
+  outlineActionText: { fontSize: 12, fontFamily: FONTS.bold },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 22, marginBottom: 10 },
-  sectionTitle: { color: UI.text, fontSize: 16, fontWeight: '900', textAlign: 'right' },
+  sectionTitle: { color: UI.text, fontSize: 16, fontFamily: FONTS.bold, textAlign: 'right' },
   inlineError: { color: UI.danger, backgroundColor: UI.dangerSoft, borderRadius: 10, padding: 10, fontSize: 12, lineHeight: 19, textAlign: 'right', marginBottom: 10 },
   noSubmissions: { backgroundColor: UI.card, borderRadius: 14, borderWidth: 1, borderColor: UI.border, padding: 22 },
   submissionCard: { backgroundColor: UI.card, borderRadius: 16, borderWidth: 1, borderColor: UI.border, padding: 14, marginBottom: 11 },
   submissionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   submissionAmountWrap: { alignItems: 'flex-end' },
-  submissionAmount: { color: UI.text, fontSize: 18, fontWeight: '900' },
+  submissionAmount: { color: UI.text, fontSize: 18, fontFamily: FONTS.bold },
   proofButton: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: UI.primarySoft, borderRadius: 11, padding: 11, marginTop: 10 },
-  proofButtonText: { color: UI.primary, fontSize: 12, fontWeight: '900' },
+  proofButtonText: { color: UI.primary, fontSize: 12, fontFamily: FONTS.bold },
   proofUnavailable: { color: UI.warning, backgroundColor: UI.warningSoft, borderRadius: 9, padding: 9, marginTop: 9, fontSize: 11, textAlign: 'right' },
   submissionActions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 7, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 11, marginTop: 11 },
   smallAction: { borderWidth: 1, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 8 },
-  smallActionText: { fontSize: 11, fontWeight: '900' },
+  smallActionText: { fontSize: 11, fontFamily: FONTS.bold },
   decisionPanel: { backgroundColor: UI.card, borderRadius: 16, borderWidth: 1.5, borderColor: UI.primary, padding: 15, marginTop: 13 },
-  decisionTitle: { color: UI.text, fontSize: 16, fontWeight: '900', textAlign: 'right' },
+  decisionTitle: { color: UI.text, fontSize: 16, fontFamily: FONTS.bold, textAlign: 'right' },
   decisionContext: { color: UI.muted, fontSize: 12, marginTop: 5, textAlign: 'right' },
-  inputLabel: { color: UI.text, fontSize: 12, fontWeight: '800', textAlign: 'right', marginTop: 14, marginBottom: 7 },
+  inputLabel: { color: UI.text, fontSize: 12, fontFamily: FONTS.bold, textAlign: 'right', marginTop: 14, marginBottom: 7 },
   reasonInput: { minHeight: 96, maxHeight: 170, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: UI.border, borderRadius: 12, padding: 12, color: UI.text, fontSize: 13, textAlignVertical: 'top' },
   characterCount: { color: UI.muted, fontSize: 10, marginTop: 5, textAlign: 'left' },
   decisionButtons: { flexDirection: 'row', gap: 9, marginTop: 13 },
   cancelButton: { flex: 1, borderWidth: 1, borderColor: UI.border, borderRadius: 11, padding: 12, alignItems: 'center', justifyContent: 'center' },
-  cancelButtonText: { color: UI.muted, fontSize: 12, fontWeight: '800' },
+  cancelButtonText: { color: UI.muted, fontSize: 12, fontFamily: FONTS.bold },
   confirmButton: { flex: 2, flexDirection: 'row', gap: 7, backgroundColor: UI.primary, borderRadius: 11, padding: 12, alignItems: 'center', justifyContent: 'center' },
-  confirmButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
+  confirmButtonText: { color: '#FFFFFF', fontSize: 12, fontFamily: FONTS.bold },
   disabledButton: { opacity: 0.65 },
 });

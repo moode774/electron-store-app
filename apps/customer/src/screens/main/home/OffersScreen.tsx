@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 const CARD_COLORS = [COLORS.primary, '#059669', '#7C3AED', '#D97706'];
 
 export default function OffersScreen({ navigation }: any) {
+  const layout = useCustomerLayout();
+  const columns = layout.wide ? 3 : layout.tablet ? 2 : 1;
+  const gap = layout.compact ? 12 : 16;
+  const cardWidth = columns === 1 ? layout.usableWidth : (layout.usableWidth - gap * (columns - 1)) / columns;
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [offers, setOffers] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,11 +46,13 @@ export default function OffersScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>العروض والكوبونات</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>العروض والكوبونات</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       {loading ? (
@@ -62,16 +69,19 @@ export default function OffersScreen({ navigation }: any) {
         </View>
       ) : (
       <FlatList
+        key={`offers-${columns}`}
         data={offers}
+        numColumns={columns}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter, gap }]}
+        columnWrapperStyle={columns > 1 ? [styles.listRow, { gap }] : undefined}
         renderItem={({ item, index }) => {
           const isCopied = copiedId === item.id;
           const color = CARD_COLORS[index % CARD_COLORS.length];
           const expires = item.end_date ? `حتى ${new Date(item.end_date).toLocaleDateString('ar-SA')}` : 'بدون انتهاء';
           const store = item.merchant_profiles?.store_name ?? 'كل المتاجر';
           return (
-            <View style={styles.card}>
+            <View style={[styles.card, { width: cardWidth }]}>
               <View style={[styles.sideBar, { backgroundColor: color }]} />
               <View style={[styles.iconWrap, { backgroundColor: `${color}15` }]}>
                 <Ionicons name="pricetag-outline" size={24} color={color} />
@@ -87,6 +97,8 @@ export default function OffersScreen({ navigation }: any) {
                     style={[styles.copyBtn, isCopied && styles.copyBtnDone]}
                     onPress={() => handleCopy(item.id, item.code)}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`نسخ الرمز ${item.code}`}
                   >
                     <Ionicons name={isCopied ? 'checkmark' : 'copy-outline'} size={14} color={isCopied ? '#FFFFFF' : COLORS.primary} />
                     <Text style={[styles.copyBtnText, isCopied && { color: '#FFFFFF' }]}>
@@ -117,30 +129,32 @@ const styles = StyleSheet.create({
   retryButton: { minHeight: 44, borderRadius: 11, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    paddingTop: Platform.OS === 'ios' ? 48 : 32,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  listContent: { padding: 20, gap: 14 },
+  headerInner: { width: '100%', maxWidth: 1320, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
+  listContent: { width: '100%', maxWidth: 1320, alignSelf: 'center', paddingTop: 16, paddingBottom: 110 },
+  listRow: { flexDirection: 'row-reverse' },
   card: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: '#F3F4F6', overflow: 'hidden',
+    minHeight: 142, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1.5, borderColor: COLORS.border, overflow: 'hidden',
   },
   sideBar: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 },
   iconWrap: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1, marginHorizontal: 14 },
-  title: { fontSize: 14.5, fontWeight: '800', color: '#111827' },
-  meta: { fontSize: 11.5, color: '#9CA3AF', marginTop: 4 },
-  codeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  info: { flex: 1, minWidth: 0, marginHorizontal: 14 },
+  title: { fontSize: 14.5, fontFamily: FONTS.bold, color: COLORS.textPrimary },
+  meta: { fontSize: 11.5, fontFamily: FONTS.regular, color: COLORS.textMuted, marginTop: 4 },
+  codeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   codeBox: {
     borderWidth: 1.5, borderColor: '#E5E7EB', borderStyle: 'dashed', borderRadius: 8,
     paddingHorizontal: 12, paddingVertical: 5, backgroundColor: '#F9FAFB',
   },
   codeText: { fontSize: 12.5, fontWeight: '800', color: '#111827', letterSpacing: 1 },
   copyBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F0F4FF',
+    minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: COLORS.primarySoft,
   },
   copyBtnDone: { backgroundColor: '#059669' },
   copyBtnText: { fontSize: 11.5, fontWeight: '700', color: COLORS.primary },

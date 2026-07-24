@@ -142,7 +142,7 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
             <View style={[styles.unavailableCard, { width: cardWidth }]}>
               <Ionicons name="alert-circle-outline" size={25} color={COLORS.textMuted} />
               <Text style={styles.unavailableText}>هذا المنتج لم يعد متاحاً</Text>
-              <TouchableOpacity onPress={() => void removeFavorite(item.product_id)} accessibilityRole="button">
+              <TouchableOpacity style={styles.removeButton} onPress={() => void removeFavorite(item.product_id)} accessibilityRole="button">
                 <Text style={styles.removeText}>إزالة من القائمة</Text>
               </TouchableOpacity>
             </View>
@@ -291,4 +291,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 11,
   },
+  removeButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
 });

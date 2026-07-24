@@ -186,8 +186,12 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // Desktop chrome = floating rail (72 + 16) + main horizontal padding (32).
   const desktopChromeWidth = 120;
   const screenPadding = isCompact ? 32 : 48;
+  const dashboardWidth = Math.min(
+    isDesktop ? Math.max(width - desktopChromeWidth, 320) : width,
+    BREAKPOINTS.wide,
+  );
   const usableWidth = Math.max(
-    isDesktop ? width - desktopChromeWidth - screenPadding : width - screenPadding,
+    dashboardWidth - screenPadding,
     288,
   );
   const gap = 20;
@@ -268,7 +272,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     <View style={containerStyle}>
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact]} showsVerticalScrollIndicator={false}
+      <ScrollView contentContainerStyle={[styles.scrollContent, { width: dashboardWidth }, isCompact && styles.scrollContentCompact]} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
       >
 
@@ -497,7 +501,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 24, paddingBottom: 112 },
+  scrollContent: { maxWidth: BREAKPOINTS.wide, alignSelf: 'center', padding: 24, paddingBottom: 112 },
   scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
   loadingCenter: { height: 300, alignItems: 'center', justifyContent: 'center' },
   errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
@@ -546,7 +550,7 @@ const styles = StyleSheet.create({
   iconBox: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textDark },
   cardTitleSoft: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textGrey, marginBottom: 12 },
-  iconBtn: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, alignItems: 'center', justifyContent: 'center' },
 
   togglePills: { flexDirection: 'row-reverse', backgroundColor: UI.cardSoft, borderRadius: RADIUS.full, padding: 4 },
   togglePill: { fontSize: 11, fontFamily: FONTS.medium, color: UI.textGrey, paddingHorizontal: 12, paddingVertical: 6 },

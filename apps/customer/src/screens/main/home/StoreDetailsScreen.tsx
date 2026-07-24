@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishlist, addToWishlist, removeFromWishlist, isFollowingStore, followStore, unfollowStore, getStoreFollowersCount, getWorkingHours, getOrCreateConversation, getReviews, WorkingHour, Review, StoreSummary, ProductSummary, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -20,12 +21,11 @@ interface Props {
 const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
 export default function StoreDetailsScreen({ navigation, route }: Props) {
-  const { width } = useWindowDimensions();
-  const productsContentWidth = Math.min(width, 1120);
-  const productGutter = width < 430 ? 16 : 24;
-  const productGap = width < 430 ? 10 : 16;
-  const productColumns = width < 720 ? 2 : width < 1024 ? 3 : 4;
-  const productCardWidth = (productsContentWidth - productGutter * 2 - productGap * (productColumns - 1)) / productColumns;
+  const layout = useCustomerLayout(1120);
+  const productGutter = layout.gutter;
+  const productGap = layout.compact ? 10 : 16;
+  const productColumns = layout.width < 560 ? 2 : layout.tablet && !layout.desktop ? 3 : layout.desktop ? 4 : 2;
+  const productCardWidth = (layout.usableWidth - productGap * (productColumns - 1)) / productColumns;
   const { storeId } = route.params;
   const [activeTab, setActiveTab] = useState<'products' | 'about'>('products');
   const [store, setStore] = useState<StoreSummary | null>(null);
@@ -169,7 +169,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void loadData(); }} accessibilityRole="button">
           <Text style={styles.retryText}>إعادة المحاولة</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button">
+        <TouchableOpacity style={styles.backLinkButton} onPress={() => navigation.goBack()} accessibilityRole="button">
           <Text style={styles.backLink}>العودة</Text>
         </TouchableOpacity>
       </View>
@@ -192,9 +192,10 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
       <StatusBar barStyle="light-content" backgroundColor={STORE.coverColor} />
       
       <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <View style={[styles.page, layout.tablet && styles.pageWide]}>
         {/* Cover & Header */}
-        <View style={[styles.cover, { backgroundColor: STORE.coverColor }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <View style={[styles.cover, layout.desktop && styles.coverDesktop, { backgroundColor: STORE.coverColor }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
             <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.coverContent}>
@@ -232,6 +233,9 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
               style={[styles.followBtn, following && styles.followBtnActive]}
               activeOpacity={0.8}
               onPress={toggleFollow}
+              accessibilityRole="button"
+              accessibilityLabel={following ? 'إلغاء متابعة المتجر' : 'متابعة المتجر'}
+              accessibilityState={{ selected: following }}
             >
               <Text style={[styles.followBtnText, following && styles.followBtnTextActive]}>
                 {following ? '✓ متابَع' : '+ متابعة'}
@@ -260,7 +264,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 
         {/* Products Grid */}
         {activeTab === 'products' && (
-          <View style={[styles.productsGrid, { maxWidth: 1120, padding: productGutter, gap: productGap }]}>
+          <View style={[styles.productsGrid, { paddingHorizontal: productGutter, paddingVertical: 24, gap: productGap }]}>
             {products.length === 0 ? (
               <View style={{ width: '100%', alignItems: 'center', paddingVertical: 40 }}>
                 <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد منتجات حتى الآن</Text>
@@ -287,7 +291,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 
         {/* About Tab */}
         {activeTab === 'about' && (
-          <View style={styles.aboutSection}>
+          <View style={[styles.aboutSection, { marginHorizontal: productGutter }]}>
             <View style={styles.aboutItem}>
               <View style={styles.aboutIconBox}>
                 <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.primary} />
@@ -360,6 +364,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         )}
 
         <View style={{ height: 40 }} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -370,21 +375,25 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#F9FAFB' 
   },
+  page: { width: '100%', maxWidth: 1120, alignSelf: 'center' },
+  pageWide: { marginVertical: 24, overflow: 'hidden', borderRadius: RADIUS.xl, backgroundColor: COLORS.surface },
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12, backgroundColor: '#F9FAFB' },
   errorTitle: { fontSize: 20, fontWeight: '900', color: '#111827' },
   errorMessage: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
   retryButton: { minHeight: 46, minWidth: 150, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
   backLink: { color: COLORS.primary, fontWeight: '700', padding: 10 },
+  backLinkButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   cover: { 
     height: 180, 
     paddingTop: 50, 
     paddingHorizontal: 20 
   },
+  coverDesktop: { height: 260 },
   backBtn: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
+    width: 44,
+    height: 44,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.2)', 
     alignItems: 'center', 
     justifyContent: 'center' 
@@ -430,7 +439,7 @@ const styles = StyleSheet.create({
   },
   storeName: { 
     fontSize: 20, 
-    fontWeight: '800', 
+    fontFamily: FONTS.bold,
     color: '#111827' 
   },
   storeDesc: { 
@@ -475,6 +484,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB' 
   },
   followBtn: { 
+    minHeight: 44,
+    justifyContent: 'center',
     backgroundColor: COLORS.primary, 
     paddingHorizontal: 20, 
     paddingVertical: 10, 
@@ -499,6 +510,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   tab: { 
+    minHeight: 44,
+    justifyContent: 'center',
     marginRight: 32, 
     paddingBottom: 12, 
     borderBottomWidth: 2, 
@@ -527,7 +540,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', 
     marginTop: 24, 
     borderRadius: 16, 
-    marginHorizontal: 24,
     borderWidth: 1.5,
     borderColor: '#F3F4F6',
   },
@@ -565,7 +577,7 @@ const styles = StyleSheet.create({
   hourRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
   hourDay: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
   hourTime: { fontSize: 13, color: '#111827', fontWeight: '700' },
-  chatStoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 14, marginTop: 18 },
+  chatStoreBtn: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 14, marginTop: 18 },
   chatStoreBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
   reviewRow: { marginTop: 8 },
   reviewStars: { fontSize: 14, color: '#FBBF24' },

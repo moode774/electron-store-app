@@ -1,21 +1,21 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, useWindowDimensions, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ORDER_STATUS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, OrderSummary } from '@marketplace/shared-hooks';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import { getMerchantOrderStatusInfo, HISTORY_MERCHANT_ORDER_STATUSES } from './merchantOrderState';
 
 const UI = {
-  primary: '#111827',
-  bg: '#F3F4F6',
-  bgMobile: '#F9FAFB',
-  textDark: '#111827',
-  textGrey: '#4B5563',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  green: '#10B981',
-  red: '#EF4444',
+  primary: COLORS.primary,
+  bg: COLORS.background,
+  bgMobile: COLORS.background,
+  textDark: COLORS.textPrimary,
+  textGrey: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  green: COLORS.success,
+  red: COLORS.error,
 };
 
 const softShadow = {
@@ -30,7 +30,9 @@ export default function MerchantHistoryScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [searchQuery, setSearchQuery] = useState('');
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
+  const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const isDesktop = width >= BREAKPOINTS.desktop;
   const { orders: allOrders, loading, refreshing, error, realtimeError, refresh } = useMerchantOrderFeed(user?.id, 'history');
   const orders = useMemo(
     () => allOrders.filter((order) => HISTORY_MERCHANT_ORDER_STATUSES.has(order.status)),
@@ -95,8 +97,8 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         </View>
 
         {/* Content Row */}
-        <View style={[styles.ledgerCard, isDesktop && styles.ledgerCardDesktop]}>
-          <View style={styles.ledgerHeader}>
+        <View style={[styles.ledgerCard, isCompact && styles.ledgerCardCompact, isDesktop && styles.ledgerCardDesktop]}>
+          <View style={[styles.ledgerHeader, isCompact && styles.ledgerHeaderCompact]}>
             <View>
               <Text style={styles.orderNumber}>{item.order_number}</Text>
               <Text style={styles.timeText}>{timeStr}</Text>
@@ -137,7 +139,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         </View>
       )}
 
-      <View style={[styles.pageContent, isDesktop && styles.pageContentDesktop]}>
+      <View style={[styles.pageContent, isTablet && styles.pageContentTablet, isDesktop && styles.pageContentDesktop]}>
         
         <View style={styles.topSection}>
           {isDesktop && (
@@ -151,12 +153,12 @@ export default function MerchantHistoryScreen({ navigation }: any) {
 
           {/* Quick Stats & Search Box */}
           <View style={[styles.dashboardCard, isDesktop && styles.dashboardCardDesktop]}>
-             <View style={styles.statsRow}>
+             <View style={[styles.statsRow, isCompact && styles.statsRowCompact]}>
                 <View style={styles.statBox}>
                   <Text style={styles.statLabel}>قيمة الطلبات المسلّمة</Text>
                   <Text style={styles.statValueGreen}>{totalDelivered} ر.ي</Text>
                 </View>
-                <View style={styles.statDivider} />
+                {!isCompact && <View style={styles.statDivider} />}
                 <View style={styles.statBox}>
                   <Text style={styles.statLabel}>عدد العمليات</Text>
                   <Text style={styles.statValueDark}>{totalOrders}</Text>
@@ -235,12 +237,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
   
   headerMobile: { paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerTitleMobile: { fontSize: 20, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
+  headerTitleMobile: { fontSize: 20, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right' },
   
   pageContent: { flex: 1 },
-  pageContentDesktop: { padding: 40, alignItems: 'center' },
+  pageContentTablet: { width: '100%', maxWidth: 1240, alignSelf: 'center', paddingHorizontal: 24 },
+  pageContentDesktop: { paddingTop: 40, paddingBottom: 40, alignItems: 'center' },
   
-  topSection: { width: '100%', maxWidth: 1000, zIndex: 2 },
+  topSection: { width: '100%', maxWidth: 1200, zIndex: 2 },
   
   pageHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
   pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
@@ -250,6 +253,7 @@ const styles = StyleSheet.create({
   dashboardCardDesktop: { borderRadius: 20, borderWidth: 1, ...softShadow, marginBottom: 24, borderBottomWidth: 1 },
   
   statsRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-around', backgroundColor: UI.bg, padding: 16, borderRadius: 16 },
+  statsRowCompact: { flexDirection: 'column', gap: 14, alignItems: 'stretch' },
   statBox: { alignItems: 'center' },
   statDivider: { width: 1, height: 40, backgroundColor: UI.border },
   statLabel: { fontSize: 13, color: UI.textGrey, fontWeight: '700', marginBottom: 4 },
@@ -260,12 +264,12 @@ const styles = StyleSheet.create({
   searchIcon: { marginLeft: 10 },
   searchInput: { flex: 1, textAlign: 'right', fontSize: 14, fontWeight: '600', color: UI.textDark, height: '100%' },
 
-  contentBox: { flex: 1, width: '100%', maxWidth: 1000 },
-  contentBoxDesktop: { backgroundColor: '#FFFFFF', borderRadius: 20, ...softShadow, borderWidth: 1, borderColor: '#FFFFFF', overflow: 'hidden' },
+  contentBox: { flex: 1, width: '100%', maxWidth: 1200 },
+  contentBoxDesktop: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, ...softShadow, borderWidth: 1, borderColor: COLORS.surface, overflow: 'hidden' },
   
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 400 },
   
-  listContent: { padding: 20, paddingBottom: 120 },
+  listContent: { padding: 16, paddingBottom: 120 },
   
   dateGroup: { marginBottom: 32 },
   dateBadge: { alignSelf: 'flex-end', backgroundColor: '#111827', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 100, marginBottom: 16, marginRight: 20 },
@@ -278,9 +282,11 @@ const styles = StyleSheet.create({
   timelineLine: { width: 2, backgroundColor: UI.border, flex: 1, position: 'absolute', top: 38, bottom: -24, zIndex: 1 },
 
   ledgerCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: UI.border, marginBottom: 16 },
+  ledgerCardCompact: { padding: 14 },
   ledgerCardDesktop: { padding: 24 },
   
   ledgerHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  ledgerHeaderCompact: { flexDirection: 'column', gap: 12, alignItems: 'stretch' },
   orderNumber: { fontSize: 16, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
   timeText: { fontSize: 12, color: UI.textMuted, fontWeight: '600', marginTop: 4, textAlign: 'right' },
   
@@ -297,7 +303,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
   emptyText: { fontSize: 14, color: UI.textMuted, textAlign: 'center' },
-  retryBtn: { backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12 },
+  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: RADIUS.md, paddingHorizontal: 22 },
   retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   inlineWarning: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#FFFBEB', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingHorizontal: 18, paddingVertical: 10 },
   inlineWarningText: { flex: 1, color: '#92400E', fontSize: 12.5, fontWeight: '700', textAlign: 'right' },

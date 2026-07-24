@@ -4,8 +4,10 @@ import { Alert } from '../../../components/appAlert';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '@marketplace/shared-utils';
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 export default function AddAddressScreen({ navigation }: any) {
+  const layout = useCustomerLayout(820);
   const user = useAuthStore((s) => s.user);
   const [label, setLabel] = useState('المنزل');
   const [selectedArea, setSelectedArea] = useState<string>(SERVICE_AREAS.SANAA);
@@ -40,20 +42,23 @@ export default function AddAddressScreen({ navigation }: any) {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>إضافة عنوان</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+            <Text style={styles.backIcon}>→</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>إضافة عنوان</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} keyboardShouldPersistTaps="handled">
+        <View style={styles.contentInner}>
         
         {/* Map Placeholder */}
         <View style={styles.mapContainer}>
           <Text style={styles.mapEmoji}>🗺️</Text>
           <Text style={styles.mapText}>حدد موقعك على الخريطة</Text>
-          <Button title="تحديد الموقع الحالي" style={{ marginTop: 12, width: 200, height: 40 }} />
+          <Button title="تحديد الموقع الحالي" style={styles.locationButton} />
         </View>
 
         <Card style={styles.formCard} variant="elevated">
@@ -108,16 +113,18 @@ export default function AddAddressScreen({ navigation }: any) {
           />
         </Card>
 
-        <View style={{ height: 40 }} />
+        </View>
       </ScrollView>
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
-        <Button
-          title={saving ? 'جاري الحفظ...' : 'حفظ العنوان'}
-          onPress={handleSave}
-          disabled={!street || saving}
-        />
+        <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
+          <Button
+            title={saving ? 'جاري الحفظ...' : 'حفظ العنوان'}
+            onPress={handleSave}
+            disabled={!street || saving}
+          />
+        </View>
       </View>
     </View>
   );
@@ -125,26 +132,31 @@ export default function AddAddressScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.background },
+  header: { paddingTop: 48, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerInner: { width: '100%', maxWidth: 820, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: COLORS.background },
+  headerSpacer: { width: 44 },
   backIcon: { fontSize: 24, color: COLORS.textPrimary },
   headerTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontFamily: FONTS.bold },
-  scrollContent: { paddingBottom: 100 },
-  mapContainer: { height: 200, backgroundColor: '#E3F2FD', alignItems: 'center', justifyContent: 'center' },
+  scrollContent: { paddingBottom: 132 },
+  contentInner: { width: '100%', maxWidth: 820, alignSelf: 'center' },
+  mapContainer: { minHeight: 220, backgroundColor: '#E3F2FD', alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.lg, marginTop: 16, padding: 20 },
   mapEmoji: { fontSize: 40, opacity: 0.5 },
   mapText: { color: '#1976D2', marginTop: 10, fontWeight: '600' },
-  formCard: { margin: SPACING.md, padding: SPACING.md, marginTop: -20 },
+  locationButton: { minWidth: 200, minHeight: 44, marginTop: 12 },
+  formCard: { width: '100%', padding: SPACING.md, marginTop: 16 },
   sectionTitle: { fontSize: 16, color: COLORS.primary, marginBottom: 16, fontFamily: FONTS.bold },
   inputLabel: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, marginBottom: 8, fontFamily: FONTS.medium },
-  labelsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  labelChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
+  labelsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  labelChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   labelChipActive: { backgroundColor: `${COLORS.primary}15`, borderColor: COLORS.primary },
   labelChipText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: FONTS.medium },
   labelChipTextActive: { color: COLORS.primary, fontWeight: '700' },
   areasRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  areaChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
+  areaChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   areaChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   areaChipText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: FONTS.medium },
   areaChipTextActive: { color: COLORS.surface },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, padding: SPACING.md, paddingBottom: 30, borderTopWidth: 1, borderTopColor: COLORS.border },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
+  bottomBarInner: { width: '100%', maxWidth: 820, alignSelf: 'center', paddingTop: 12, paddingBottom: 24 },
 });

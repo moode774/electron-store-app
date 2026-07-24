@@ -1,23 +1,25 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Modal, TextInput, Platform
+  ActivityIndicator, RefreshControl, Modal, TextInput, Platform,
+  useWindowDimensions
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminWithdrawals, processWithdrawal, AdminWithdrawal, type WithdrawalDecisionStatus } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  warning: '#D97706',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  warning: COLORS.warning,
 };
 
 const STATUS_FILTERS = [
@@ -61,6 +63,11 @@ function payoutDestinationLines(destination: AdminWithdrawal['payout_destination
 }
 
 export default function AdminWalletScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [requests, setRequests] = useState<AdminWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -252,7 +259,7 @@ export default function AdminWalletScreen({ navigation }: any) {
     <View style={s.root}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
@@ -291,9 +298,12 @@ export default function AdminWalletScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={requests}
+          key={`withdrawals-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderRequest}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -307,7 +317,7 @@ export default function AdminWalletScreen({ navigation }: any) {
 
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => !processing && setModalVisible(false)} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
-          <View style={s.modalBox}>
+          <View style={[s.modalBox, { width: Math.min(Math.max(width - 24, 280), 420) }]}>
             <View style={s.modalHeader}>
                <Text style={s.modalTitle}>{currentAction.title}</Text>
                <TouchableOpacity onPress={() => setModalVisible(false)} style={s.closeBtn} disabled={!!processing}>
@@ -374,24 +384,25 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text },
-  backBtn: { padding: 4 },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bg },
   headerBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#FDE68A' },
   headerBadgeText: { fontSize: 12, fontWeight: '800', color: '#92400E' },
   filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
   filterRow: { flexDirection: 'row-reverse', paddingHorizontal: 20, gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  filterBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { padding: 20, paddingTop: 6, gap: 16, paddingBottom: 60 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
+  columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 16, color: UI.textMuted, fontWeight: '700' },
   errorText: { color: UI.danger, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
   retryBtn: { backgroundColor: UI.primary, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-  card: { backgroundColor: UI.card, borderRadius: 24, padding: 20, gap: 14, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, gap: 14, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
   cardTop: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between' },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   statusText: { fontSize: 12, fontWeight: '800' },
@@ -413,12 +424,12 @@ const s = StyleSheet.create({
   auditText: { color: UI.textMuted, fontSize: 11.5, fontWeight: '700', textAlign: 'right', lineHeight: 18 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 4 },
   actionsRow: { flexDirection: 'row-reverse', gap: 12, alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 },
-  approveBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: 14, paddingVertical: 12, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  approveBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: RADIUS.md, paddingVertical: 10, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
   approveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
   rejectBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#FEE2E2' },
   rejectBtnText: { fontSize: 14, fontWeight: '800', color: UI.danger },
   modalOverlay: { flex: 1, backgroundColor: '#0F172A66', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modalBox: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, width: '100%', maxWidth: 400, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
+  modalBox: { maxHeight: '90%', backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 24, maxWidth: 420, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   modalTitle: { fontSize: 18, fontWeight: '900', color: UI.text, textAlign: 'right' },
   closeBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 12 },

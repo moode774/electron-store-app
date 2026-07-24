@@ -21,6 +21,7 @@ import OffersScreen from '../screens/main/home/OffersScreen';
 import ChatScreen from '../screens/main/chat/ChatScreen';
 
 import CartScreen from '../screens/main/cart/CartScreen';
+import AddressSelectionScreen from '../screens/main/cart/AddressSelectionScreen';
 import CheckoutScreen from '../screens/main/cart/CheckoutScreen';
 
 import OrdersListScreen from '../screens/main/orders/OrdersListScreen';
@@ -73,6 +74,7 @@ function CartNavigator() {
   return (
     <CartStack.Navigator screenOptions={{ headerShown: false }}>
       <CartStack.Screen name="CartMain" component={CartScreen} />
+      <CartStack.Screen name="AddressSelection" component={AddressSelectionScreen} />
       <CartStack.Screen name="Checkout" component={CheckoutScreen} />
     </CartStack.Navigator>
   );

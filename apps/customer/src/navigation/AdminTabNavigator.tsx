@@ -246,6 +246,8 @@ const sidebarStyles = StyleSheet.create({
 // ---- Desktop command header ----
 function DesktopTopHeader() {
   const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
+  const showFullNavigation = width >= BREAKPOINTS.wide;
   const routeName = useNavigationState((state) => {
     if (!state) return 'AdminDashboard';
     const currentRoute = state.routes[state.index];
@@ -264,8 +266,20 @@ function DesktopTopHeader() {
     return isActive ? topHeaderStyles.navLinkActive : topHeaderStyles.navLink;
   };
 
+  const currentLabel = ({
+    AdminDashboard: 'الرئيسية',
+    AdminOrders: 'الطلبات',
+    AdminMerchants: 'المتاجر',
+    AdminUsers: 'المستخدمون',
+    AdminDelivery: 'السائقون',
+    AdminWallet: 'طلبات السحب',
+    AdminSettings: 'الإعدادات',
+    AdminSupport: 'الدعم الفني',
+  } as Record<string, string>)[routeName] ?? 'لوحة التحكم';
+
   return (
     <View style={topHeaderStyles.topHeader}>
+      {showFullNavigation ? (
       <View style={topHeaderStyles.navLinks}>
         <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
           <Text style={getStyle('AdminDashboard')}>الرئيسية</Text>
@@ -292,6 +306,12 @@ function DesktopTopHeader() {
           <Text style={getStyle('AdminSupport')}>الدعم</Text>
         </TouchableOpacity>
       </View>
+      ) : (
+        <View style={topHeaderStyles.currentContext}>
+          <View style={topHeaderStyles.currentContextDot} />
+          <Text style={topHeaderStyles.currentContextText}>{currentLabel}</Text>
+        </View>
+      )}
       <View style={topHeaderStyles.headerRight}>
         <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="البحث">
           <Ionicons name="search-outline" size={20} color={COLORS.textPrimary} />
@@ -313,6 +333,9 @@ const topHeaderStyles = StyleSheet.create({
   navLinks: { flexDirection: 'row-reverse', backgroundColor: COLORS.surface, borderRadius: RADIUS.full, paddingHorizontal: 7, paddingVertical: 6, borderWidth: 1, borderColor: COLORS.border, ...softShadow },
   navLink: { fontSize: 13, fontFamily: FONTS.medium, color: COLORS.textSecondary, paddingHorizontal: 14, paddingVertical: 8 },
   navLinkActive: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.primarySoft, borderRadius: RADIUS.full },
+  currentContext: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 16, borderRadius: RADIUS.full, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, ...softShadow },
+  currentContextDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
+  currentContextText: { color: COLORS.textPrimary, fontSize: 13, fontFamily: FONTS.semiBold },
   headerRight: { position: 'absolute', left: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
   headerIconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', position: 'relative', ...softShadow },
   notificationDot: { position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.accentCoral, top: 7, right: 7, borderWidth: 2, borderColor: COLORS.surface },

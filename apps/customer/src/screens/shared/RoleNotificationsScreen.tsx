@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../components/NotificationPreferencesCard';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 export default function RoleNotificationsScreen({ navigation, route }: any) {
+  const layout = useResponsiveLayout(960);
   const user = useAuthStore((s) => s.user);
   const role: 'merchant' | 'delivery' = route?.params?.role === 'delivery' ? 'delivery' : 'merchant';
   const [items, setItems] = useState<Notification[]>([]);
@@ -71,7 +73,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }, layout.desktop && styles.headerDesktop]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
@@ -93,7 +95,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter }]}
           ListHeaderComponent={<NotificationPreferencesCard />}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
@@ -133,10 +135,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    width: '100%', maxWidth: 960, alignSelf: 'center',
   },
+  headerDesktop: { paddingTop: 28 },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  listContent: { padding: 20, gap: 12 },
+  listContent: { padding: 20, gap: 12, width: '100%', maxWidth: 960, alignSelf: 'center', paddingBottom: 80 },
   card: {
     flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
     borderWidth: 1.5, borderColor: '#F3F4F6',

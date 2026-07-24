@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -21,21 +22,22 @@ import {
   LegacyReconciliationStatsState,
   reconcileLegacyDeliveredOrder,
 } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const C = {
-  primary: '#1E3A8A',
-  primarySoft: '#EEF2FF',
-  background: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  danger: '#B91C1C',
-  dangerSoft: '#FEF2F2',
-  warning: '#B45309',
-  warningSoft: '#FFFBEB',
-  success: '#047857',
-  successSoft: '#ECFDF5',
+  primary: COLORS.primary,
+  primarySoft: COLORS.primarySoft,
+  background: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  muted: COLORS.textMuted,
+  border: COLORS.border,
+  danger: COLORS.error,
+  dangerSoft: COLORS.accentCoralSoft,
+  warning: COLORS.warning,
+  warningSoft: COLORS.secondarySoft,
+  success: COLORS.success,
+  successSoft: COLORS.accentMintSoft,
 };
 
 const CONFLICT_LABELS: Record<string, string> = {
@@ -96,6 +98,11 @@ function initialForm(item: LegacyFinancialReconciliationCandidate): FormState {
 }
 
 export default function AdminFinancialReconciliationScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : 20;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [items, setItems] = useState<LegacyFinancialReconciliationCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -279,7 +286,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
 
   return (
     <View style={s.root}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backButton} accessibilityRole="button">
           <Ionicons name="arrow-forward" size={24} color={C.text} />
         </TouchableOpacity>
@@ -302,9 +309,12 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
       ) : (
         <FlatList
           data={items}
+          key={`reconciliation-${columns}`}
+          numColumns={columns}
+          columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           renderItem={renderItem}
           keyExtractor={(item) => item.order_id}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
           ListEmptyComponent={(
             <View style={s.center}>
@@ -322,7 +332,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
         onRequestClose={() => !submitting && setSelected(null)}
       >
         <View style={s.modalOverlay}>
-          <View style={s.modalCard}>
+          <View style={[s.modalCard, { width: Math.min(Math.max(width - 24, 280), 680) }]}>
             <ScrollView contentContainerStyle={s.modalContent} keyboardShouldPersistTaps="handled">
               <View style={s.modalHeader}>
                 <TouchableOpacity onPress={() => setSelected(null)} disabled={submitting} style={s.closeButton}>
@@ -335,18 +345,18 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
               </View>
 
               <Field label="وقت التسليم المؤكد (ISO)" value={form?.deliveredAt ?? ''} onChangeText={(v) => update('deliveredAt', v)} placeholder="2026-07-10T14:30:00+03:00" />
-              <View style={s.twoColumns}>
+              <View style={[s.twoColumns, compact && s.stack]}>
                 <Field compact label="الإجمالي" value={form?.gross ?? ''} onChangeText={(v) => update('gross', v)} keyboardType="decimal-pad" />
                 <Field compact label="مستحق التاجر" value={form?.merchant ?? ''} onChangeText={(v) => update('merchant', v)} keyboardType="decimal-pad" />
               </View>
-              <View style={s.twoColumns}>
+              <View style={[s.twoColumns, compact && s.stack]}>
                 <Field compact label="مستحق التوصيل" value={form?.delivery ?? ''} onChangeText={(v) => update('delivery', v)} keyboardType="decimal-pad" />
                 <Field compact label="عمولة المنصة" value={form?.commission ?? ''} onChangeText={(v) => update('commission', v)} keyboardType="decimal-pad" />
               </View>
               <Field label="الضريبة" value={form?.tax ?? ''} onChangeText={(v) => update('tax', v)} keyboardType="decimal-pad" />
 
               <Text style={s.fieldLabel}>هل أضيفت إحصاءات الطلب سابقًا؟</Text>
-              <View style={s.choiceRow}>
+              <View style={[s.choiceRow, compact && s.stack]}>
                 <Choice selected={form?.statsState === 'already_counted'} label="نعم، محسوبة" onPress={() => update('statsState', 'already_counted')} />
                 <Choice selected={form?.statsState === 'not_counted'} label="لا، غير محسوبة" onPress={() => update('statsState', 'not_counted')} />
               </View>
@@ -409,12 +419,13 @@ function Choice({ selected, label, onPress }: { selected: boolean; label: string
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.background },
   header: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingTop: Platform.OS === 'ios' ? 58 : 34, paddingBottom: 18, paddingHorizontal: 20, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border },
-  backButton: { padding: 6 },
+  backButton: { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceMuted },
   headerText: { flex: 1, alignItems: 'flex-end' },
-  title: { color: C.text, fontSize: 21, fontWeight: '900', textAlign: 'right' },
-  subtitle: { color: C.muted, fontSize: 12, marginTop: 4, textAlign: 'right' },
-  list: { padding: 16, gap: 12, flexGrow: 1 },
-  card: { backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.border, padding: 16, gap: 12 },
+  title: { color: C.text, fontSize: 21, fontFamily: FONTS.bold, textAlign: 'right' },
+  subtitle: { color: C.muted, fontSize: 12, fontFamily: FONTS.regular, marginTop: 4, textAlign: 'right' },
+  list: { alignSelf: 'center', paddingTop: 16, paddingBottom: 112, gap: 12, flexGrow: 1 },
+  columnRow: { gap: 12 },
+  card: { flex: 1, minWidth: 0, backgroundColor: C.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: C.border, padding: 16, gap: 12 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   orderTitleWrap: { flex: 1, alignItems: 'flex-end' },
   orderNumber: { fontSize: 17, fontWeight: '900', color: C.text },
@@ -431,17 +442,17 @@ const s = StyleSheet.create({
   warningText: { flex: 1, color: C.warning, fontSize: 12, lineHeight: 19, textAlign: 'right' },
   conflictBox: { backgroundColor: C.dangerSoft, borderRadius: 10, padding: 10, gap: 5 },
   conflictText: { color: C.danger, fontSize: 12, lineHeight: 19, textAlign: 'right' },
-  reviewButton: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: 11, paddingVertical: 12 },
+  reviewButton: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.primary, borderRadius: RADIUS.sm, paddingVertical: 10 },
   reviewButtonText: { color: '#FFFFFF', fontWeight: '800' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 30 },
   centerText: { color: C.muted, textAlign: 'center', lineHeight: 21 },
   retryButton: { backgroundColor: C.primarySoft, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: C.primary, fontWeight: '800' },
-  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 14, backgroundColor: 'rgba(15,23,42,0.62)' },
-  modalCard: { width: '100%', maxWidth: 680, maxHeight: '92%', backgroundColor: C.card, borderRadius: 20, overflow: 'hidden' },
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 12, backgroundColor: COLORS.overlay },
+  modalCard: { maxWidth: 680, maxHeight: '92%', backgroundColor: C.card, borderRadius: RADIUS.lg, overflow: 'hidden' },
   modalContent: { padding: 18, gap: 12 },
   modalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 4 },
-  closeButton: { padding: 5, backgroundColor: '#F1F5F9', borderRadius: 9 },
+  closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.sm },
   modalTitleWrap: { flex: 1, alignItems: 'flex-end' },
   modalTitle: { color: C.text, fontSize: 20, fontWeight: '900', textAlign: 'right' },
   modalSubtitle: { color: C.muted, fontSize: 12, marginTop: 4, textAlign: 'right' },
@@ -451,6 +462,7 @@ const s = StyleSheet.create({
   input: { minHeight: 44, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 12, color: C.text, backgroundColor: '#FFFFFF' },
   multiline: { minHeight: 88, paddingTop: 11, textAlignVertical: 'top' },
   twoColumns: { flexDirection: 'row-reverse', gap: 10 },
+  stack: { flexDirection: 'column' },
   choiceRow: { flexDirection: 'row-reverse', gap: 10 },
   choice: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingVertical: 11 },
   choiceSelected: { borderColor: C.primary, backgroundColor: C.primarySoft },

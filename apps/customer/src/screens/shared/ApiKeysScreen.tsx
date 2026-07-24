@@ -9,6 +9,7 @@ import {
   getMyApiKeys, createApiKey, revokeApiKey, deleteApiKey,
   ApiKeyInfo, API_V1_URL,
 } from '@marketplace/shared-hooks';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const UI = {
   primary: '#1E3A8A', primaryLight: '#EEF2FF', bg: '#F8FAFC', card: '#FFFFFF',
@@ -32,6 +33,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 export default function ApiKeysScreen() {
+  const layout = useResponsiveLayout(960);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -117,7 +119,7 @@ export default function ApiKeysScreen() {
 
   return (
     <View style={s.root}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingHorizontal: layout.gutter }, layout.desktop && s.headerDesktop]}>
         <Text style={s.headerTitle}>مفاتيح API</Text>
         <Text style={s.headerSub}>
           اربط حسابك مع Claude أو أي نموذج ذكاء اصطناعي. المفتاح يمنح صلاحيات حسابك فقط — لا تشاركه مع أحد.
@@ -125,7 +127,7 @@ export default function ApiKeysScreen() {
       </View>
 
       {/* إنشاء مفتاح */}
-      <View style={s.createBox}>
+      <View style={[s.createBox, { paddingHorizontal: layout.gutter }, layout.tablet && s.createBoxWide]}>
         <TextInput
           style={s.input}
           value={newName}
@@ -151,7 +153,7 @@ export default function ApiKeysScreen() {
           data={keys}
           keyExtractor={k => k.id}
           renderItem={renderKey}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingHorizontal: layout.gutter }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -165,7 +167,7 @@ export default function ApiKeysScreen() {
       {/* عرض المفتاح الجديد — مرة واحدة فقط */}
       <Modal visible={!!freshKey} transparent animationType="fade" onRequestClose={() => setFreshKey(null)}>
         <View style={s.modalOverlay}>
-          <View style={s.modalCard}>
+          <View style={[s.modalCard, layout.compact && s.modalCardCompact]}>
             <Ionicons name="shield-checkmark" size={40} color={UI.success} style={{ alignSelf: 'center' }} />
             <Text style={s.modalTitle}>تم إنشاء المفتاح ✓</Text>
             <Text style={s.modalWarn}>
@@ -208,20 +210,23 @@ const s = StyleSheet.create({
   header: {
     backgroundColor: UI.card, paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16, paddingHorizontal: 24, borderBottomWidth: 1, borderColor: UI.border,
+    width: '100%', maxWidth: 960, alignSelf: 'center',
   },
+  headerDesktop: { marginTop: 24, borderRadius: 22, borderWidth: 1 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text, textAlign: 'right' },
   headerSub: { fontSize: 13, color: UI.textMuted, textAlign: 'right', marginTop: 6, lineHeight: 20 },
-  createBox: { padding: 16, gap: 10 },
+  createBox: { padding: 16, gap: 10, width: '100%', maxWidth: 960, alignSelf: 'center' },
+  createBoxWide: { flexDirection: 'row-reverse', alignItems: 'center' },
   input: {
     backgroundColor: UI.card, borderRadius: 14, borderWidth: 1, borderColor: UI.border,
-    paddingHorizontal: 14, height: 48, fontSize: 14, color: UI.text, fontWeight: '600',
+    paddingHorizontal: 14, height: 48, fontSize: 14, color: UI.text, fontWeight: '600', flex: 1, minWidth: 0,
   },
   createBtn: {
     backgroundColor: UI.primary, borderRadius: 14, height: 48,
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8,
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 20,
   },
   createBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  list: { padding: 16, paddingTop: 0, gap: 12, paddingBottom: 60 },
+  list: { padding: 16, paddingTop: 0, gap: 12, paddingBottom: 60, width: '100%', maxWidth: 960, alignSelf: 'center' },
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12, paddingHorizontal: 30 },
   emptyText: { fontSize: 14, color: UI.textMuted, fontWeight: '600', textAlign: 'center' },
   card: {
@@ -239,6 +244,7 @@ const s = StyleSheet.create({
 
   modalOverlay: { flex: 1, backgroundColor: '#0F172A99', alignItems: 'center', justifyContent: 'center', padding: 20 },
   modalCard: { backgroundColor: UI.card, borderRadius: 24, padding: 22, width: '100%', maxWidth: 480 },
+  modalCardCompact: { padding: 16, borderRadius: 20 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: UI.text, textAlign: 'center', marginTop: 8 },
   modalWarn: { fontSize: 13, color: UI.danger, fontWeight: '700', textAlign: 'center', marginTop: 8, lineHeight: 20 },
   keyBox: { backgroundColor: '#0F172A', borderRadius: 12, padding: 14, marginTop: 14, maxHeight: 60 },

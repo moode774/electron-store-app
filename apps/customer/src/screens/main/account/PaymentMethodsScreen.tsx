@@ -2,8 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getPaymentMethods, PaymentMethod } from '@marketplace/shared-hooks';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 const METHODS = [
   { id: 'cod', title: 'الدفع عند الاستلام', sub: 'ادفع نقداً عند وصول طلبك', icon: 'cash-outline', color: '#059669', available: true },
@@ -13,6 +14,7 @@ const METHODS = [
 ];
 
 export default function PaymentMethodsScreen({ navigation }: any) {
+  const layout = useCustomerLayout(820);
   const user = useAuthStore((s) => s.user);
   const [saved, setSaved] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,14 +39,16 @@ export default function PaymentMethodsScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>طرق الدفع</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>طرق الدفع</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]}>
         {METHODS.map((m) => (
           <View key={m.id} style={[styles.card, !m.available && styles.cardDisabled]}>
             <View style={[styles.iconWrap, { backgroundColor: `${m.color}15` }]}>
@@ -115,20 +119,19 @@ export default function PaymentMethodsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  scrollContent: { padding: 20, gap: 12 },
+  header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
+  headerInner: { width: '100%', maxWidth: 820, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
+  scrollContent: { width: '100%', maxWidth: 820, alignSelf: 'center', paddingTop: 20, paddingBottom: 64, gap: 12 },
   card: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: '#F3F4F6',
+    minHeight: 80, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1.5, borderColor: COLORS.border,
   },
   cardDisabled: { opacity: 0.6 },
   iconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1, marginHorizontal: 14 },
+  info: { flex: 1, minWidth: 0, marginHorizontal: 14 },
   title: { fontSize: 14.5, fontWeight: '800', color: '#111827' },
   sub: { fontSize: 12, color: '#9CA3AF', marginTop: 3 },
   activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
@@ -145,6 +148,6 @@ const styles = StyleSheet.create({
   emptySavedText: { fontSize: 13, color: '#9CA3AF' },
   loadError: { alignItems: 'center', gap: 10, paddingVertical: 18, paddingHorizontal: 12, backgroundColor: '#FEF2F2', borderRadius: 12 },
   loadErrorText: { color: '#991B1B', textAlign: 'center' },
-  retryButton: { minHeight: 40, borderRadius: 10, backgroundColor: COLORS.primary, justifyContent: 'center', paddingHorizontal: 16 },
+  retryButton: { minHeight: 44, borderRadius: 10, backgroundColor: COLORS.primary, justifyContent: 'center', paddingHorizontal: 16 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

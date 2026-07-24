@@ -4,11 +4,13 @@ import {
   StatusBar, Platform, KeyboardAvoidingView, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 export default function ChatScreen({ navigation, route }: any) {
+  const layout = useCustomerLayout(960);
   const conversationId: string = route?.params?.conversationId;
   const title: string = route?.params?.title ?? 'المحادثة';
   const asMerchant: boolean = route?.params?.asMerchant ?? false;
@@ -97,11 +99,13 @@ export default function ChatScreen({ navigation, route }: any) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       {loading ? (
@@ -111,7 +115,7 @@ export default function ChatScreen({ navigation, route }: any) {
       ) : (
         <>
           {loadError ? (
-            <TouchableOpacity style={styles.errorBanner} onPress={load} accessibilityRole="button" accessibilityLabel="إعادة تحميل الرسائل">
+            <TouchableOpacity style={[styles.errorBanner, { width: layout.usableWidth }]} onPress={load} accessibilityRole="button" accessibilityLabel="إعادة تحميل الرسائل">
               <Ionicons name="cloud-offline-outline" size={18} color="#B91C1C" />
               <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
             </TouchableOpacity>
@@ -121,7 +125,8 @@ export default function ChatScreen({ navigation, route }: any) {
             data={messages}
             keyExtractor={(m) => m.id}
             renderItem={renderMessage}
-            contentContainerStyle={styles.listContent}
+            style={styles.list}
+            contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter }]}
             onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
             ListEmptyComponent={
               <View style={styles.empty}>
@@ -133,20 +138,22 @@ export default function ChatScreen({ navigation, route }: any) {
         </>
       )}
 
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          placeholder="اكتب رسالة..."
-          placeholderTextColor="#9CA3AF"
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={2000}
-          accessibilityLabel="نص الرسالة"
-        />
-        <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="إرسال الرسالة">
-          <Ionicons name="send" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+      <View style={styles.inputShell}>
+        <View style={[styles.inputBar, { paddingHorizontal: layout.gutter }]}>
+          <TextInput
+            style={styles.input}
+            placeholder="اكتب رسالة..."
+            placeholderTextColor={COLORS.textMuted}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={2000}
+            accessibilityLabel="نص الرسالة"
+          />
+          <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="إرسال الرسالة">
+            <Ionicons name="send" size={20} color={COLORS.surface} />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -155,33 +162,36 @@ export default function ChatScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    paddingTop: Platform.OS === 'ios' ? 48 : 32,
     backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#111827', textAlign: 'center' },
-  listContent: { padding: 16, gap: 10, flexGrow: 1 },
+  headerInner: { width: '100%', maxWidth: 960, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  headerTitle: { flex: 1, fontSize: 16, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center', paddingHorizontal: 12 },
+  list: { width: '100%', maxWidth: 960, alignSelf: 'center' },
+  listContent: { paddingVertical: 16, gap: 10, flexGrow: 1 },
   bubbleRow: { flexDirection: 'row' },
   rowMine: { justifyContent: 'flex-start' },
   rowOther: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '78%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
+  bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: RADIUS.lg },
   bubbleMine: { backgroundColor: COLORS.primary, borderBottomLeftRadius: 4 },
   bubbleOther: { backgroundColor: '#FFFFFF', borderBottomRightRadius: 4, borderWidth: 1, borderColor: '#F3F4F6' },
-  bubbleText: { fontSize: 14, color: '#111827', lineHeight: 20 },
-  bubbleTime: { fontSize: 10, color: '#9CA3AF', marginTop: 4, textAlign: 'left' },
+  bubbleText: { fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textPrimary, lineHeight: 20 },
+  bubbleTime: { fontSize: 10, fontFamily: FONTS.regular, color: COLORS.textMuted, marginTop: 4, textAlign: 'left' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 80 },
   emptyText: { fontSize: 14, color: '#9CA3AF' },
-  errorBanner: { margin: 12, marginBottom: 0, padding: 12, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', flexDirection: 'row', alignItems: 'center', gap: 8 },
+  errorBanner: { maxWidth: 912, alignSelf: 'center', marginTop: 12, marginBottom: 0, padding: 12, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', flexDirection: 'row', alignItems: 'center', gap: 8 },
   errorText: { flex: 1, color: '#991B1B', fontSize: 12, lineHeight: 18 },
+  inputShell: { backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
   inputBar: {
+    width: '100%', maxWidth: 960, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: '#FFFFFF',
-    borderTopWidth: 1, borderTopColor: '#F3F4F6',
+    paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: COLORS.surface,
   },
   input: {
     flex: 1, backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 14, color: '#111827', maxHeight: 100,
+    minHeight: 44, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textPrimary, maxHeight: 120,
   },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
 });

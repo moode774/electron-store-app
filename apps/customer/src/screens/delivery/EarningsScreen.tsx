@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getMyWithdrawalRequests, requestWithdrawal, DeliveryEarning, WithdrawalRequest, WithdrawalStatus } from '@marketplace/shared-hooks';
+import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'pending',
@@ -30,6 +31,7 @@ function withdrawalErrorMessage(error: unknown): string {
 }
 
 export default function EarningsScreen() {
+  const layout = useResponsiveLayout(920);
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
@@ -104,14 +106,14 @@ export default function EarningsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <Text style={styles.headerTitle}>أرباحي</Text>
       </View>
 
       {/* Withdrawal Modal */}
       <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => !withdrawing && setShowWithdraw(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, layout.compact && styles.modalCardCompact]}>
             <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
             <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: '#111827' }}>{balance} ر.ي</Text></Text>
             <TextInput
@@ -154,7 +156,7 @@ export default function EarningsScreen() {
       <FlatList
         data={history}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter }]}
         ListHeaderComponent={
           <>
             {loadError ? (
@@ -166,10 +168,10 @@ export default function EarningsScreen() {
               </View>
             ) : null}
             {/* Summary Card */}
-            <View style={styles.summaryCard}>
+            <View style={[styles.summaryCard, layout.compact && styles.summaryCardCompact]}>
               <Text style={styles.summaryLabel}>رصيد المحفظة</Text>
               <Text style={styles.summaryValue}>{balance} ر.ي</Text>
-              <View style={styles.summaryRow}>
+              <View style={[styles.summaryRow, layout.compact && styles.summaryRowCompact]}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryItemValue}>{history.length}</Text>
                   <Text style={styles.summaryItemLabel}>توصيلات مسجّلة</Text>
@@ -247,9 +249,9 @@ export default function EarningsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12 },
+  header: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12, width: '100%', maxWidth: 920, alignSelf: 'center' },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#111827' },
-  listContent: { padding: 20, gap: 12, paddingBottom: 100 },
+  listContent: { padding: 20, gap: 12, paddingBottom: 100, width: '100%', maxWidth: 920, alignSelf: 'center' },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
@@ -261,12 +263,14 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: COLORS.primary, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 8,
   },
+  summaryCardCompact: { paddingHorizontal: 16 },
   summaryLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   summaryValue: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', marginTop: 6, marginBottom: 20 },
   summaryRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 14, padding: 14, width: '100%', justifyContent: 'space-around',
   },
+  summaryRowCompact: { paddingHorizontal: 8 },
   summaryItem: { alignItems: 'center' },
   summaryItemValue: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   summaryItemLabel: { fontSize: 10.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
@@ -288,6 +292,7 @@ const styles = StyleSheet.create({
   withdrawBtnText: { fontSize: 14, fontWeight: '800', color: '#111827' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, width: '100%', maxWidth: 380 },
+  modalCardCompact: { padding: 18 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#111827', textAlign: 'right', marginBottom: 6 },
   modalSub: { fontSize: 13, color: '#6B7280', textAlign: 'right', marginBottom: 20, fontWeight: '600' },
   modalInput: {

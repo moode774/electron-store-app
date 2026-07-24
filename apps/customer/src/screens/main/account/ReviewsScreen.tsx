@@ -4,8 +4,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-utils';
 import { Card } from '@marketplace/shared-ui';
 import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 export default function ReviewsScreen({ navigation }: any) {
+  const layout = useCustomerLayout(1040);
+  const columns = layout.desktop ? 2 : 1;
+  const gap = layout.compact ? 12 : 16;
+  const cardWidth = columns === 1 ? layout.usableWidth : (layout.usableWidth - gap) / 2;
   const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState<'store' | 'driver'>('store');
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -27,7 +32,7 @@ export default function ReviewsScreen({ navigation }: any) {
     activeTab === 'driver' ? isDriver(r.target_type) : !isDriver(r.target_type));
 
   const renderReview = ({ item }: { item: Review }) => (
-    <Card style={styles.reviewCard} variant="outlined">
+    <Card style={{ ...styles.reviewCard, width: cardWidth }} variant="outlined">
       <View style={styles.reviewHeader}>
         <View style={styles.reviewTitleRow}>
           <Text style={styles.reviewIcon}>{isDriver(item.target_type) ? '🛵' : '🏪'}</Text>
@@ -56,15 +61,18 @@ export default function ReviewsScreen({ navigation }: any) {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>→</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>التقييمات والمراجعات</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+            <Text style={styles.backIcon}>→</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>التقييمات والمراجعات</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
+        <View style={[styles.tabsInner, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity 
           style={[styles.tabBtn, activeTab === 'store' && styles.tabBtnActive]}
           onPress={() => setActiveTab('store')}
@@ -77,6 +85,7 @@ export default function ReviewsScreen({ navigation }: any) {
         >
           <Text style={[styles.tabText, activeTab === 'driver' && styles.tabTextActive]}>المندوبين</Text>
         </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -91,10 +100,13 @@ export default function ReviewsScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
+          key={`reviews-${columns}`}
           data={filteredReviews}
+          numColumns={columns}
           keyExtractor={(item) => item.id}
           renderItem={renderReview}
-          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={columns > 1 ? [styles.listRow, { gap }] : undefined}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter, gap }]}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>⭐</Text>
@@ -109,17 +121,21 @@ export default function ReviewsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingTop: 60, paddingBottom: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: COLORS.background },
+  header: { paddingTop: 48, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerInner: { width: '100%', maxWidth: 1040, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 16, backgroundColor: COLORS.background },
+  headerSpacer: { width: 44 },
   backIcon: { fontSize: 24, color: COLORS.textPrimary },
   headerTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontFamily: FONTS.bold },
-  tabsContainer: { flexDirection: 'row', padding: SPACING.md, backgroundColor: COLORS.surface },
-  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: COLORS.border },
+  tabsContainer: { backgroundColor: COLORS.surface },
+  tabsInner: { width: '100%', maxWidth: 1040, alignSelf: 'center', flexDirection: 'row', paddingVertical: SPACING.md },
+  tabBtn: { flex: 1, minHeight: 44, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: COLORS.border },
   tabBtnActive: { borderBottomColor: COLORS.primary },
   tabText: { fontSize: 14, color: COLORS.textMuted, fontFamily: FONTS.semiBold },
   tabTextActive: { color: COLORS.primary, fontWeight: '700' },
-  listContent: { padding: SPACING.md },
-  reviewCard: { marginBottom: SPACING.md, padding: SPACING.md },
+  listContent: { width: '100%', maxWidth: 1040, alignSelf: 'center', paddingTop: SPACING.md, paddingBottom: 110 },
+  listRow: { flexDirection: 'row-reverse' },
+  reviewCard: { padding: SPACING.md },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   reviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   reviewIcon: { fontSize: 18 },
@@ -132,6 +148,6 @@ const styles = StyleSheet.create({
   emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
   emptyEmoji: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 16, color: COLORS.textMuted },
-  retryBtn: { marginTop: 14, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10 },
+  retryBtn: { minHeight: 44, marginTop: 14, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10, justifyContent: 'center' },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../../components/NotificationPreferencesCard';
+import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 export default function NotificationsScreen({ navigation }: any) {
+  const layout = useCustomerLayout(1120);
+  const columns = layout.desktop ? 2 : 1;
+  const gap = layout.compact ? 10 : 14;
+  const cardWidth = columns === 1 ? layout.usableWidth : (layout.usableWidth - gap) / 2;
   const user = useAuthStore((s) => s.user);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,11 +62,13 @@ export default function NotificationsScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>الإشعارات</Text>
-        <View style={{ width: 40 }} />
+        <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>الإشعارات</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       {loading ? (
@@ -76,9 +83,12 @@ export default function NotificationsScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
+          key={`notifications-${columns}`}
           data={notifications}
+          numColumns={columns}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={columns > 1 ? [styles.listRow, { gap }] : undefined}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter, gap }]}
           ListHeaderComponent={<NotificationPreferencesCard />}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
@@ -87,7 +97,7 @@ export default function NotificationsScreen({ navigation }: any) {
           }
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.card, !item.is_read && styles.cardUnread]}
+              style={[styles.card, !item.is_read && styles.cardUnread, { width: cardWidth }]}
               activeOpacity={0.7}
               onPress={() => openNotification(item)}
               accessibilityRole="button"
@@ -115,21 +125,20 @@ export default function NotificationsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-    backgroundColor: '#F9FAFB',
-  },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  listContent: { padding: 20, gap: 12 },
+  header: { paddingTop: Platform.OS === 'ios' ? 48 : 32, backgroundColor: COLORS.background },
+  headerInner: { width: '100%', maxWidth: 1120, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer: { width: 44 },
+  headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
+  listContent: { width: '100%', maxWidth: 1120, alignSelf: 'center', paddingTop: 16, paddingBottom: 110 },
+  listRow: { flexDirection: 'row-reverse' },
   card: {
-    flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-    borderWidth: 1.5, borderColor: '#F3F4F6',
+    minHeight: 116, flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16,
+    borderWidth: 1.5, borderColor: COLORS.border,
   },
   cardUnread: { borderColor: `${COLORS.primary}30`, backgroundColor: '#FDFDFF' },
   iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1, marginHorizontal: 12 },
+  info: { flex: 1, minWidth: 0, marginHorizontal: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 14, fontWeight: '800', color: '#111827' },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
@@ -137,6 +146,6 @@ const styles = StyleSheet.create({
   time: { fontSize: 11, color: '#9CA3AF', marginTop: 8 },
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   errorText: { color: '#991B1B', textAlign: 'center' },
-  retryButton: { backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 17, paddingVertical: 10 },
+  retryButton: { minHeight: 44, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 17, paddingVertical: 10, justifyContent: 'center' },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
 });

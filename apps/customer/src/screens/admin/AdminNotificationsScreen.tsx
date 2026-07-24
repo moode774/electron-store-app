@@ -2,22 +2,24 @@ import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   TextInput, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
-  primary: '#1E3A8A',
-  primaryLight: '#EEF2FF',
-  bg: '#F8FAFC',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  border: '#E2E8F0',
-  success: '#059669',
-  danger: '#DC2626',
-  info: '#2563EB',
+  primary: COLORS.primary,
+  primaryLight: COLORS.primarySoft,
+  bg: COLORS.background,
+  card: COLORS.surface,
+  text: COLORS.textPrimary,
+  textMuted: COLORS.textMuted,
+  border: COLORS.border,
+  success: COLORS.success,
+  danger: COLORS.error,
+  info: COLORS.info,
 };
 
 const AUDIENCE_OPTIONS = [
@@ -35,6 +37,12 @@ const QUICK_TEMPLATES = [
 ];
 
 export default function AdminNotificationsScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
+  const compact = width < BREAKPOINTS.compact;
+  const desktop = width >= BREAKPOINTS.desktop;
+  const pagePadding = compact ? 12 : 24;
+  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 920);
+  const audienceWidth = desktop ? '23.5%' : '48%';
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [audience, setAudience] = useState<'' | 'customer' | 'merchant' | 'delivery'>('');
@@ -93,7 +101,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Modern Header */}
       <View style={s.header}>
-        <View style={s.headerContent}>
+        <View style={[s.headerContent, { width: contentWidth }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
@@ -106,7 +114,8 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <View style={[s.content, { width: contentWidth }]}>
         {sentCount !== null && (
           <View style={s.successBanner}>
             <Ionicons name="checkmark-circle" size={22} color={UI.success} />
@@ -120,7 +129,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             {AUDIENCE_OPTIONS.map(opt => (
               <TouchableOpacity
                 key={opt.key}
-                style={[s.audienceCard, audience === opt.key && { borderColor: opt.color, backgroundColor: opt.bg }]}
+                style={[s.audienceCard, { width: audienceWidth }, audience === opt.key && { borderColor: opt.color, backgroundColor: opt.bg }]}
                 onPress={() => setAudience(opt.key)}
                 activeOpacity={0.8}
               >
@@ -205,6 +214,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             </>
           )}
         </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -220,34 +230,35 @@ const s = StyleSheet.create({
     shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
     zIndex: 10
   },
-  headerContent: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text },
-  backBtn: { padding: 4 },
+  headerContent: { maxWidth: 920, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
+  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
+  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bg },
   headerIcon: { width: 44, height: 44, backgroundColor: UI.primaryLight, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  scroll: { padding: 20, paddingBottom: 60, gap: 16 },
+  scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
+  content: { maxWidth: 920, gap: 16 },
   successBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: '#ECFDF5', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#D1FAE5' },
-  successText: { fontSize: 15, fontWeight: '800', color: UI.success },
-  card: { backgroundColor: UI.card, borderRadius: 24, padding: 20, shadowColor: '#64748B', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: '#F8FAFC' },
-  sectionTitle: { fontSize: 16, fontWeight: '900', color: UI.text, marginBottom: 16, textAlign: 'right' },
+  successText: { flex: 1, fontSize: 15, fontFamily: FONTS.semiBold, color: UI.success, textAlign: 'right' },
+  card: { backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
+  sectionTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, marginBottom: 16, textAlign: 'right' },
   audienceGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
-  audienceCard: { width: '48%', alignItems: 'center', gap: 10, paddingVertical: 16, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#F1F5F9' },
+  audienceCard: { minHeight: 96, alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, borderRadius: RADIUS.md, backgroundColor: UI.card, borderWidth: 2, borderColor: UI.border },
   audienceIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  audienceLabel: { fontSize: 14, fontWeight: '700', color: UI.textMuted },
+  audienceLabel: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   templatesRow: { paddingBottom: 4, gap: 10 },
-  templateChip: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, backgroundColor: UI.primaryLight, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#E0E7FF' },
-  templateChipText: { fontSize: 13, fontWeight: '800', color: UI.primary },
+  templateChip: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6, backgroundColor: UI.primaryLight, paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: UI.primaryLight },
+  templateChipText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.primary },
   inputWrapper: { marginBottom: 12 },
-  input: { backgroundColor: '#F8FAFC', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 15, color: UI.text, borderWidth: 1, borderColor: UI.border, fontWeight: '600' },
+  input: { backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.md, paddingHorizontal: 16, paddingVertical: 16, fontSize: 15, fontFamily: FONTS.medium, color: UI.text, borderWidth: 1, borderColor: UI.border },
   textArea: { height: 120, textAlignVertical: 'top' },
-  charCount: { fontSize: 11, color: '#9CA3AF', textAlign: 'left', marginTop: 4, paddingHorizontal: 4 },
+  charCount: { fontSize: 11, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'left', marginTop: 4, paddingHorizontal: 4 },
   previewBox: { marginTop: 8 },
-  previewLabel: { fontSize: 13, color: UI.textMuted, fontWeight: '700', marginBottom: 8, textAlign: 'right' },
+  previewLabel: { fontSize: 13, color: UI.textMuted, fontFamily: FONTS.semiBold, marginBottom: 8, textAlign: 'right' },
   previewCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3, borderWidth: 1, borderColor: UI.primaryLight },
   previewIconCircle: { width: 46, height: 46, borderRadius: 14, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   previewContent: { flex: 1 },
-  previewTitle: { fontSize: 15, fontWeight: '900', color: UI.text, textAlign: 'right', marginBottom: 6 },
-  previewBody: { fontSize: 13, color: UI.textMuted, textAlign: 'right', lineHeight: 20, fontWeight: '500' },
-  sendBtn: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: UI.primary, borderRadius: 16, paddingVertical: 18, shadowColor: UI.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, marginTop: 10 },
+  previewTitle: { fontSize: 15, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 6 },
+  previewBody: { fontSize: 13, color: UI.textMuted, textAlign: 'right', lineHeight: 20, fontFamily: FONTS.regular },
+  sendBtn: { minHeight: 56, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: UI.primary, borderRadius: RADIUS.md, paddingVertical: 14, shadowColor: UI.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, marginTop: 10 },
   sendBtnDisabled: { opacity: 0.6, shadowOpacity: 0 },
-  sendBtnText: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
+  sendBtnText: { fontSize: 18, fontFamily: FONTS.bold, color: UI.card },
 });
