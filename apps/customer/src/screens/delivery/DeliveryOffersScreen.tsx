@@ -75,6 +75,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [accepting, setAccepting] = useState(false);
   const [onlineUpdating, setOnlineUpdating] = useState(false);
   const [todayEarnings, setTodayEarnings] = useState(0);
+  const [earningsFailed, setEarningsFailed] = useState(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [locationMessage, setLocationMessage] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -121,10 +122,16 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     setLoadError('');
 
     try {
-      const [runtimeProfile, earningsResult] = await Promise.all([
+      // فشل جلب الأرباح لا يمنع عرض العروض، لكن يجب ألّا يظهر كأن الدخل صفر
+      const [runtimeProfile, earningsSettled] = await Promise.all([
         getDeliveryRuntimeProfile(user.id),
-        getDeliveryEarnings(user.id).catch(() => null),
+        getDeliveryEarnings(user.id).then(
+          (value) => ({ ok: true as const, value }),
+          () => ({ ok: false as const, value: null }),
+        ),
       ]);
+      const earningsResult = earningsSettled.ok ? earningsSettled.value : null;
+      setEarningsFailed(!earningsSettled.ok);
 
       if (!runtimeProfile) {
         setProfile(null);
@@ -363,7 +370,11 @@ export default function DeliveryOffersScreen({ navigation }: any) {
               </View>
               <View style={styles.earningsTexts}>
                 <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-                <Text style={styles.earningsValue}>{todayEarnings.toLocaleString()} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
+                {earningsFailed ? (
+                  <Text style={styles.earningsValue}>—</Text>
+                ) : (
+                  <Text style={styles.earningsValue}>{todayEarnings.toLocaleString()} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
+                )}
               </View>
             </View>
           </View>

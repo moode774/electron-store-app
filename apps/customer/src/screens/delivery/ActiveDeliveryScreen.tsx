@@ -474,7 +474,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     // الانتقال إلى picked_up يتطلب كود الاستلام من التاجر
     const upcomingStatus = STEPS[stepIndex + 1]?.statusOnEnter;
     if (upcomingStatus === ORDER_STATUS.PICKED_UP && !pickupCode.trim()) {
-      Alert.alert('كود الاستلام مطلوب', 'اطلب كود الاستلام (4 أرقام) من التاجر وأدخله لتأكيد استلام الطلب.');
+      Alert.alert('كود الاستلام مطلوب', 'اطلب كود الاستلام (6 أرقام) من التاجر وأدخله لتأكيد استلام الطلب.');
       return;
     }
 
@@ -661,12 +661,12 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             <View style={styles.pickupCodeRow}>
               <TextInput
                 style={styles.pickupCodeInput}
-                placeholder="كود الاستلام من التاجر (4 أرقام)"
+                placeholder="كود الاستلام من التاجر (6 أرقام)"
                 placeholderTextColor="#9CA3AF"
                 value={pickupCode}
                 onChangeText={setPickupCode}
                 keyboardType="number-pad"
-                maxLength={4}
+                maxLength={6}
                 textAlign="center"
                 accessibilityLabel="كود الاستلام من التاجر"
               />

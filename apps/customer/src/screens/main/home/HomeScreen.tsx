@@ -17,8 +17,10 @@ import { Alert } from '../../../components/appAlert';
 import {
   addToWishlist,
   Category,
+  getAddresses,
   getCategories,
   getFeaturedProducts,
+  getNotifications,
   getOrders,
   getStores,
   getWishlist,
@@ -86,6 +88,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const user = useAuthStore((state) => state.user);
   const addToCart = useCartStore((state) => state.addToCart);
 
+  const [defaultCity, setDefaultCity] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
@@ -176,6 +180,23 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         } catch {
           // ignore
         }
+
+        // مدينة العنوان الافتراضي بدل نص ثابت للجميع
+        try {
+          const addresses = await getAddresses(user.id);
+          const preferred = addresses.find((a) => a.is_default) ?? addresses[0];
+          setDefaultCity(preferred?.city ?? '');
+        } catch {
+          setDefaultCity('');
+        }
+
+        // نقطة الإشعارات تظهر فقط عند وجود غير مقروء
+        try {
+          const notifications = await getNotifications(user.id);
+          setUnreadCount(notifications.filter((n) => !n.is_read).length);
+        } catch {
+          setUnreadCount(0);
+        }
       }
     } catch (err) {
       console.error('Error loading home data:', err);
@@ -253,16 +274,30 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           <View style={styles.headerTopRow}>
             <View style={styles.locationContainer}>
               <Text style={styles.locationLabel}>الموقع</Text>
-              <TouchableOpacity style={styles.locationPickerRow} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.locationPickerRow}
+                activeOpacity={0.8}
+                onPress={() => navigation.getParent()?.navigate('Account', { screen: 'AddressBook' })}
+                accessibilityRole="button"
+                accessibilityLabel="تغيير عنوان التوصيل"
+              >
                 <Ionicons name="location" size={17} color="#172554" />
-                <Text style={styles.locationValueText}>صنعاء، اليمن</Text>
+                <Text style={styles.locationValueText}>
+                  {defaultCity || 'اختر عنوان التوصيل'}
+                </Text>
                 <Ionicons name="chevron-down" size={14} color="#64748B" />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.notifCircleBtn} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.notifCircleBtn}
+              activeOpacity={0.8}
+              onPress={() => navigation.getParent()?.navigate('Account', { screen: 'Notifications' })}
+              accessibilityRole="button"
+              accessibilityLabel="الإشعارات"
+            >
               <Ionicons name="notifications" size={20} color="#172554" />
-              <View style={styles.notifCircleBadgeDot} />
+              {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
             </TouchableOpacity>
           </View>
 

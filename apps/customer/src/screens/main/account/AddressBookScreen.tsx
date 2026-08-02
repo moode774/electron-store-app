@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-utils';
 import { Card, Button } from '@marketplace/shared-ui';
-import { useAuthStore, getAddresses, Address } from '@marketplace/shared-hooks';
+import { useAuthStore, getAddresses, deleteAddress, setDefaultAddress, Address } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { Alert } from '../../../components/appAlert';
 
 export default function AddressBookScreen({ navigation }: any) {
   const layout = useCustomerLayout(1040);
@@ -13,14 +14,47 @@ export default function AddressBookScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
-    try { setAddresses(await getAddresses(user.id)); } catch { setAddresses([]); }
-    finally { setLoading(false); }
+    setLoadError('');
+    try {
+      setAddresses(await getAddresses(user.id));
+    } catch (e: any) {
+      // لا نعرض قائمة فارغة عند فشل الشبكة — ذلك يوهم بعدم وجود عناوين
+      setLoadError(e?.message ?? 'تعذّر تحميل العناوين. تحقق من الاتصال.');
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleDelete = (item: Address) => {
+    Alert.alert('حذف العنوان', `هل تريد حذف "${item.full_address}"؟`, [
+      { text: 'تراجع', style: 'cancel' },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: async () => {
+          setBusyId(item.id);
+          try { await deleteAddress(item.id); await load(); }
+          catch (e: any) { Alert.alert('تعذّر الحذف', e?.message ?? 'أعد المحاولة.'); }
+          finally { setBusyId(null); }
+        },
+      },
+    ]);
+  };
+
+  const handleSetDefault = async (item: Address) => {
+    if (!user?.id || item.is_default) return;
+    setBusyId(item.id);
+    try { await setDefaultAddress(user.id, item.id); await load(); }
+    catch (e: any) { Alert.alert('تعذّر التعيين', e?.message ?? 'أعد المحاولة.'); }
+    finally { setBusyId(null); }
+  };
 
   const renderAddress = ({ item }: { item: Address }) => (
     <Card style={{ ...styles.addressCard, width: cardWidth }} variant="outlined">
@@ -30,14 +64,34 @@ export default function AddressBookScreen({ navigation }: any) {
           <Text style={styles.labelText}>{item.label === 'home' ? 'المنزل' : item.label}</Text>
           {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>الافتراضي</Text></View>}
         </View>
-        <TouchableOpacity style={styles.editButton} accessibilityRole="button" accessibilityLabel="تعديل العنوان">
-          <Text style={styles.editIcon}>✏️</Text>
-        </TouchableOpacity>
+        {busyId === item.id ? (
+          <ActivityIndicator size="small" color={COLORS.primary} />
+        ) : (
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => handleDelete(item)}
+            accessibilityRole="button"
+            accessibilityLabel="حذف العنوان"
+          >
+            <Text style={styles.editIcon}>🗑️</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.addressBody}>
         <Text style={styles.areaText}>📍 {item.city ?? ''}</Text>
         <Text style={styles.streetText}>{item.full_address}</Text>
       </View>
+      {!item.is_default && (
+        <TouchableOpacity
+          style={styles.makeDefaultBtn}
+          onPress={() => handleSetDefault(item)}
+          disabled={busyId === item.id}
+          accessibilityRole="button"
+          accessibilityLabel="تعيين كعنوان افتراضي"
+        >
+          <Text style={styles.makeDefaultText}>تعيين كافتراضي</Text>
+        </TouchableOpacity>
+      )}
     </Card>
   );
 
@@ -70,10 +124,20 @@ export default function AddressBookScreen({ navigation }: any) {
         columnWrapperStyle={columns > 1 ? [styles.listRow, { gap }] : undefined}
         contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter, gap }]}
         ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyEmoji}>📍</Text>
-            <Text style={styles.emptyText}>لم تقم بإضافة أي عناوين بعد</Text>
-          </View>
+          loading ? null : loadError ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyEmoji}>⚠️</Text>
+              <Text style={styles.emptyText}>{loadError}</Text>
+              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة المحاولة">
+                <Text style={styles.retryText}>إعادة المحاولة</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyEmoji}>📍</Text>
+              <Text style={styles.emptyText}>لم تقم بإضافة أي عناوين بعد</Text>
+            </View>
+          )
         }
       />
 
@@ -109,6 +173,10 @@ const styles = StyleSheet.create({
   defaultText: { fontSize: 10, color: COLORS.success, fontWeight: '700' },
   editIcon: { fontSize: 18 },
   editButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  makeDefaultBtn: { marginTop: 10, alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.primary },
+  makeDefaultText: { color: COLORS.primary, fontSize: 13, fontFamily: FONTS.bold },
+  retryBtn: { marginTop: 14, minHeight: 44, justifyContent: 'center', paddingHorizontal: 20, borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
+  retryText: { color: '#FFFFFF', fontSize: 14, fontFamily: FONTS.bold },
   addressBody: { gap: 6 },
   areaText: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   streetText: { fontSize: 13, color: COLORS.textSecondary, marginLeft: 22 },

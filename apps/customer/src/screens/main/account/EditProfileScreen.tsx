@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useAuthStore, updateUserProfile } from '@marketplace/shared-hooks';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuthStore, updateUserProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
 import { Input } from '@marketplace/shared-ui';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
@@ -14,6 +15,37 @@ export default function EditProfileScreen({ navigation }: any) {
   const [name, setName] = useState(user?.full_name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar_url ?? null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleChangeAvatar = async () => {
+    if (!user?.id || uploadingAvatar) return;
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('إذن الصور', 'نحتاج إذن الوصول للصور لاختيار صورة الحساب.');
+        return;
+      }
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (picked.canceled || !picked.assets?.length) return;
+
+      setUploadingAvatar(true);
+      const url = await uploadImageToStorage('avatars', `${user.id}/${Date.now()}`, picked.assets[0].uri);
+      await updateUserProfile(user.id, { avatar_url: url });
+      await refreshUser();
+      setAvatarUrl(url);
+      Alert.alert('تم التحديث ✅', 'تم تغيير صورة حسابك.');
+    } catch (e: any) {
+      Alert.alert('تعذّر تغيير الصورة', e?.message ?? 'حاول مرة أخرى.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -55,9 +87,23 @@ export default function EditProfileScreen({ navigation }: any) {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{name.charAt(0) || 'م'}</Text>
-            <TouchableOpacity style={styles.cameraBtn} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تغيير الصورة الشخصية">
-              <Ionicons name="camera" size={14} color="#FFFFFF" />
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
+            ) : (
+              <Text style={styles.avatarText}>{name.charAt(0) || 'م'}</Text>
+            )}
+            <TouchableOpacity
+              style={styles.cameraBtn}
+              activeOpacity={0.8}
+              onPress={handleChangeAvatar}
+              disabled={uploadingAvatar}
+              accessibilityRole="button"
+              accessibilityLabel="تغيير الصورة الشخصية"
+              accessibilityState={{ disabled: uploadingAvatar, busy: uploadingAvatar }}
+            >
+              {uploadingAvatar
+                ? <ActivityIndicator size="small" color="#FFFFFF" />
+                : <Ionicons name="camera" size={14} color="#FFFFFF" />}
             </TouchableOpacity>
           </View>
         </View>
@@ -101,6 +147,7 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
   scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingTop: 24, paddingBottom: 48 },
   avatarSection: { alignItems: 'center', marginBottom: 28 },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 999 },
   avatar: {
     width: 88, height: 88, borderRadius: 44, backgroundColor: '#111827',
     alignItems: 'center', justifyContent: 'center',

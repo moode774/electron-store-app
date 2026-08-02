@@ -293,10 +293,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             activeOpacity={0.85}
           >
             {locating ? (
-              <ActivityIndicator size="small" color="#1E3A8A" />
+              <ActivityIndicator size="small" color="#172554" />
             ) : (
               <>
-                <Ionicons name="locate-outline" size={16} color="#1E3A8A" />
+                <Ionicons name="locate-outline" size={16} color="#172554" />
                 <Text style={styles.floatingLocateText}>استخدام موقعي الحالي</Text>
               </>
             )}
@@ -315,7 +315,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         <View style={styles.card}>
           {/* 1. المدينة */}
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="location-outline" size={16} color="#1E3A8A" />
+            <Ionicons name="location-outline" size={16} color="#172554" />
             <Text style={styles.sectionTitleText}>المدينة</Text>
           </View>
           <View style={styles.cityChipsRow}>
@@ -328,7 +328,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                   onPress={() => setSelectedCity(cityKey)}
                   activeOpacity={0.8}
                 >
-                  {isSelected && <Ionicons name="checkmark-circle" size={16} color="#1E3A8A" style={{ marginLeft: 4 }} />}
+                  {isSelected && <Ionicons name="checkmark-circle" size={16} color="#172554" style={{ marginLeft: 4 }} />}
                   <Text style={[styles.cityChipText, isSelected && styles.cityChipTextSelected]}>
                     {AREA_LABELS[cityKey] || cityKey}
                   </Text>
@@ -339,7 +339,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
 
           {/* 2. نوع العنوان */}
           <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
-            <Ionicons name="pricetag-outline" size={16} color="#1E3A8A" />
+            <Ionicons name="pricetag-outline" size={16} color="#172554" />
             <Text style={styles.sectionTitleText}>نوع العنوان</Text>
           </View>
           <View style={styles.typeChipsRow}>
@@ -426,11 +426,11 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <Switch
               value={saveForFuture}
               onValueChange={setSaveForFuture}
-              trackColor={{ false: '#CBD5E1', true: '#1E3A8A' }}
+              trackColor={{ false: '#CBD5E1', true: '#172554' }}
               thumbColor="#FFFFFF"
             />
             <View style={styles.switchRightTextWrap}>
-              <Ionicons name="shield-checkmark-outline" size={16} color="#1E3A8A" style={{ marginLeft: 6 }} />
+              <Ionicons name="shield-checkmark-outline" size={16} color="#172554" style={{ marginLeft: 6 }} />
               <Text style={styles.switchLabelText}>حفظ هذا العنوان لاستخدامه مستقبلاً في حسابك</Text>
             </View>
           </View>
@@ -439,12 +439,12 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         {/* Section 2: العناوين المحفوظة */}
         <View style={styles.card}>
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="bookmark-outline" size={18} color="#1E3A8A" />
+            <Ionicons name="bookmark-outline" size={18} color="#172554" />
             <Text style={styles.sectionTitleText}>العناوين المحفوظة</Text>
           </View>
 
           {loadingAddresses ? (
-            <ActivityIndicator size="small" color="#1E3A8A" style={{ marginVertical: 14 }} />
+            <ActivityIndicator size="small" color="#172554" style={{ marginVertical: 14 }} />
           ) : savedAddresses.length > 0 ? (
             <View style={styles.savedList}>
               {savedAddresses.map((item) => {
@@ -463,8 +463,13 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                     }}
                     activeOpacity={0.85}
                   >
-                    {/* Left Side: 3 Dots Menu */}
-                    <TouchableOpacity style={styles.dotsBtn}>
+                    {/* Left Side: إدارة العنوان */}
+                    <TouchableOpacity
+                      style={styles.dotsBtn}
+                      onPress={() => navigation.getParent()?.navigate('Account', { screen: 'AddressBook' })}
+                      accessibilityRole="button"
+                      accessibilityLabel="إدارة العناوين"
+                    >
                       <Ionicons name="ellipsis-vertical" size={16} color="#94A3B8" />
                     </TouchableOpacity>
 
@@ -489,7 +494,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                         <Ionicons
                           name={isHome ? 'home-outline' : 'briefcase-outline'}
                           size={18}
-                          color="#1E3A8A"
+                          color="#172554"
                         />
                       </View>
                       <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
@@ -596,8 +601,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   stepCircleActive: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554', // Dark Royal Blue
+    borderColor: '#172554',
   },
   stepCircleDone: {
     backgroundColor: '#059669',
@@ -611,7 +616,7 @@ const styles = StyleSheet.create({
   },
   stepLabelActive: {
     fontFamily: FONTS.bold,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   stepLabelDone: {
     color: '#059669',
@@ -674,7 +679,7 @@ const styles = StyleSheet.create({
   floatingLocateText: {
     fontFamily: FONTS.bold,
     fontSize: 11.5,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   mapCenterPinWrap: {
     alignItems: 'center',
@@ -691,10 +696,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1E3A8A',
+    shadowColor: '#172554',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -735,7 +740,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
   cityChipSelected: {
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
     backgroundColor: '#F0F5FF',
   },
   cityChipText: {
@@ -745,7 +750,7 @@ const styles = StyleSheet.create({
   },
   cityChipTextSelected: {
     fontFamily: FONTS.bold,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   typeChipsRow: {
     flexDirection: 'row-reverse',
@@ -763,8 +768,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
   },
   typeChipSelected: {
-    backgroundColor: '#1E3A8A', // Solid Royal Blue matching mockup
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554', // Solid Royal Blue matching mockup
+    borderColor: '#172554',
   },
   typeChipText: {
     fontFamily: FONTS.medium,
@@ -839,7 +844,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   savedAddressCardSelected: {
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
     backgroundColor: '#F0F5FF',
   },
   dotsBtn: {
@@ -870,7 +875,7 @@ const styles = StyleSheet.create({
   preferredBadgeText: {
     fontFamily: FONTS.bold,
     fontSize: 9.5,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   savedFullAddressText: {
     fontFamily: FONTS.regular,
@@ -902,13 +907,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioCircleSelected: {
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
   },
   radioDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
   },
   noAddressesText: {
     fontFamily: FONTS.regular,
@@ -947,7 +952,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   continueBtn: {
-    backgroundColor: '#1E3A8A', // Solid Royal Blue matching mockup
+    backgroundColor: '#172554', // Solid Royal Blue matching mockup
     borderRadius: 16,
     height: 48,
     alignItems: 'center',
