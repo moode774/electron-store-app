@@ -107,6 +107,8 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const items = order?.order_items ?? [];
   const subtotal = order?.subtotal ?? items.reduce((s, i) => s + i.total_price, 0);
   const deliveryFee = order?.delivery_fee ?? 0;
+  const taxAmount = Number(order?.tax_amount ?? 0);
+  const discountAmount = Number(order?.discount_amount ?? 0);
   const customerName = order?.customer?.full_name ?? 'عميل غير مسجل';
   const customerPhone = order?.customer?.phone ?? '';
   const customerAddress = order?.addresses?.full_address ?? 'عنوان غير متوفر';
@@ -380,10 +382,23 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                    <Text style={styles.summaryLineLabel}>رسوم التوصيل</Text>
                    <Text style={styles.summaryLineValue}>{deliveryFee} ر.ي</Text>
                  </View>
+                 {/* بدون هذين السطرين لا يتطابق الإجمالي مع مكوّناته */}
+                 {discountAmount > 0 && (
+                   <View style={styles.summaryLine}>
+                     <Text style={styles.summaryLineLabel}>الخصم</Text>
+                     <Text style={[styles.summaryLineValue, { color: UI.green }]}>- {discountAmount} ر.ي</Text>
+                   </View>
+                 )}
+                 {taxAmount > 0 && (
+                   <View style={styles.summaryLine}>
+                     <Text style={styles.summaryLineLabel}>الضريبة</Text>
+                     <Text style={styles.summaryLineValue}>{taxAmount} ر.ي</Text>
+                   </View>
+                 )}
                </View>
                <View style={styles.summaryTotalLine}>
                  <Text style={styles.summaryTotalLabel}>الإجمالي المستحق</Text>
-                 <Text style={styles.summaryTotalValue}>{order?.total_amount ?? (subtotal + deliveryFee)} <Text style={{ fontSize: 14 }}>ر.ي</Text></Text>
+                 <Text style={styles.summaryTotalValue}>{order?.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount)} <Text style={{ fontSize: 14 }}>ر.ي</Text></Text>
                </View>
              </View>
 

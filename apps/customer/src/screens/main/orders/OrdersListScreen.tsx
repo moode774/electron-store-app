@@ -180,7 +180,6 @@ export default function OrdersListScreen({ navigation }: any) {
         };
       case ORDER_STATUS.PREPARING:
       case ORDER_STATUS.CONFIRMED:
-      case ORDER_STATUS.PENDING:
       case ORDER_STATUS.READY:
         return {
           label: 'جاري التجهيز',
@@ -188,6 +187,15 @@ export default function OrdersListScreen({ navigation }: any) {
           bgColor: '#EFF6FF',
           textColor: '#1D4ED8',
           stepIndex: 2,
+        };
+      // الطلب المعلّق لم يؤكّده المتجر بعد — لا يجوز عرضه كأنه قيد التجهيز
+      case ORDER_STATUS.PENDING:
+        return {
+          label: 'بانتظار تأكيد المتجر',
+          icon: 'time-outline',
+          bgColor: '#FEF3C7',
+          textColor: '#B45309',
+          stepIndex: 1,
         };
       case ORDER_STATUS.DELIVERED:
         return {
@@ -289,12 +297,12 @@ export default function OrdersListScreen({ navigation }: any) {
         {/* 4-Step Stepper Timeline (Only for active / delivering orders) */}
         {item.status !== ORDER_STATUS.DELIVERED && item.status !== ORDER_STATUS.CANCELLED && (
           <View style={styles.stepperContainer}>
-            {/* Step 1: Confirmed */}
+            {/* Step 1: Confirmed — يكتمل فقط بعد تأكيد المتجر فعلياً */}
             <View style={styles.stepItem}>
-              <View style={[styles.stepCircle, styles.stepCircleDone]}>
-                <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+              <View style={[styles.stepCircle, statusConfig.stepIndex >= 2 && styles.stepCircleDone]}>
+                {statusConfig.stepIndex >= 2 && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
               </View>
-              <Text style={[styles.stepLabel, styles.stepLabelDone]}>تم التأكيد</Text>
+              <Text style={[styles.stepLabel, statusConfig.stepIndex >= 2 && styles.stepLabelDone]}>تم التأكيد</Text>
             </View>
             <View style={[styles.stepLine, statusConfig.stepIndex >= 2 && styles.stepLineDone]} />
 
@@ -387,11 +395,13 @@ export default function OrdersListScreen({ navigation }: any) {
             <Ionicons name="time-outline" size={15} color="#172554" />
             <Text style={styles.infoBannerText}>
               <Text style={styles.infoBannerLabel}>
-                {item.status === ORDER_STATUS.DELIVERED ? 'تم التوصيل في: ' : 'التوصيل المتوقع: '}
+                {item.status === ORDER_STATUS.DELIVERED ? 'تم التوصيل في: ' : 'حالة التوصيل: '}
               </Text>
               {item.status === ORDER_STATUS.DELIVERED
-                ? dateFormatted
-                : `اليوم ${dateFormatted.split(' ')[0]} مايو • 4:00 م - 6:00 م`}
+                ? (item.delivered_at ? formatDate(item.delivered_at) : dateFormatted)
+                : item.status === ORDER_STATUS.CANCELLED
+                  ? 'أُلغي الطلب'
+                  : 'يُحدَّد وقت التسليم بعد إسناد الطلب لمندوب'}
             </Text>
           </View>
         </View>
