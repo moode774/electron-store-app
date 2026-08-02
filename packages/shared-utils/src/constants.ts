@@ -6,9 +6,9 @@ export const APP_NAME = 'متجر اليمن' as const;
 
 // ---- Colors ------------------------------------------------
 export const COLORS = {
-  primary: '#1E3A8A',
-  primaryLight: '#2563EB',
-  primaryDark: '#0F172A',
+  primary: '#172554',
+  primaryLight: '#1E3A8A',
+  primaryDark: '#172554',
   primarySoft: '#F0F5FF',
   secondary: '#1D4ED8',
   secondarySoft: '#EFF6FF',

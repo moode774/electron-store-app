@@ -233,7 +233,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   };
 
   if (loading) {
-    return <View style={styles.loading}><ActivityIndicator color="#2563EB" /><Text style={styles.loadingText}>جارٍ التحقق من إرجاع المنتجات…</Text></View>;
+    return <View style={styles.loading}><ActivityIndicator color="#172554" /><Text style={styles.loadingText}>جارٍ التحقق من إرجاع المنتجات…</Text></View>;
   }
 
   const completedWithoutRefund = latestRequest?.status === 'completed'
@@ -292,7 +292,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
 
       {canCreate && !loadError && !showForm ? (
         <TouchableOpacity style={styles.openBtn} onPress={openForm} accessibilityRole="button" accessibilityLabel="فتح طلب إرجاع منتجات">
-          <Ionicons name="cube-outline" size={19} color="#2563EB" />
+          <Ionicons name="cube-outline" size={19} color="#172554" />
           <Text style={styles.openBtnText}>{latestRequest?.status === 'completed' ? 'إرجاع كمية متبقية' : 'طلب إرجاع منتجات'}</Text>
         </TouchableOpacity>
       ) : null}
@@ -321,7 +321,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
           {RETURN_REASONS.map((item) => (
             <TouchableOpacity key={item.value} style={[styles.choiceRow, reason === item.value && styles.choiceSelected]} onPress={() => setReason(item.value)} accessibilityRole="radio" accessibilityState={{ selected: reason === item.value }}>
               <Text style={[styles.choiceText, reason === item.value && styles.choiceTextSelected]}>{item.label}</Text>
-              <Ionicons name={reason === item.value ? 'radio-button-on' : 'radio-button-off'} size={20} color={reason === item.value ? '#2563EB' : '#94A3B8'} />
+              <Ionicons name={reason === item.value ? 'radio-button-on' : 'radio-button-off'} size={20} color={reason === item.value ? '#172554' : '#94A3B8'} />
             </TouchableOpacity>
           ))}
 
@@ -332,7 +332,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
           ] as const).map(([value, label]) => (
             <TouchableOpacity key={value} style={[styles.choiceRow, pickupMethod === value && styles.choiceSelected]} onPress={() => setPickupMethod(value)} accessibilityRole="radio" accessibilityState={{ selected: pickupMethod === value }}>
               <Text style={[styles.choiceText, pickupMethod === value && styles.choiceTextSelected]}>{label}</Text>
-              <Ionicons name={pickupMethod === value ? 'radio-button-on' : 'radio-button-off'} size={20} color={pickupMethod === value ? '#2563EB' : '#94A3B8'} />
+              <Ionicons name={pickupMethod === value ? 'radio-button-on' : 'radio-button-off'} size={20} color={pickupMethod === value ? '#172554' : '#94A3B8'} />
             </TouchableOpacity>
           ))}
 
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   loading: { marginHorizontal: 16, marginTop: 12, padding: 14, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   loadingText: { color: '#64748B', fontSize: 12 },
   sectionIntro: { marginHorizontal: 16, marginTop: 18, padding: 14, borderRadius: RADIUS.md, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
-  sectionTitle: { color: '#1E3A8A', fontFamily: FONTS.bold, fontSize: 15, textAlign: 'right' },
+  sectionTitle: { color: '#172554', fontFamily: FONTS.bold, fontSize: 15, textAlign: 'right' },
   sectionText: { color: '#1D4ED8', fontSize: 12, lineHeight: 19, textAlign: 'right', marginTop: 4 },
   statusCard: { marginHorizontal: 16, marginTop: 10, padding: 15, borderRadius: 14, borderWidth: 1 },
   statusTitle: { fontWeight: '900', fontSize: 15, textAlign: 'right' },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   cancelRequestText: { color: '#B91C1C', fontSize: 12, fontWeight: '800' },
   errorCard: { marginHorizontal: 16, marginTop: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
   errorText: { color: '#991B1B', fontSize: 12, lineHeight: 19, textAlign: 'right' },
-  openBtn: { minHeight: 48, marginHorizontal: 16, marginTop: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#2563EB', flexDirection: 'row-reverse', gap: 7, alignItems: 'center', justifyContent: 'center' },
+  openBtn: { minHeight: 48, marginHorizontal: 16, marginTop: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#172554', flexDirection: 'row-reverse', gap: 7, alignItems: 'center', justifyContent: 'center' },
   openBtnText: { color: '#1D4ED8', fontWeight: '900', fontSize: 14 },
   formCard: { margin: 16, padding: 16, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#CBD5E1' },
   formTitle: { color: '#0F172A', fontWeight: '900', fontSize: 14, textAlign: 'right', marginBottom: 7 },

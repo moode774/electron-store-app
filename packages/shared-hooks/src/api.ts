@@ -1972,14 +1972,18 @@ export async function getMerchantStats(merchantId: string): Promise<{
   totalProducts: number;
   pendingOrders: number;
 }> {
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const adenDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Aden', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(now);
+  const todayStart = new Date(`${adenDate}T00:00:00+03:00`).toISOString();
 
   const [ordersRes, productsRes, pendingRes] = await Promise.all([
     supabase
       .from(TABLES.ORDERS)
       .select('total_amount, status')
       .eq('merchant_id', merchantId)
-      .gte('created_at', today),
+      .gte('created_at', todayStart),
     supabase
       .from(TABLES.PRODUCTS)
       .select('id', { count: 'exact', head: true })
@@ -1991,6 +1995,10 @@ export async function getMerchantStats(merchantId: string): Promise<{
       .eq('merchant_id', merchantId)
       .eq('status', 'pending'),
   ]);
+
+  if (ordersRes.error) throw ordersRes.error;
+  if (productsRes.error) throw productsRes.error;
+  if (pendingRes.error) throw pendingRes.error;
 
   const todayOrders = ordersRes.data?.length ?? 0;
   const todayRevenue = ordersRes.data

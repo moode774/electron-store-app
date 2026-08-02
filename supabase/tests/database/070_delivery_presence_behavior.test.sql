@@ -49,6 +49,12 @@ select ok(
   'couriers cannot split presence/history writes into partial direct mutations'
 );
 select ok(
+  has_column_privilege('authenticated', 'public.delivery_profiles', 'work_city', 'select')
+  and not has_column_privilege('authenticated', 'public.delivery_profiles', 'national_id', 'select')
+  and not has_column_privilege('authenticated', 'public.delivery_profiles', 'wallet_balance', 'select'),
+  'couriers can read offer-ranking city without exposing protected identity or balance fields'
+);
+select ok(
   pg_get_functiondef(
     'public.record_my_delivery_location(uuid,uuid,numeric,numeric,numeric)'::regprocedure
   ) ilike '%INSERT INTO public.delivery_location_history%UPDATE public.delivery_profiles%'

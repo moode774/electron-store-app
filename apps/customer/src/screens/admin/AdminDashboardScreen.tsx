@@ -44,6 +44,21 @@ const softShadow = {
   elevation: 4,
 } as const;
 
+const ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
+  pending: { label: 'جديد', color: '#F59E0B' },
+  confirmed: { label: 'مؤكد', color: '#3B82F6' },
+  preparing: { label: 'قيد التجهيز', color: '#8B5CF6' },
+  ready: { label: 'جاهز للمندوب', color: '#0EA5E9' },
+  assigned: { label: 'تم تعيين مندوب', color: '#6366F1' },
+  picked_up: { label: 'استلمه المندوب', color: '#0891B2' },
+  on_the_way: { label: 'في الطريق', color: '#2563EB' },
+  rescheduled: { label: 'أعيدت الجدولة', color: '#D97706' },
+  failed_delivery: { label: 'تعذّر التسليم', color: '#DC2626' },
+  delivered: { label: 'مكتمل', color: UI.green },
+  cancelled: { label: 'ملغي', color: '#EF4444' },
+  returned: { label: 'مرتجع', color: '#64748B' },
+};
+
 // ---- SVG Line Chart (matching Merchant) ----
 function LineChart({ w, h, points, color }: { w: number; h: number; points: number[]; color: string }) {
   const data = points && points.length > 1 ? points : [0, 0];
@@ -206,8 +221,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
   // ── Order row render ──
   const renderOrderRow = (item: any, index: number) => {
-    const statusLabel = item.status === 'delivered' ? 'مكتمل' : item.status === 'cancelled' ? 'ملغي' : 'جاري التوصيل';
-    const statusColor = item.status === 'delivered' ? UI.green : item.status === 'cancelled' ? '#EF4444' : '#F59E0B';
+    const statusMeta = ORDER_STATUS_META[item.status] ?? { label: item.status || 'حالة غير معروفة', color: UI.textMuted };
+    const statusLabel = statusMeta.label;
+    const statusColor = statusMeta.color;
     const d = new Date(item.created_at);
     return (
       <TouchableOpacity

@@ -24,6 +24,7 @@ import {
   validateCoupon,
   appStorage,
   estimateDeliveryFees,
+  getSystemSettings,
   isCartItemSelected,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
@@ -117,8 +118,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
   const [feeMatched, setFeeMatched] = useState(false);
   const [feeError, setFeeError] = useState(false);
   const [deliveryUnavailable, setDeliveryUnavailable] = useState(false);
+  const [taxRate, setTaxRate] = useState(0);
+  const [taxLoading, setTaxLoading] = useState(true);
+  const [taxError, setTaxError] = useState(false);
 
-  const finalTotal = Math.max(0, cartTotal + deliveryFee - (couponApplied ? discount : 0));
+  const taxableSubtotal = Math.max(0, cartTotal - (couponApplied ? discount : 0));
+  const taxAmount = Math.round(taxableSubtotal * taxRate) / 100;
+  const finalTotal = Math.max(0, taxableSubtotal + deliveryFee + taxAmount);
   const totalCount = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
@@ -154,6 +160,28 @@ export default function CheckoutScreen({ navigation, route }: any) {
       active = false;
     };
   }, [selectedAddress?.city, selectedItems.length]);
+
+  useEffect(() => {
+    let active = true;
+    setTaxLoading(true);
+    setTaxError(false);
+    getSystemSettings()
+      .then((settings) => {
+        if (!active) return;
+        const rate = Number(settings.tax_percent ?? 0);
+        if (!Number.isFinite(rate) || rate < 0 || rate > 100) throw new Error('INVALID_TAX_RATE');
+        setTaxRate(rate);
+      })
+      .catch(() => {
+        if (!active) return;
+        setTaxRate(0);
+        setTaxError(true);
+      })
+      .finally(() => {
+        if (active) setTaxLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   // Fetch or resolve delivery address
   useEffect(() => {
@@ -482,11 +510,18 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     </View>
                   )}
 
+                  <View style={styles.costItemRow}>
+                    <Text style={[styles.costValueText, taxError && { color: '#DC2626' }]}>
+                      {taxLoading ? '...' : taxError ? 'تعذّر الحساب' : `${taxAmount.toLocaleString()} ر.ي`}
+                    </Text>
+                    <Text style={styles.costLabelText}>الضريبة ({taxRate.toLocaleString()}%)</Text>
+                  </View>
+
                   <View style={styles.totalCostRow}>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} ر.ي</Text>
                       <Text style={styles.vatSubText}>
-                        {feeError || (!feeLoading && !feeMatched)
+                        {feeError || taxError || (!feeLoading && !feeMatched)
                           ? 'المبلغ تقديري — يُحتسب النهائي عند تأكيد الطلب'
                           : 'المبلغ النهائي يُحتسب عند تأكيد الطلب'}
                       </Text>
@@ -684,9 +719,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
           {/* Right Column: Complete Payment CTA Button */}
           <TouchableOpacity
-            style={[styles.checkoutBtn, (placing || deliveryUnavailable) && { opacity: 0.7 }]}
+            style={[styles.checkoutBtn, (placing || deliveryUnavailable || taxLoading || taxError) && { opacity: 0.7 }]}
             onPress={handleConfirmOrder}
-            disabled={placing || deliveryUnavailable}
+            disabled={placing || deliveryUnavailable || taxLoading || taxError}
             activeOpacity={0.88}
           >
             {placing ? (
