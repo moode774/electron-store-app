@@ -63,6 +63,14 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          # GitHub Pages يخدم المشروع تحت مسار فرعي باسم المستودع؛ بدون هذا
+          # تُبنى مسارات الملفات من الجذر "/" فتفشل. على نطاق جذري اتركه فارغاً.
+          EXPO_PUBLIC_BASE_PATH: ${{ vars.EXPO_PUBLIC_BASE_PATH || github.event.repository.name }}
+
+      - name: Add SPA fallback and disable Jekyll
+        run: |
+          cp apps/customer/dist/index.html apps/customer/dist/404.html
+          touch apps/customer/dist/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

@@ -9,6 +9,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
@@ -20,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { BREAKPOINTS, COLORS, ORDER_STATUS } from '@marketplace/shared-utils';
 import {
+  confirmOrderPickup,
   getDeliveryOrders,
   getOrderById,
   OrderDetail,
@@ -92,6 +94,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const [completingDelivery, setCompletingDelivery] = useState(false);
   const [uploadedProofPath, setUploadedProofPath] = useState<string | null>(null);
   const advanceLock = useRef(false);
+  const [pickupCode, setPickupCode] = useState('');
   const completionLock = useRef(false);
   const proofIdempotencyKeyRef = useRef<string | null>(null);
   const proofLocationLock = useRef(false);
@@ -264,6 +267,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     customerPhone: order?.customer?.phone ?? '',
     dropoff: order?.addresses?.full_address ?? 'عنوان العميل',
     codAmount: order?.total_amount ?? 0,
+    // وجهات التوجيه في خرائط جوجل (نص العنوان — يعمل بدون إحداثيات)
+    storeMapsQuery: [order?.merchant_profiles?.store_name, order?.merchant_profiles?.address, order?.merchant_profiles?.city]
+      .filter(Boolean).join('، '),
+    dropoffMapsQuery: [order?.addresses?.full_address, order?.addresses?.city].filter(Boolean).join('، '),
+  };
+
+  const openInMaps = (destination: string) => {
+    if (!destination) return;
+    void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=driving`);
   };
   const proofValidationMessage = getDeliveryProofValidationError({
     photoUri: proofPhoto?.uri,
@@ -459,6 +471,13 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       return;
     }
 
+    // الانتقال إلى picked_up يتطلب كود الاستلام من التاجر
+    const upcomingStatus = STEPS[stepIndex + 1]?.statusOnEnter;
+    if (upcomingStatus === ORDER_STATUS.PICKED_UP && !pickupCode.trim()) {
+      Alert.alert('كود الاستلام مطلوب', 'اطلب كود الاستلام (4 أرقام) من التاجر وأدخله لتأكيد استلام الطلب.');
+      return;
+    }
+
     advanceLock.current = true;
     setAdvancing(true);
     const previousStep = stepIndex;
@@ -466,7 +485,11 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     try {
       const nextStep = previousStep + 1;
       const nextStatus = STEPS[nextStep].statusOnEnter;
-      if (nextStatus) {
+      if (nextStatus === ORDER_STATUS.PICKED_UP) {
+        await confirmOrderPickup(orderId, pickupCode);
+        setPickupCode('');
+        setOrder((currentOrder) => currentOrder ? { ...currentOrder, status: nextStatus } : currentOrder);
+      } else if (nextStatus) {
         await updateOrderStatus(orderId, nextStatus);
         setOrder((currentOrder) => currentOrder ? { ...currentOrder, status: nextStatus } : currentOrder);
       }
@@ -479,7 +502,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       advanceLock.current = false;
       setAdvancing(false);
     }
-  }, [loadOrder, openDeliveryProof, order, orderId, stepIndex, terminalOrder]);
+  }, [loadOrder, openDeliveryProof, order, orderId, pickupCode, stepIndex, terminalOrder]);
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) navigation.goBack();
@@ -583,6 +606,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               <Text style={styles.detailLabel}>الاستلام من</Text>
               <Text style={styles.detailValue}>{orderView.store}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.mapsBtn}
+              activeOpacity={0.7}
+              onPress={() => openInMaps(orderView.storeMapsQuery)}
+              accessibilityRole="button"
+              accessibilityLabel="التوجه إلى المتجر عبر الخرائط"
+            >
+              <Ionicons name="navigate" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.detailRow}>
@@ -591,6 +623,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               <Text style={styles.detailLabel}>التسليم إلى</Text>
               <Text style={styles.detailValue}>{orderView.customer} — {orderView.dropoff}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.mapsBtn}
+              activeOpacity={0.7}
+              onPress={() => openInMaps(orderView.dropoffMapsQuery)}
+              accessibilityRole="button"
+              accessibilityLabel="التوجه إلى العميل عبر الخرائط"
+            >
+              <Ionicons name="navigate" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.callBtn, !orderView.customerPhone && styles.disabledAction]}
               activeOpacity={0.7}
@@ -616,6 +657,21 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       {!terminalOrder && (
         <View style={styles.bottomBar}>
           <View style={[styles.bottomBarInner, { paddingHorizontal: pageGutter }]}>
+          {STEPS[stepIndex + 1]?.statusOnEnter === ORDER_STATUS.PICKED_UP && (
+            <View style={styles.pickupCodeRow}>
+              <TextInput
+                style={styles.pickupCodeInput}
+                placeholder="كود الاستلام من التاجر (4 أرقام)"
+                placeholderTextColor="#9CA3AF"
+                value={pickupCode}
+                onChangeText={setPickupCode}
+                keyboardType="number-pad"
+                maxLength={4}
+                textAlign="center"
+                accessibilityLabel="كود الاستلام من التاجر"
+              />
+            </View>
+          )}
           <TouchableOpacity
             style={[styles.actionBtn, advancing && styles.disabledAction]}
             onPress={() => void advanceStep()}
@@ -840,6 +896,9 @@ const styles = StyleSheet.create({
   bottomBarInner: { width: '100%', maxWidth: 900, alignSelf: 'center' },
   actionBtn: { backgroundColor: COLORS.primary, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   actionBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  pickupCodeRow: { marginBottom: 10 },
+  pickupCodeInput: { height: 48, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: '#F9FAFB', fontSize: 16, fontWeight: '800', letterSpacing: 4, color: '#111827' },
+  mapsBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.info, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   disabledAction: { opacity: 0.55 },
   proofModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(17,24,39,0.55)' },
   proofModalOverlayDesktop: { justifyContent: 'center', alignItems: 'center', padding: 24 },

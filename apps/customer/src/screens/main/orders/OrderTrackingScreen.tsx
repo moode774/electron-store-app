@@ -329,7 +329,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E3A8A" />
+        <ActivityIndicator size="large" color="#172554" />
       </View>
     );
   }
@@ -359,7 +359,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             onPress={() => setShowSupport(!showSupport)}
             activeOpacity={0.8}
           >
-            <Ionicons name="headset-outline" size={16} color="#1E3A8A" />
+            <Ionicons name="headset-outline" size={16} color="#172554" />
             <Text style={styles.supportPillText}>الدعم</Text>
           </TouchableOpacity>
 
@@ -382,7 +382,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => reload(true)}
-            tintColor="#1E3A8A"
+            tintColor="#172554"
           />
         }
       >
@@ -397,7 +397,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             <Ionicons
               name={currentStatus === ORDER_STATUS.ON_THE_WAY ? 'car' : 'cube'}
               size={16}
-              color="#1E3A8A"
+              color="#172554"
             />
             <Text style={styles.liveStatusText}>
               {terminalLabel
@@ -434,7 +434,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               </View>
 
               <View style={styles.driverAvatarCircle}>
-                <Ionicons name="person" size={24} color="#1E3A8A" />
+                <Ionicons name="person" size={24} color="#172554" />
               </View>
             </View>
           </View>
@@ -443,7 +443,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Stepper Timeline Progress Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="git-commit-outline" size={18} color="#1E3A8A" />
+            <Ionicons name="git-commit-outline" size={18} color="#172554" />
             <Text style={styles.cardTitle}>مراحل تنفيذ الطلب</Text>
           </View>
 
@@ -467,7 +467,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                       <Ionicons
                         name={(isDone ? 'checkmark' : step.icon) as any}
                         size={14}
-                        color={isDone ? '#FFFFFF' : isCurrent ? '#1E3A8A' : '#94A3B8'}
+                        color={isDone ? '#FFFFFF' : isCurrent ? '#172554' : '#94A3B8'}
                       />
                     </View>
                     {!isLast && (
@@ -502,7 +502,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Address & Delivery Info Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="location-outline" size={18} color="#1E3A8A" />
+            <Ionicons name="location-outline" size={18} color="#172554" />
             <Text style={styles.cardTitle}>تفاصيل التوصيل والمستلم</Text>
           </View>
 
@@ -527,7 +527,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Order Items & Cost Summary Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="receipt-outline" size={18} color="#1E3A8A" />
+            <Ionicons name="receipt-outline" size={18} color="#172554" />
             <Text style={styles.cardTitle}>ملخص منتجات الطلب</Text>
           </View>
 
@@ -536,7 +536,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               {order.order_items.map((item) => (
                 <View key={item.id} style={styles.itemRow}>
                   <Text style={styles.itemPriceText}>
-                    {Number(item.total_price || 0).toLocaleString('ar-SA')} ر.س
+                    {Number(item.total_price || 0).toLocaleString('ar-SA')} ر.ي
                   </Text>
                   <View style={styles.itemDetailsCol}>
                     <Text style={styles.itemNameText}>{item.product_name || 'منتج متميز'}</Text>
@@ -553,7 +553,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
           <View style={styles.summaryTotalRow}>
             <Text style={styles.totalPriceAmountText}>
-              {Number(order?.total_amount || 0).toLocaleString('ar-SA')} ر.س
+              {Number(order?.total_amount || 0).toLocaleString('ar-SA')} ر.ي
             </Text>
             <Text style={styles.totalPriceLabelText}>إجمالي المبلغ المدفوع:</Text>
           </View>
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   supportPillText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -755,12 +755,12 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
   },
   liveStatusText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   centerPinMarker: {
     alignItems: 'center',
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 6,
@@ -860,12 +860,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   timelineCircleDone: {
-    backgroundColor: '#1E3A8A',
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554',
+    borderColor: '#172554',
   },
   timelineCircleCurrent: {
     backgroundColor: '#F0F5FF',
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
   },
   timelineVerticalLine: {
     width: 2,
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   timelineVerticalLineDone: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
   },
   timelineDetailsCol: {
     flex: 1,
@@ -887,10 +887,10 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   stepTitleDone: {
-    color: '#1E3A8A',
+    color: '#172554',
   },
   stepTitleCurrent: {
-    color: '#1E3A8A',
+    color: '#172554',
     fontSize: 13.5,
   },
   stepDescText: {
@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
   infoLabelText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   infoValueText: {
     fontFamily: FONTS.regular,
@@ -947,7 +947,7 @@ const styles = StyleSheet.create({
   itemPriceText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   noItemsText: {
     fontFamily: FONTS.regular,
@@ -973,10 +973,10 @@ const styles = StyleSheet.create({
   totalPriceAmountText: {
     fontFamily: FONTS.bold,
     fontSize: 16,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   merchantChatBtn: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     borderRadius: 14,
     height: 48,
     flexDirection: 'row-reverse',
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitReviewBtn: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     borderRadius: 12,
     height: 44,
     paddingHorizontal: 28,
@@ -1102,7 +1102,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryBtn: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,

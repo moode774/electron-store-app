@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { appStorage } from './supabaseClient';
 
 export interface CartItem {
   id: string; // product id + variant id
@@ -13,7 +15,12 @@ export interface CartItem {
   storeId: string;
   storeName: string;
   image?: string;
+  /** غير محدد = محدد (توافق مع سلال محفوظة قبل إضافة الخاصية) */
+  selected?: boolean;
 }
+
+/** العنصر محدد ما لم يُلغَ تحديده صراحةً */
+export const isCartItemSelected = (item: CartItem): boolean => item.selected !== false;
 
 interface CartState {
   items: CartItem[];
@@ -23,9 +30,16 @@ interface CartState {
   clearCart: () => void;
   getTotalPrice: () => number;
   getItemsByStore: () => Record<string, CartItem[]>;
+  /** تبديل تحديد عنصر — المحدد فقط هو ما يُطلب في الشيك-آوت */
+  toggleSelected: (itemId: string) => void;
+  getSelectedItems: () => CartItem[];
+  getSelectedTotal: () => number;
+  getSelectedByStore: () => Record<string, CartItem[]>;
+  /** إزالة العناصر المحددة فقط (بعد إتمام طلبها) */
+  clearSelected: () => void;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
+export const useCartStore = create<CartState>()(persist((set, get) => ({
   items: [],
 
   addToCart: (newItem) => {
@@ -42,7 +56,7 @@ export const useCartStore = create<CartState>((set, get) => ({
           ),
         };
       }
-      return { items: [...state.items, newItem] };
+      return { items: [...state.items, { ...newItem, selected: true }] };
     });
   },
 
@@ -83,4 +97,40 @@ export const useCartStore = create<CartState>((set, get) => ({
     });
     return grouped;
   },
+
+  toggleSelected: (itemId) => {
+    set((state) => ({
+      items: state.items.map((i) => (
+        i.id === itemId ? { ...i, selected: !isCartItemSelected(i) } : i
+      )),
+    }));
+  },
+
+  getSelectedItems: () => get().items.filter(isCartItemSelected),
+
+  getSelectedTotal: () => {
+    return get()
+      .items.filter(isCartItemSelected)
+      .reduce((total, item) => total + item.price * item.quantity, 0);
+  },
+
+  getSelectedByStore: () => {
+    const grouped: Record<string, CartItem[]> = {};
+    get().items.filter(isCartItemSelected).forEach((item) => {
+      if (!grouped[item.storeId]) {
+        grouped[item.storeId] = [];
+      }
+      grouped[item.storeId].push(item);
+    });
+    return grouped;
+  },
+
+  clearSelected: () => {
+    set((state) => ({ items: state.items.filter((i) => !isCartItemSelected(i)) }));
+  },
+}), {
+  name: 'marketplace-cart-v1',
+  storage: createJSONStorage(() => appStorage),
+  // نحفظ عناصر السلة فقط؛ الدوال تُعاد بناؤها عند الإقلاع
+  partialize: (state) => ({ items: state.items }),
 }));

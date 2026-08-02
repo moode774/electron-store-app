@@ -13,6 +13,16 @@ const supabasePublishableKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
   PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+// مسار النشر الفرعي: يبقى فارغاً على Vercel/النطاق الجذري، ويُضبط إلى "/repo-name"
+// عند النشر على GitHub Pages تحت مسار فرعي وإلا فشل تحميل ملفات البناء (مسارات تبدأ بـ /).
+const rawBasePath = (process.env.EXPO_PUBLIC_BASE_PATH ?? '').trim();
+const baseUrl = rawBasePath && rawBasePath !== '/'
+  ? `/${rawBasePath.replace(/^\/+|\/+$/g, '')}`
+  : '';
+
+// معرّف مشروع EAS مطلوب لربط البناء بالحساب
+const easProjectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? process.env.EAS_PROJECT_ID;
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'متجر - العميل',
@@ -54,6 +64,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundler: 'metro',
     favicon: './assets/favicon.png'
   },
+  experiments: {
+    // فارغ = نشر على جذر النطاق (Vercel). يُملأ من EXPO_PUBLIC_BASE_PATH لـ GitHub Pages.
+    baseUrl,
+  },
   plugins: [
     'expo-localization',
     'expo-font',
@@ -67,6 +81,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabasePublishableKey,
     // Backward compatibility for older mobile bundles.
     supabaseAnonKey: supabasePublishableKey,
-    easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+    easProjectId,
+    // EAS يقرأ المعرّف من هذا المسار تحديداً (extra.eas.projectId)
+    ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
   }
 });

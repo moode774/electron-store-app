@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Path, Defs, LinearGradient, Stop, Rect, Circle } from 'react-native-svg';
 import {
-  useAuthStore, getMerchantProfile, getMerchantSalesChart, getMerchantTopProducts, getMerchantPeriodStats,
+  useAuthStore, getMerchantProfile, getMerchantSalesChart, getMerchantTopProducts, getMerchantPeriodStats, getMerchantReport,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
@@ -124,13 +124,25 @@ export default function MerchantReportsScreen({ navigation }: any) {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const merchant = await getMerchantProfile(user.id);
-      if (!merchant?.id) throw new Error('MERCHANT_PROFILE_NOT_FOUND');
-      const [chart, top, ps] = await Promise.all([
-        getMerchantSalesChart(merchant.id, days === 1 ? 1 : days),
-        getMerchantTopProducts(merchant.id, 5),
-        getMerchantPeriodStats(merchant.id, days),
-      ]);
+      let chart: number[];
+      let top: any[];
+      let ps: typeof periodStats;
+      try {
+        // المسار الأساسي: دالة SQL واحدة تجمع التقرير كاملاً في القاعدة
+        const report = await getMerchantReport(days === 1 ? 1 : days);
+        chart = report.chart;
+        top = report.topProducts;
+        ps = report.stats;
+      } catch {
+        // مسار احتياطي: التجميع في التطبيق مع ترقيم الصفحات
+        const merchant = await getMerchantProfile(user.id);
+        if (!merchant?.id) throw new Error('MERCHANT_PROFILE_NOT_FOUND');
+        [chart, top, ps] = await Promise.all([
+          getMerchantSalesChart(merchant.id, days === 1 ? 1 : days),
+          getMerchantTopProducts(merchant.id, 5, days === 1 ? 1 : days),
+          getMerchantPeriodStats(merchant.id, days),
+        ]);
+      }
       setChartData(chart);
       setChartLabels(
         days === 1
@@ -142,8 +154,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
       setTopProducts(top);
       setPeriodStats(ps);
       setError(null);
-    } catch {
-      setError('تعذر تحميل التقرير. تحقق من الاتصال ثم أعد المحاولة.');
+    } catch (e: any) {
+      // نُظهر السبب الحقيقي (صلاحيات/بيانات/شبكة) بدل رسالة عامة تخفي المشكلة
+      const detail = e?.message ? ` (${e.message})` : '';
+      setError(`تعذر تحميل التقرير. تحقق من الاتصال ثم أعد المحاولة.${detail}`);
     } finally {
       setLoading(false);
     }
@@ -187,10 +201,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         '',
         'أفضل المنتجات',
         'الاسم,الكمية المباعة,الإيرادات',
-        ...topProducts.map(p => {
-          const rev = (p.sale_price ?? p.base_price) * p.total_sold;
-          return `"${p.name}",${p.total_sold},${rev.toFixed(2)}`;
-        }),
+        ...topProducts.map(p => `"${p.name}",${p.total_sold},${Number(p.revenue ?? 0).toFixed(2)}`),
         '',
         'مبيعات الفترة',
         chartLabels.map((l, i) => `${l}: ${chartData[i]?.toFixed(2) ?? 0} ر.ي`).join('\n'),
@@ -208,8 +219,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
       } else {
         await Share.share({ message: csv, title: `تقرير ${period.label}` });
       }
-    } catch {
-      Alert.alert('خطأ', 'تعذّر تصدير التقرير');
+    } catch (e: any) {
+      Alert.alert('خطأ', `تعذّر تصدير التقرير${e?.message ? `: ${e.message}` : ''}`);
     } finally {
       setExporting(false);
     }
@@ -378,8 +389,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
             {topProducts.length === 0 ? (
               <Text style={styles.emptyText}>لا توجد بيانات كافية</Text>
             ) : topProducts.map((p, i) => {
-              const rev = (p.sale_price ?? p.base_price) * p.total_sold;
-              const maxRev = (topProducts[0]?.sale_price ?? topProducts[0]?.base_price ?? 0) * (topProducts[0]?.total_sold ?? 1);
+              const rev = Number(p.revenue ?? 0);
+              const maxRev = Number(topProducts[0]?.revenue ?? 0);
               const progress = maxRev > 0 ? (rev / maxRev) * 100 : 0;
               return (
                 <View key={p.id} style={styles.tableRow}>

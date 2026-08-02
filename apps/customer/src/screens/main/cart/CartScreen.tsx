@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,57 +10,57 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCartStore } from '@marketplace/shared-hooks';
+import { useCartStore, isCartItemSelected, getFeaturedProducts, ProductSummary } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
-// Mockup Recommendation Products for "قد يعجبك أيضاً"
-const RECOMMENDATIONS = [
-  {
-    id: 'rec-1',
-    name: 'حذاء رياضي رجالي',
-    price: 299,
-    oldPrice: 399,
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'rec-2',
-    name: 'عطر أو دي بارفان',
-    price: 199,
-    oldPrice: 249,
-    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'rec-3',
-    name: 'سماعة سوني WH-1000XM5',
-    price: 849,
-    oldPrice: 1099,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'rec-4',
-    name: 'نظارة شمسية كلاسيك',
-    price: 129,
-    oldPrice: 189,
-    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=300&q=80',
-  },
-];
+// اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
+interface Recommendation {
+  id: string;
+  name: string;
+  price: number;
+  oldPrice: number | null;
+  image: string | null;
+  storeId: string;
+  storeName: string;
+}
+
+const toRecommendation = (p: ProductSummary): Recommendation => ({
+  id: p.id,
+  name: p.name_ar || p.name,
+  price: Number(p.sale_price ?? p.base_price),
+  oldPrice: p.sale_price ? Number(p.base_price) : null,
+  image:
+    p.product_images?.find((img) => img.is_primary)?.url ??
+    p.product_images?.[0]?.url ??
+    p.og_image_url ??
+    null,
+  storeId: p.merchant_id,
+  storeName: (p as any).merchant_profiles?.store_name ?? 'المتجر',
+});
 
 export default function CartScreen({ navigation }: any) {
   const layout = useCustomerLayout(1180);
-  const { updateQuantity, removeFromCart, addToCart, items } = useCartStore();
+  const { updateQuantity, removeFromCart, addToCart, items, toggleSelected } = useCartStore();
 
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(
-    new Set(items.map((i) => i.id))
-  );
   const [wishlistedItems, setWishlistedItems] = useState<Set<string>>(new Set());
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
 
-  const toggleSelect = (id: string) => {
-    const next = new Set(selectedItems);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedItems(next);
-  };
+  useEffect(() => {
+    let active = true;
+    getFeaturedProducts(8)
+      .then((products) => {
+        if (!active) return;
+        const inCart = new Set(items.map((i) => i.productId));
+        setRecommendations(
+          products.filter((p) => !inCart.has(p.id)).slice(0, 4).map(toRecommendation)
+        );
+      })
+      .catch(() => { /* نخفي القسم عند تعذّر الجلب */ });
+    return () => { active = false; };
+    // نجلبها مرة واحدة عند فتح الشاشة
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleWishlist = (id: string) => {
     const next = new Set(wishlistedItems);
@@ -69,7 +69,7 @@ export default function CartScreen({ navigation }: any) {
     setWishlistedItems(next);
   };
 
-  const activeCartItems = items.filter((item) => selectedItems.has(item.id));
+  const activeCartItems = items.filter(isCartItemSelected);
   const totalPrice = activeCartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const totalCount = activeCartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -127,7 +127,7 @@ export default function CartScreen({ navigation }: any) {
         {/* Cart Product Cards List */}
         <View style={styles.cartItemsListContainer}>
           {items.map((item) => {
-            const isSelected = selectedItems.has(item.id);
+            const isSelected = isCartItemSelected(item);
             const isWishlisted = wishlistedItems.has(item.id);
 
             return (
@@ -190,13 +190,13 @@ export default function CartScreen({ navigation }: any) {
                     <View style={styles.priceCheckboxRow}>
                       <TouchableOpacity
                         style={[styles.checkboxSquare, isSelected && styles.checkboxSquareActive]}
-                        onPress={() => toggleSelect(item.id)}
+                        onPress={() => toggleSelected(item.id)}
                       >
                         {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                       </TouchableOpacity>
 
                       <Text style={styles.itemPriceText}>
-                        {item.price.toLocaleString()} ر.س
+                        {item.price.toLocaleString()} ر.ي
                       </Text>
                     </View>
 
@@ -225,61 +225,73 @@ export default function CartScreen({ navigation }: any) {
           })}
         </View>
 
-        {/* Section Header: قد يعجبك أيضاً */}
-        <View style={styles.recommendationsHeaderRow}>
-          <Text style={styles.recommendationsTitleText}>قد يعجبك أيضاً</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}>
-            <Text style={styles.viewAllText}>عرض الكل ›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recommendations Horizontal List */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.recommendationsScroll}
-        >
-          {RECOMMENDATIONS.map((rec) => (
-            <View key={rec.id} style={styles.recCard}>
-              <View style={styles.recImgWrap}>
-                <Image source={{ uri: rec.image }} style={styles.recImg} resizeMode="cover" />
-                <TouchableOpacity style={styles.recHeartBtn}>
-                  <Ionicons name="heart-outline" size={14} color="#475569" />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.recTitleText} numberOfLines={1}>
-                {rec.name}
-              </Text>
-
-              <View style={styles.recPriceRow}>
-                <View>
-                  <Text style={styles.recPriceText}>{rec.price} ر.س</Text>
-                  <Text style={styles.recOldPriceText}>{rec.oldPrice} ر.س</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.recAddBtn}
-                  onPress={() =>
-                    addToCart({
-                      id: rec.id,
-                      productId: rec.id,
-                      name: rec.name,
-                      price: rec.price,
-                      image: rec.image,
-                      emoji: '🛍️',
-                      quantity: 1,
-                      storeId: 'featured-store',
-                      storeName: 'متجر مختار',
-                    })
-                  }
-                >
-                  <Ionicons name="add" size={16} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
+        {/* قد يعجبك أيضاً — منتجات حقيقية من القاعدة */}
+        {recommendations.length > 0 && (
+          <>
+            <View style={styles.recommendationsHeaderRow}>
+              <Text style={styles.recommendationsTitleText}>قد يعجبك أيضاً</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}>
+                <Text style={styles.viewAllText}>عرض الكل ›</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recommendationsScroll}
+            >
+              {recommendations.map((rec) => (
+                <View key={rec.id} style={styles.recCard}>
+                  <TouchableOpacity
+                    style={styles.recImgWrap}
+                    activeOpacity={0.85}
+                    onPress={() => navigation.navigate('Home', { screen: 'ProductDetails', params: { productId: rec.id } })}
+                  >
+                    {rec.image ? (
+                      <Image source={{ uri: rec.image }} style={styles.recImg} resizeMode="cover" />
+                    ) : (
+                      <View style={[styles.recImg, { alignItems: 'center', justifyContent: 'center' }]}>
+                        <Ionicons name="cube-outline" size={28} color="#94A3B8" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <Text style={styles.recTitleText} numberOfLines={1}>
+                    {rec.name}
+                  </Text>
+
+                  <View style={styles.recPriceRow}>
+                    <View>
+                      <Text style={styles.recPriceText}>{rec.price.toLocaleString()} ر.ي</Text>
+                      {rec.oldPrice ? (
+                        <Text style={styles.recOldPriceText}>{rec.oldPrice.toLocaleString()} ر.ي</Text>
+                      ) : null}
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.recAddBtn}
+                      onPress={() =>
+                        addToCart({
+                          id: rec.id,
+                          productId: rec.id,
+                          name: rec.name,
+                          price: rec.price,
+                          image: rec.image ?? undefined,
+                          emoji: '🛍️',
+                          quantity: 1,
+                          storeId: rec.storeId,
+                          storeName: rec.storeName,
+                        })
+                      }
+                    >
+                      <Ionicons name="add" size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        )}
       </ScrollView>
 
       {/* Fixed Compact Bottom Checkout Footer Card */}
@@ -289,14 +301,13 @@ export default function CartScreen({ navigation }: any) {
           <View style={styles.orderTotalsCol}>
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>المجموع الفرعي ({totalCount} منتجات)</Text>
-              <Text style={styles.totalsVal}>{totalPrice.toLocaleString()} ر.س</Text>
+              <Text style={styles.totalsVal}>{totalPrice.toLocaleString()} ر.ي</Text>
             </View>
 
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>تكلفة التوصيل</Text>
               <View style={styles.shippingValRow}>
-                <Text style={styles.oldShippingText}>25 ر.س</Text>
-                <Text style={styles.freeGreenText}>مجاني</Text>
+                <Text style={styles.totalsLabel}>تُحسب حسب عنوانك عند إتمام الطلب</Text>
               </View>
             </View>
 
@@ -305,21 +316,24 @@ export default function CartScreen({ navigation }: any) {
             <View style={styles.totalsRow}>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={styles.grandTotalLabel}>الإجمالي</Text>
-                <Text style={styles.vatText}>شامل ضريبة القيمة المضافة</Text>
+                <Text style={styles.vatText}>قبل رسوم التوصيل</Text>
               </View>
-              <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.س</Text>
+              <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.ي</Text>
             </View>
           </View>
 
           {/* Bottom Full-Width Checkout Button */}
           <TouchableOpacity
-            style={styles.checkoutBtn}
+            style={[styles.checkoutBtn, activeCartItems.length === 0 && { opacity: 0.5 }]}
             onPress={() => navigation.navigate('AddressSelection')}
+            disabled={activeCartItems.length === 0}
             activeOpacity={0.88}
           >
             <View style={styles.checkoutBtnInner}>
               <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
-              <Text style={styles.checkoutBtnText}>إتمام الطلب</Text>
+              <Text style={styles.checkoutBtnText}>
+                {activeCartItems.length === 0 ? 'حدد منتجاً للمتابعة' : 'إتمام الطلب'}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -363,7 +377,7 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
   browseBtn: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 16,
@@ -407,7 +421,7 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   headerBadgePill: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -457,7 +471,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -488,7 +502,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     borderRadius: 3,
   },
   progressLabelsRow: {
@@ -606,8 +620,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   checkboxSquareActive: {
-    backgroundColor: '#1E3A8A',
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554',
+    borderColor: '#172554',
   },
   itemPriceText: {
     fontFamily: FONTS.bold,
@@ -655,7 +669,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontFamily: FONTS.bold,
     fontSize: 12.5,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   recommendationsScroll: {
     flexDirection: 'row-reverse',
@@ -722,7 +736,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 8,
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -846,7 +860,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   checkoutBtn: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     borderRadius: 16,
     height: 48,
     justifyContent: 'center',

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   StatusBar,
   TextInput,
@@ -14,143 +13,56 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
-// Fallback/Mockup Stores to match the screenshot 100% when DB store count is low
-const MOCKUP_STORES_FULL = [
-  {
-    id: 'noon',
-    store_name: 'نون',
-    store_category: 'إلكترونيات، أزياء، منزل',
-    rating: 4.9,
-    reviews_count: '20K+',
-    banner_bg: '#FEF08A',
-    logo_text: 'نون',
-    logo_bg: '#FEE500',
-    delivery_time: '2-3 يوم',
-    offers_count: '25 عرض',
-    thumbnails: [
-      'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80',
-    ],
-    is_verified: true,
-  },
-  {
-    id: 'amazon',
-    store_name: 'أمازون',
-    store_category: 'إلكترونيات، كتب، ألعاب',
-    rating: 4.7,
-    reviews_count: '15K+',
-    banner_bg: '#1E293B',
-    logo_text: 'amazon',
-    logo_bg: '#FFFFFF',
-    logo_text_color: '#000000',
-    delivery_time: 'يوم واحد',
-    offers_count: '18 عرض',
-    thumbnails: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=200&q=80',
-    ],
-    is_verified: true,
-  },
-  {
-    id: 'namshi',
-    store_name: 'نمشي',
-    store_category: 'أزياء، أحذية، إكسسوارات',
-    rating: 4.6,
-    reviews_count: '12K+',
-    banner_bg: '#334155',
-    logo_text: 'NAMSHI',
-    logo_bg: '#FFFFFF',
-    logo_text_color: '#000000',
-    delivery_time: '2-2 يوم',
-    offers_count: '22 عرض',
-    thumbnails: [
-      'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=200&q=80',
-    ],
-    is_verified: true,
-  },
-  {
-    id: 'shein',
-    store_name: 'شي إن',
-    store_category: 'أزياء، نسائية، رجالية، أطفال',
-    rating: 4.5,
-    reviews_count: '11K+',
-    banner_bg: '#0F172A',
-    logo_text: 'SHEIN',
-    logo_bg: '#000000',
-    logo_text_color: '#FFFFFF',
-    delivery_time: '3-3 يوم',
-    offers_count: '20 عرض',
-    thumbnails: [
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=200&q=80',
-    ],
-    is_verified: true,
-  },
-  {
-    id: 'express',
-    store_name: 'علي إكسبريس',
-    store_category: 'إلكترونيات، منزل، أدوات',
-    rating: 4.4,
-    reviews_count: '9K+',
-    banner_bg: '#EA580C',
-    logo_text: 'AliExpress',
-    logo_bg: '#FF4747',
-    logo_text_color: '#FFFFFF',
-    delivery_time: '5-12 يوم',
-    offers_count: '79 عرض',
-    thumbnails: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=200&q=80',
-    ],
-    is_verified: true,
-  },
-  {
-    id: 'vogacloset',
-    store_name: 'فوغا كلوسيت',
-    store_category: 'أزياء، فاخرة، ساعات، حقائب',
-    rating: 4.8,
-    reviews_count: '8K+',
-    banner_bg: '#475569',
-    logo_text: 'VOGACLOSET',
-    logo_bg: '#FFFFFF',
-    logo_text_color: '#000000',
-    delivery_time: '2-3 يوم',
-    offers_count: '12 عرض',
-    thumbnails: [
-      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80',
-      'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=200&q=80',
-    ],
-    is_verified: true,
-  },
-];
+// ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
+const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
 
 const CATEGORY_CHIPS = [
-  { id: 'all', name: 'الكل', icon: 'apps-outline' },
+  { id: 'all', name: 'الكل', icon: 'grid' },
   { id: 'fashion', name: 'أزياء وموضة', icon: 'shirt-outline' },
   { id: 'electronics', name: 'إلكترونيات', icon: 'hardware-chip-outline' },
-  { id: 'home', name: 'المنزل والمطبخ', icon: 'home-outline' },
   { id: 'beauty', name: 'الجمال والعناية', icon: 'sparkles-outline' },
+  { id: 'home', name: 'المنزل والمطبخ', icon: 'home-outline' },
   { id: 'sports', name: 'رياضة', icon: 'barbell-outline' },
+];
+
+const STORE_CAROUSEL_CARDS = [
+  {
+    id: 's1',
+    title: 'تسوق من أفضل المتاجر',
+    sub: 'آلاف المنتجات، عروض حصرية وتوصيل سريع وأمان كامل',
+    btnText: 'تسوق الآن',
+    img: require('../../../../assets/images/bannerstoor/delfre.png'),
+  },
+  {
+    id: 's2',
+    title: 'متاجر موثوقة 100% 🏬',
+    sub: 'أفضل الماركات العالمية والمحلية في مكان واحد مع ضمان الجودة',
+    btnText: 'استكشف المتاجر',
+    img: require('../../../../assets/images/home/premium-hero-desktop.png'),
+  },
+  {
+    id: 's3',
+    title: 'توصيل مجاني للطلبات 🚚',
+    sub: 'شحن مجاني وسريع لكافة المتاجر المختارة على طلباتك الأولى',
+    btnText: 'تصفح المتاجر',
+    img: require('../../../../assets/images/bannerstoor/delfre.png'),
+  },
+  {
+    id: 's4',
+    title: 'عروض وحسومات المتاجر ⚡',
+    sub: 'تخفيضات تصل إلى 60% على المنتجات المتميزة والأكثر طلباً',
+    btnText: 'شاهد العروض',
+    img: require('../../../../assets/images/bannerstoor/add.png'),
+  },
 ];
 
 export default function StoresListScreen({ navigation, route }: any) {
   const layout = useCustomerLayout();
-  const columns = layout.wide ? 3 : layout.tablet ? 2 : 2; // 2 columns on mobile matching mockup
-  const gap = layout.compact ? 12 : 16;
-  const cardWidth = (layout.usableWidth - gap * (columns - 1)) / columns;
-
   const categoryId = route?.params?.categoryId;
   const isDatabaseCategory = Boolean(categoryId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(categoryId));
   const fallbackCategory = isDatabaseCategory ? undefined : route?.params?.filter;
@@ -161,6 +73,20 @@ export default function StoresListScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>(fallbackCategory || 'all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [heroIndex, setHeroIndex] = useState<number>(0);
+  const heroScrollRef = React.useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % STORE_CAROUSEL_CARDS.length;
+        const cardW = layout.usableWidth || 340;
+        heroScrollRef.current?.scrollTo({ x: nextIndex * cardW, animated: true });
+        return nextIndex;
+      });
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [layout.usableWidth]);
 
   const loadStores = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
@@ -190,9 +116,11 @@ export default function StoresListScreen({ navigation, route }: any) {
     return () => clearTimeout(timer);
   }, [loadStores]);
 
-  useFocusEffect(useCallback(() => {
-    loadStores(true);
-  }, [loadStores]));
+  useFocusEffect(
+    useCallback(() => {
+      loadStores(true);
+    }, [loadStores])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -206,100 +134,107 @@ export default function StoresListScreen({ navigation, route }: any) {
     setFavorites(next);
   };
 
-  // Combine real database stores with mockup stores to ensure 100% full rich mockup matching
-  const displayStoresList = stores.length > 0
-    ? stores.map((s, idx) => ({
-        id: s.id,
-        store_name: s.store_name,
-        store_category: s.store_category || 'متجر شامل',
-        rating: s.rating || 4.8,
-        reviews_count: `${s.total_reviews || 100}+`,
-        banner_bg: MOCKUP_STORES_FULL[idx % MOCKUP_STORES_FULL.length].banner_bg,
-        logo_url: s.store_logo_url,
-        logo_text: s.store_name,
-        delivery_time: '2-3 يوم',
-        offers_count: 'عرض متاح',
-        thumbnails: MOCKUP_STORES_FULL[idx % MOCKUP_STORES_FULL.length].thumbnails,
-        is_verified: true,
-      }))
-    : MOCKUP_STORES_FULL;
+  // بيانات حقيقية فقط: التقييم وعدد المراجعات كما في القاعدة، ولا متاجر وهمية عند الفراغ
+  const displayStoresList = stores.map((s, idx) => ({
+    id: s.id,
+    store_name: s.store_name,
+    store_category: s.store_category || 'متجر عام',
+    rating: Number(s.rating ?? 0),
+    reviews_count: Number(s.total_reviews ?? 0),
+    logo_url: s.store_logo_url,
+    logo_bg: STORE_LOGO_COLORS[idx % STORE_LOGO_COLORS.length],
+    logo_text: s.store_name?.slice(0, 2) || 'متجر',
+    logo_text_color: '#172554',
+    is_verified: s.is_approved === true,
+  }));
 
-  const filteredStores = activeCategory && activeCategory !== 'all'
-    ? displayStoresList.filter((s) => s.store_category.includes(activeCategory) || activeCategory === 'all')
-    : displayStoresList;
+  const filteredStores =
+    activeCategory && activeCategory !== 'all'
+      ? displayStoresList.filter(
+          (s) => s.store_category.includes(activeCategory) || activeCategory === 'all'
+        )
+      : displayStoresList;
 
-  const featuredStore = displayStoresList[0] || MOCKUP_STORES_FULL[0];
-
-  const renderStoreCard = ({ item }: { item: any }) => {
+  const renderStoreRow = (item: any) => {
     const isFav = favorites.has(item.id);
     return (
       <TouchableOpacity
         key={item.id}
-        activeOpacity={0.92}
+        activeOpacity={0.9}
         onPress={() => navigation.navigate('StoreDetails', { storeId: item.id })}
-        style={styles.storeGridCard}
+        style={styles.storeRowCard}
       >
-        {/* Banner Top Header */}
-        <View style={[styles.storeCardBanner, { backgroundColor: item.banner_bg || '#1E3A8A' }]}>
-          <Text style={[styles.bannerLogoText, item.logo_text_color && { color: item.logo_text_color }]}>
-            {item.logo_text}
-          </Text>
-          <TouchableOpacity
-            style={styles.cardHeartBtn}
-            onPress={(e) => {
-              e.stopPropagation();
-              toggleFavorite(item.id);
-            }}
-          >
-            <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={15} color={isFav ? '#EF4444' : '#475569'} />
-          </TouchableOpacity>
+        {/* Right Side: Round Logo Avatar */}
+        <View style={styles.storeRowLogoWrap}>
+          {item.logo_url ? (
+            <Image source={{ uri: item.logo_url }} style={styles.storeRowLogo} />
+          ) : item.logo_bg ? (
+            <View style={[styles.storeRowLogoFallback, { backgroundColor: item.logo_bg }]}>
+              <Text
+                style={[
+                  styles.storeRowLogoFallbackText,
+                  item.logo_text_color && { color: item.logo_text_color },
+                ]}
+                numberOfLines={2}
+              >
+                {item.logo_text}
+              </Text>
+            </View>
+          ) : (
+            <Ionicons name="storefront-outline" size={26} color="#172554" />
+          )}
+          {item.is_verified ? (
+            <View style={styles.storeRowVerifiedBadge}>
+              <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+            </View>
+          ) : null}
         </View>
 
-        {/* Store Title & Badges */}
-        <View style={styles.storeCardBody}>
-          <View style={styles.storeTitleRow}>
-            <Text style={styles.storeCardName} numberOfLines={1}>
-              {item.store_name}
-            </Text>
-            {item.is_verified ? (
-              <Ionicons name="checkmark-circle" size={15} color="#2563EB" style={{ marginLeft: 3 }} />
-            ) : null}
-          </View>
-
-          <Text style={styles.storeCardCategory} numberOfLines={1}>
+        {/* Center-Right: Title, Categories, Free Delivery Pill */}
+        <View style={styles.storeRowMainInfo}>
+          <Text style={styles.storeRowName} numberOfLines={1}>
+            {item.store_name}
+          </Text>
+          <Text style={styles.storeRowCategory} numberOfLines={1}>
             {item.store_category}
           </Text>
 
-          {/* Rating */}
-          <View style={styles.storeRatingRow}>
-            <Ionicons name="star" size={12} color="#F59E0B" />
-            <Text style={styles.ratingNumText}>{item.rating}</Text>
-            <Text style={styles.reviewsNumText}>({item.reviews_count})</Text>
+          <View style={styles.freeDeliveryPill}>
+            <Ionicons name="cube-outline" size={11} color="#059669" />
+            <Text style={styles.freeDeliveryText}>توصيل مجاني</Text>
           </View>
-
-          {/* Mini Thumbnails Row */}
-          <View style={styles.thumbnailsRow}>
-            {item.thumbnails.map((thumbUri: string, index: number) => (
-              <View key={index} style={styles.thumbWrap}>
-                <Image source={{ uri: thumbUri }} style={styles.thumbImg} resizeMode="cover" />
-              </View>
-            ))}
-          </View>
-
-          {/* Info Details Row */}
-          <View style={styles.infoDetailsRow}>
-            <Text style={styles.infoDetailText}>🚚 {item.delivery_time}</Text>
-            <Text style={styles.infoDetailText}>🏷️ {item.offers_count}</Text>
-          </View>
-
-          {/* Action Enter Store Button */}
-          <TouchableOpacity
-            style={styles.enterStoreButton}
-            onPress={() => navigation.navigate('StoreDetails', { storeId: item.id })}
-          >
-            <Text style={styles.enterStoreBtnText}>ادخل المتجر</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Stats Column: Rating & Reviews (بيانات حقيقية من القاعدة) */}
+        <View style={styles.storeRowStatsCol}>
+          <View style={styles.statSubCol}>
+            <View style={styles.statIconRow}>
+              <Ionicons name="star" size={13} color={item.rating > 0 ? '#F59E0B' : '#CBD5E1'} />
+              <Text style={styles.statValText}>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</Text>
+            </View>
+            <Text style={styles.statLabelText}>التقييم</Text>
+          </View>
+
+          <View style={styles.statSubCol}>
+            <View style={styles.statIconRow}>
+              <Ionicons name="chatbubble-ellipses-outline" size={13} color="#64748B" />
+              <Text style={styles.statValText}>{item.reviews_count}</Text>
+            </View>
+            <Text style={styles.statLabelText}>التقييمات</Text>
+          </View>
+        </View>
+
+        {/* Far-Left: Heart Button */}
+        <TouchableOpacity
+          style={styles.storeRowHeartBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            toggleFavorite(item.id);
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={18} color={isFav ? '#172554' : '#64748B'} />
+        </TouchableOpacity>
       </TouchableOpacity>
     );
   };
@@ -308,42 +243,37 @@ export default function StoresListScreen({ navigation, route }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header Section */}
+      {/* Clean Minimalist Header Matching HomeScreen */}
       <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
-          </TouchableOpacity>
-
-          <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitleText}>المتاجر</Text>
-            <Text style={styles.headerSubTitleText}>تسوق من آلاف المتاجر الموثوقة</Text>
+        {/* Search Row: Search Input + Dark Filter Button */}
+        <View style={styles.searchRowContainer}>
+          <View style={styles.searchBoxRow}>
+            <Ionicons name="search-outline" size={19} color="#94A3B8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="ابحث عن متجر أو منتج..."
+              placeholderTextColor="#94A3B8"
+              value={search}
+              onChangeText={setSearch}
+              textAlign={Platform.OS === 'web' ? 'right' : 'left'}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
           </View>
 
-          <TouchableOpacity style={styles.headerIconButton}>
-            <Ionicons name="options-outline" size={20} color="#0F172A" />
+          <TouchableOpacity
+            style={styles.darkFilterBtn}
+            onPress={() => setSearch('')}
+            activeOpacity={0.86}
+          >
+            <Ionicons name="options-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchBoxRow}>
-          <Ionicons name="search-outline" size={19} color="#94A3B8" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="ابحث عن متجر أو منتج..."
-            placeholderTextColor="#94A3B8"
-            value={search}
-            onChangeText={setSearch}
-            textAlign={Platform.OS === 'web' ? 'right' : 'left'}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Horizontal Category Chips Bar */}
+        {/* Horizontal Category Chips */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -356,15 +286,18 @@ export default function StoresListScreen({ navigation, route }: any) {
                 key={chip.id}
                 style={[styles.chipPill, isActive && styles.chipPillActive]}
                 onPress={() => setActiveCategory(chip.id)}
-                activeOpacity={0.8}
+                activeOpacity={0.82}
               >
-                <Ionicons
-                  name={chip.icon as any}
-                  size={16}
-                  color={isActive ? '#FFFFFF' : '#475569'}
-                  style={{ marginLeft: 6 }}
-                />
-                <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{chip.name}</Text>
+                <View style={[styles.chipIconWrap, isActive && styles.chipIconWrapActive]}>
+                  <Ionicons
+                    name={chip.icon as any}
+                    size={14}
+                    color={isActive ? '#172554' : '#64748B'}
+                  />
+                </View>
+                <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                  {chip.name}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -374,101 +307,88 @@ export default function StoresListScreen({ navigation, route }: any) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#172554" />}
       >
-        {/* Featured Store Banner */}
-        <View style={styles.featuredCard}>
-          <View style={styles.featuredTextCol}>
-            <View style={styles.featuredBadgePill}>
-              <Text style={styles.featuredBadgeText}>متجر مميز</Text>
-            </View>
+        {/* 4 Swipable Content Cards Carousel for StoresListScreen */}
+        <ScrollView
+          ref={heroScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.heroCarouselScroll}
+          onScroll={(e) => {
+            const offsetX = e.nativeEvent.contentOffset.x;
+            const cardW = layout.usableWidth || 340;
+            const index = Math.round(offsetX / cardW);
+            setHeroIndex(Math.max(0, Math.min(STORE_CAROUSEL_CARDS.length - 1, index)));
+          }}
+          scrollEventThrottle={16}
+        >
+          {STORE_CAROUSEL_CARDS.map((card) => (
+            <View key={card.id} style={[styles.heroCardContainer, { width: layout.usableWidth || '100%' }]}>
+              <View style={styles.heroTextCol}>
+                <Text style={styles.heroTitleText}>{card.title}</Text>
+                <Text style={styles.heroSubTitleText}>{card.sub}</Text>
 
-            <Text style={styles.featuredStoreName}>{featuredStore.store_name}</Text>
-            <Text style={styles.featuredStoreCat}>{featuredStore.store_category}</Text>
-
-            <View style={styles.featuredRatingRow}>
-              <Ionicons name="star" size={13} color="#F59E0B" />
-              <Text style={styles.featuredRatingText}>{featuredStore.rating} ({featuredStore.reviews_count} تقييم)</Text>
-            </View>
-
-            <View style={styles.featuredTagsRow}>
-              <View style={styles.greenTagPill}>
-                <Text style={styles.greenTagText}>🚚 توصيل خلال 60 دقيقة</Text>
+                <TouchableOpacity
+                  style={styles.heroCtaBtn}
+                  onPress={() => setActiveCategory('all')}
+                  activeOpacity={0.88}
+                >
+                  <Text style={styles.heroCtaText}>{card.btnText}</Text>
+                  <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
+                </TouchableOpacity>
               </View>
-              <View style={styles.purpleTagPill}>
-                <Text style={styles.purpleTagText}>{featuredStore.offers_count}</Text>
+
+              <View style={styles.heroGraphicCol}>
+                <Image source={card.img} style={styles.heroGraphicImg} resizeMode="contain" />
               </View>
             </View>
+          ))}
+        </ScrollView>
 
-            <TouchableOpacity
-              style={styles.featuredEnterBtn}
-              onPress={() => navigation.navigate('StoreDetails', { storeId: featuredStore.id })}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.featuredEnterBtnText}>ادخل المتجر</Text>
-              <Ionicons name="arrow-back" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Featured Graphic Illustration */}
-          <View style={styles.featuredGraphicCol}>
-            <Ionicons name="bag-handle" size={72} color="#1E3A8A" />
-          </View>
-
-          {/* Carousel Dots */}
-          <View style={styles.carouselDotsRow}>
-            <View style={[styles.dot, styles.dotActive]} />
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-          </View>
+        {/* 3 Fixed Aesthetic Dots */}
+        <View style={styles.carouselDotsRow}>
+          <View style={[styles.dot, heroIndex % 3 === 0 && styles.dotActive]} />
+          <View style={[styles.dot, heroIndex % 3 === 1 && styles.dotActive]} />
+          <View style={[styles.dot, heroIndex % 3 === 2 && styles.dotActive]} />
         </View>
 
-        {/* Section Header: المتاجر المميزة */}
+        {/* Section Header */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitleText}>المتاجر المميزة</Text>
-          <TouchableOpacity onPress={() => setActiveCategory('all')}>
+          <View style={styles.sectionTitleGroup}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitleText}>المتاجر المميزة</Text>
+              <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
+            </View>
+            <Text style={styles.sectionSubTitleText}>متاجر موثوقة وتجربة تسوق رائعة</Text>
+          </View>
+
+          <TouchableOpacity onPress={() => setActiveCategory('all')} activeOpacity={0.75}>
             <Text style={styles.viewAllText}>عرض الكل ›</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Stores Grid */}
+        {/* Stores List */}
         {loading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color="#172554" />
           </View>
         ) : (
-          <View style={styles.storesGridContainer}>
-            {filteredStores.map((item) => renderStoreCard({ item }))}
+          <View style={styles.storesListContainer}>
+            {filteredStores.length === 0 ? (
+              <View style={styles.emptyStoresState}>
+                <Ionicons name="storefront-outline" size={44} color="#CBD5E1" />
+                <Text style={styles.emptyStoresTitle}>لا توجد متاجر متاحة حالياً</Text>
+                <Text style={styles.emptyStoresSub}>
+                  نعمل على إضافة متاجر جديدة في منطقتك. عاود المحاولة قريباً.
+                </Text>
+              </View>
+            ) : (
+              filteredStores.map((item) => renderStoreRow(item))
+            )}
           </View>
         )}
-
-        {/* Footer Benefits Bar matching mockup */}
-        <View style={styles.benefitsFooterRow}>
-          <View style={styles.benefitItem}>
-            <Ionicons name="lock-closed-outline" size={18} color="#1E3A8A" />
-            <Text style={styles.benefitTitle}>دفع آمن</Text>
-            <Text style={styles.benefitSub}>طرق دفع آمنة ومشفرة</Text>
-          </View>
-
-          <View style={styles.benefitItem}>
-            <Ionicons name="pricetag-outline" size={18} color="#1E3A8A" />
-            <Text style={styles.benefitTitle}>أفضل الأسعار</Text>
-            <Text style={styles.benefitSub}>نضمن لك أفضل الأسعار</Text>
-          </View>
-
-          <View style={styles.benefitItem}>
-            <Ionicons name="refresh-outline" size={18} color="#1E3A8A" />
-            <Text style={styles.benefitTitle}>إرجاع سهل</Text>
-            <Text style={styles.benefitSub}>إرجاع مجاني 15 يوم</Text>
-          </View>
-
-          <View style={styles.benefitItem}>
-            <Ionicons name="shield-checkmark-outline" size={18} color="#1E3A8A" />
-            <Text style={styles.benefitTitle}>متاجر موثوقة</Text>
-            <Text style={styles.benefitSub}>جميع المتاجر موثوقة</Text>
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
@@ -481,84 +401,81 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'ios' ? 44 : 24,
+    paddingTop: Platform.OS === 'ios' ? 48 : 18,
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    paddingBottom: 12,
   },
-  headerRow: {
+  searchRowContainer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
     marginBottom: 12,
-  },
-  headerIconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  headerCenterCol: {
-    alignItems: 'center',
-  },
-  headerTitleText: {
-    fontFamily: FONTS.bold,
-    fontSize: 18,
-    color: '#0F172A',
-  },
-  headerSubTitleText: {
-    fontFamily: FONTS.regular,
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
   },
   searchBoxRow: {
+    flex: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F1F5F9',
     borderRadius: 16,
-    paddingHorizontal: 12,
-    height: 46,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: 12,
+    paddingHorizontal: 14,
+    height: 48,
   },
   searchInput: {
     flex: 1,
     fontFamily: FONTS.regular,
-    fontSize: 13,
+    fontSize: 13.5,
     color: '#0F172A',
     marginHorizontal: 8,
     textAlign: 'right',
   },
+  darkFilterBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: '#172554',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#172554',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   categoryChipsScroll: {
     flexDirection: 'row-reverse',
-    gap: 8,
+    gap: 10,
     paddingVertical: 2,
   },
   chipPill: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: 14,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#F8FAFC',
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    gap: 7,
   },
   chipPillActive: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554',
+    borderColor: '#172554',
+  },
+  chipIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
+  },
+  chipIconWrapActive: {
+    backgroundColor: '#FFFFFF',
   },
   chipText: {
     fontFamily: FONTS.medium,
-    fontSize: 12,
-    color: '#475569',
+    fontSize: 12.5,
+    color: '#334155',
   },
   chipTextActive: {
     color: '#FFFFFF',
@@ -566,110 +483,85 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 36,
+    paddingTop: 8,
+    paddingBottom: 40,
   },
-  featuredCard: {
-    backgroundColor: '#F0F5FF',
-    borderRadius: 22,
-    padding: 16,
+  heroCarouselScroll: {
+    paddingBottom: 4,
+  },
+  heroCardContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 24,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     position: 'relative',
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
   },
-  featuredTextCol: {
+  heroTextCol: {
     flex: 1,
     alignItems: 'flex-end',
+    zIndex: 2,
   },
-  featuredBadgePill: {
-    backgroundColor: '#DBEAFE',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginBottom: 6,
-  },
-  featuredBadgeText: {
+  heroTitleText: {
     fontFamily: FONTS.bold,
-    fontSize: 10.5,
-    color: '#1E3A8A',
-  },
-  featuredStoreName: {
-    fontFamily: FONTS.bold,
-    fontSize: 22,
+    fontSize: 20,
     color: '#0F172A',
+    textAlign: 'right',
   },
-  featuredStoreCat: {
+  heroSubTitleText: {
     fontFamily: FONTS.regular,
     fontSize: 11.5,
     color: '#64748B',
-    marginTop: 2,
+    lineHeight: 18,
+    marginTop: 4,
+    textAlign: 'right',
   },
-  featuredRatingRow: {
+  heroCtaBtn: {
+    backgroundColor: '#172554',
     flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
-  },
-  featuredRatingText: {
-    fontFamily: FONTS.medium,
-    fontSize: 11,
-    color: '#475569',
-  },
-  featuredTagsRow: {
-    flexDirection: 'row-reverse',
-    gap: 6,
-    marginTop: 8,
-  },
-  greenTagPill: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  greenTagText: {
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-    color: '#059669',
-  },
-  purpleTagPill: {
-    backgroundColor: '#E0E7FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  purpleTagText: {
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-    color: '#1E3A8A',
-  },
-  featuredEnterBtn: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 36,
-    borderRadius: 18,
-    marginTop: 14,
-  },
-  featuredEnterBtnText: {
-    fontFamily: FONTS.bold,
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-  featuredGraphicCol: {
-    width: 90,
-    height: 90,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
+    height: 38,
+    borderRadius: 16,
+    marginTop: 14,
+    gap: 6,
+    shadowColor: '#172554',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  heroCtaText: {
+    fontFamily: FONTS.bold,
+    fontSize: 12.5,
+    color: '#FFFFFF',
+  },
+  heroGraphicCol: {
+    width: 120,
+    height: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  heroGraphicImg: {
+    width: '100%',
+    height: '100%',
   },
   carouselDotsRow: {
     position: 'absolute',
-    bottom: 8,
-    left: '42%',
+    bottom: 10,
+    left: '46%',
     flexDirection: 'row',
-    gap: 4,
+    alignItems: 'center',
+    gap: 5,
   },
   dot: {
     width: 6,
@@ -678,173 +570,189 @@ const styles = StyleSheet.create({
     backgroundColor: '#CBD5E1',
   },
   dotActive: {
-    backgroundColor: '#1E3A8A',
-    width: 14,
+    backgroundColor: '#172554',
+    width: 16,
   },
   sectionHeaderRow: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
+  },
+  sectionTitleGroup: {
+    alignItems: 'flex-end',
+  },
+  sectionTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
   },
   sectionTitleText: {
     fontFamily: FONTS.bold,
-    fontSize: 17,
+    fontSize: 18,
     color: '#0F172A',
+  },
+  sectionSubTitleText: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
   },
   viewAllText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#1E3A8A',
+    color: '#64748B',
   },
-  storesGridContainer: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 14,
-    marginBottom: 24,
-  },
-  storeGridCard: {
-    width: '48.5%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  storeCardBanner: {
-    height: 64,
+  emptyStoresState: {
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    paddingVertical: 56,
+    paddingHorizontal: 24,
+    gap: 10,
   },
-  bannerLogoText: {
-    fontFamily: FONTS.bold,
+  emptyStoresTitle: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#334155',
+    fontFamily: FONTS.bold,
+    textAlign: 'center',
   },
-  cardHeartBtn: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  emptyStoresSub: {
+    fontSize: 13,
+    color: '#94A3B8',
+    fontFamily: FONTS.regular,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  storesListContainer: {
+    gap: 12,
+  },
+  storeRowCard: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  storeRowLogoWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    position: 'relative',
   },
-  storeCardBody: {
-    padding: 10,
+  storeRowLogo: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 29,
+    resizeMode: 'cover',
+  },
+  storeRowLogoFallback: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+  },
+  storeRowLogoFallbackText: {
+    fontFamily: FONTS.bold,
+    fontSize: 11,
+    textAlign: 'center',
+  },
+  storeRowVerifiedBadge: {
+    position: 'absolute',
+    bottom: -1,
+    left: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#172554',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  storeRowMainInfo: {
+    flex: 1,
+    marginRight: 12,
     alignItems: 'flex-end',
   },
-  storeTitleRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-  },
-  storeCardName: {
+  storeRowName: {
     fontFamily: FONTS.bold,
-    fontSize: 13.5,
+    fontSize: 14.5,
     color: '#0F172A',
     textAlign: 'right',
   },
-  storeCardCategory: {
+  storeRowCategory: {
     fontFamily: FONTS.regular,
-    fontSize: 10.5,
+    fontSize: 11,
     color: '#64748B',
     marginTop: 2,
     textAlign: 'right',
   },
-  storeRatingRow: {
+  freeDeliveryPill: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 3,
-    marginTop: 4,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginTop: 6,
+    gap: 4,
   },
-  ratingNumText: {
+  freeDeliveryText: {
     fontFamily: FONTS.bold,
-    fontSize: 11,
+    fontSize: 10,
+    color: '#059669',
+  },
+  storeRowStatsCol: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 12,
+  },
+  statSubCol: {
+    alignItems: 'center',
+  },
+  statIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  statValText: {
+    fontFamily: FONTS.bold,
+    fontSize: 12,
     color: '#0F172A',
   },
-  reviewsNumText: {
+  statLabelText: {
     fontFamily: FONTS.regular,
     fontSize: 9.5,
     color: '#94A3B8',
-  },
-  thumbnailsRow: {
-    flexDirection: 'row-reverse',
-    gap: 4,
-    marginTop: 8,
-    marginBottom: 8,
-    width: '100%',
-    justifyContent: 'space-between',
-  },
-  thumbWrap: {
-    flex: 1,
-    height: 38,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#E2E8F0',
-  },
-  thumbImg: {
-    width: '100%',
-    height: '100%',
-  },
-  infoDetailsRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    width: '100%',
     marginTop: 2,
-    marginBottom: 8,
   },
-  infoDetailText: {
-    fontFamily: FONTS.medium,
-    fontSize: 9.5,
-    color: '#64748B',
-  },
-  enterStoreButton: {
-    width: '100%',
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#F0F5FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  enterStoreBtnText: {
-    fontFamily: FONTS.bold,
-    fontSize: 11.5,
-    color: '#1E3A8A', // Dark Royal Blue
-  },
-  loadingWrap: {
-    height: 160,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  benefitsFooterRow: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
+  storeRowHeartBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#F8FAFC',
-    borderRadius: 18,
-    padding: 14,
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    marginTop: 8,
   },
-  benefitItem: {
-    width: '46%',
-    alignItems: 'flex-end',
-  },
-  benefitTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 11.5,
-    color: '#0F172A',
-    marginTop: 4,
-  },
-  benefitSub: {
-    fontFamily: FONTS.regular,
-    fontSize: 9.5,
-    color: '#64748B',
-    marginTop: 1,
+  loadingWrap: {
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

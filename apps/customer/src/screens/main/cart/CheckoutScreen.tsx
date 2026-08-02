@@ -23,43 +23,15 @@ import {
   getAddresses,
   validateCoupon,
   appStorage,
+  estimateDeliveryFees,
+  isCartItemSelected,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 
-// Mock payment methods matching user mockup
+// السيرفر (place_order_group) يقبل الدفع نقداً فقط حالياً ويرفض غيره بـ
+// PAYMENT_METHOD_UNAVAILABLE، لذا تُعرض الطرق الأخرى معطّلة كـ«قريباً» بدل
+// السماح باختيارها ثم إرسال cash خلف الكواليس.
 const PAYMENT_OPTIONS = [
-  {
-    id: 'mada',
-    name: 'مدى',
-    subtitle: '•••• 4242',
-    iconType: 'card',
-    brand: 'MADA',
-    brandBg: '#059669',
-  },
-  {
-    id: 'apple_pay',
-    name: 'Apple Pay',
-    subtitle: 'دفع سريع وآمن بنقرة واحدة',
-    iconType: 'logo-apple',
-    brand: 'APPLE',
-    brandBg: '#0F172A',
-  },
-  {
-    id: 'card',
-    name: 'فيزا / ماستركارد',
-    subtitle: 'بطاقات ائتمان / مدى',
-    iconType: 'card-outline',
-    brand: 'VISA',
-    brandBg: '#1E3A8A',
-  },
-  {
-    id: 'tamara',
-    name: 'تمارا',
-    subtitle: 'قسّم فاتورتك على 4 دفعات بدون فوائد',
-    iconType: 'calendar-outline',
-    brand: 'TAMARA',
-    brandBg: '#F59E0B',
-  },
   {
     id: 'cash',
     name: 'الدفع عند الاستلام',
@@ -67,21 +39,43 @@ const PAYMENT_OPTIONS = [
     iconType: 'cash-outline',
     brand: 'COD',
     brandBg: '#059669',
+    available: true,
   },
   {
-    id: 'bank_transfer',
-    name: 'تحويل بنكي',
-    subtitle: 'تحويل مباشر إلى حساب المؤسسة',
+    id: 'jawali',
+    name: 'محفظة جوالي',
+    subtitle: 'سيتوفر قريباً',
+    iconType: 'phone-portrait-outline',
+    brand: 'جوالي',
+    brandBg: '#94A3B8',
+    available: false,
+  },
+  {
+    id: 'kuraimi',
+    name: 'الكريمي',
+    subtitle: 'سيتوفر قريباً',
     iconType: 'business-outline',
-    brand: 'BANK',
-    brandBg: '#64748B',
+    brand: 'كريمي',
+    brandBg: '#94A3B8',
+    available: false,
+  },
+  {
+    id: 'card',
+    name: 'بطاقة بنكية',
+    subtitle: 'سيتوفر قريباً',
+    iconType: 'card-outline',
+    brand: 'CARD',
+    brandBg: '#94A3B8',
+    available: false,
   },
 ];
 
 export default function CheckoutScreen({ navigation, route }: any) {
-  const { getTotalPrice, items, getItemsByStore, clearCart } = useCartStore();
+  const { items, getSelectedByStore, clearSelected } = useCartStore();
   const user = useAuthStore((s) => s.user);
-  const cartTotal = getTotalPrice();
+  // يُطلب فقط ما حدده العميل في السلة
+  const selectedItems = items.filter(isCartItemSelected);
+  const cartTotal = selectedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   // Params passed from AddressSelectionScreen or fallback
   const paramAddressId = route.params?.selectedAddressId;
@@ -92,7 +86,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
   const [loadingAddress, setLoadingAddress] = useState(true);
 
   // Payment Selection
-  const [selectedPayment, setSelectedPayment] = useState('mada');
+  const [selectedPayment, setSelectedPayment] = useState('cash');
   const [showAllPaymentMethods, setShowAllPaymentMethods] = useState(false);
 
   // Order Placement State
@@ -115,10 +109,48 @@ export default function CheckoutScreen({ navigation, route }: any) {
   // Summary Toggle
   const [summaryExpanded, setSummaryExpanded] = useState(true);
 
-  const storeCount = Math.max(1, Object.keys(getItemsByStore()).length);
-  const deliveryFee = 0; // Free delivery matching mockup
+  const storeCount = Math.max(1, Object.keys(getSelectedByStore()).length);
+
+  // رسوم التوصيل الحقيقية: تُقدَّر بنفس منطق السيرفر (منطقة توصيل حسب مدينة العنوان لكل متجر)
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [feeLoading, setFeeLoading] = useState(true);
+  const [feeMatched, setFeeMatched] = useState(false);
+  const [feeError, setFeeError] = useState(false);
+
   const finalTotal = Math.max(0, cartTotal + deliveryFee - (couponApplied ? discount : 0));
-  const totalCount = items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalCount = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  useEffect(() => {
+    let active = true;
+    const city = selectedAddress?.city;
+    const merchantIds = Object.keys(getSelectedByStore());
+    if (!city || merchantIds.length === 0) {
+      setDeliveryFee(0);
+      setFeeMatched(false);
+      setFeeLoading(false);
+      return;
+    }
+    setFeeLoading(true);
+    setFeeError(false);
+    estimateDeliveryFees(city, merchantIds)
+      .then((est) => {
+        if (!active) return;
+        setDeliveryFee(est.total);
+        setFeeMatched(est.matched);
+      })
+      .catch(() => {
+        if (!active) return;
+        setDeliveryFee(0);
+        setFeeMatched(false);
+        setFeeError(true);
+      })
+      .finally(() => {
+        if (active) setFeeLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedAddress?.city, selectedItems.length]);
 
   // Fetch or resolve delivery address
   useEffect(() => {
@@ -155,6 +187,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
+    // السيرفر يرفض الكوبون عندما تضم السلة أكثر من متجر (GROUP_COUPON_REQUIRES_SINGLE_STORE)
+    if (storeCount > 1) {
+      setDiscount(0);
+      setCouponApplied(false);
+      setCouponMsg('كود الخصم متاح فقط عند الطلب من متجر واحد. قسّم طلبك أو احذف منتجات المتاجر الأخرى.');
+      return;
+    }
     setCheckingCoupon(true);
     setCouponMsg('');
     try {
@@ -196,8 +235,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
       return;
     }
 
-    if (items.length === 0) {
-      Alert.alert('تنبيه', 'سلة المشتريات فارغة');
+    if (selectedItems.length === 0) {
+      Alert.alert('تنبيه', 'لم تحدد أي منتج للطلب. ارجع للسلة وحدد المنتجات المطلوبة.');
       return;
     }
 
@@ -205,7 +244,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
     setPlacing(true);
 
     try {
-      const byStore = getItemsByStore();
+      const byStore = getSelectedByStore();
       const stores = Object.entries(byStore).map(([storeId, storeItems]) => ({
         merchant_id: storeId,
         items: storeItems.map((item) => ({
@@ -257,7 +296,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
         stores,
       });
 
-      clearCart();
+      // نزيل من السلة ما طُلب فعلاً فقط؛ غير المحدد يبقى للعميل
+      clearSelected();
       try {
         await appStorage.removeItem(attemptStorageKey);
       } catch (storageError) {
@@ -275,7 +315,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
     }
   };
 
-  const visiblePaymentMethods = showAllPaymentMethods ? PAYMENT_OPTIONS : PAYMENT_OPTIONS.slice(0, 5);
+  const visiblePaymentMethods = showAllPaymentMethods ? PAYMENT_OPTIONS : PAYMENT_OPTIONS.slice(0, 2);
 
   return (
     <View style={styles.container}>
@@ -345,7 +385,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         >
           <View style={styles.addressRightWrap}>
             <View style={styles.locationIconCircle}>
-              <Ionicons name="location" size={18} color="#1E3A8A" />
+              <Ionicons name="location" size={18} color="#172554" />
             </View>
             <View style={styles.addressTextCol}>
               <Text style={styles.addressBannerTitle}>
@@ -386,7 +426,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               <View style={styles.summaryMainRow}>
                 {/* Right Side: Product Image Thumbnails */}
                 <View style={styles.thumbnailsRow}>
-                  {items.slice(0, 3).map((item, idx) => (
+                  {selectedItems.slice(0, 3).map((item, idx) => (
                     <View key={item.id} style={styles.thumbWrapper}>
                       <Image
                         source={{
@@ -399,9 +439,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
                       />
                     </View>
                   ))}
-                  {items.length > 3 && (
+                  {selectedItems.length > 3 && (
                     <View style={styles.thumbMoreBadge}>
-                      <Text style={styles.thumbMoreText}>+{items.length - 3}</Text>
+                      <Text style={styles.thumbMoreText}>+{selectedItems.length - 3}</Text>
                     </View>
                   )}
                 </View>
@@ -409,26 +449,42 @@ export default function CheckoutScreen({ navigation, route }: any) {
                 {/* Left Side: Summary Costs */}
                 <View style={styles.costsCol}>
                   <View style={styles.costItemRow}>
-                    <Text style={styles.costValueText}>{cartTotal.toLocaleString()} ر.س</Text>
+                    <Text style={styles.costValueText}>{cartTotal.toLocaleString()} ر.ي</Text>
                     <Text style={styles.costLabelText}>المجموع الفرعي</Text>
                   </View>
 
                   <View style={styles.costItemRow}>
-                    <Text style={styles.freeGreenText}>مجاني</Text>
-                    <Text style={styles.costLabelText}>تكلفة التوصيل</Text>
+                    {feeLoading ? (
+                      <Text style={styles.costValueText}>...</Text>
+                    ) : feeError ? (
+                      <Text style={styles.costValueText}>تعذّر الحساب</Text>
+                    ) : deliveryFee > 0 ? (
+                      <Text style={styles.costValueText}>{deliveryFee.toLocaleString()} ر.ي</Text>
+                    ) : feeMatched ? (
+                      <Text style={styles.freeGreenText}>مجاني</Text>
+                    ) : (
+                      <Text style={styles.costValueText}>تُحدَّد عند التأكيد</Text>
+                    )}
+                    <Text style={styles.costLabelText}>
+                      تكلفة التوصيل{storeCount > 1 ? ` (${storeCount} متاجر)` : ''}
+                    </Text>
                   </View>
 
                   {couponApplied && (
                     <View style={styles.costItemRow}>
-                      <Text style={styles.discountGreenText}>150- ر.س</Text>
+                      <Text style={styles.discountGreenText}>{discount.toLocaleString()}- ر.ي</Text>
                       <Text style={styles.costLabelText}>كوبون خصم</Text>
                     </View>
                   )}
 
                   <View style={styles.totalCostRow}>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} ر.س</Text>
-                      <Text style={styles.vatSubText}>شامل ضريبة القيمة المضافة</Text>
+                      <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.vatSubText}>
+                        {feeError || (!feeLoading && !feeMatched)
+                          ? 'المبلغ تقديري — يُحتسب النهائي عند تأكيد الطلب'
+                          : 'المبلغ النهائي يُحتسب عند تأكيد الطلب'}
+                      </Text>
                     </View>
                     <Text style={styles.totalCostLabel}>الإجمالي</Text>
                   </View>
@@ -436,9 +492,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
               </View>
 
               {/* Savings Highlight Pill */}
-              {couponApplied && (
+              {couponApplied && discount > 0 && (
                 <View style={styles.savingsPillCard}>
-                  <Text style={styles.savingsPillText}>🎉 توفير 150 ر.س على هذا الطلب</Text>
+                  <Text style={styles.savingsPillText}>🎉 توفير {discount.toLocaleString()} ر.ي على هذا الطلب</Text>
                 </View>
               )}
             </View>
@@ -461,9 +517,11 @@ export default function CheckoutScreen({ navigation, route }: any) {
               return (
                 <TouchableOpacity
                   key={method.id}
-                  style={[styles.pmItemCard, isSelected && styles.pmItemCardSelected]}
-                  onPress={() => setSelectedPayment(method.id)}
+                  style={[styles.pmItemCard, isSelected && styles.pmItemCardSelected, !method.available && styles.pmItemCardDisabled]}
+                  onPress={() => method.available && setSelectedPayment(method.id)}
+                  disabled={!method.available}
                   activeOpacity={0.85}
+                  accessibilityState={{ disabled: !method.available, selected: isSelected }}
                 >
                   {/* Left Side: Brand Logo/Badge */}
                   <View style={styles.pmBrandWrap}>
@@ -479,9 +537,15 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   </View>
 
                   {/* Right Side: Radio Check */}
-                  <View style={[styles.pmRadioCircle, isSelected && styles.pmRadioCircleSelected]}>
-                    {isSelected && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
-                  </View>
+                  {method.available ? (
+                    <View style={[styles.pmRadioCircle, isSelected && styles.pmRadioCircleSelected]}>
+                      {isSelected && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                    </View>
+                  ) : (
+                    <View style={styles.pmSoonBadge}>
+                      <Text style={styles.pmSoonText}>قريباً</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -501,7 +565,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         {/* Card 3: Active Coupon Discount */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="pricetag-outline" size={17} color="#1E3A8A" />
+            <Ionicons name="pricetag-outline" size={17} color="#172554" />
             <Text style={styles.cardTitle}>كوبون خصم</Text>
           </View>
 
@@ -569,13 +633,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <Switch
               value={needTaxInvoice}
               onValueChange={setNeedTaxInvoice}
-              trackColor={{ false: '#CBD5E1', true: '#1E3A8A' }}
+              trackColor={{ false: '#CBD5E1', true: '#172554' }}
               thumbColor="#FFFFFF"
             />
 
             <View style={styles.taxInvoiceRightCol}>
               <View style={styles.taxInvoiceTitleRow}>
-                <Ionicons name="receipt-outline" size={17} color="#1E3A8A" style={{ marginLeft: 6 }} />
+                <Ionicons name="receipt-outline" size={17} color="#172554" style={{ marginLeft: 6 }} />
                 <Text style={styles.taxInvoiceTitle}>فاتورة ضريبية</Text>
               </View>
               <Text style={styles.taxInvoiceSub}>أريد الحصول على فاتورة ضريبية رسمية</Text>
@@ -598,8 +662,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
           {/* Left Column: Total Cost */}
           <View style={styles.bottomTotalCol}>
             <Text style={styles.bottomTotalLabel}>الإجمالي الكلي</Text>
-            <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} ر.س</Text>
-            <Text style={styles.bottomVatSub}>شامل ضريبة القيمة المضافة</Text>
+            <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} ر.ي</Text>
+            <Text style={styles.bottomVatSub}>شامل رسوم التوصيل — يُحتسب النهائي عند التأكيد</Text>
           </View>
 
           {/* Right Column: Complete Payment CTA Button */}
@@ -730,8 +794,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   stepCircleActive: {
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554', // Dark Royal Blue
+    borderColor: '#172554',
   },
   stepCircleDone: {
     backgroundColor: '#059669',
@@ -745,7 +809,7 @@ const styles = StyleSheet.create({
   },
   stepLabelActive: {
     fontFamily: FONTS.bold,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   stepLabelDone: {
     color: '#059669',
@@ -816,7 +880,7 @@ const styles = StyleSheet.create({
   changeAddressText: {
     fontFamily: FONTS.bold,
     fontSize: 11,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -990,8 +1054,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   pmItemCardSelected: {
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
     backgroundColor: '#F0F5FF',
+  },
+  pmItemCardDisabled: {
+    opacity: 0.55,
+  },
+  pmSoonBadge: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  pmSoonText: {
+    fontFamily: FONTS.bold,
+    fontSize: 10.5,
+    color: '#64748B',
   },
   pmRadioCircle: {
     width: 20,
@@ -1003,8 +1081,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pmRadioCircleSelected: {
-    borderColor: '#1E3A8A',
-    backgroundColor: '#1E3A8A',
+    borderColor: '#172554',
+    backgroundColor: '#172554',
   },
   pmInfoCol: {
     flex: 1,
@@ -1043,7 +1121,7 @@ const styles = StyleSheet.create({
   expandPaymentText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   appliedCouponRow: {
     flexDirection: 'row-reverse',
@@ -1086,7 +1164,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   couponApplyBtn: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     paddingHorizontal: 16,
     height: 44,
     borderRadius: 12,
@@ -1200,7 +1278,7 @@ const styles = StyleSheet.create({
   },
   checkoutBtn: {
     flex: 1,
-    backgroundColor: '#1E3A8A', // Dark Royal Blue
+    backgroundColor: '#172554', // Dark Royal Blue
     borderRadius: 16,
     height: 48,
     alignItems: 'center',
@@ -1280,7 +1358,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   successBtn: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 14,

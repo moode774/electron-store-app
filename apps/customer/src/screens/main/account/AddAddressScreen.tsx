@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import * as Location from 'expo-location';
 import { Alert } from '../../../components/appAlert';
 import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '@marketplace/shared-utils';
 import { Button, Input, Card } from '@marketplace/shared-ui';
@@ -14,8 +15,53 @@ export default function AddAddressScreen({ navigation }: any) {
   const [street, setStreet] = useState('');
   const [landmark, setLandmark] = useState('');
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const LABELS = ['المنزل', 'العمل', 'أخرى'];
+
+  const handleUseCurrentLocation = async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('إذن الموقع', 'لم يتم السماح بالوصول إلى الموقع. فعّل إذن الموقع من إعدادات الجهاز.');
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const current = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      setCoords(current);
+
+      try {
+        const reverseResults = await Location.reverseGeocodeAsync(current);
+        const place = reverseResults?.[0];
+        if (place) {
+          const detectedCity = place.city || place.region || place.subregion || '';
+          if (detectedCity.includes('عدن') || detectedCity.includes('Aden')) setSelectedArea(SERVICE_AREAS.ADEN);
+          else if (detectedCity.includes('إب') || detectedCity.includes('Ibb')) setSelectedArea(SERVICE_AREAS.IBB);
+          else if (detectedCity.includes('تعز') || detectedCity.includes('Taiz')) setSelectedArea(SERVICE_AREAS.TAIZ);
+          else setSelectedArea(SERVICE_AREAS.SANAA);
+
+          const detectedStreet = [place.street, place.district, place.subregion, place.name]
+            .filter(Boolean)
+            .join(' - ');
+          if (detectedStreet) setStreet(detectedStreet);
+          if (place.name && !landmark) setLandmark(place.name);
+        }
+      } catch {
+        // الإحداثيات كافية حتى لو فشل تحويلها إلى عنوان نصي
+      }
+
+      if (!street) {
+        setStreet((prev) => prev || `موقعي الحالي (${current.latitude.toFixed(4)}, ${current.longitude.toFixed(4)})`);
+      }
+      Alert.alert('تم تحديد موقعك 📍', 'تم جلب إحداثياتك وسيتم حفظها مع العنوان.');
+    } catch {
+      Alert.alert('خطأ في تحديد الموقع', 'تعذّر جلب موقعك. تأكد من تفعيل GPS والسماح بالصلاحيات.');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
@@ -27,6 +73,8 @@ export default function AddAddressScreen({ navigation }: any) {
         label: label === 'المنزل' ? 'home' : label === 'العمل' ? 'work' : label,
         full_address: `${street.trim()}${landmark.trim() ? ' - ' + landmark.trim() : ''}`,
         city: selectedArea,
+        latitude: coords?.latitude,
+        longitude: coords?.longitude,
       });
       navigation.goBack();
     } catch (e: any) {
@@ -54,11 +102,20 @@ export default function AddAddressScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} keyboardShouldPersistTaps="handled">
         <View style={styles.contentInner}>
         
-        {/* Map Placeholder */}
+        {/* تحديد الموقع الحالي */}
         <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text style={styles.mapText}>حدد موقعك على الخريطة</Text>
-          <Button title="تحديد الموقع الحالي" style={styles.locationButton} />
+          <Text style={styles.mapEmoji}>{coords ? '📍' : '🗺️'}</Text>
+          <Text style={styles.mapText}>
+            {coords
+              ? `تم تحديد موقعك (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+              : 'حدد موقعك لتعبئة العنوان تلقائياً'}
+          </Text>
+          <Button
+            title={locating ? 'جاري تحديد الموقع...' : coords ? 'إعادة تحديد الموقع' : 'تحديد الموقع الحالي'}
+            style={styles.locationButton}
+            onPress={handleUseCurrentLocation}
+            disabled={locating}
+          />
         </View>
 
         <Card style={styles.formCard} variant="elevated">

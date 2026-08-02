@@ -181,7 +181,7 @@ export default function AdminProductsScreen({ navigation }: any) {
                       <Text style={s.storeName}>{product.merchant_profiles?.store_name ?? 'متجر غير معروف'}</Text>
                     </View>
                     <Text style={s.productName}>{product.name_ar || product.name}</Text>
-                    <Text style={s.price}>{Number(product.sale_price ?? product.base_price).toFixed(2)} ر.س</Text>
+                    <Text style={s.price}>{Number(product.sale_price ?? product.base_price).toFixed(2)} ر.ي</Text>
                     <Text style={s.meta}>المخزون: {product.stock_quantity ?? 0} · أضيف {new Date(product.created_at).toLocaleDateString('ar-SA')}</Text>
                   </View>
                 </View>

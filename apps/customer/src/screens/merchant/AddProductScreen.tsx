@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuthStore, createProduct, addProductImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
+import { useAuthStore, createProductWithImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 
@@ -121,7 +121,6 @@ export default function AddProductScreen({ navigation }: any) {
       const merchant = await getMerchantProfile(user.id);
       if (!merchant?.id) throw new Error('لم يتم العثور على ملف المتجر المرتبط بالحساب');
 
-      let og_image_url: string | undefined;
       let uploadedUrls: string[] = [];
 
       if (selectedImages.length > 0) {
@@ -131,28 +130,22 @@ export default function AddProductScreen({ navigation }: any) {
             uploadImageToStorage('products', `${merchant.id}/${Date.now()}_${i}`, uri)
           )
         );
-        og_image_url = uploadedUrls[0];
         setUploadingImages(false);
       }
 
-      const product = await createProduct({
-        merchant_id: merchant.id,
+      // المنتج وصوره يُحفظان في معاملة واحدة: لا يبقى منتج ناقص الصور عند أي فشل
+      // (الصورة الأولى تصبح الصورة الرئيسية تلقائياً داخل الدالة)
+      await createProductWithImages({
         name: name.trim(),
         description: description.trim() || undefined,
         base_price: parsedPrice,
         category_id: categoryId || undefined,
         stock_quantity: Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : 0,
         is_active: true,
-        og_image_url,
+        image_urls: uploadedUrls,
       });
 
-      let galleryWarning = false;
-      if (product?.id && uploadedUrls.length > 0) {
-        try { await addProductImages(product.id, uploadedUrls); }
-        catch { galleryWarning = true; }
-      }
-
-      Alert.alert('تم الحفظ ✅', galleryWarning ? 'تمت إضافة المنتج والصورة الرئيسية، لكن تعذّر ربط بعض صور المعرض. يمكنك إعادة إضافتها من تعديل المنتج.' : 'تمت إضافة المنتج بنجاح', [
+      Alert.alert('تم الحفظ ✅', 'تمت إضافة المنتج بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {

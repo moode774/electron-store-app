@@ -4,6 +4,8 @@ export interface DeliveryRuntimeProfile {
   id: string;
   is_online: boolean;
   is_approved: boolean;
+  /** مدينة عمل المندوب — تُستخدم لترتيب العروض القريبة أولاً */
+  work_city?: string | null;
 }
 
 export interface DeliveryCoordinates {
@@ -15,7 +17,7 @@ export interface DeliveryCoordinates {
 export async function getDeliveryRuntimeProfile(userId: string): Promise<DeliveryRuntimeProfile | null> {
   const { data, error } = await supabase
     .from('delivery_profiles')
-    .select('id, is_online, is_approved')
+    .select('id, is_online, is_approved, work_city')
     .eq('user_id', userId)
     .maybeSingle();
 

@@ -35,6 +35,7 @@ export default function EarningsScreen() {
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
+  const [recordedCount, setRecordedCount] = useState(0);
   const [history, setHistory] = useState<DeliveryEarning[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function EarningsScreen() {
       ]);
       setBalance(result.balance);
       setTotalDeliveries(result.totalDeliveries);
+      setRecordedCount(result.recordedCount);
       setHistory(result.earnings);
       setWithdrawals(requests);
     } catch (error) {
@@ -173,7 +175,7 @@ export default function EarningsScreen() {
               <Text style={styles.summaryValue}>{balance} ر.ي</Text>
               <View style={[styles.summaryRow, layout.compact && styles.summaryRowCompact]}>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryItemValue}>{history.length}</Text>
+                  <Text style={styles.summaryItemValue}>{recordedCount}</Text>
                   <Text style={styles.summaryItemLabel}>توصيلات مسجّلة</Text>
                 </View>
                 <View style={styles.summaryDivider} />
@@ -221,7 +223,9 @@ export default function EarningsScreen() {
               </View>
             ) : null}
 
-            <Text style={styles.sectionTitle}>سجل التوصيلات</Text>
+            <Text style={styles.sectionTitle}>
+              سجل التوصيلات{recordedCount > history.length ? ` (أحدث ${history.length} من ${recordedCount})` : ''}
+            </Text>
           </>
         }
         ListEmptyComponent={

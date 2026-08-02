@@ -25,16 +25,16 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 
-// Product Image Placeholders matching mockup categories
-const MOCK_PRODUCT_IMAGES = [
-  'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=150&auto=format&fit=crop&q=80', // Headphones
-  'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=150&auto=format&fit=crop&q=80', // Handbag
-  'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150&auto=format&fit=crop&q=80', // Smartwatch
-  'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=150&auto=format&fit=crop&q=80', // Sunglasses
-  'https://images.unsplash.com/photo-1541643600914-78b084683601?w=150&auto=format&fit=crop&q=80', // Perfume
-];
-
 type FilterTab = 'all' | 'active' | 'delivering' | 'completed';
+
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: 'الدفع عند الاستلام',
+  cod: 'الدفع عند الاستلام',
+  jawali: 'محفظة جوالي',
+  kuraimi: 'الكريمي',
+  card: 'بطاقة بنكية',
+  wallet: 'المحفظة',
+};
 
 export default function OrdersListScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
@@ -217,24 +217,18 @@ export default function OrdersListScreen({ navigation }: any) {
     }
   };
 
-  const renderOrderCard = ({ item, index }: { item: OrderSummary; index: number }) => {
+  const renderOrderCard = ({ item }: { item: OrderSummary }) => {
     const statusConfig = getStatusBadgeConfig(item.status);
     const storeName = item.merchant_profiles?.store_name ?? 'المتجر';
     const dateFormatted = formatDate(item.created_at);
     const totalItems = item.order_items?.length || 1;
-    const addressStr = item.addresses?.full_address || 'شارع الملك فهد - حي الروضة، الرياض';
+    const addressStr = item.addresses?.full_address || 'عنوان التوصيل غير متوفر';
+    const paymentLabel = PAYMENT_LABELS[(item.payment_method ?? '').toLowerCase()] ?? 'طريقة الدفع غير محددة';
 
-    // Item image thumbnails list
-    const thumbnails =
-      item.order_items && item.order_items.length > 0
-        ? item.order_items.slice(0, 3).map((it, idx) => ({
-            uri:
-              it.products?.og_image_url ||
-              MOCK_PRODUCT_IMAGES[(index + idx) % MOCK_PRODUCT_IMAGES.length],
-          }))
-        : [
-            { uri: MOCK_PRODUCT_IMAGES[index % MOCK_PRODUCT_IMAGES.length] },
-          ];
+    // صور المنتجات الحقيقية فقط؛ ما لا صورة له يُعرض بأيقونة بديلة
+    const thumbnails = (item.order_items ?? [])
+      .slice(0, 3)
+      .map((it) => ({ uri: it.products?.og_image_url ?? null }));
 
     return (
       <View style={styles.orderCard}>
@@ -259,28 +253,38 @@ export default function OrdersListScreen({ navigation }: any) {
         {/* Price & Payment Method Row */}
         <View style={styles.priceRow}>
           <View style={styles.paymentPill}>
-            <Ionicons name="card-outline" size={14} color="#1E3A8A" />
-            <Text style={styles.paymentPillText}>
-              مدى •••• {item.order_number.slice(-4) || '4242'}
-            </Text>
+            <Ionicons
+              name={item.payment_method === 'cash' || item.payment_method === 'cod' ? 'cash-outline' : 'card-outline'}
+              size={14}
+              color="#172554"
+            />
+            <Text style={styles.paymentPillText}>{paymentLabel}</Text>
           </View>
 
           <View style={styles.priceCol}>
             <Text style={styles.priceAmountText}>
-              {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'} ر.س
+              {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'} ر.ي
             </Text>
             <Text style={styles.itemCountText}>{totalItems} منتجات</Text>
           </View>
         </View>
 
         {/* Product Image Thumbnails Row */}
-        <View style={styles.thumbnailsContainer}>
-          {thumbnails.map((thumb, idx) => (
-            <View key={idx} style={styles.thumbnailWrapper}>
-              <Image source={{ uri: thumb.uri }} style={styles.thumbnailImage} resizeMode="cover" />
-            </View>
-          ))}
-        </View>
+        {thumbnails.length > 0 && (
+          <View style={styles.thumbnailsContainer}>
+            {thumbnails.map((thumb, idx) => (
+              <View key={idx} style={styles.thumbnailWrapper}>
+                {thumb.uri ? (
+                  <Image source={{ uri: thumb.uri }} style={styles.thumbnailImage} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.thumbnailImage, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' }]}>
+                    <Ionicons name="cube-outline" size={18} color="#94A3B8" />
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* 4-Step Stepper Timeline (Only for active / delivering orders) */}
         {item.status !== ORDER_STATUS.DELIVERED && item.status !== ORDER_STATUS.CANCELLED && (
@@ -380,7 +384,7 @@ export default function OrdersListScreen({ navigation }: any) {
             </Text>
           </View>
           <View style={[styles.infoBannerRow, { marginTop: 4 }]}>
-            <Ionicons name="time-outline" size={15} color="#1E3A8A" />
+            <Ionicons name="time-outline" size={15} color="#172554" />
             <Text style={styles.infoBannerText}>
               <Text style={styles.infoBannerLabel}>
                 {item.status === ORDER_STATUS.DELIVERED ? 'تم التوصيل في: ' : 'التوصيل المتوقع: '}
@@ -400,7 +404,7 @@ export default function OrdersListScreen({ navigation }: any) {
               onPress={() => reorder(item.id, storeName)}
               activeOpacity={0.85}
             >
-              <Ionicons name="refresh-outline" size={16} color="#1E3A8A" />
+              <Ionicons name="refresh-outline" size={16} color="#172554" />
               <Text style={styles.reorderPrimaryBtnText}>إعادة الطلب</Text>
             </TouchableOpacity>
           ) : (
@@ -438,7 +442,7 @@ export default function OrdersListScreen({ navigation }: any) {
             onPress={() => Alert.alert('خدمة العملاء', 'نحن هنا لمساعدتك على مدار الساعة.')}
             activeOpacity={0.8}
           >
-            <Ionicons name="headset-outline" size={16} color="#1E3A8A" />
+            <Ionicons name="headset-outline" size={16} color="#172554" />
             <Text style={styles.supportPillText}>الدعم</Text>
           </TouchableOpacity>
 
@@ -519,7 +523,7 @@ export default function OrdersListScreen({ navigation }: any) {
       {/* Main Orders List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1E3A8A" />
+          <ActivityIndicator size="large" color="#172554" />
         </View>
       ) : (
         <FlatList
@@ -532,7 +536,7 @@ export default function OrdersListScreen({ navigation }: any) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => loadOrders(true)}
-              tintColor="#1E3A8A"
+              tintColor="#172554"
             />
           }
           ListEmptyComponent={
@@ -618,7 +622,7 @@ const styles = StyleSheet.create({
   supportPillText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   tabsContainer: {
     marginTop: 14,
@@ -641,8 +645,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   tabChipActive: {
-    backgroundColor: '#1E3A8A', // Solid Royal Blue matching mockup
-    shadowColor: '#1E3A8A',
+    backgroundColor: '#172554', // Solid Royal Blue matching mockup
+    shadowColor: '#172554',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -793,11 +797,11 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   stepCircleDone: {
-    backgroundColor: '#1E3A8A',
-    borderColor: '#1E3A8A',
+    backgroundColor: '#172554',
+    borderColor: '#172554',
   },
   stepCircleActive: {
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
     backgroundColor: '#F0F5FF',
   },
   stepDotInner: {
@@ -807,7 +811,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#94A3B8',
   },
   stepDotActiveInner: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
   },
   stepLabel: {
     fontFamily: FONTS.medium,
@@ -816,11 +820,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stepLabelDone: {
-    color: '#1E3A8A',
+    color: '#172554',
   },
   stepLabelActive: {
     fontFamily: FONTS.bold,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   stepLine: {
     flex: 1,
@@ -830,7 +834,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   stepLineDone: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
   },
   infoBannerBox: {
     backgroundColor: '#F8FAFC',
@@ -854,7 +858,7 @@ const styles = StyleSheet.create({
   },
   infoBannerLabel: {
     fontFamily: FONTS.bold,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   actionButtonsRow: {
     flexDirection: 'row-reverse',
@@ -865,7 +869,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#1E3A8A', // Solid Royal Blue matching mockup
+    backgroundColor: '#172554', // Solid Royal Blue matching mockup
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
@@ -882,7 +886,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: '#1E3A8A',
+    borderColor: '#172554',
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
@@ -891,7 +895,7 @@ const styles = StyleSheet.create({
   reorderPrimaryBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#1E3A8A',
+    color: '#172554',
   },
   detailsSecondaryBtn: {
     flex: 1,
@@ -934,7 +938,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#172554',
   },
   retryBtnText: {
     fontFamily: FONTS.bold,

@@ -15,7 +15,9 @@ import * as Location from 'expo-location';
 import {
   claimDeliveryOrder,
   getDeliveryEarnings,
+  getMyOfferRejections,
   OrderSummary,
+  rejectDeliveryOffer,
   supabase,
   useAuthStore,
 } from '@marketplace/shared-hooks';
@@ -33,6 +35,33 @@ const FALLBACK_REFRESH_MS = 20_000;
 
 const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback;
+
+const normalizeCity = (city?: string | null) => (city ?? '').trim().toLowerCase();
+
+// ترتيب العروض بحسب القرب: عروض مدينة عمل المندوب أولاً (استلامًا ثم تسليمًا)،
+// ثم الأقدم فالأحدث. القاعدة تُرجع الطلبات الجاهزة؛ الترتيب هنا يقرّب الأنسب للمندوب.
+const sortOffersByProximity = (
+  offers: OrderSummary[],
+  profile: DeliveryRuntimeProfile | null,
+): OrderSummary[] => {
+  const workCity = normalizeCity(profile?.work_city);
+  if (!workCity) return offers;
+
+  const score = (order: OrderSummary): number => {
+    const pickupCity = normalizeCity(order.merchant_profiles?.city);
+    const dropoffCity = normalizeCity(order.addresses?.city);
+    if (pickupCity === workCity && dropoffCity === workCity) return 0;
+    if (pickupCity === workCity) return 1;
+    if (dropoffCity === workCity) return 2;
+    return 3;
+  };
+
+  return [...offers].sort((a, b) => {
+    const diff = score(a) - score(b);
+    if (diff !== 0) return diff;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+};
 
 export default function DeliveryOffersScreen({ navigation }: any) {
   const user = useAuthStore((state) => state.user);
@@ -120,8 +149,18 @@ export default function DeliveryOffersScreen({ navigation }: any) {
         return;
       }
 
-      const available = await getAvailableDeliveryOffers();
-      setOrders(available.filter((order) => !dismissedOrderIds.current.has(order.id)));
+      // الرفض مسجَّل في السيرفر: يبقى مخفياً بعد إعادة التشغيل وعبر الأجهزة
+      const [available, rejectedIds] = await Promise.all([
+        getAvailableDeliveryOffers(),
+        getMyOfferRejections().catch(() => [] as string[]),
+      ]);
+      rejectedIds.forEach((id) => dismissedOrderIds.current.add(id));
+      setOrders(
+        sortOffersByProximity(
+          available.filter((order) => !dismissedOrderIds.current.has(order.id)),
+          runtimeProfile,
+        ),
+      );
     } catch (error) {
       setLoadError(errorMessage(error, 'تعذّر تحديث عروض التوصيل. تحقق من الاتصال وحاول مجددًا.'));
     } finally {
@@ -144,7 +183,9 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       .channel(`delivery-offers-${user.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
+        // العروض هي الطلبات الجاهزة فقط — التصفية على السيرفر تمنع إعادة تحميل
+        // على كل تغيير في أي طلب (حالات العميل/التاجر/التوصيل الجارية)
+        { event: '*', schema: 'public', table: 'orders', filter: 'status=eq.ready' },
         () => {
           if (active) void loadData();
         },
@@ -249,9 +290,12 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 
   const handleReject = useCallback(() => {
     if (!current || accepting) return;
-    dismissedOrderIds.current.add(current.id);
+    const rejectedId = current.id;
+    dismissedOrderIds.current.add(rejectedId);
     setShowIncomingModal(false);
-    setOrders((previous) => previous.filter((order) => order.id !== current.id));
+    setOrders((previous) => previous.filter((order) => order.id !== rejectedId));
+    // يُسجَّل في السيرفر ليبقى مرفوضاً بعد إعادة التشغيل وليتوفر سجل للرفض
+    void rejectDeliveryOffer(rejectedId).catch(() => { /* الإخفاء المحلي يبقى ساريًا */ });
   }, [accepting, current]);
 
   const openDeliveryAccount = useCallback(() => {

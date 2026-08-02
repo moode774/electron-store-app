@@ -123,20 +123,20 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
     setSaving(true);
     try {
+      // المتجر يُستنتج من الجلسة في السيرفر؛ لا يُمرَّر من العميل
       await createMerchantCoupon({
-        merchant_id: merchantProfileId,
         code: trimmedCode,
         type,
         value: numValue,
-        min_order_amount: minOrder ? parseFloat(minOrder) : undefined,
-        max_discount_amount: maxDiscount ? parseFloat(maxDiscount) : undefined,
-        max_uses: maxUses ? parseInt(maxUses) : undefined,
-        end_date: endDate || undefined,
+        min_order_amount: minOrder ? parseFloat(minOrder) : null,
+        max_discount_amount: maxDiscount ? parseFloat(maxDiscount) : null,
+        max_uses: maxUses ? parseInt(maxUses) : null,
+        end_date: endDate || null,
       });
       setShowModal(false);
       load();
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message?.includes('duplicate') ? 'هذا الكود موجود مسبقاً' : 'فشل إنشاء الكوبون');
+      Alert.alert('خطأ', e?.message ?? 'فشل إنشاء الكوبون');
     } finally {
       setSaving(false);
     }
@@ -148,8 +148,8 @@ export default function MerchantCouponsScreen({ navigation }: any) {
     try {
       await updateMerchantCoupon(coupon.id, { is_active: !coupon.is_active });
       await load();
-    } catch {
-      Alert.alert('لم يتم التحديث', 'تعذر تغيير حالة الكوبون.');
+    } catch (e: any) {
+      Alert.alert('لم يتم التحديث', e?.message ?? 'تعذر تغيير حالة الكوبون.');
     } finally {
       setUpdatingId(null);
     }
@@ -166,10 +166,11 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           style: 'destructive',
           onPress: async () => {
             try {
+              // كوبون استُخدم في طلبات سابقة يُعطَّل بدل حذفه، لذا نُعيد التحميل
               await deleteMerchantCoupon(coupon.id);
-              setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
-            } catch {
-              Alert.alert('تعذر الحذف', 'لم يتم حذف الكوبون. أعد المحاولة.');
+              await load();
+            } catch (e: any) {
+              Alert.alert('تعذر الحذف', e?.message ?? 'لم يتم حذف الكوبون. أعد المحاولة.');
             }
           },
         },

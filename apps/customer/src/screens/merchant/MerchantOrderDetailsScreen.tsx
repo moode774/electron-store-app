@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
-import { getOrderById, updateOrderStatus, OrderDetail, supabase } from '@marketplace/shared-hooks';
+import { getOrderById, updateOrderStatus, cancelOrder, getCancellationReasons, getOrderPickupCode, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
 import {
   getMerchantOrderStatusInfo,
   getOrderTransitionErrorMessage,
@@ -41,6 +41,21 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const [status, setStatus] = useState<string>(ORDER_STATUS.PENDING);
   const [deliveryId, setDeliveryId] = useState<string | null | undefined>(undefined);
   const [updating, setUpdating] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReasons, setCancelReasons] = useState<CancellationReason[]>([]);
+  const [cancelling, setCancelling] = useState(false);
+  const [pickupCode, setPickupCode] = useState<string | null>(null);
+
+  // كود تسليم الطلب للمندوب — يظهر للتاجر من مرحلة "جاهز" حتى الاستلام
+  useEffect(() => {
+    const needsCode = status === ORDER_STATUS.READY || status === ORDER_STATUS.ASSIGNED;
+    if (!orderId || !needsCode) { setPickupCode(null); return; }
+    let active = true;
+    getOrderPickupCode(orderId)
+      .then((code) => { if (active) setPickupCode(code || null); })
+      .catch(() => { if (active) setPickupCode(null); });
+    return () => { active = false; };
+  }, [orderId, status]);
   const { width } = useWindowDimensions();
   const isCompact = width < BREAKPOINTS.compact;
   const isDesktop = width >= BREAKPOINTS.desktop;
@@ -113,6 +128,29 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
     }
   };
 
+  const openCancel = async () => {
+    setShowCancel(true);
+    if (cancelReasons.length === 0) {
+      try { setCancelReasons(await getCancellationReasons('merchant')); } catch { /* تُعرض قائمة فارغة مع خيار سبب عام */ }
+    }
+  };
+
+  const doCancel = async (reason: string) => {
+    if (!orderId || cancelling) return;
+    setCancelling(true);
+    try {
+      await cancelOrder(orderId, reason);
+      setShowCancel(false);
+      await load(false);
+      Alert.alert('تم إلغاء الطلب', 'أُلغي الطلب وأُعيد المخزون تلقائياً وسيُشعَر العميل.');
+    } catch (e) {
+      await load(false);
+      Alert.alert('تعذّر إلغاء الطلب', getOrderTransitionErrorMessage(e));
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const info = getMerchantOrderStatusInfo(status);
   const progress = merchantOrderProgress(status);
 
@@ -156,20 +194,17 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   } else if (status === ORDER_STATUS.PREPARING) {
     nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.READY)} disabled={updating} accessibilityRole="button" accessibilityLabel="تحديد الطلب جاهزًا للمندوب" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>الطلب جاهز للمندوب</Text>}</TouchableOpacity>;
   } else if (status === ORDER_STATUS.READY) {
-    if (deliveryId === null) {
-      nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.ON_THE_WAY)} disabled={updating} accessibilityRole="button" accessibilityLabel="بدء التوصيل الذاتي" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>سأوصل الطلب بنفسي</Text>}</TouchableOpacity>;
-      actionNotice = 'يمكنك بدء التوصيل الذاتي طالما لم يطالب مندوب بالطلب.';
-    } else if (deliveryId) {
-      actionNotice = 'تم إسناد الطلب إلى مندوب. ستتحدث الحالة تلقائيًا عند الاستلام.';
-    } else {
-      actionNotice = 'تعذر التحقق من إسناد المندوب الآن؛ تم إخفاء إجراء التوصيل الذاتي احتياطياً.';
-    }
-  } else if (status === ORDER_STATUS.ON_THE_WAY && deliveryId === null) {
-    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.DELIVERED)} disabled={updating} accessibilityRole="button" accessibilityLabel="تأكيد توصيل الطلب ذاتيًا" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>تأكيد توصيل الطلب</Text>}</TouchableOpacity>;
-    actionNotice = 'استخدم التأكيد بعد تسليم الطلب فعليًا للعميل.';
+    // مسار الطلب بعد "جاهز" حصري للمندوب بحسب قواعد القاعدة —
+    // التاجر لا يستطيع on_the_way أو delivered (تتطلب إثبات تسليم من مندوب).
+    actionNotice = deliveryId
+      ? 'تم إسناد الطلب إلى مندوب. ستتحدث الحالة تلقائيًا عند الاستلام.'
+      : 'الطلب جاهز وبانتظار أن يستلمه مندوب. ستتحدث الحالة تلقائيًا.';
   } else if ([ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKED_UP, ORDER_STATUS.ON_THE_WAY, ORDER_STATUS.RESCHEDULED].includes(status as any)) {
     actionNotice = 'الطلب الآن ضمن مسار المندوب، ولا يحتاج إلى تغيير يدوي من التاجر.';
   }
+
+  // الإلغاء متاح للتاجر قبل أن يصبح الطلب جاهزًا (نفس قاعدة marketplace_cancel_order_as)
+  const canCancel = [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING].includes(status as any);
 
   return (
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
@@ -352,8 +387,19 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                </View>
              </View>
 
+             {/* كود تسليم الطلب للمندوب */}
+             {!!pickupCode && (
+               <View style={styles.pickupCodeCard}>
+                 <View style={{ flex: 1 }}>
+                   <Text style={styles.pickupCodeTitle}>كود تسليم الطلب للمندوب</Text>
+                   <Text style={styles.pickupCodeHint}>لا تُعطِ الكود إلا عند تسليم الطلب للمندوب فعلياً — هو إثبات الاستلام.</Text>
+                 </View>
+                 <Text style={styles.pickupCodeValue}>{pickupCode}</Text>
+               </View>
+             )}
+
              {/* Actions */}
-             {(nextActionBtn || actionNotice) && (
+             {(nextActionBtn || actionNotice || canCancel) && (
                <View style={styles.actionsCard}>
                  {!!actionNotice && (
                    <View style={styles.waitingDriverNotice}>
@@ -362,6 +408,47 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                    </View>
                  )}
                  {nextActionBtn}
+
+                 {/* إلغاء الطلب (متاح قبل مرحلة "جاهز") */}
+                 {canCancel && !showCancel && (
+                   <TouchableOpacity
+                     style={styles.btnCancelOutline}
+                     onPress={openCancel}
+                     disabled={updating || cancelling}
+                     activeOpacity={0.8}
+                     accessibilityRole="button"
+                     accessibilityLabel="إلغاء الطلب"
+                   >
+                     <Text style={styles.btnCancelOutlineText}>إلغاء الطلب</Text>
+                   </TouchableOpacity>
+                 )}
+                 {canCancel && showCancel && (
+                   <View style={styles.cancelReasonsCard}>
+                     <Text style={styles.cancelReasonsTitle}>سبب الإلغاء</Text>
+                     {(cancelReasons.length > 0
+                       ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? 'سبب آخر' }))
+                       : [
+                           { key: 'out_of_stock', label: 'المنتج غير متوفر حالياً' },
+                           { key: 'cannot_fulfill', label: 'تعذّر تجهيز الطلب' },
+                           { key: 'other', label: 'سبب آخر' },
+                         ]
+                     ).map((r) => (
+                       <TouchableOpacity
+                         key={r.key}
+                         style={styles.cancelReasonItem}
+                         onPress={() => doCancel(r.label)}
+                         disabled={cancelling}
+                         activeOpacity={0.7}
+                       >
+                         <Text style={styles.cancelReasonText}>{r.label}</Text>
+                         {cancelling ? <ActivityIndicator size="small" color={UI.red} /> : <Ionicons name="chevron-back" size={16} color={UI.textMuted} />}
+                       </TouchableOpacity>
+                     ))}
+                     <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.cancelBackBtn}>
+                       <Text style={styles.cancelBackText}>تراجع</Text>
+                     </TouchableOpacity>
+                   </View>
+                 )}
                </View>
              )}
 
@@ -375,6 +462,18 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
+  pickupCodeCard: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0', borderRadius: 14, padding: 14, marginBottom: 12 },
+  pickupCodeTitle: { fontSize: 14, fontWeight: '800', color: '#065F46' },
+  pickupCodeHint: { fontSize: 11.5, color: '#047857', marginTop: 3, lineHeight: 17 },
+  pickupCodeValue: { fontSize: 26, fontWeight: '900', color: '#065F46', letterSpacing: 6 },
+  btnCancelOutline: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: UI.red, marginTop: 10 },
+  btnCancelOutlineText: { color: UI.red, fontSize: 14, fontWeight: '800' },
+  cancelReasonsCard: { marginTop: 10, borderWidth: 1, borderColor: UI.border, borderRadius: 12, padding: 12, backgroundColor: '#FFFFFF' },
+  cancelReasonsTitle: { fontSize: 14, fontWeight: '800', color: UI.textDark, marginBottom: 6 },
+  cancelReasonItem: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: UI.border },
+  cancelReasonText: { fontSize: 13.5, fontWeight: '600', color: UI.textDark },
+  cancelBackBtn: { alignItems: 'center', paddingVertical: 10 },
+  cancelBackText: { color: UI.textMuted, fontSize: 13, fontWeight: '700' },
   loadErrorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bgMobile, padding: 24, gap: 14 },
   loadErrorTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
   loadErrorText: { fontSize: 14, color: UI.textGrey, textAlign: 'center', lineHeight: 21 },

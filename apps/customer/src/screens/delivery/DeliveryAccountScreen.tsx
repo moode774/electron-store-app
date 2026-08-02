@@ -36,7 +36,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     setLoadError('');
     try {
       const result = await getDeliveryEarnings(user.id);
-      setInfo({ balance: result.balance, totalDeliveries: result.totalDeliveries, count: result.earnings.length });
+      setInfo({ balance: result.balance, totalDeliveries: result.totalDeliveries, count: result.recordedCount });
     } catch (error) {
       setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحديث ملخص الحساب.');
     }

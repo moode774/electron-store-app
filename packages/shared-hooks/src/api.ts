@@ -156,7 +156,7 @@ export interface OrderDetail {
   cancelled_at?: string | null;
   delivery_fee_amount?: number;
   addresses?: { full_address: string; city: string | null } | null;
-  merchant_profiles?: { store_name: string; store_logo_url: string | null } | null;
+  merchant_profiles?: { store_name: string; store_logo_url: string | null; address?: string | null; city?: string | null } | null;
   customer?: { full_name: string | null; phone: string | null } | null;
   order_items?: {
     id: string;
@@ -302,6 +302,10 @@ export async function getMerchantProducts(merchantId: string): Promise<(ProductS
   })) as any;
 }
 
+/**
+ * @deprecated يكتب في جدول المنتجات مباشرة بلا صور — استخدم createProductWithImages
+ * التي تحفظ المنتج وصوره في معاملة واحدة ذرّية.
+ */
 export async function createProduct(data: {
   merchant_id: string;
   name: string;
@@ -330,6 +334,46 @@ export async function createProduct(data: {
     .single();
   if (error) throw error;
   return result;
+}
+
+const PRODUCT_ERROR_MESSAGES: Record<string, string> = {
+  PRODUCT_NAME_REQUIRED: 'اسم المنتج مطلوب.',
+  INVALID_BASE_PRICE: 'سعر المنتج غير صالح.',
+  INVALID_SALE_PRICE: 'سعر التخفيض يجب ألا يتجاوز السعر الأساسي.',
+  INVALID_STOCK: 'كمية المخزون غير صالحة.',
+  TOO_MANY_IMAGES: 'الحد الأقصى 10 صور للمنتج.',
+  CATEGORY_NOT_FOUND: 'التصنيف المختار غير موجود.',
+  MERCHANT_PROFILE_NOT_FOUND: 'لم يتم العثور على ملف المتجر المرتبط بالحساب.',
+  'merchant account is not operational': 'حساب المتجر غير مفعّل حالياً.',
+};
+
+// إنشاء المنتج مع صوره في معاملة واحدة: إمّا يكتمل كل شيء أو لا يُنشأ منتج ناقص
+export async function createProductWithImages(data: {
+  name: string;
+  base_price: number;
+  description?: string;
+  category_id?: string | null;
+  sale_price?: number | null;
+  stock_quantity?: number;
+  is_active?: boolean;
+  image_urls?: string[];
+}): Promise<{ id: string; images: number }> {
+  const { data: result, error } = await supabase.rpc('create_product_with_images', {
+    p_name: data.name,
+    p_base_price: data.base_price,
+    p_description: data.description ?? null,
+    p_category_id: data.category_id ?? null,
+    p_sale_price: data.sale_price ?? null,
+    p_stock_quantity: data.stock_quantity ?? 0,
+    p_is_active: data.is_active ?? true,
+    p_image_urls: data.image_urls ?? [],
+  });
+  if (error) {
+    const raw = error.message ?? '';
+    const match = Object.keys(PRODUCT_ERROR_MESSAGES).find((key) => raw.includes(key));
+    throw new Error(match ? PRODUCT_ERROR_MESSAGES[match] : (raw || 'تعذّر حفظ المنتج.'));
+  }
+  return result as { id: string; images: number };
 }
 
 export async function updateProduct(id: string, updates: {
@@ -464,7 +508,7 @@ export async function getOrderById(id: string): Promise<OrderDetail | null> {
       tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason,
       delivered_at, cancelled_at, created_at, updated_at,
       addresses(full_address, city),
-      merchant_profiles(store_name, store_logo_url),
+      merchant_profiles(store_name, store_logo_url, address, city),
       customer:users(full_name, phone),
       order_items(id, quantity, unit_price, total_price, product_name, variant_id, products(name)),
       order_tracking(id, status, notes, latitude, longitude, created_at)
@@ -601,6 +645,52 @@ export async function createOrderGroup(data: {
   const orders = Array.isArray(result) ? result : (result as any)?.orders;
   if (!Array.isArray(orders) || !orders.length) throw new Error('لم يُرجع الخادم الطلبات المنشأة.');
   return orders as { id: string; order_number: string }[];
+}
+
+// تقدير رسوم التوصيل محليًا بنفس منطق place_order في السيرفر:
+// منطقة التاجر المطابقة لمدينة العنوان أولاً، وإلا منطقة المنصة العامة، وإلا 0.
+// الرسوم تُحسب لكل طلب متجر على حدة ثم تُجمع.
+export interface DeliveryFeeEstimate {
+  total: number;
+  perStore: Record<string, number>;
+  /** false إذا لم تُطابق أي منطقة توصيل مدينة العنوان (السيرفر سيقرر) */
+  matched: boolean;
+  /** true إذا كانت المنطقة المطابقة موقوفة التوصيل — السيرفر سيرفض الطلب */
+  unavailable: boolean;
+}
+
+export async function estimateDeliveryFees(
+  city: string | null | undefined,
+  merchantIds: string[],
+): Promise<DeliveryFeeEstimate> {
+  const empty: DeliveryFeeEstimate = { total: 0, perStore: {}, matched: false, unavailable: false };
+  if (!city || !merchantIds.length) return empty;
+
+  const { data, error } = await supabase
+    .from(TABLES.DELIVERY_ZONES)
+    .select('merchant_id, city, delivery_fee, delivery_available, is_active')
+    .eq('is_active', true)
+    .ilike('city', city.trim());
+  if (error || !data?.length) return empty;
+
+  const zones = data as { merchant_id: string | null; delivery_fee: number; delivery_available: boolean }[];
+  const platformZone = zones.find((z) => z.merchant_id === null);
+  const perStore: Record<string, number> = {};
+  let total = 0;
+  let matchedAny = false;
+  let unavailable = false;
+
+  for (const merchantId of merchantIds) {
+    const zone = zones.find((z) => z.merchant_id === merchantId) ?? platformZone;
+    if (!zone) continue;
+    matchedAny = true;
+    if (!zone.delivery_available) unavailable = true;
+    const fee = Math.max(0, Number(zone.delivery_fee) || 0);
+    perStore[merchantId] = fee;
+    total += fee;
+  }
+
+  return { total, perStore, matched: matchedAny, unavailable };
 }
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
@@ -1757,18 +1847,70 @@ export async function getActiveCoupons(): Promise<Coupon[]> {
   return data as unknown as Coupon[];
 }
 
-// أكثر منتجات التاجر مبيعاً
-export async function getMerchantTopProducts(merchantId: string, limit = 5): Promise<{
-  id: string; name: string; total_sold: number; base_price: number; sale_price: number | null; og_image_url: string | null;
+// جلب كل الصفوف على دفعات لتجاوز حد Supabase الافتراضي (1000 صف)
+async function fetchAllRows<T>(
+  buildQuery: () => any,
+): Promise<T[]> {
+  const pageSize = 1000;
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+    if (error) throw error;
+    const batch = (data ?? []) as T[];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return rows;
+}
+
+// أكثر منتجات التاجر مبيعاً — من عناصر الطلبات الفعلية خلال الفترة
+// (الكمية والإيراد بأسعار البيع الحقيقية وقت الطلب، مع استبعاد الملغي/المرتجع)
+export async function getMerchantTopProducts(merchantId: string, limit = 5, days?: number): Promise<{
+  id: string; name: string; total_sold: number; revenue: number; og_image_url: string | null;
 }[]> {
-  const { data, error } = await supabase
-    .from(TABLES.PRODUCTS)
-    .select('id, name, total_sold, base_price, sale_price, og_image_url')
-    .eq('merchant_id', merchantId)
-    .order('total_sold', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data as any;
+  let since: string | null = null;
+  if (days && days > 0) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    since = d.toISOString();
+  }
+
+  const rows = await fetchAllRows<{
+    product_id: string | null;
+    product_name: string | null;
+    quantity: number;
+    total_price: number;
+    products?: { og_image_url: string | null } | null;
+  }>(() => {
+    let q = supabase
+      .from(TABLES.ORDER_ITEMS)
+      .select('product_id, product_name, quantity, total_price, products(og_image_url), orders!inner(merchant_id, status, created_at)')
+      .eq('orders.merchant_id', merchantId)
+      .not('orders.status', 'in', '(cancelled,returned)')
+      .order('order_id');
+    if (since) q = q.gte('orders.created_at', since);
+    return q;
+  });
+
+  const byProduct = new Map<string, { id: string; name: string; total_sold: number; revenue: number; og_image_url: string | null }>();
+  for (const row of rows) {
+    const key = row.product_id ?? row.product_name ?? 'unknown';
+    const entry = byProduct.get(key) ?? {
+      id: key,
+      name: row.product_name ?? 'منتج',
+      total_sold: 0,
+      revenue: 0,
+      og_image_url: row.products?.og_image_url ?? null,
+    };
+    entry.total_sold += row.quantity ?? 0;
+    entry.revenue += Number(row.total_price ?? 0);
+    if (!entry.og_image_url && row.products?.og_image_url) entry.og_image_url = row.products.og_image_url;
+    byProduct.set(key, entry);
+  }
+
+  return [...byProduct.values()]
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
 }
 
 // مبيعات التاجر اليومية لآخر N أيام (لرسم بياني حقيقي)
@@ -1777,16 +1919,19 @@ export async function getMerchantSalesChart(merchantId: string, days = 8): Promi
   since.setDate(since.getDate() - (days - 1));
   since.setHours(0, 0, 0, 0);
 
-  const { data, error } = await supabase
-    .from(TABLES.ORDERS)
-    .select('total_amount, created_at')
-    .eq('merchant_id', merchantId)
-    .eq('status', 'delivered')
-    .gte('created_at', since.toISOString());
-  if (error) throw error;
+  // ترقيم الصفحات لتجاوز حد الصفوف (1000) عند كثرة الطلبات
+  const data = await fetchAllRows<{ total_amount: number | null; created_at: string }>(() =>
+    supabase
+      .from(TABLES.ORDERS)
+      .select('total_amount, created_at')
+      .eq('merchant_id', merchantId)
+      .eq('status', 'delivered')
+      .gte('created_at', since.toISOString())
+      .order('created_at'),
+  );
 
   const buckets = new Array(days).fill(0);
-  (data ?? []).forEach((o: { total_amount: number | null; created_at: string }) => {
+  data.forEach((o: { total_amount: number | null; created_at: string }) => {
     const d = new Date(o.created_at);
     d.setHours(0, 0, 0, 0);
     const idx = Math.floor((d.getTime() - since.getTime()) / 86400000);
@@ -2084,6 +2229,8 @@ export interface DeliveryEarning {
 export async function getDeliveryEarnings(deliveryUserId: string): Promise<{
   balance: number;
   totalDeliveries: number;
+  /** العدد الحقيقي الكامل لسجلات الأرباح (وليس طول القائمة المحدودة بـ50) */
+  recordedCount: number;
   earnings: DeliveryEarning[];
 }> {
   void deliveryUserId;
@@ -2092,18 +2239,65 @@ export async function getDeliveryEarnings(deliveryUserId: string): Promise<{
   if (!profile) throw new Error('تعذّر العثور على ملف المندوب المرتبط بهذا الحساب.');
 
   const p = profile as { id: string; wallet_balance?: number; total_deliveries?: number };
-  const { data, error } = await supabase
-    .from('delivery_earnings')
-    .select('id, base_earning, bonus_earning, tip_amount, total_earning, created_at')
-    .eq('delivery_id', p.id)
-    .order('created_at', { ascending: false })
-    .limit(50);
+  const [{ data, error }, countRes] = await Promise.all([
+    supabase
+      .from('delivery_earnings')
+      .select('id, base_earning, bonus_earning, tip_amount, total_earning, created_at')
+      .eq('delivery_id', p.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase
+      .from('delivery_earnings')
+      .select('id', { count: 'exact', head: true })
+      .eq('delivery_id', p.id),
+  ]);
   if (error) throw error;
   return {
     balance: Number(p.wallet_balance ?? 0),
     totalDeliveries: Number(p.total_deliveries ?? 0),
+    recordedCount: countRes.count ?? (data?.length ?? 0),
     earnings: (data ?? []) as DeliveryEarning[],
   };
+}
+
+// ============================================================
+// PICKUP CONFIRMATION & OFFER REJECTIONS (إثبات الاستلام ورفض العروض)
+// ============================================================
+
+// كود الاستلام: يعرضه التاجر للمندوب عند تسليم الطلب (التاجر/الأدمن فقط)
+export async function getOrderPickupCode(orderId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('get_order_pickup_code', { p_order_id: orderId });
+  if (error) throw error;
+  return (data as string) ?? '';
+}
+
+// المندوب يؤكد استلام الطلب من المتجر بالكود — يمر عبر مسار الانتقال المعتمد
+export async function confirmOrderPickup(orderId: string, code: string): Promise<void> {
+  const { error } = await supabase.rpc('confirm_order_pickup', {
+    p_order_id: orderId,
+    p_code: code.trim(),
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('PICKUP_CODE_LOCKED')) throw new Error('تم إيقاف المحاولات مؤقتاً بعد عدة أكواد خاطئة. انتظر 15 دقيقة أو تواصل مع الدعم.');
+    if (msg.includes('PICKUP_CODE_NOT_ISSUED')) throw new Error('لم يصدر كود لهذا الطلب بعد. اطلب من التاجر فتح الطلب لعرض الكود.');
+    if (msg.includes('INVALID_PICKUP_CODE')) throw new Error('كود الاستلام غير صحيح. اطلب الكود من التاجر وحاول مجدداً.');
+    if (msg.includes('ORDER_NOT_ASSIGNED')) throw new Error('الطلب ليس في مرحلة تسمح بتأكيد الاستلام.');
+    if (msg.includes('NOT_ASSIGNED_DELIVERY')) throw new Error('هذا الطلب غير مسند إليك.');
+    throw error;
+  }
+}
+
+// تسجيل رفض العرض في السيرفر (يبقى مخفياً عبر الأجهزة وإعادة التشغيل)
+export async function rejectDeliveryOffer(orderId: string): Promise<void> {
+  const { error } = await supabase.rpc('reject_delivery_offer', { p_order_id: orderId });
+  if (error) throw error;
+}
+
+export async function getMyOfferRejections(): Promise<string[]> {
+  const { data, error } = await supabase.rpc('list_my_offer_rejections');
+  if (error) throw error;
+  return ((data ?? []) as unknown[]).map((id) => String(id));
 }
 
 export type CodCollectionStatus = 'collected' | 'partially_remitted' | 'remitted' | 'disputed';
@@ -2913,19 +3107,78 @@ export async function getMerchantCoupons(merchantProfileId: string): Promise<any
   return (data ?? []) as any[];
 }
 
-export async function createMerchantCoupon(coupon: any): Promise<void> {
-  const { error } = await supabase.from('coupons').insert(coupon);
-  if (error) throw error;
+const COUPON_ERROR_MESSAGES: Record<string, string> = {
+  COUPON_CODE_TAKEN: 'هذا الكود مستخدم مسبقاً. اختر كوداً آخر.',
+  INVALID_COUPON_CODE: 'كود الكوبون يجب أن يكون بين 3 و32 خانة.',
+  INVALID_COUPON_CODE_FORMAT: 'الكود يقبل الحروف الإنجليزية والأرقام و(-) و(_) فقط.',
+  INVALID_COUPON_TYPE: 'نوع الخصم غير صالح.',
+  INVALID_COUPON_VALUE: 'قيمة الخصم يجب أن تكون أكبر من صفر.',
+  PERCENTAGE_ABOVE_100: 'نسبة الخصم لا يمكن أن تتجاوز 100%.',
+  INVALID_MIN_ORDER: 'الحد الأدنى للطلب غير صالح.',
+  INVALID_MAX_DISCOUNT: 'الحد الأقصى للخصم يجب أن يكون أكبر من صفر.',
+  INVALID_MAX_USES: 'عدد مرات الاستخدام يجب أن يكون أكبر من صفر.',
+  END_DATE_IN_PAST: 'تاريخ الانتهاء يجب أن يكون في المستقبل.',
+  COUPON_NOT_FOUND: 'الكوبون غير موجود أو لا يخص متجرك.',
+  'merchant account is not operational': 'حساب المتجر غير مفعّل حالياً.',
+};
+
+function throwCouponError(error: { message?: string }): never {
+  const raw = error.message ?? '';
+  const match = Object.keys(COUPON_ERROR_MESSAGES).find((key) => raw.includes(key));
+  throw new Error(match ? COUPON_ERROR_MESSAGES[match] : (raw || 'تعذّر تنفيذ العملية على الكوبون.'));
 }
 
-export async function updateMerchantCoupon(id: string, updates: any): Promise<void> {
-  const { error } = await supabase.from('coupons').update(updates).eq('id', id);
-  if (error) throw error;
+// إنشاء كوبون التاجر عبر RPC: المتجر يُستنتج من الجلسة والقيم تُتحقق في السيرفر
+export async function createMerchantCoupon(coupon: {
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  min_order_amount?: number | null;
+  max_discount_amount?: number | null;
+  max_uses?: number | null;
+  end_date?: string | null;
+}): Promise<{ id: string; code: string }> {
+  const { data, error } = await supabase.rpc('merchant_create_coupon', {
+    p_code: coupon.code,
+    p_type: coupon.type,
+    p_value: coupon.value,
+    p_min_order_amount: coupon.min_order_amount ?? null,
+    p_max_discount_amount: coupon.max_discount_amount ?? null,
+    p_max_uses: coupon.max_uses ?? null,
+    p_end_date: coupon.end_date ?? null,
+  });
+  if (error) throwCouponError(error);
+  return data as { id: string; code: string };
 }
 
+// التعديل مقصور على الحقول المسموحة؛ الكود والمتجر وعدّادات الاستخدام محميّة في السيرفر
+// تمرير null صراحةً لأي حقل اختياري يعني «امسح القيمة»؛ إغفال الحقل يعني «اتركه كما هو»
+export async function updateMerchantCoupon(id: string, updates: {
+  is_active?: boolean;
+  min_order_amount?: number | null;
+  max_discount_amount?: number | null;
+  max_uses?: number | null;
+  end_date?: string | null;
+}): Promise<void> {
+  const { error } = await supabase.rpc('merchant_update_coupon', {
+    p_id: id,
+    p_is_active: updates.is_active ?? null,
+    p_min_order_amount: updates.min_order_amount ?? null,
+    p_max_discount_amount: updates.max_discount_amount ?? null,
+    p_max_uses: updates.max_uses ?? null,
+    p_end_date: updates.end_date ?? null,
+    p_clear_min_order: 'min_order_amount' in updates && updates.min_order_amount === null,
+    p_clear_max_discount: 'max_discount_amount' in updates && updates.max_discount_amount === null,
+    p_clear_max_uses: 'max_uses' in updates && updates.max_uses === null,
+    p_clear_end_date: 'end_date' in updates && updates.end_date === null,
+  });
+  if (error) throwCouponError(error);
+}
+
+// الحذف: الكوبون المستخدَم في طلبات سابقة يُعطَّل بدل حذفه (سلامة السجلات)
 export async function deleteMerchantCoupon(id: string): Promise<void> {
-  const { error } = await supabase.from('coupons').delete().eq('id', id);
-  if (error) throw error;
+  const { error } = await supabase.rpc('merchant_delete_coupon', { p_id: id });
+  if (error) throwCouponError(error);
 }
 
 export interface MerchantCoupon {
@@ -3032,8 +3285,49 @@ export async function addProductImages(productId: string, imageUrls: string[]): 
     is_primary: i === 0,
     sort_order: i,
   }));
+  // حذف ثم إدخال حتى تكون الدالة آمنة عند إعادة المحاولة (لا صور مكررة)
+  const { error: deleteError } = await supabase.from('product_images').delete().eq('product_id', productId);
+  if (deleteError) throw deleteError;
   const { error } = await supabase.from('product_images').insert(rows);
   if (error) throw error;
+}
+
+export interface MerchantReportData {
+  chart: number[];
+  topProducts: { id: string; name: string; total_sold: number; revenue: number; og_image_url: string | null }[];
+  stats: {
+    currentRevenue: number; previousRevenue: number;
+    currentOrders: number; previousOrders: number;
+    deliveredCount: number; cancelledCount: number; inProgressCount: number;
+  };
+}
+
+// تقرير التاجر كاملاً في استدعاء SQL واحد (merchant_sales_report) —
+// التاجر يُستنتج من جلسة المصادقة في السيرفر، ولا حدود صفوف لأن التجميع يتم في القاعدة
+export async function getMerchantReport(days: number): Promise<MerchantReportData> {
+  const { data, error } = await supabase.rpc('merchant_sales_report', { p_days: days });
+  if (error) throw error;
+  const r = (data ?? {}) as any;
+  const s = r.stats ?? {};
+  return {
+    chart: ((r.chart ?? []) as unknown[]).map((v) => Number(v) || 0),
+    topProducts: ((r.top_products ?? []) as any[]).map((p) => ({
+      id: String(p.id ?? ''),
+      name: p.name ?? 'منتج',
+      total_sold: Number(p.total_sold ?? 0),
+      revenue: Number(p.revenue ?? 0),
+      og_image_url: p.og_image_url ?? null,
+    })),
+    stats: {
+      currentRevenue: Number(s.current_revenue ?? 0),
+      previousRevenue: Number(s.previous_revenue ?? 0),
+      currentOrders: Number(s.current_orders ?? 0),
+      previousOrders: Number(s.previous_orders ?? 0),
+      deliveredCount: Number(s.delivered_count ?? 0),
+      cancelledCount: Number(s.cancelled_count ?? 0),
+      inProgressCount: Number(s.in_progress_count ?? 0),
+    },
+  };
 }
 
 export async function getMerchantPeriodStats(merchantId: string, days: number): Promise<{
@@ -3047,14 +3341,15 @@ export async function getMerchantPeriodStats(merchantId: string, days: number): 
   const previousStart = new Date(currentStart);
   previousStart.setDate(previousStart.getDate() - days);
 
-  const { data, error } = await supabase
-    .from(TABLES.ORDERS)
-    .select('total_amount, status, created_at')
-    .eq('merchant_id', merchantId)
-    .gte('created_at', previousStart.toISOString());
-  if (error) throw error;
-
-  const all = data ?? [];
+  // ترقيم الصفحات لتجاوز حد الصفوف (1000) عند كثرة الطلبات
+  const all = await fetchAllRows<{ total_amount: number | null; status: string; created_at: string }>(() =>
+    supabase
+      .from(TABLES.ORDERS)
+      .select('total_amount, status, created_at')
+      .eq('merchant_id', merchantId)
+      .gte('created_at', previousStart.toISOString())
+      .order('created_at'),
+  );
   const current = all.filter(o => new Date(o.created_at) >= currentStart);
   const previous = all.filter(o => new Date(o.created_at) < currentStart);
 
