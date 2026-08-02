@@ -2272,19 +2272,38 @@ export async function getOrderPickupCode(orderId: string): Promise<string> {
 }
 
 // المندوب يؤكد استلام الطلب من المتجر بالكود — يمر عبر مسار الانتقال المعتمد
+// ملاحظة: الدالة تُعيد {ok:false} بدل رفع استثناء عند الكود الخاطئ، لأن رفع
+// الاستثناء يُلغي حفظ عدّاد المحاولات فيبطل الحظر. لذلك نفحص الحقل ok دائماً.
 export async function confirmOrderPickup(orderId: string, code: string): Promise<void> {
-  const { error } = await supabase.rpc('confirm_order_pickup', {
+  const { data, error } = await supabase.rpc('confirm_order_pickup', {
     p_order_id: orderId,
     p_code: code.trim(),
   });
   if (error) {
     const msg = error.message ?? '';
-    if (msg.includes('PICKUP_CODE_LOCKED')) throw new Error('تم إيقاف المحاولات مؤقتاً بعد عدة أكواد خاطئة. انتظر 15 دقيقة أو تواصل مع الدعم.');
-    if (msg.includes('PICKUP_CODE_NOT_ISSUED')) throw new Error('لم يصدر كود لهذا الطلب بعد. اطلب من التاجر فتح الطلب لعرض الكود.');
-    if (msg.includes('INVALID_PICKUP_CODE')) throw new Error('كود الاستلام غير صحيح. اطلب الكود من التاجر وحاول مجدداً.');
     if (msg.includes('ORDER_NOT_ASSIGNED')) throw new Error('الطلب ليس في مرحلة تسمح بتأكيد الاستلام.');
     if (msg.includes('NOT_ASSIGNED_DELIVERY')) throw new Error('هذا الطلب غير مسند إليك.');
     throw error;
+  }
+
+  const result = (data ?? {}) as { ok?: boolean; error?: string; attempts_left?: number; locked_until?: string };
+  if (result.ok === true) return;
+
+  const minutesLeft = result.locked_until
+    ? Math.max(1, Math.ceil((new Date(result.locked_until).getTime() - Date.now()) / 60000))
+    : 15;
+
+  switch (result.error) {
+    case 'PICKUP_CODE_LOCKED':
+      throw new Error(`تم إيقاف المحاولات مؤقتاً بعد عدة أكواد خاطئة. أعد المحاولة بعد ${minutesLeft} دقيقة.`);
+    case 'PICKUP_CODE_NOT_ISSUED':
+      throw new Error('لم يصدر كود لهذا الطلب بعد. اطلب من التاجر فتح الطلب لعرض الكود.');
+    case 'INVALID_PICKUP_CODE':
+      throw new Error(
+        `كود الاستلام غير صحيح.${typeof result.attempts_left === 'number' ? ` تبقّى ${result.attempts_left} محاولات.` : ''}`,
+      );
+    default:
+      throw new Error('تعذّر تأكيد الاستلام. حاول مجدداً.');
   }
 }
 

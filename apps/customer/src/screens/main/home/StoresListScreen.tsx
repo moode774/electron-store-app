@@ -47,8 +47,8 @@ const STORE_CAROUSEL_CARDS = [
   },
   {
     id: 's3',
-    title: 'توصيل مجاني للطلبات 🚚',
-    sub: 'شحن مجاني وسريع لكافة المتاجر المختارة على طلباتك الأولى',
+    title: 'توصيل سريع لكل المدن 🚚',
+    sub: 'رسوم التوصيل تُحسب حسب مدينتك وتظهر لك قبل تأكيد الطلب',
     btnText: 'تصفح المتاجر',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
@@ -139,6 +139,7 @@ export default function StoresListScreen({ navigation, route }: any) {
     id: s.id,
     store_name: s.store_name,
     store_category: s.store_category || 'متجر عام',
+    city: s.city ?? '',
     rating: Number(s.rating ?? 0),
     reviews_count: Number(s.total_reviews ?? 0),
     logo_url: s.store_logo_url,
@@ -199,10 +200,12 @@ export default function StoresListScreen({ navigation, route }: any) {
             {item.store_category}
           </Text>
 
-          <View style={styles.freeDeliveryPill}>
-            <Ionicons name="cube-outline" size={11} color="#059669" />
-            <Text style={styles.freeDeliveryText}>توصيل مجاني</Text>
-          </View>
+          {item.city ? (
+            <View style={styles.freeDeliveryPill}>
+              <Ionicons name="location-outline" size={11} color="#059669" />
+              <Text style={styles.freeDeliveryText}>{item.city}</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Stats Column: Rating & Reviews (بيانات حقيقية من القاعدة) */}
