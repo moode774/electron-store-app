@@ -655,42 +655,65 @@ export interface DeliveryFeeEstimate {
   perStore: Record<string, number>;
   /** false إذا لم تُطابق أي منطقة توصيل مدينة العنوان (السيرفر سيقرر) */
   matched: boolean;
-  /** true إذا كانت المنطقة المطابقة موقوفة التوصيل — السيرفر سيرفض الطلب */
+  /** true إذا كانت المنطقة المختارة لأي متجر موقوفة — السيرفر سيرفض الطلب */
   unavailable: boolean;
+  /** معرّفات المتاجر التي لا يتوفر لها توصيل لهذه المدينة */
+  unavailableStores: string[];
 }
 
 export async function estimateDeliveryFees(
   city: string | null | undefined,
   merchantIds: string[],
 ): Promise<DeliveryFeeEstimate> {
-  const empty: DeliveryFeeEstimate = { total: 0, perStore: {}, matched: false, unavailable: false };
+  const empty: DeliveryFeeEstimate = { total: 0, perStore: {}, matched: false, unavailable: false, unavailableStores: [] };
   if (!city || !merchantIds.length) return empty;
 
+  // مطابق حرفياً لاختيار المنطقة في place_order بالسيرفر:
+  //   ORDER BY (dz.merchant_id = p_merchant_id) DESC, dz.id LIMIT 1
+  // لصف المنصة تكون المقارنة NULL، و DESC في Postgres يضع NULL أولاً، لذا
+  // **منطقة المنصة تفوز متى وُجدت**، ومنطقة التاجر تُستخدم فقط عند غيابها.
+  // ثم يرفض السيرفر إن كانت المنطقة المختارة متوقفة (is_active/delivery_available).
+  // لا نُصفّي is_active في الاستعلام لأن السيرفر لا يفعل — التصفية كانت تُخفي
+  // منطقة تاجر متوقفة فيظهر التوصيل متاحاً ثم يرفض السيرفر الطلب.
   const { data, error } = await supabase
     .from(TABLES.DELIVERY_ZONES)
     .select('merchant_id, city, delivery_fee, delivery_available, is_active')
-    .eq('is_active', true)
     .ilike('city', city.trim());
   if (error || !data?.length) return empty;
 
-  const zones = data as { merchant_id: string | null; delivery_fee: number; delivery_available: boolean }[];
+  const zones = data as {
+    merchant_id: string | null;
+    delivery_fee: number;
+    delivery_available: boolean;
+    is_active: boolean;
+  }[];
   const platformZone = zones.find((z) => z.merchant_id === null);
   const perStore: Record<string, number> = {};
+  const unavailableStores: string[] = [];
   let total = 0;
   let matchedAny = false;
-  let unavailable = false;
 
   for (const merchantId of merchantIds) {
-    const zone = zones.find((z) => z.merchant_id === merchantId) ?? platformZone;
+    // المنصة أولاً ثم منطقة التاجر — نفس ما يختاره السيرفر فعلياً
+    const zone = platformZone ?? zones.find((z) => z.merchant_id === merchantId);
     if (!zone) continue;
     matchedAny = true;
-    if (!zone.delivery_available) unavailable = true;
+    if (!zone.is_active || !zone.delivery_available) {
+      unavailableStores.push(merchantId);
+      continue;
+    }
     const fee = Math.max(0, Number(zone.delivery_fee) || 0);
     perStore[merchantId] = fee;
     total += fee;
   }
 
-  return { total, perStore, matched: matchedAny, unavailable };
+  return {
+    total,
+    perStore,
+    matched: matchedAny,
+    unavailable: unavailableStores.length > 0,
+    unavailableStores,
+  };
 }
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {

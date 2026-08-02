@@ -116,6 +116,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
   const [feeLoading, setFeeLoading] = useState(true);
   const [feeMatched, setFeeMatched] = useState(false);
   const [feeError, setFeeError] = useState(false);
+  const [deliveryUnavailable, setDeliveryUnavailable] = useState(false);
 
   const finalTotal = Math.max(0, cartTotal + deliveryFee - (couponApplied ? discount : 0));
   const totalCount = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -132,11 +133,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
     }
     setFeeLoading(true);
     setFeeError(false);
+    setDeliveryUnavailable(false);
     estimateDeliveryFees(city, merchantIds)
       .then((est) => {
         if (!active) return;
         setDeliveryFee(est.total);
         setFeeMatched(est.matched);
+        setDeliveryUnavailable(est.unavailable);
       })
       .catch(() => {
         if (!active) return;
@@ -456,6 +459,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   <View style={styles.costItemRow}>
                     {feeLoading ? (
                       <Text style={styles.costValueText}>...</Text>
+                    ) : deliveryUnavailable ? (
+                      <Text style={[styles.costValueText, { color: '#DC2626' }]}>غير متاح</Text>
                     ) : feeError ? (
                       <Text style={styles.costValueText}>تعذّر الحساب</Text>
                     ) : deliveryFee > 0 ? (
@@ -647,6 +652,17 @@ export default function CheckoutScreen({ navigation, route }: any) {
           </View>
         </View>
 
+        {/* التوصيل غير متاح لهذه المدينة — السيرفر سيرفض الطلب */}
+        {deliveryUnavailable && (
+          <View style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
+            <Text style={styles.errorText}>
+              التوصيل غير متاح إلى {selectedAddress?.city || 'هذه المدينة'} من أحد المتاجر في سلتك.
+              غيّر عنوان التوصيل أو احذف منتجات ذلك المتجر.
+            </Text>
+          </View>
+        )}
+
         {/* Error Alert Card */}
         {!!submitError && (
           <View style={styles.errorCard}>
@@ -668,9 +684,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
           {/* Right Column: Complete Payment CTA Button */}
           <TouchableOpacity
-            style={[styles.checkoutBtn, placing && { opacity: 0.7 }]}
+            style={[styles.checkoutBtn, (placing || deliveryUnavailable) && { opacity: 0.7 }]}
             onPress={handleConfirmOrder}
-            disabled={placing}
+            disabled={placing || deliveryUnavailable}
             activeOpacity={0.88}
           >
             {placing ? (
