@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS, TIMEOUTS } from '@marketplace/shared-utils';
 import CustomAlert from '../../components/CustomAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const OTP_LENGTH = 6;
 const { height } = Dimensions.get('window');
@@ -142,9 +143,9 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
               />
             </View>
 
-            <Text style={styles.titleText}>رمز التحقق</Text>
-            <Text style={styles.subtitleText}>أدخل الرمز المكون من 6 أرقام المرسل إلى</Text>
-            <Text style={styles.phoneText}>{maskedPhone}</Text>
+            <Text style={styles.titleText}>{t('رمز التحقق')}</Text>
+            <Text style={styles.subtitleText}>{t('أدخل الرمز المكون من 6 أرقام المرسل إلى')}</Text>
+            <Text style={styles.phoneText}>{tv(maskedPhone)}</Text>
 
             <View style={styles.otpRow}>
               {Array(OTP_LENGTH).fill(null).map((_: null, i: number) => {
@@ -183,7 +184,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.verifyBtnText}>تأكيد الرمز</Text>
+                  <Text style={styles.verifyBtnText}>{t('تأكيد الرمز')}</Text>
                   <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.verifyArrow} />
                 </>
               )}
@@ -192,19 +193,18 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
             <View style={styles.resendWrapper}>
               {canResend ? (
                 <View style={styles.resendRow}>
-                  <Text style={styles.didNotReceiveText}>لم يصلك الرمز؟ </Text>
+                  <Text style={styles.didNotReceiveText}>{t('لم يصلك الرمز؟ ')}</Text>
                   <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
-                    <Text style={styles.resendActionText}>إعادة إرسال</Text>
+                    <Text style={styles.resendActionText}>{t('إعادة إرسال')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.timerRow}>
                   <Ionicons name="time-outline" size={16} color="#6B7280" />
-                  <Text style={styles.timerText}>
-                    إعادة الإرسال متاح بعد{' '}
+                  <Text style={styles.timerText}>{t('إعادة الإرسال متاح بعد')}{' '}
                     <Text style={styles.timerNum}>
-                      {String(Math.floor(countdown / 60)).padStart(2, '0')}:
-                      {String(countdown % 60).padStart(2, '0')}
+                      {tv(String(Math.floor(countdown / 60)).padStart(2, '0'))}:
+                      {tv(String(countdown % 60).padStart(2, '0'))}
                     </Text>
                   </Text>
                 </View>
@@ -217,8 +217,8 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
 
       <CustomAlert
         visible={alertVisible}
-        title={alertConfig.title}
-        message={alertConfig.message}
+        title={tv(alertConfig.title)}
+        message={tv(alertConfig.message)}
         onClose={() => setAlertVisible(false)}
       />
     </KeyboardAvoidingView>

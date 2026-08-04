@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const CONTENT = {
   privacy: {
@@ -38,20 +39,20 @@ export default function LegalScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{content.title}</Text>
+          <Text style={styles.headerTitle}>{tv(content.title)}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} showsVerticalScrollIndicator={false}>
-        <Text style={styles.updated}>آخر تحديث: يونيو 2026</Text>
+        <Text style={styles.updated}>{t('آخر تحديث: يونيو 2026')}</Text>
         {content.sections.map((s, i) => (
           <View key={i} style={styles.section}>
-            <Text style={styles.sectionTitle}>{s.h}</Text>
-            <Text style={styles.sectionBody}>{s.p}</Text>
+            <Text style={styles.sectionTitle}>{tv(s.h)}</Text>
+            <Text style={styles.sectionBody}>{tv(s.p)}</Text>
           </View>
         ))}
         <View style={{ height: 40 }} />

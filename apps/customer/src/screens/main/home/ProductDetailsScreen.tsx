@@ -8,6 +8,7 @@ import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, getReviews, ProductDetail } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
@@ -88,13 +89,13 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     return (
       <View style={styles.errorState} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={52} color="#B91C1C" />
-        <Text style={styles.errorTitle}>تعذّر فتح المنتج</Text>
-        <Text style={styles.errorMessage}>{loadError || 'المنتج غير موجود أو لم يعد متاحًا.'}</Text>
+        <Text style={styles.errorTitle}>{t('تعذّر فتح المنتج')}</Text>
+        <Text style={styles.errorMessage}>{tv(loadError || t('المنتج غير موجود أو لم يعد متاحًا.'))}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => void loadProduct()} accessibilityRole="button">
-          <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+          <Text style={styles.retryButtonText}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backLinkButton} onPress={() => navigation.goBack()} accessibilityRole="button">
-          <Text style={styles.backLink}>العودة</Text>
+          <Text style={styles.backLink}>{t('العودة')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -136,14 +137,14 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         <View style={[styles.mediaPanel, layout.desktop && styles.mediaPanelDesktop]}>
         {/* Header Options */}
         <View style={[styles.header, layout.desktop && styles.headerDesktop]}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel="مشاركة المنتج">
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: t('{0} - {1} ر.ي', [tv(PRODUCT.name), tv(PRODUCT.price)]), title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel={t('مشاركة المنتج')}>
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? 'إزالة المنتج من المفضلة' : 'إضافة المنتج إلى المفضلة'} accessibilityState={{ selected: wished }}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? t('إزالة المنتج من المفضلة') : t('إضافة المنتج إلى المفضلة')} accessibilityState={{ selected: wished }}>
               <Ionicons name={wished ? 'heart' : 'heart-outline'} size={22} color={wished ? '#EF4444' : '#111827'} />
             </TouchableOpacity>
           </View>
@@ -172,29 +173,27 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
               activeOpacity={0.7}
               onPress={() => PRODUCT.store.id && navigation.navigate('StoreDetails', { storeId: PRODUCT.store.id })}
               accessibilityRole="button"
-              accessibilityLabel={`فتح متجر ${PRODUCT.store.name}`}
+              accessibilityLabel={t('فتح متجر {0}', [tv(PRODUCT.store.name)])}
             >
               <Ionicons name="storefront-outline" size={14} color={COLORS.primary} />
-              <Text style={styles.storeName}>{PRODUCT.store.name}</Text>
+              <Text style={styles.storeName}>{tv(PRODUCT.store.name)}</Text>
             </TouchableOpacity>
             <View style={styles.ratingBadge}>
               <Ionicons name="star" size={12} color="#B45309" />
-              <Text style={styles.ratingText}>{PRODUCT.rating}</Text>
-              <Text style={styles.reviewsText}>({PRODUCT.reviews})</Text>
+              <Text style={styles.ratingText}>{tv(PRODUCT.rating)}</Text>
+              <Text style={styles.reviewsText}>({tv(PRODUCT.reviews)})</Text>
             </View>
           </View>
 
-          <Text style={styles.productName}>{PRODUCT.name}</Text>
+          <Text style={styles.productName}>{tv(PRODUCT.name)}</Text>
           
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.ي</Text></Text>
+            <Text style={styles.price}>{tv(PRODUCT.price)} <Text style={styles.currency}>{t('ر.ي')}</Text></Text>
             {PRODUCT.oldPrice ? (
               <>
-                <Text style={styles.oldPrice}>{PRODUCT.oldPrice}</Text>
+                <Text style={styles.oldPrice}>{tv(PRODUCT.oldPrice)}</Text>
                 <View style={styles.discountBadge}>
-                  <Text style={styles.discountText}>
-                    خصم {Math.round((1 - PRODUCT.price / PRODUCT.oldPrice) * 100)}%
-                  </Text>
+                  <Text style={styles.discountText}>{t('خصم {0}%', [Math.round((1 - PRODUCT.price / PRODUCT.oldPrice) * 100)])}</Text>
                 </View>
               </>
             ) : null}
@@ -203,12 +202,12 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           <View style={styles.soldRow}>
             <View style={styles.soldBadge}>
               <Ionicons name="flame" size={14} color="#DC2626" />
-              <Text style={styles.soldText}>تم بيع {PRODUCT.sold} قطعة</Text>
+              <Text style={styles.soldText}>{t('تم بيع {0} قطعة', [tv(PRODUCT.sold)])}</Text>
             </View>
             <View style={[styles.stockBadge, !PRODUCT.hasStock && styles.stockBadgeOut]}>
               <Ionicons name={PRODUCT.hasStock ? 'cube-outline' : 'close-circle-outline'} size={14} color={PRODUCT.hasStock ? '#059669' : '#DC2626'} />
               <Text style={[styles.stockText, !PRODUCT.hasStock && { color: '#DC2626' }]}>
-                {PRODUCT.hasStock ? `متبقي ${PRODUCT.stock} قطعة` : 'نفد المخزون'}
+                {tv(PRODUCT.hasStock ? t('متبقي {0} قطعة', [tv(PRODUCT.stock)]) : t('نفد المخزون'))}
               </Text>
             </View>
           </View>
@@ -218,7 +217,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           {/* Variants (خيارات حقيقية) */}
           {variants.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>الخيارات المتاحة</Text>
+              <Text style={styles.sectionTitle}>{t('الخيارات المتاحة')}</Text>
               <View style={styles.variantsRow}>
                 {variants.map((v) => {
                   const isActive = selectedVariant?.id === v.id;
@@ -230,11 +229,11 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
                       disabled={v.stock_quantity <= 0}
                       activeOpacity={0.8}
                       accessibilityRole="radio"
-                      accessibilityLabel={`${v.name}${v.stock_quantity <= 0 ? '، نفد المخزون' : ''}`}
+                      accessibilityLabel={`${v.name}${v.stock_quantity <= 0 ? t('، نفد المخزون') : ''}`}
                       accessibilityState={{ selected: isActive, disabled: v.stock_quantity <= 0 }}
                     >
                       <Text style={[styles.variantLabel, isActive && styles.variantLabelActive]}>
-                        {v.name}{v.price_modifier > 0 ? ` (+${v.price_modifier})` : ''}
+                        {tv(v.name)}{tv(v.price_modifier > 0 ? ` (+${v.price_modifier})` : '')}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -245,8 +244,8 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           )}
 
           {/* Description */}
-          <Text style={styles.sectionTitle}>تفاصيل المنتج</Text>
-          <Text style={styles.description}>{PRODUCT.description}</Text>
+          <Text style={styles.sectionTitle}>{t('تفاصيل المنتج')}</Text>
+          <Text style={styles.description}>{tv(PRODUCT.description)}</Text>
           
         </View>
         </View>
@@ -262,19 +261,19 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             onPress={() => setQuantity(Math.max(1, quantity - 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="تقليل الكمية"
+            accessibilityLabel={t('تقليل الكمية')}
             accessibilityState={{ disabled: quantity <= 1 }}
             disabled={quantity <= 1}
           >
             <Ionicons name="remove" size={20} color="#111827" />
           </TouchableOpacity>
-          <Text style={styles.qtyText}>{quantity}</Text>
+          <Text style={styles.qtyText}>{tv(quantity)}</Text>
           <TouchableOpacity
             style={styles.qtyBtn}
             onPress={() => setQuantity(Math.min(PRODUCT.stock > 0 ? PRODUCT.stock : 1, quantity + 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="زيادة الكمية"
+            accessibilityLabel={t('زيادة الكمية')}
             accessibilityState={{ disabled: quantity >= PRODUCT.stock }}
             disabled={quantity >= PRODUCT.stock}
           >
@@ -287,7 +286,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           activeOpacity={0.9}
           disabled={!PRODUCT.hasStock}
           accessibilityRole="button"
-          accessibilityLabel={`إضافة ${PRODUCT.name} إلى السلة`}
+          accessibilityLabel={t('إضافة {0} إلى السلة', [tv(PRODUCT.name)])}
           accessibilityState={{ disabled: !PRODUCT.hasStock }}
           onPress={() => {
             if (!PRODUCT.store.id) {
@@ -311,9 +310,9 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             navigation.navigate('Cart', { screen: 'CartMain' });
           }}
         >
-          <Text style={styles.addToCartText}>{PRODUCT.hasStock ? 'إضافة للسلة' : 'نفد المخزون'}</Text>
+          <Text style={styles.addToCartText}>{tv(PRODUCT.hasStock ? t('إضافة للسلة') : t('نفد المخزون'))}</Text>
           <View style={styles.addToCartPriceBox}>
-            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.ي</Text>
+            <Text style={styles.addToCartPrice}>{t('{0} ر.ي', [PRODUCT.price * quantity])}</Text>
           </View>
         </TouchableOpacity>
         </View>

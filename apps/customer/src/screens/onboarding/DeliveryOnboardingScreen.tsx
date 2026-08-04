@@ -17,6 +17,7 @@ import {
   useAuthStore,
 } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const VEHICLE_TYPES = [
   { key: 'motorcycle', label: 'دراجة نارية', icon: 'bicycle-outline' },
@@ -153,17 +154,17 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
           style={[styles.logoutButton, { left: layout.gutter }, layout.desktop && styles.logoutButtonDesktop]}
           onPress={() => useAuthStore.getState().signOut()}
           accessibilityRole="button"
-          accessibilityLabel="تسجيل الخروج"
+          accessibilityLabel={t('تسجيل الخروج')}
         >
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
-          <Text style={[styles.logoutText, layout.compact && styles.logoutTextCompact]}>خروج</Text>
+          <Text style={[styles.logoutText, layout.compact && styles.logoutTextCompact]}>{t('خروج')}</Text>
         </TouchableOpacity>
 
         <View style={styles.headerIcon}>
           <Ionicons name="bicycle" size={28} color={COLORS.primary} />
         </View>
-        <Text style={styles.headerTitle}>إعداد حساب التوصيل</Text>
-        <Text style={styles.headerSub}>أدخل بياناتك للبدء في استقبال الطلبات</Text>
+        <Text style={styles.headerTitle}>{t('إعداد حساب التوصيل')}</Text>
+        <Text style={styles.headerSub}>{t('أدخل بياناتك للبدء في استقبال الطلبات')}</Text>
       </View>
 
       <ScrollView
@@ -174,23 +175,23 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         {/* Info banner */}
         <View style={styles.infoBanner}>
           <Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" />
-          <Text style={styles.infoBannerText}>بياناتك آمنة ومحمية — تُستخدم فقط للتحقق من هويتك</Text>
+          <Text style={styles.infoBannerText}>{t('بياناتك آمنة ومحمية — تُستخدم فقط للتحقق من هويتك')}</Text>
         </View>
 
         {/* Personal */}
-        <Text style={styles.groupTitle}>المعلومات الشخصية</Text>
+        <Text style={styles.groupTitle}>{t('المعلومات الشخصية')}</Text>
 
-        <Field label="الاسم الكامل" icon="person-outline">
+        <Field label={t('الاسم الكامل')} icon="person-outline">
           <TextInput
             style={styles.input}
-            placeholder="الاسم الأول والأخير"
+            placeholder={t('الاسم الأول والأخير')}
             placeholderTextColor="#9CA3AF"
             value={fullName}
             onChangeText={setFullName}
           />
         </Field>
 
-        <Field label="رقم الهوية الوطنية *" icon="card-outline">
+        <Field label={t('رقم الهوية الوطنية *')} icon="card-outline">
           <TextInput
             style={styles.input}
             placeholder="0000000000"
@@ -203,9 +204,9 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         </Field>
 
         {/* Vehicle */}
-        <Text style={styles.groupTitle}>معلومات المركبة</Text>
+        <Text style={styles.groupTitle}>{t('معلومات المركبة')}</Text>
 
-        <Text style={styles.fieldLabel}>نوع المركبة *</Text>
+        <Text style={styles.fieldLabel}>{t('نوع المركبة *')}</Text>
         <View style={styles.vehicleGrid}>
           {VEHICLE_TYPES.map((v) => (
             <TouchableOpacity
@@ -219,15 +220,15 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
               activeOpacity={0.8}
             >
               <Ionicons name={v.icon as any} size={26} color={vehicleType === v.key ? '#fff' : '#6B7280'} />
-              <Text style={[styles.vehicleLabel, vehicleType === v.key && styles.vehicleLabelActive]}>{v.label}</Text>
+              <Text style={[styles.vehicleLabel, vehicleType === v.key && styles.vehicleLabelActive]}>{tv(v.label)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Field label="رقم اللوحة *" icon="barcode-outline">
+        <Field label={t('رقم اللوحة *')} icon="barcode-outline">
           <TextInput
             style={styles.input}
-            placeholder="مثال: ABC 1234"
+            placeholder={t('مثال: ABC 1234')}
             placeholderTextColor="#9CA3AF"
             value={vehiclePlate}
             onChangeText={setVehiclePlate}
@@ -236,8 +237,8 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         </Field>
 
         {/* City */}
-        <Text style={styles.groupTitle}>منطقة العمل</Text>
-        <Text style={styles.fieldLabel}>المدينة *</Text>
+        <Text style={styles.groupTitle}>{t('منطقة العمل')}</Text>
+        <Text style={styles.fieldLabel}>{t('المدينة *')}</Text>
         <View style={styles.chipGrid}>
           {CITIES.map((c) => (
             <TouchableOpacity
@@ -246,17 +247,17 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
               onPress={() => setCity(c)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.chipText, city === c && styles.chipTextActive]}>{c}</Text>
+              <Text style={[styles.chipText, city === c && styles.chipTextActive]}>{tv(c)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Document uploads */}
-        <Text style={styles.groupTitle}>صور المستندات (اختياري)</Text>
-        <Text style={styles.groupSub}>تسريع عملية المراجعة بإرفاق المستندات</Text>
+        <Text style={styles.groupTitle}>{t('صور المستندات (اختياري)')}</Text>
+        <Text style={styles.groupSub}>{t('تسريع عملية المراجعة بإرفاق المستندات')}</Text>
 
         <DocPicker
-          label="صورة الهوية الوطنية"
+          label={t('صورة الهوية الوطنية')}
           icon="card"
           picked={!!idImage}
           onPick={async () => {
@@ -265,7 +266,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
           }}
         />
         <DocPicker
-          label="صورة رخصة القيادة"
+          label={t('صورة رخصة القيادة')}
           icon="document-text"
           picked={!!licenseImage}
           onPick={async () => {
@@ -276,17 +277,14 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
 
         <View style={styles.finalNote}>
           <Ionicons name="time-outline" size={20} color="#D97706" />
-          <Text style={styles.finalNoteText}>
-            بعد الإرسال سيراجع فريقنا بياناتك خلال 24 ساعة ويمكنك البدء باستقبال الطلبات فور القبول
-          </Text>
+          <Text style={styles.finalNoteText}>{t('بعد الإرسال سيراجع فريقنا بياناتك خلال 24 ساعة ويمكنك البدء باستقبال الطلبات فور القبول')}</Text>
         </View>
 
         <TouchableOpacity style={styles.termsRow} onPress={() => setAgreedToTerms((v) => !v)} activeOpacity={0.8}>
           <View style={[styles.checkbox, agreedToTerms && styles.checkboxActive]}>
             {agreedToTerms && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
           </View>
-          <Text style={styles.termsText}>
-            أوافق على <Text style={styles.termsLink}>الشروط والأحكام</Text> و <Text style={styles.termsLink}>سياسة الخصوصية</Text>
+          <Text style={styles.termsText}>{t('أوافق على')}{' '}<Text style={styles.termsLink}>{t('الشروط والأحكام')}</Text>{' '}{t('و')}{' '}<Text style={styles.termsLink}>{t('سياسة الخصوصية')}</Text>
           </Text>
         </TouchableOpacity>
 
@@ -304,7 +302,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <>
-              <Text style={styles.submitBtnText}>إرسال البيانات</Text>
+              <Text style={styles.submitBtnText}>{t('إرسال البيانات')}</Text>
               <Ionicons name="send" size={18} color="#fff" />
             </>
           )}
@@ -317,7 +315,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
 function Field({ label, icon, children }: { label: string; icon: string; children: React.ReactNode }) {
   return (
     <View style={styles.fieldGroup}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={styles.fieldLabel}>{tv(label)}</Text>
       <View style={styles.fieldBox}>
         <Ionicons name={icon as any} size={18} color="#9CA3AF" style={{ marginRight: 10 }} />
         <View style={{ flex: 1 }}>{children}</View>
@@ -333,8 +331,8 @@ function DocPicker({ label, icon, picked, onPick }: { label: string; icon: strin
         <Ionicons name={picked ? 'checkmark-circle' : (icon as any)} size={22} color={picked ? '#059669' : '#6B7280'} />
       </View>
       <View style={styles.docInfo}>
-        <Text style={[styles.docLabel, picked && styles.docLabelPicked]}>{label}</Text>
-        <Text style={styles.docSub}>{picked ? 'تم الاختيار ✅ — اضغط للتغيير' : 'اضغط للاختيار من معرض الصور'}</Text>
+        <Text style={[styles.docLabel, picked && styles.docLabelPicked]}>{tv(label)}</Text>
+        <Text style={styles.docSub}>{tv(picked ? t('تم الاختيار ✅ — اضغط للتغيير') : t('اضغط للاختيار من معرض الصور'))}</Text>
       </View>
       <Ionicons name="camera-outline" size={20} color="#9CA3AF" />
     </TouchableOpacity>

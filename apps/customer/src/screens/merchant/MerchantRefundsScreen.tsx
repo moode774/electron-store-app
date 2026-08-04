@@ -10,6 +10,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const STATUS: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'بانتظار المراجعة', color: '#B45309', bg: '#FFFBEB' },
@@ -83,23 +84,23 @@ export default function MerchantRefundsScreen({ navigation }: any) {
   return (
     <View style={styles.page}>
       <View style={[styles.header, isCompact && styles.headerCompact, isTablet && styles.headerWide]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>طلبات الاسترداد</Text>
-          <Text style={styles.subtitle}>راجع الطلب وقدّم معلوماتك؛ قرار القبول والتنفيذ المالي من صلاحية الإدارة.</Text>
+          <Text style={styles.title}>{t('طلبات الاسترداد')}</Text>
+          <Text style={styles.subtitle}>{t('راجع الطلب وقدّم معلوماتك؛ قرار القبول والتنفيذ المالي من صلاحية الإدارة.')}</Text>
         </View>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filters, isTablet && styles.filtersWide]}>
         {[
-          { key: '', label: 'الكل' }, { key: 'pending', label: 'قيد المراجعة' },
-          { key: 'approved', label: 'مقبول' }, { key: 'processing', label: 'قيد التنفيذ' },
-          { key: 'completed', label: 'مكتمل' }, { key: 'rejected', label: 'مرفوض' },
+          { key: '', label: t('الكل') }, { key: 'pending', label: t('قيد المراجعة') },
+          { key: 'approved', label: t('مقبول') }, { key: 'processing', label: t('قيد التنفيذ') },
+          { key: 'completed', label: t('مكتمل') }, { key: 'rejected', label: t('مرفوض') },
         ].map((option) => (
           <TouchableOpacity key={option.key} style={[styles.filter, filter === option.key && styles.filterActive]} onPress={() => setFilter(option.key)} accessibilityRole="button" accessibilityState={{ selected: filter === option.key }}>
-            <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{option.label}</Text>
+            <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{tv(option.label)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -107,8 +108,8 @@ export default function MerchantRefundsScreen({ navigation }: any) {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color="#111827" /></View> : error ? (
         <View style={styles.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={44} color="#B91C1C" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retry} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={styles.errorText}>{tv(error)}</Text>
+          <TouchableOpacity style={styles.retry} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -119,37 +120,37 @@ export default function MerchantRefundsScreen({ navigation }: any) {
           key={isTablet ? 'refund-grid' : 'refund-list'}
           columnWrapperStyle={isTablet ? styles.columnWrapper : undefined}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
-          ListEmptyComponent={<View style={styles.center}><Text style={styles.emptyText}>لا توجد طلبات استرداد بهذه الحالة.</Text></View>}
+          ListEmptyComponent={<View style={styles.center}><Text style={styles.emptyText}>{t('لا توجد طلبات استرداد بهذه الحالة.')}</Text></View>}
           renderItem={({ item }) => {
             const meta = STATUS[item.status] ?? { label: item.status, color: '#64748B', bg: '#F1F5F9' };
             const orderItems = Array.isArray(item.orders?.order_items) ? item.orders.order_items : [];
             return (
               <View style={[styles.card, isCompact && styles.cardCompact]}>
                 <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
-                  <View style={[styles.badge, { backgroundColor: meta.bg }]}><Text style={[styles.badgeText, { color: meta.color }]}>{meta.label}</Text></View>
+                  <View style={[styles.badge, { backgroundColor: meta.bg }]}><Text style={[styles.badgeText, { color: meta.color }]}>{tv(meta.label)}</Text></View>
                   <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                    <Text style={styles.orderNumber}>طلب #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8)}</Text>
-                    <Text style={styles.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+                    <Text style={styles.orderNumber}>{t('طلب #{0}', [item.orders?.order_number ?? item.order_id?.slice?.(0, 8)])}</Text>
+                    <Text style={styles.date}>{tv(new Date(item.created_at).toLocaleString(getLocale()))}</Text>
                   </View>
                 </View>
                 <View style={[styles.amountRow, isCompact && styles.amountRowCompact]}>
-                  <Text style={styles.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} ر.ي</Text>
-                  <Text style={styles.amountLabel}>المبلغ المحسوب للاسترداد</Text>
+                  <Text style={styles.amount}>{t('{0} ر.ي', [Number(item.refund_amount ?? 0).toFixed(2)])}</Text>
+                  <Text style={styles.amountLabel}>{t('المبلغ المحسوب للاسترداد')}</Text>
                 </View>
-                <Text style={styles.label}>السبب</Text>
-                <Text style={styles.body}>{item.reason ?? '—'}</Text>
-                {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
+                <Text style={styles.label}>{t('السبب')}</Text>
+                <Text style={styles.body}>{tv(item.reason ?? '—')}</Text>
+                {item.description ? <Text style={styles.description}>{tv(item.description)}</Text> : null}
                 {orderItems.length ? (
                   <View style={styles.itemsBox}>
-                    <Text style={styles.label}>عناصر الطلب</Text>
-                    {orderItems.map((orderItem: any, index: number) => <Text key={`${orderItem.product_name}-${index}`} style={styles.itemLine}>{orderItem.product_name ?? 'منتج'} × {orderItem.quantity ?? 0}</Text>)}
+                    <Text style={styles.label}>{t('عناصر الطلب')}</Text>
+                    {orderItems.map((orderItem: any, index: number) => <Text key={`${orderItem.product_name}-${index}`} style={styles.itemLine}>{tv(orderItem.product_name ?? t('منتج'))} × {tv(orderItem.quantity ?? 0)}</Text>)}
                   </View>
                 ) : null}
-                {item.merchant_response ? <View style={styles.responseBox}><Text style={styles.label}>رد المتجر</Text><Text style={styles.body}>{item.merchant_response}</Text></View> : null}
-                {item.decision_reason ? <View style={styles.adminBox}><Text style={styles.label}>سبب القرار</Text><Text style={styles.body}>{item.decision_reason}</Text></View> : null}
+                {item.merchant_response ? <View style={styles.responseBox}><Text style={styles.label}>{t('رد المتجر')}</Text><Text style={styles.body}>{tv(item.merchant_response)}</Text></View> : null}
+                {item.decision_reason ? <View style={styles.adminBox}><Text style={styles.label}>{t('سبب القرار')}</Text><Text style={styles.body}>{tv(item.decision_reason)}</Text></View> : null}
                 {item.status === 'pending' ? (
-                  <TouchableOpacity style={styles.responseButton} onPress={() => openResponse(item)} accessibilityRole="button" accessibilityLabel="إضافة رد التاجر">
-                    <Text style={styles.responseButtonText}>{item.merchant_response ? 'تحديث رد المتجر' : 'إضافة معلومات للإدارة'}</Text>
+                  <TouchableOpacity style={styles.responseButton} onPress={() => openResponse(item)} accessibilityRole="button" accessibilityLabel={t('إضافة رد التاجر')}>
+                    <Text style={styles.responseButtonText}>{tv(item.merchant_response ? t('تحديث رد المتجر') : t('إضافة معلومات للإدارة'))}</Text>
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -161,13 +162,13 @@ export default function MerchantRefundsScreen({ navigation }: any) {
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => !sending && setSelected(null)} accessibilityViewIsModal>
         <View style={styles.modalOverlay}>
           <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalTitle}>رد المتجر على طلب الاسترداد</Text>
-            <Text style={styles.modalHint}>اكتب حالة تجهيز الطلب أو أي معلومة تساعد الإدارة. هذا الرد لا يرفض الطلب ولا يغير حالته.</Text>
-            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder="تفاصيل رد المتجر..." placeholderTextColor="#94A3B8" accessibilityLabel="رد المتجر" />
+            <Text style={styles.modalTitle}>{t('رد المتجر على طلب الاسترداد')}</Text>
+            <Text style={styles.modalHint}>{t('اكتب حالة تجهيز الطلب أو أي معلومة تساعد الإدارة. هذا الرد لا يرفض الطلب ولا يغير حالته.')}</Text>
+            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder={t('تفاصيل رد المتجر...')} placeholderTextColor="#94A3B8" accessibilityLabel={t('رد المتجر')} />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
-              <TouchableOpacity style={styles.cancel} onPress={() => setSelected(null)} disabled={sending}><Text style={styles.cancelText}>إلغاء</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.cancel} onPress={() => setSelected(null)} disabled={sending}><Text style={styles.cancelText}>{t('إلغاء')}</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.confirm, (!response.trim() || sending) && { opacity: 0.5 }]} onPress={sendResponse} disabled={!response.trim() || sending}>
-                {sending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.confirmText}>حفظ الرد</Text>}
+                {sending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.confirmText}>{t('حفظ الرد')}</Text>}
               </TouchableOpacity>
             </View>
           </ScrollView>

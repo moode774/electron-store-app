@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const CATEGORIES = [
   { value: 'technical', label: 'مشكلة تقنية' },
@@ -68,46 +69,46 @@ export default function HelpCenterScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>مركز المساعدة</Text>
+          <Text style={styles.headerTitle}>{t('مركز المساعدة')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* إرسال تذكرة دعم */}
-        <Text style={styles.sectionTitle}>إرسال طلب دعم</Text>
+        <Text style={styles.sectionTitle}>{t('إرسال طلب دعم')}</Text>
         <View style={styles.ticketForm}>
           <View style={styles.catRow}>
             {CATEGORIES.map((c) => (
-              <TouchableOpacity key={c.value} style={[styles.catChip, category === c.value && styles.catChipActive]} onPress={() => setCategory(c.value)} activeOpacity={0.7} accessibilityRole="radio" accessibilityLabel={c.label} accessibilityState={{ selected: category === c.value }}>
-                <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{c.label}</Text>
+              <TouchableOpacity key={c.value} style={[styles.catChip, category === c.value && styles.catChipActive]} onPress={() => setCategory(c.value)} activeOpacity={0.7} accessibilityRole="radio" accessibilityLabel={tv(c.label)} accessibilityState={{ selected: category === c.value }}>
+                <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{tv(c.label)}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <TextInput style={styles.ticketInput} placeholder="الموضوع" placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel="موضوع تذكرة الدعم" />
-          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder="اشرح مشكلتك..." placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel="تفاصيل تذكرة الدعم" />
-          <TouchableOpacity style={[styles.submitTicket, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
-            {sending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitTicketText}>إرسال التذكرة</Text>}
+          <TextInput style={styles.ticketInput} placeholder={t('الموضوع')} placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel={t('موضوع تذكرة الدعم')} />
+          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder={t('اشرح مشكلتك...')} placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel={t('تفاصيل تذكرة الدعم')} />
+          <TouchableOpacity style={[styles.submitTicket, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={t('إرسال تذكرة الدعم')} accessibilityState={{ disabled: sending, busy: sending }}>
+            {sending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitTicketText}>{t('إرسال التذكرة')}</Text>}
           </TouchableOpacity>
         </View>
 
-        {ticketError ? <Text style={styles.ticketError} accessibilityRole="alert">{ticketError}</Text> : null}
+        {ticketError ? <Text style={styles.ticketError} accessibilityRole="alert">{tv(ticketError)}</Text> : null}
 
         {tickets.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>تذاكري</Text>
+            <Text style={styles.sectionTitle}>{t('تذاكري')}</Text>
             <View style={styles.faqContainer}>
-              {tickets.map((t, i) => (
-                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
+              {tickets.map((ticket, i) => (
+                <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={t('فتح تذكرة {0}', [tv(ticket.subject)])}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.ticketSubject}>{t.subject}</Text>
-                    <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
+                    <Text style={styles.ticketSubject}>{tv(ticket.subject)}</Text>
+                    <Text style={styles.ticketDate}>{tv(new Date(ticket.created_at).toLocaleDateString(getLocale()))}</Text>
                   </View>
                   <View style={styles.ticketStatusBadge}>
-                    <Text style={styles.ticketStatusText}>{TICKET_STATUS[t.status] ?? t.status}</Text>
+                    <Text style={styles.ticketStatusText}>{tv(TICKET_STATUS[ticket.status] ?? ticket.status)}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -116,7 +117,7 @@ export default function HelpCenterScreen({ navigation }: any) {
         )}
 
         {/* FAQs */}
-        <Text style={styles.sectionTitle}>الأسئلة الشائعة</Text>
+        <Text style={styles.sectionTitle}>{t('الأسئلة الشائعة')}</Text>
         <View style={styles.faqContainer}>
           {FAQS.map((faq, index) => {
             const isOpen = expandedId === faq.id;
@@ -127,13 +128,13 @@ export default function HelpCenterScreen({ navigation }: any) {
                   onPress={() => setExpandedId(isOpen ? null : faq.id)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={faq.q}
+                  accessibilityLabel={tv(faq.q)}
                   accessibilityState={{ expanded: isOpen }}
                 >
-                  <Text style={styles.faqQuestion}>{faq.q}</Text>
+                  <Text style={styles.faqQuestion}>{tv(faq.q)}</Text>
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#9CA3AF" />
                 </TouchableOpacity>
-                {isOpen && <Text style={styles.faqAnswer}>{faq.a}</Text>}
+                {isOpen && <Text style={styles.faqAnswer}>{tv(faq.a)}</Text>}
               </View>
             );
           })}

@@ -18,6 +18,7 @@ import DeliveryZonesScreen from '../screens/delivery/DeliveryZonesScreen';
 import DeliverySupportScreen from '../screens/delivery/DeliverySupportScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
 import SupportTicketThreadScreen from '../screens/shared/SupportTicketThreadScreen';
+import { t, tv } from '@marketplace/shared-i18n';
 
 export type DeliveryAccountStackParamList = {
   AccountMain: undefined;
@@ -98,8 +99,8 @@ function DesktopDeliverySidebar() {
           <Ionicons name="bicycle" size={22} color={COLORS.surface} />
         </View>
         <View style={styles.desktopBrandCopy}>
-          <Text style={styles.desktopBrandTitle}>مساحة المندوب</Text>
-          <Text style={styles.desktopBrandSubtitle}>إدارة التوصيل</Text>
+          <Text style={styles.desktopBrandTitle}>{t('مساحة المندوب')}</Text>
+          <Text style={styles.desktopBrandSubtitle}>{t('إدارة التوصيل')}</Text>
         </View>
       </View>
 
@@ -113,7 +114,7 @@ function DesktopDeliverySidebar() {
               onPress={() => navigation.navigate(item.route)}
               activeOpacity={0.82}
               accessibilityRole="button"
-              accessibilityLabel={item.label}
+              accessibilityLabel={tv(item.label)}
               accessibilityState={{ selected: active }}
             >
               <View style={[styles.desktopNavIcon, active && styles.desktopNavIconActive]}>
@@ -123,7 +124,7 @@ function DesktopDeliverySidebar() {
                   color={active ? COLORS.surface : COLORS.textSecondary}
                 />
               </View>
-              <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>{item.label}</Text>
+              <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>{tv(item.label)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -134,14 +135,14 @@ function DesktopDeliverySidebar() {
         onPress={() => navigation.navigate('DeliveryHome')}
         activeOpacity={0.84}
         accessibilityRole="button"
-        accessibilityLabel="فتح استقبال طلبات التوصيل"
+        accessibilityLabel={t('فتح استقبال طلبات التوصيل')}
       >
         <View style={styles.desktopOnlineIcon}>
           <Ionicons name="radio-outline" size={20} color={COLORS.primary} />
         </View>
         <View style={styles.desktopOnlineCopy}>
-          <Text style={styles.desktopOnlineTitle}>استقبال الطلبات</Text>
-          <Text style={styles.desktopOnlineSubtitle}>تحكم بحالة الاتصال</Text>
+          <Text style={styles.desktopOnlineTitle}>{t('استقبال الطلبات')}</Text>
+          <Text style={styles.desktopOnlineSubtitle}>{t('تحكم بحالة الاتصال')}</Text>
         </View>
         <Ionicons name="chevron-back" size={18} color={COLORS.textMuted} />
       </TouchableOpacity>
@@ -191,7 +192,7 @@ export default function DeliveryTabNavigator() {
         name="DeliveryHome"
         component={OffersNavigator}
         options={{
-          tabBarLabel: 'الرئيسية',
+          tabBarLabel: t('الرئيسية'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />,
         }}
       />
@@ -199,7 +200,7 @@ export default function DeliveryTabNavigator() {
         name="DeliveryOrders"
         component={ActiveDeliveryScreen}
         options={{
-          tabBarLabel: 'الطلبات',
+          tabBarLabel: t('الطلبات'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />,
         }}
       />
@@ -213,7 +214,7 @@ export default function DeliveryTabNavigator() {
           },
         })}
         options={{
-          tabBarLabel: 'قبول',
+          tabBarLabel: t('قبول'),
           tabBarIcon: () => (
             <View style={{
               width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primary,
@@ -232,7 +233,7 @@ export default function DeliveryTabNavigator() {
         name="DeliveryEarnings"
         component={EarningsScreen}
         options={{
-          tabBarLabel: 'الأرباح',
+          tabBarLabel: t('الأرباح'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={22} color={color} />,
         }}
       />
@@ -240,7 +241,7 @@ export default function DeliveryTabNavigator() {
         name="DeliveryMore"
         component={AccountNavigator}
         options={{
-          tabBarLabel: 'المزيد',
+          tabBarLabel: t('المزيد'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} />,
         }}
       />
@@ -254,12 +255,12 @@ export default function DeliveryTabNavigator() {
         <View style={styles.desktopMain}>
           <View style={styles.desktopTopBar}>
             <View>
-              <Text style={styles.desktopTopTitle}>لوحة المندوب</Text>
-              <Text style={styles.desktopTopSubtitle}>تابع التوصيلات والأرباح من مكان واحد</Text>
+              <Text style={styles.desktopTopTitle}>{t('لوحة المندوب')}</Text>
+              <Text style={styles.desktopTopSubtitle}>{t('تابع التوصيلات والأرباح من مكان واحد')}</Text>
             </View>
             <View style={styles.desktopTopStatus}>
               <View style={styles.desktopTopStatusDot} />
-              <Text style={styles.desktopTopStatusText}>جاهز للعمل</Text>
+              <Text style={styles.desktopTopStatusText}>{t('جاهز للعمل')}</Text>
             </View>
           </View>
           <View style={styles.desktopFrame}>{content}</View>

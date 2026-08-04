@@ -8,6 +8,7 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 export default function ChatScreen({ navigation, route }: any) {
   const layout = useCustomerLayout(960);
@@ -86,9 +87,9 @@ export default function ChatScreen({ navigation, route }: any) {
     return (
       <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowOther]}>
         <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
-          <Text style={[styles.bubbleText, mine && { color: '#FFFFFF' }]}>{item.message}</Text>
+          <Text style={[styles.bubbleText, mine && { color: '#FFFFFF' }]}>{tv(item.message)}</Text>
           <Text style={[styles.bubbleTime, mine && { color: 'rgba(255,255,255,0.7)' }]}>
-            {new Date(item.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+            {tv(new Date(item.created_at).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }))}
           </Text>
         </View>
       </View>
@@ -100,10 +101,10 @@ export default function ChatScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{tv(title)}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -115,9 +116,9 @@ export default function ChatScreen({ navigation, route }: any) {
       ) : (
         <>
           {loadError ? (
-            <TouchableOpacity style={[styles.errorBanner, { width: layout.usableWidth }]} onPress={load} accessibilityRole="button" accessibilityLabel="إعادة تحميل الرسائل">
+            <TouchableOpacity style={[styles.errorBanner, { width: layout.usableWidth }]} onPress={load} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل الرسائل')}>
               <Ionicons name="cloud-offline-outline" size={18} color="#B91C1C" />
-              <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+              <Text style={styles.errorText}>{t('{0} اضغط لإعادة المحاولة.', [tv(loadError)])}</Text>
             </TouchableOpacity>
           ) : null}
           <FlatList
@@ -131,7 +132,7 @@ export default function ChatScreen({ navigation, route }: any) {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="chatbubbles-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.emptyText}>ابدأ المحادثة الآن</Text>
+                <Text style={styles.emptyText}>{t('ابدأ المحادثة الآن')}</Text>
               </View>
             }
           />
@@ -142,15 +143,15 @@ export default function ChatScreen({ navigation, route }: any) {
         <View style={[styles.inputBar, { paddingHorizontal: layout.gutter }]}>
           <TextInput
             style={styles.input}
-            placeholder="اكتب رسالة..."
+            placeholder={t('اكتب رسالة...')}
             placeholderTextColor={COLORS.textMuted}
             value={text}
             onChangeText={setText}
             multiline
             maxLength={2000}
-            accessibilityLabel="نص الرسالة"
+            accessibilityLabel={t('نص الرسالة')}
           />
-          <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="إرسال الرسالة">
+          <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('إرسال الرسالة')}>
             <Ionicons name="send" size={20} color={COLORS.surface} />
           </TouchableOpacity>
         </View>

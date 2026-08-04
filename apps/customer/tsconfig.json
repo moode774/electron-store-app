@@ -14,6 +14,9 @@
       ],
       "@marketplace/shared-utils": [
         "../../packages/shared-utils/src/index.ts"
+      ],
+      "@marketplace/shared-i18n": [
+        "../../packages/shared-i18n/src/index.ts"
       ]
     }
   },

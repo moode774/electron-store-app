@@ -11,6 +11,7 @@ import * as Location from 'expo-location';
 import {
   useAuthStore, createMerchantProfile, uploadImageToStorage, getServiceAreas, ServiceArea,
 } from '@marketplace/shared-hooks';
+import { t, tv } from '@marketplace/shared-i18n';
 
 // ─── Design System ─────────────────────────────────────────
 const UI = {
@@ -63,12 +64,12 @@ const STEP_META = [
 function Field({ label, icon, children, hint }: { label: string; icon: string; children: React.ReactNode; hint?: string }) {
   return (
     <View style={s.fieldGroup}>
-      <Text style={s.fieldLabel}>{label}</Text>
+      <Text style={s.fieldLabel}>{tv(label)}</Text>
       <View style={s.fieldBox}>
         <Ionicons name={icon as any} size={18} color={UI.textMuted} style={{ marginLeft: 12 }} />
         <View style={{ flex: 1 }}>{children}</View>
       </View>
-      {hint && <Text style={s.fieldHint}>{hint}</Text>}
+      {hint && <Text style={s.fieldHint}>{tv(hint)}</Text>}
     </View>
   );
 }
@@ -77,16 +78,16 @@ function ReviewBlock({ title, rows, onEdit }: { title: string; rows: [string, st
   return (
     <View style={s.reviewCard}>
       <View style={s.reviewHeader}>
-        <Text style={s.reviewTitle}>{title}</Text>
+        <Text style={s.reviewTitle}>{tv(title)}</Text>
         <TouchableOpacity onPress={onEdit} activeOpacity={0.7} style={s.reviewEditBtn}>
           <Ionicons name="create-outline" size={14} color={UI.primary} />
-          <Text style={s.reviewEditText}>تعديل</Text>
+          <Text style={s.reviewEditText}>{t('تعديل')}</Text>
         </TouchableOpacity>
       </View>
       {rows.map(([k, v]) => (
         <View key={k} style={s.reviewRow}>
-          <Text style={s.reviewKey}>{k}</Text>
-          <Text style={s.reviewVal} numberOfLines={1}>{v || '—'}</Text>
+          <Text style={s.reviewKey}>{tv(k)}</Text>
+          <Text style={s.reviewVal} numberOfLines={1}>{tv(v || '—')}</Text>
         </View>
       ))}
     </View>
@@ -236,18 +237,18 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View style={s.stepIconBox}>
           <Ionicons name={currentMeta.icon as any} size={28} color={UI.primary} />
         </View>
-        <Text style={s.stepTitle}>{currentMeta.label}</Text>
-        <Text style={s.stepCount}>الخطوة {step} من {TOTAL_STEPS}</Text>
+        <Text style={s.stepTitle}>{tv(currentMeta.label)}</Text>
+        <Text style={s.stepCount}>{t('الخطوة {0} من {1}', [tv(step), tv(TOTAL_STEPS)])}</Text>
       </View>
 
       {/* ── Step 1 ── معلومات المتجر */}
       {step === 1 && (
         <View>
-          <Field label="الاسم التجاري للمتجر" icon="storefront-outline">
-            <TextInput style={s.input} placeholder="مثال: متجر الأناقة" placeholderTextColor={UI.textMuted} value={storeName} onChangeText={setStoreName} textAlign="right" />
+          <Field label={t('الاسم التجاري للمتجر')} icon="storefront-outline">
+            <TextInput style={s.input} placeholder={t('مثال: متجر الأناقة')} placeholderTextColor={UI.textMuted} value={storeName} onChangeText={setStoreName} textAlign="right" />
           </Field>
-          <Field label="وصف المتجر (اختياري)" icon="document-text-outline" hint="يظهر للعملاء في صفحة متجرك">
-            <TextInput style={[s.input, s.textarea]} placeholder="نبذة مميزة عن متجرك..." placeholderTextColor={UI.textMuted} value={description} onChangeText={setDescription} multiline textAlign="right" textAlignVertical="top" />
+          <Field label={t('وصف المتجر (اختياري)')} icon="document-text-outline" hint={t('يظهر للعملاء في صفحة متجرك')}>
+            <TextInput style={[s.input, s.textarea]} placeholder={t('نبذة مميزة عن متجرك...')} placeholderTextColor={UI.textMuted} value={description} onChangeText={setDescription} multiline textAlign="right" textAlignVertical="top" />
           </Field>
         </View>
       )}
@@ -255,11 +256,11 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 2 ── تصنيف المتجر */}
       {step === 2 && (
         <View>
-          <Text style={s.subLabel}>اختر التصنيف الأنسب لمنتجاتك</Text>
+          <Text style={s.subLabel}>{t('اختر التصنيف الأنسب لمنتجاتك')}</Text>
           <View style={s.chipGrid}>
             {STORE_CATEGORIES.map((cat) => (
               <TouchableOpacity key={cat} style={[s.chip, storeCategory === cat && s.chipActive]} onPress={() => setStoreCategory(cat)} activeOpacity={0.7}>
-                <Text style={[s.chipText, storeCategory === cat && s.chipTextActive]}>{cat}</Text>
+                <Text style={[s.chipText, storeCategory === cat && s.chipTextActive]}>{tv(cat)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -269,10 +270,10 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 3 ── معلومات التواصل */}
       {step === 3 && (
         <View>
-          <Field label="رقم تواصل المتجر" icon="call-outline" hint="سيظهر للعملاء لإتمام الطلب">
+          <Field label={t('رقم تواصل المتجر')} icon="call-outline" hint={t('سيظهر للعملاء لإتمام الطلب')}>
             <TextInput style={s.input} placeholder="7XXXXXXXX" placeholderTextColor={UI.textMuted} value={storePhone} onChangeText={setStorePhone} keyboardType="phone-pad" textAlign="right" />
           </Field>
-          <Field label="رقم واتساب (اختياري)" icon="logo-whatsapp">
+          <Field label={t('رقم واتساب (اختياري)')} icon="logo-whatsapp">
             <TextInput style={s.input} placeholder="7XXXXXXXX" placeholderTextColor={UI.textMuted} value={whatsapp} onChangeText={setWhatsapp} keyboardType="phone-pad" textAlign="right" />
           </Field>
         </View>
@@ -281,7 +282,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 4 ── الهوية البصرية */}
       {step === 4 && (
         <View>
-          <Text style={s.subLabel}>شعار المتجر</Text>
+          <Text style={s.subLabel}>{t('شعار المتجر')}</Text>
           <TouchableOpacity style={s.imagePicker} activeOpacity={0.8} onPress={async () => { const uri = await pickImage([1, 1]); if (uri) setLogoUri(uri); }}>
             {logoUri ? (
               <Image source={{ uri: logoUri }} style={s.imagePreview} resizeMode="cover" />
@@ -290,16 +291,16 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
                 <View style={s.imagePickerIconBox}>
                   <Ionicons name="camera-outline" size={26} color={UI.primary} />
                 </View>
-                <Text style={s.imagePickerTitle}>رفع شعار المتجر</Text>
-                <Text style={s.imagePickerSub}>JPG او PNG — مربع الشكل مفضل</Text>
+                <Text style={s.imagePickerTitle}>{t('رفع شعار المتجر')}</Text>
+                <Text style={s.imagePickerSub}>{t('JPG او PNG — مربع الشكل مفضل')}</Text>
               </View>
             )}
           </TouchableOpacity>
-          {logoUri && <Text style={s.changeHint}>اضغط الصورة لتغييرها</Text>}
+          {logoUri && <Text style={s.changeHint}>{t('اضغط الصورة لتغييرها')}</Text>}
 
           <View style={s.divider} />
 
-          <Text style={s.subLabel}>لافتة المتجر (اختياري)</Text>
+          <Text style={s.subLabel}>{t('لافتة المتجر (اختياري)')}</Text>
           <TouchableOpacity style={[s.imagePicker, { borderColor: UI.border, borderStyle: 'solid' }]} activeOpacity={0.8} onPress={async () => { const uri = await pickImage([16, 9]); if (uri) setBannerUri(uri); }}>
             {bannerUri ? (
               <Image source={{ uri: bannerUri }} style={s.imagePreview} resizeMode="cover" />
@@ -308,44 +309,44 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
                 <View style={[s.imagePickerIconBox, { backgroundColor: UI.bg }]}>
                   <Ionicons name="image-outline" size={26} color={UI.textMuted} />
                 </View>
-                <Text style={[s.imagePickerTitle, { color: UI.textGrey }]}>رفع لافتة المتجر</Text>
-                <Text style={s.imagePickerSub}>نسبة 16:9 — تظهر اعلى صفحة متجرك</Text>
+                <Text style={[s.imagePickerTitle, { color: UI.textGrey }]}>{t('رفع لافتة المتجر')}</Text>
+                <Text style={s.imagePickerSub}>{t('نسبة 16:9 — تظهر اعلى صفحة متجرك')}</Text>
               </View>
             )}
           </TouchableOpacity>
-          {bannerUri && <Text style={s.changeHint}>اضغط الصورة لتغييرها</Text>}
+          {bannerUri && <Text style={s.changeHint}>{t('اضغط الصورة لتغييرها')}</Text>}
         </View>
       )}
 
       {/* ── Step 5 ── الموقع والمحافظة */}
       {step === 5 && (
         <View>
-          <Text style={s.subLabel}>المدينة / المحافظة</Text>
+          <Text style={s.subLabel}>{t('المدينة / المحافظة')}</Text>
           <View style={s.chipGrid}>
             {CITIES.map((c) => (
               <TouchableOpacity key={c} style={[s.chip, city === c && s.chipActive]} onPress={() => setCity(c)} activeOpacity={0.7}>
-                <Text style={[s.chipText, city === c && s.chipTextActive]}>{c}</Text>
+                <Text style={[s.chipText, city === c && s.chipTextActive]}>{tv(c)}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Field label="العنوان التفصيلي" icon="navigate-outline">
-            <TextInput style={s.input} placeholder="الحي، الشارع، اقرب معلم" placeholderTextColor={UI.textMuted} value={address} onChangeText={setAddress} textAlign="right" />
+          <Field label={t('العنوان التفصيلي')} icon="navigate-outline">
+            <TextInput style={s.input} placeholder={t('الحي، الشارع، اقرب معلم')} placeholderTextColor={UI.textMuted} value={address} onChangeText={setAddress} textAlign="right" />
           </Field>
 
-          <Text style={s.subLabel}>الموقع الجغرافي</Text>
+          <Text style={s.subLabel}>{t('الموقع الجغرافي')}</Text>
           <TouchableOpacity style={[s.locationBtn, lat != null && s.locationBtnDone]} onPress={captureLocation} disabled={locating} activeOpacity={0.8}>
             {locating ? (
               <ActivityIndicator color={UI.primary} size="small" />
             ) : lat != null ? (
               <>
                 <Ionicons name="checkmark-circle" size={20} color={UI.green} />
-                <Text style={s.locationDoneText}>تم تحديد الموقع بنجاح ({lat}, {lng})</Text>
+                <Text style={s.locationDoneText}>{t('تم تحديد الموقع بنجاح ({0}, {1})', [tv(lat), tv(lng)])}</Text>
               </>
             ) : (
               <>
                 <Ionicons name="locate" size={20} color={UI.primary} />
-                <Text style={s.locationText}>استخدام موقعي الحالي</Text>
+                <Text style={s.locationText}>{t('استخدام موقعي الحالي')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -355,15 +356,15 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 6 ── نطاق التوصيل */}
       {step === 6 && (
         <View>
-          <Text style={s.subLabel}>حدد نطاق استقبالك للطلبات</Text>
+          <Text style={s.subLabel}>{t('حدد نطاق استقبالك للطلبات')}</Text>
           {DELIVERY_TYPES.map((type) => (
             <TouchableOpacity key={type.id} style={[s.selectionCard, deliveryType === type.id && s.selectionCardActive]} onPress={() => setDeliveryType(type.id)} activeOpacity={0.8}>
               <View style={[s.selectionRadio, deliveryType === type.id && s.selectionRadioActive]}>
                 {deliveryType === type.id && <View style={s.selectionRadioDot} />}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.selectionTitle, deliveryType === type.id && { color: UI.primary }]}>{type.title}</Text>
-                <Text style={s.selectionDesc}>{type.desc}</Text>
+                <Text style={[s.selectionTitle, deliveryType === type.id && { color: UI.primary }]}>{tv(type.title)}</Text>
+                <Text style={s.selectionDesc}>{tv(type.desc)}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -375,19 +376,19 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View>
           <View style={s.infoBox}>
             <Ionicons name="lock-closed-outline" size={18} color={UI.blueText} />
-            <Text style={s.infoText}>جميع البيانات مشفرة وآمنة تماماً ولا تُشارك مع أي طرف ثالث.</Text>
+            <Text style={s.infoText}>{t('جميع البيانات مشفرة وآمنة تماماً ولا تُشارك مع أي طرف ثالث.')}</Text>
           </View>
-          <Field label="اسم مالك المتجر" icon="person-outline">
-            <TextInput style={s.input} placeholder="الاسم الكامل" placeholderTextColor={UI.textMuted} value={ownerName} onChangeText={setOwnerName} textAlign="right" />
+          <Field label={t('اسم مالك المتجر')} icon="person-outline">
+            <TextInput style={s.input} placeholder={t('الاسم الكامل')} placeholderTextColor={UI.textMuted} value={ownerName} onChangeText={setOwnerName} textAlign="right" />
           </Field>
-          <Field label="رقم الهوية الوطنية" icon="card-outline">
-            <TextInput style={s.input} placeholder="رقم الهوية" placeholderTextColor={UI.textMuted} value={nationalId} onChangeText={setNationalId} keyboardType="numeric" textAlign="right" />
+          <Field label={t('رقم الهوية الوطنية')} icon="card-outline">
+            <TextInput style={s.input} placeholder={t('رقم الهوية')} placeholderTextColor={UI.textMuted} value={nationalId} onChangeText={setNationalId} keyboardType="numeric" textAlign="right" />
           </Field>
-          <Field label="رقم السجل التجاري" icon="document-outline">
-            <TextInput style={s.input} placeholder="مثال: 1010000000" placeholderTextColor={UI.textMuted} value={commercialRegister} onChangeText={setCommercialRegister} keyboardType="numeric" textAlign="right" />
+          <Field label={t('رقم السجل التجاري')} icon="document-outline">
+            <TextInput style={s.input} placeholder={t('مثال: 1010000000')} placeholderTextColor={UI.textMuted} value={commercialRegister} onChangeText={setCommercialRegister} keyboardType="numeric" textAlign="right" />
           </Field>
-          <Field label="الرقم الضريبي (اختياري)" icon="receipt-outline">
-            <TextInput style={s.input} placeholder="الرقم الضريبي ان وجد" placeholderTextColor={UI.textMuted} value={taxNumber} onChangeText={setTaxNumber} keyboardType="numeric" textAlign="right" />
+          <Field label={t('الرقم الضريبي (اختياري)')} icon="receipt-outline">
+            <TextInput style={s.input} placeholder={t('الرقم الضريبي ان وجد')} placeholderTextColor={UI.textMuted} value={taxNumber} onChangeText={setTaxNumber} keyboardType="numeric" textAlign="right" />
           </Field>
         </View>
       )}
@@ -397,16 +398,16 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View>
           <View style={s.infoBox}>
             <Ionicons name="information-circle-outline" size={18} color={UI.blueText} />
-            <Text style={s.infoText}>سنقوم بتحويل أرباحك دورياً إلى هذا الحساب. تأكد من دقة البيانات.</Text>
+            <Text style={s.infoText}>{t('سنقوم بتحويل أرباحك دورياً إلى هذا الحساب. تأكد من دقة البيانات.')}</Text>
           </View>
-          <Field label="اسم البنك" icon="business-outline">
+          <Field label={t('اسم البنك')} icon="business-outline">
             <TextInput style={[s.input, { color: UI.textMuted }]} value={bankName} onChangeText={setBankName} editable={false} textAlign="right" />
           </Field>
-          <Field label="اسم صاحب الحساب" icon="person-circle-outline">
-            <TextInput style={s.input} placeholder="الاسم كما يظهر في الحساب البنكي" placeholderTextColor={UI.textMuted} value={bankAccountName} onChangeText={setBankAccountName} textAlign="right" />
+          <Field label={t('اسم صاحب الحساب')} icon="person-circle-outline">
+            <TextInput style={s.input} placeholder={t('الاسم كما يظهر في الحساب البنكي')} placeholderTextColor={UI.textMuted} value={bankAccountName} onChangeText={setBankAccountName} textAlign="right" />
           </Field>
-          <Field label="رقم الحساب البنكي" icon="card-outline">
-            <TextInput style={s.input} placeholder="رقم حسابك في بنك الكريمي" placeholderTextColor={UI.textMuted} value={iban} onChangeText={setIban} keyboardType="numeric" textAlign="right" />
+          <Field label={t('رقم الحساب البنكي')} icon="card-outline">
+            <TextInput style={s.input} placeholder={t('رقم حسابك في بنك الكريمي')} placeholderTextColor={UI.textMuted} value={iban} onChangeText={setIban} keyboardType="numeric" textAlign="right" />
           </Field>
         </View>
       )}
@@ -414,46 +415,45 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 9 ── المراجعة */}
       {step === 9 && (
         <View>
-          <ReviewBlock title="معلومات المتجر" onEdit={() => setStep(1)} rows={[
-            ['اسم المتجر', storeName],
-            ['الوصف', description],
-            ['التصنيف', storeCategory],
+          <ReviewBlock title={t('معلومات المتجر')} onEdit={() => setStep(1)} rows={[
+            [t('اسم المتجر'), storeName],
+            [t('الوصف'), description],
+            [t('التصنيف'), storeCategory],
           ]} />
-          <ReviewBlock title="التواصل" onEdit={() => setStep(3)} rows={[
-            ['الهاتف', storePhone],
-            ['واتساب', whatsapp],
+          <ReviewBlock title={t('التواصل')} onEdit={() => setStep(3)} rows={[
+            [t('الهاتف'), storePhone],
+            [t('واتساب'), whatsapp],
           ]} />
-          <ReviewBlock title="الموقع والتوصيل" onEdit={() => setStep(5)} rows={[
-            ['المحافظة', city],
-            ['العنوان', address],
-            ['نطاق التوصيل', deliveryType === 'local' ? 'داخل المحافظة' : 'كافة المحافظات'],
+          <ReviewBlock title={t('الموقع والتوصيل')} onEdit={() => setStep(5)} rows={[
+            [t('المحافظة'), city],
+            [t('العنوان'), address],
+            [t('نطاق التوصيل'), deliveryType === 'local' ? t('داخل المحافظة') : t('كافة المحافظات')],
           ]} />
-          <ReviewBlock title="الوثائق الرسمية" onEdit={() => setStep(7)} rows={[
-            ['اسم المالك', ownerName],
-            ['الهوية', nationalId],
-            ['السجل التجاري', commercialRegister],
+          <ReviewBlock title={t('الوثائق الرسمية')} onEdit={() => setStep(7)} rows={[
+            [t('اسم المالك'), ownerName],
+            [t('الهوية'), nationalId],
+            [t('السجل التجاري'), commercialRegister],
           ]} />
-          <ReviewBlock title="البيانات البنكية" onEdit={() => setStep(8)} rows={[
-            ['البنك', bankName],
-            ['اسم الحساب', bankAccountName],
-            ['رقم الحساب', iban],
+          <ReviewBlock title={t('البيانات البنكية')} onEdit={() => setStep(8)} rows={[
+            [t('البنك'), bankName],
+            [t('اسم الحساب'), bankAccountName],
+            [t('رقم الحساب'), iban],
           ]} />
 
           <TouchableOpacity style={s.termsRow} onPress={() => setAgreedToTerms((v) => !v)} activeOpacity={0.8}>
             <View style={[s.checkbox, agreedToTerms && s.checkboxActive]}>
               {agreedToTerms && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
             </View>
-            <Text style={s.termsText}>
-              أوافق على{' '}
-              <Text style={s.termsLink}>الشروط والأحكام</Text>
-              {' '}و{' '}
-              <Text style={s.termsLink}>سياسة الخصوصية</Text>
+            <Text style={s.termsText}>{t('أوافق على')}{' '}
+              <Text style={s.termsLink}>{t('الشروط والأحكام')}</Text>
+              {' '}{t('و')}{' '}
+              <Text style={s.termsLink}>{t('سياسة الخصوصية')}</Text>
             </Text>
           </TouchableOpacity>
 
           <View style={s.finalNote}>
             <Ionicons name="time-outline" size={18} color={UI.green} />
-            <Text style={s.finalNoteText}>بعد الإرسال سيراجع فريقنا بياناتك خلال 24 ساعة ويصلك إشعار بالقبول.</Text>
+            <Text style={s.finalNoteText}>{t('بعد الإرسال سيراجع فريقنا بياناتك خلال 24 ساعة ويصلك إشعار بالقبول.')}</Text>
           </View>
         </View>
       )}
@@ -474,15 +474,15 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
             onPress={() => useAuthStore.getState().signOut()} 
             style={{position: 'absolute', top: 20, right: 20, flexDirection: 'row-reverse', alignItems: 'center', gap: 6}}
           >
-            <Text style={{color: '#FCA5A5', fontSize: 13, fontWeight: '700'}}>تسجيل خروج</Text>
+            <Text style={{color: '#FCA5A5', fontSize: 13, fontWeight: '700'}}>{t('تسجيل خروج')}</Text>
             <Ionicons name="log-out-outline" size={18} color="#FCA5A5" />
           </TouchableOpacity>
 
           <View style={s.sidebarLogo}>
             <Ionicons name="storefront" size={28} color={UI.white} />
           </View>
-          <Text style={s.sidebarMainTitle}>تسجيل متجر</Text>
-          <Text style={s.sidebarSubTitle}>أكمل الخطوات لتفعيل متجرك</Text>
+          <Text style={s.sidebarMainTitle}>{t('تسجيل متجر')}</Text>
+          <Text style={s.sidebarSubTitle}>{t('أكمل الخطوات لتفعيل متجرك')}</Text>
 
           <View style={s.sidebarSteps}>
             {STEP_META.map((m, i) => {
@@ -496,11 +496,11 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
                   <View style={[s.sidebarDot, isDone && s.sidebarDotDone, isAct && s.sidebarDotActive]}>
                     {isDone
                       ? <Ionicons name="checkmark" size={14} color={UI.white} />
-                      : <Text style={[s.sidebarDotNum, isAct && { color: UI.white }]}>{idx}</Text>
+                      : <Text style={[s.sidebarDotNum, isAct && { color: UI.white }]}>{tv(idx)}</Text>
                     }
                   </View>
                   <Text style={[s.sidebarStepLabel, isAct && s.sidebarStepLabelActive, isDone && { color: UI.green }]}>
-                    {m.label}
+                    {tv(m.label)}
                   </Text>
                 </View>
               );
@@ -518,20 +518,20 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
               {step > 1 && (
                 <TouchableOpacity style={s.backBtn} onPress={() => setStep((s) => s - 1)} activeOpacity={0.7}>
                   <Ionicons name="arrow-forward" size={18} color={UI.textDark} />
-                  <Text style={s.backBtnText}>السابق</Text>
+                  <Text style={s.backBtnText}>{t('السابق')}</Text>
                 </TouchableOpacity>
               )}
               <View style={{ flex: 1 }} />
               {step < TOTAL_STEPS ? (
                 <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
-                  <Text style={s.nextBtnText}>التالي</Text>
+                  <Text style={s.nextBtnText}>{t('التالي')}</Text>
                   <Ionicons name="arrow-back" size={18} color={UI.white} />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity style={[s.nextBtn, (saving || !agreedToTerms) && s.btnDisabled]} onPress={submitProfile} disabled={saving || !agreedToTerms} activeOpacity={0.85}>
                   {saving ? <ActivityIndicator color={UI.white} size="small" /> : (
                     <>
-                      <Text style={s.nextBtnText}>ارسال وتفعيل المتجر</Text>
+                      <Text style={s.nextBtnText}>{t('ارسال وتفعيل المتجر')}</Text>
                       <Ionicons name="checkmark-circle" size={18} color={UI.white} />
                     </>
                   )}
@@ -561,7 +561,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
           </TouchableOpacity>
         )}
         <View style={s.mobileHeaderCenter}>
-          <Text style={s.mobileHeaderLabel}>تسجيل متجر جديد</Text>
+          <Text style={s.mobileHeaderLabel}>{t('تسجيل متجر جديد')}</Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -578,14 +578,14 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View style={[s.mobileBottomBar, { paddingHorizontal: pageGutter }]}>
           {step < TOTAL_STEPS ? (
             <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
-              <Text style={s.nextBtnText}>التالي</Text>
+              <Text style={s.nextBtnText}>{t('التالي')}</Text>
               <Ionicons name="arrow-back" size={18} color={UI.white} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[s.nextBtn, (saving || !agreedToTerms) && s.btnDisabled]} onPress={submitProfile} disabled={saving || !agreedToTerms} activeOpacity={0.85}>
               {saving ? <ActivityIndicator color={UI.white} size="small" /> : (
                 <>
-                  <Text style={s.nextBtnText}>ارسال وتفعيل المتجر</Text>
+                  <Text style={s.nextBtnText}>{t('ارسال وتفعيل المتجر')}</Text>
                   <Ionicons name="checkmark-circle" size={18} color={UI.white} />
                 </>
               )}

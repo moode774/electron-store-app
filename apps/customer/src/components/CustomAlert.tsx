@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { t, tv } from '@marketplace/shared-i18n';
 
 interface CustomAlertProps {
   visible: boolean;
@@ -32,15 +33,15 @@ export default function CustomAlert({
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.alertBox}>
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.message}>{message}</Text>
+              <Text style={styles.title}>{tv(title)}</Text>
+              <Text style={styles.message}>{tv(message)}</Text>
               
               <TouchableOpacity
                 style={styles.button}
                 onPress={onClose}
                 activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>حسناً</Text>
+                <Text style={styles.buttonText}>{t('حسناً')}</Text>
               </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>

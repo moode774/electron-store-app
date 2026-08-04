@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -57,7 +58,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
     const targetLabel = AUDIENCE_OPTIONS.find(a => a.key === audience)?.label ?? 'الجميع';
     Alert.alert(
       'تأكيد الإرسال',
-      `إرسال إشعار إلى: ${targetLabel}\nالعنوان: ${title}`,
+      t('إرسال إشعار إلى: {0}\nالعنوان: {1}', [tv(targetLabel), tv(title)]),
       [
         { text: 'إلغاء', style: 'cancel' },
         {
@@ -91,9 +92,9 @@ export default function AdminNotificationsScreen({ navigation }: any) {
     );
   };
 
-  const applyTemplate = (t: { title: string; body: string }) => {
-    setTitle(t.title);
-    setBody(t.body);
+  const applyTemplate = (template: { title: string; body: string }) => {
+    setTitle(template.title);
+    setBody(template.body);
     setSentCount(null);
   };
 
@@ -106,7 +107,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>إرسال الإشعارات</Text>
+            <Text style={s.headerTitle}>{t('إرسال الإشعارات')}</Text>
           </View>
           <View style={s.headerIcon}>
             <Ionicons name="notifications" size={20} color={UI.primary} />
@@ -119,12 +120,12 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         {sentCount !== null && (
           <View style={s.successBanner}>
             <Ionicons name="checkmark-circle" size={22} color={UI.success} />
-            <Text style={s.successText}>تم إنشاء {sentCount} إشعار داخل التطبيق.</Text>
+            <Text style={s.successText}>{t('تم إنشاء {0} إشعار داخل التطبيق.', [tv(sentCount)])}</Text>
           </View>
         )}
 
         <View style={s.card}>
-          <Text style={s.sectionTitle}>الجمهور المستهدف</Text>
+          <Text style={s.sectionTitle}>{t('الجمهور المستهدف')}</Text>
           <View style={s.audienceGrid}>
             {AUDIENCE_OPTIONS.map(opt => (
               <TouchableOpacity
@@ -136,43 +137,43 @@ export default function AdminNotificationsScreen({ navigation }: any) {
                 <View style={[s.audienceIcon, { backgroundColor: audience === opt.key ? opt.color : '#F1F5F9' }]}>
                   <Ionicons name={opt.icon as any} size={20} color={audience === opt.key ? '#FFFFFF' : UI.textMuted} />
                 </View>
-                <Text style={[s.audienceLabel, audience === opt.key && { color: opt.color, fontWeight: '800' }]}>{opt.label}</Text>
+                <Text style={[s.audienceLabel, audience === opt.key && { color: opt.color, fontWeight: '800' }]}>{tv(opt.label)}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         <View style={s.card}>
-          <Text style={s.sectionTitle}>قوالب الإشعارات الجاهزة</Text>
+          <Text style={s.sectionTitle}>{t('قوالب الإشعارات الجاهزة')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.templatesRow}>
-            {QUICK_TEMPLATES.map((t, idx) => (
-              <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(t)} activeOpacity={0.8}>
+            {QUICK_TEMPLATES.map((template, idx) => (
+              <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(template)} activeOpacity={0.8}>
                 <Ionicons name="flash" size={14} color={UI.primary} />
-                <Text style={s.templateChipText}>{t.title}</Text>
+                <Text style={s.templateChipText}>{tv(template.title)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
         <View style={s.card}>
-          <Text style={s.sectionTitle}>محتوى الإشعار</Text>
+          <Text style={s.sectionTitle}>{t('محتوى الإشعار')}</Text>
           <View style={s.inputWrapper}>
              <TextInput
                style={s.input}
-               placeholder="عنوان الإشعار (مثال: خصم جديد!)"
+               placeholder={t('عنوان الإشعار (مثال: خصم جديد!)')}
                placeholderTextColor={UI.textMuted}
                value={title}
                onChangeText={setTitle}
                textAlign="right"
                maxLength={80}
              />
-             <Text style={s.charCount}>{title.length}/80</Text>
+             <Text style={s.charCount}>{tv(title.length)}/80</Text>
           </View>
 
           <View style={s.inputWrapper}>
              <TextInput
                style={[s.input, s.textArea]}
-               placeholder="اكتب نص وتفاصيل الإشعار هنا..."
+               placeholder={t('اكتب نص وتفاصيل الإشعار هنا...')}
                placeholderTextColor={UI.textMuted}
                value={body}
                onChangeText={setBody}
@@ -182,19 +183,19 @@ export default function AdminNotificationsScreen({ navigation }: any) {
                textAlignVertical="top"
                maxLength={300}
              />
-             <Text style={s.charCount}>{body.length}/300</Text>
+             <Text style={s.charCount}>{tv(body.length)}/300</Text>
           </View>
         </View>
 
         <View style={s.previewBox}>
-          <Text style={s.previewLabel}>شكل الإشعار على هواتف المستخدمين</Text>
+          <Text style={s.previewLabel}>{t('شكل الإشعار على هواتف المستخدمين')}</Text>
           <View style={s.previewCard}>
             <View style={s.previewIconCircle}>
               <Ionicons name="notifications" size={20} color={UI.primary} />
             </View>
             <View style={s.previewContent}>
-              <Text style={s.previewTitle}>{title || 'عنوان الإشعار'}</Text>
-              <Text style={s.previewBody} numberOfLines={2}>{body || 'نص الإشعار سيظهر هنا...'}</Text>
+              <Text style={s.previewTitle}>{tv(title || t('عنوان الإشعار'))}</Text>
+              <Text style={s.previewBody} numberOfLines={2}>{tv(body || t('نص الإشعار سيظهر هنا...'))}</Text>
             </View>
           </View>
         </View>
@@ -209,7 +210,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
-              <Text style={s.sendBtnText}>إرسال الآن</Text>
+              <Text style={s.sendBtnText}>{t('إرسال الآن')}</Text>
               <Ionicons name="send" size={20} color="#FFFFFF" />
             </>
           )}

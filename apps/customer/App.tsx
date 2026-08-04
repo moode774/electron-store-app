@@ -29,6 +29,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAuthStore, useCartStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
+import { t, tv, useLanguageStore } from '@marketplace/shared-i18n';
 
 import SplashScreen from './src/screens/auth/SplashScreen';
 import OnboardingScreen from './src/screens/auth/OnboardingScreen';
@@ -181,14 +182,14 @@ function RootNavigator(): React.JSX.Element {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: 28, gap: 12 }} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={50} color="#B91C1C" />
-        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'center' }}>تعذّر فتح مساحة العمل</Text>
-        <Text style={{ color: '#6B7280', textAlign: 'center', lineHeight: 22 }}>{profileCheckError}</Text>
+        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'center' }}>{t('تعذّر فتح مساحة العمل')}</Text>
+        <Text style={{ color: '#6B7280', textAlign: 'center', lineHeight: 22 }}>{tv(profileCheckError)}</Text>
         <TouchableOpacity
           style={{ minHeight: 46, minWidth: 160, borderRadius: 13, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 }}
           onPress={() => setProfileCheckAttempt((value) => value + 1)}
           accessibilityRole="button"
         >
-          <Text style={{ color: '#fff', fontWeight: '800' }}>إعادة المحاولة</Text>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -214,6 +215,10 @@ export default function App(): React.JSX.Element | null {
   const [appReady, setAppReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const initialize = useAuthStore((s) => s.initialize);
+  // اللغة الحالية: تغييرها يعيد بناء شجرة التنقل بالكامل حتى تُترجم
+  // كل شاشة فوراً بدون الحاجة لإعادة تشغيل التطبيق.
+  const language = useLanguageStore((s) => s.language);
+  const initializeLanguage = useLanguageStore((s) => s.initialize);
   const sessionUserId = useAuthStore((s) => s.user?.id ?? null);
   const sessionRole = useAuthStore((s) => s.role);
   const clearCart = useCartStore((s) => s.clearCart);
@@ -286,6 +291,7 @@ export default function App(): React.JSX.Element | null {
   useEffect(() => {
     const prepare = async () => {
       try {
+        await initializeLanguage();
         await initialize();
         const done = await storage.get(ONBOARDING_KEY);
         setShowOnboarding(done !== '1');
@@ -328,7 +334,7 @@ export default function App(): React.JSX.Element | null {
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <NavigationContainer ref={navRef} onReady={openPendingPushDestination}>
+      <NavigationContainer key={language} ref={navRef} onReady={openPendingPushDestination}>
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

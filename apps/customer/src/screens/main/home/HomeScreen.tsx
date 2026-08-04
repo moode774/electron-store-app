@@ -35,6 +35,7 @@ import {
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { HomeStackParamList } from '../../../navigation/types';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
@@ -273,17 +274,17 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           {/* Top Row: Location Title & Bell Notification Button */}
           <View style={styles.headerTopRow}>
             <View style={styles.locationContainer}>
-              <Text style={styles.locationLabel}>الموقع</Text>
+              <Text style={styles.locationLabel}>{t('الموقع')}</Text>
               <TouchableOpacity
                 style={styles.locationPickerRow}
                 activeOpacity={0.8}
                 onPress={() => navigation.getParent()?.navigate('Account', { screen: 'AddressBook' })}
                 accessibilityRole="button"
-                accessibilityLabel="تغيير عنوان التوصيل"
+                accessibilityLabel={t('تغيير عنوان التوصيل')}
               >
                 <Ionicons name="location" size={17} color="#172554" />
                 <Text style={styles.locationValueText}>
-                  {defaultCity || 'اختر عنوان التوصيل'}
+                  {tv(defaultCity || t('اختر عنوان التوصيل'))}
                 </Text>
                 <Ionicons name="chevron-down" size={14} color="#64748B" />
               </TouchableOpacity>
@@ -294,7 +295,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               activeOpacity={0.8}
               onPress={() => navigation.getParent()?.navigate('Account', { screen: 'Notifications' })}
               accessibilityRole="button"
-              accessibilityLabel="الإشعارات"
+              accessibilityLabel={t('الإشعارات')}
             >
               <Ionicons name="notifications" size={20} color="#172554" />
               {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
@@ -309,9 +310,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               activeOpacity={0.9}
             >
               <Ionicons name="search-outline" size={20} color="#94A3B8" />
-              <Text style={styles.searchPlaceholderText} numberOfLines={1}>
-                ابحث عن منتجات، ماركات، ومتاجر...
-              </Text>
+              <Text style={styles.searchPlaceholderText} numberOfLines={1}>{t('ابحث عن منتجات، ماركات، ومتاجر...')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -340,15 +339,15 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 <Ionicons name="navigate" size={20} color="#172554" />
               </View>
               <View style={styles.activeOrderInfo}>
-                <Text style={styles.activeOrderTitle}>طلبك رقم #{activeOrder.order_number}</Text>
-                <Text style={styles.activeOrderSub}>قيد المعالجة الآن — تابع حالته لحظة بلحظة</Text>
+                <Text style={styles.activeOrderTitle}>{t('طلبك رقم #{0}', [tv(activeOrder.order_number)])}</Text>
+                <Text style={styles.activeOrderSub}>{t('قيد المعالجة الآن — تابع حالته لحظة بلحظة')}</Text>
               </View>
               <TouchableOpacity
                 style={styles.trackButton}
                 onPress={() => openTab('Orders', 'OrderTracking', { orderId: activeOrder.id })}
                 activeOpacity={0.86}
               >
-                <Text style={styles.trackButtonText}>تتبع</Text>
+                <Text style={styles.trackButtonText}>{t('تتبع')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -385,14 +384,14 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               return (
                 <View key={banner.id} style={[styles.heroCollectionCard, { width: layout.usableWidth || '100%' }]}>
                   <View style={styles.heroCollectionContent}>
-                    <Text style={styles.heroCollectionTitle}>{banner.title}</Text>
-                    <Text style={styles.heroCollectionSub}>{banner.sub}</Text>
+                    <Text style={styles.heroCollectionTitle}>{tv(banner.title)}</Text>
+                    <Text style={styles.heroCollectionSub}>{tv(banner.sub)}</Text>
                     <TouchableOpacity
                       style={styles.shopNowBtn}
                       onPress={() => navigation.navigate(banner.route as any)}
                       activeOpacity={0.88}
                     >
-                      <Text style={styles.shopNowBtnText}>{banner.btnText}</Text>
+                      <Text style={styles.shopNowBtnText}>{tv(banner.btnText)}</Text>
                     </TouchableOpacity>
                   </View>
                   <View style={styles.heroCollectionMedia}>
@@ -412,9 +411,9 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           {/* Categories Circle Bar (التصنيفات) */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitleBold}>التصنيفات</Text>
+            <Text style={styles.sectionTitleBold}>{t('التصنيفات')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('StoresList', {})} activeOpacity={0.75}>
-              <Text style={styles.seeAllLink}>عرض الكل</Text>
+              <Text style={styles.seeAllLink}>{t('عرض الكل')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -441,7 +440,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                   <Ionicons name={item.icon as any} size={25} color="#172554" />
                 </View>
                 <Text style={styles.categoryCircleName} numberOfLines={1}>
-                  {item.name}
+                  {tv(item.name)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -449,9 +448,9 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           {/* Stores Section (متاجر مختارة) */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitleBold}>متاجر مختارة</Text>
+            <Text style={styles.sectionTitleBold}>{t('متاجر مختارة')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('StoresList', {})} activeOpacity={0.75}>
-              <Text style={styles.seeAllLink}>عرض الكل</Text>
+              <Text style={styles.seeAllLink}>{t('عرض الكل')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -463,7 +462,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             {displayStores.length === 0 && (
               <View style={styles.storesEmptyState}>
                 <Ionicons name="storefront-outline" size={22} color="#94A3B8" />
-                <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة في منطقتك حالياً</Text>
+                <Text style={styles.storesEmptyText}>{t('لا توجد متاجر متاحة في منطقتك حالياً')}</Text>
               </View>
             )}
             {displayStores.map((store: any) => (
@@ -485,7 +484,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                         ]}
                         numberOfLines={2}
                       >
-                        {store.logo_text}
+                        {tv(store.logo_text)}
                       </Text>
                     </View>
                   ) : (
@@ -498,7 +497,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                   ) : null}
                 </View>
                 <Text style={styles.storeCircleName} numberOfLines={1}>
-                  {store.store_name}
+                  {tv(store.store_name)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -507,12 +506,12 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           {/* Flash Sale Section (عروض خاطفة) */}
           <View style={styles.flashHeaderRow}>
             <View style={styles.flashTitleCol}>
-              <Text style={styles.sectionTitleBold}>عروض خاطفة</Text>
+              <Text style={styles.sectionTitleBold}>{t('عروض خاطفة')}</Text>
             </View>
 
             <View style={styles.timerBadge}>
               <Ionicons name="time-outline" size={13} color="#172554" style={{ marginLeft: 4 }} />
-              <Text style={styles.timerText}>ينتهي خلال : 02 : 12 : 56</Text>
+              <Text style={styles.timerText}>{t('ينتهي خلال : 02 : 12 : 56')}</Text>
             </View>
           </View>
 
@@ -532,7 +531,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                   activeOpacity={0.82}
                 >
                   <Text style={[styles.flashPillText, isSelected && styles.flashPillTextSelected]}>
-                    {f.name}
+                    {tv(f.name)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -573,7 +572,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                       )}
                       {discount > 0 ? (
                         <View style={styles.discountBadge}>
-                          <Text style={styles.discountText}>-{discount}%</Text>
+                          <Text style={styles.discountText}>-{tv(discount)}%</Text>
                         </View>
                       ) : null}
                       <TouchableOpacity
@@ -581,7 +580,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                         onPress={() => void toggleWish(item.id)}
                         activeOpacity={0.84}
                         accessibilityRole="button"
-                        accessibilityLabel={isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                        accessibilityLabel={isFavorite ? t('إزالة من المفضلة') : t('إضافة إلى المفضلة')}
                       >
                         <Ionicons
                           name={isFavorite ? 'heart' : 'heart-outline'}
@@ -594,31 +593,31 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                     <View style={styles.productBody}>
                       {item.merchant_profiles?.store_name ? (
                         <Text style={styles.productStore} numberOfLines={1}>
-                          {item.merchant_profiles.store_name}
+                          {tv(item.merchant_profiles.store_name)}
                         </Text>
                       ) : null}
                       <Text style={styles.productName} numberOfLines={2}>
-                        {item.name_ar || item.name}
+                        {tv(item.name_ar || item.name)}
                       </Text>
                       <View style={styles.ratingRow}>
                         <Ionicons name="star" size={13} color="#F4B740" />
-                        <Text style={styles.ratingText}>{Number(item.rating ?? 0).toFixed(1)}</Text>
-                        {item.total_sold > 0 ? <Text style={styles.soldText}>• {item.total_sold} مبيع</Text> : null}
+                        <Text style={styles.ratingText}>{tv(Number(item.rating ?? 0).toFixed(1))}</Text>
+                        {item.total_sold > 0 ? <Text style={styles.soldText}>{t('• {0} مبيع', [tv(item.total_sold)])}</Text> : null}
                       </View>
 
                       <View style={styles.priceActionRow}>
                         <View style={styles.priceCol}>
                           <Text style={styles.priceText}>
-                            {currentPrice} <Text style={styles.currencyText}>ر.ي</Text>
+                            {tv(currentPrice)} <Text style={styles.currencyText}>{t('ر.ي')}</Text>
                           </Text>
-                          {oldPrice ? <Text style={styles.oldPriceText}>{oldPrice} ر.ي</Text> : null}
+                          {oldPrice ? <Text style={styles.oldPriceText}>{t('{0} ر.ي', [tv(oldPrice)])}</Text> : null}
                         </View>
                         <TouchableOpacity
                           style={styles.addButton}
                           onPress={() => quickAddToCart(item)}
                           activeOpacity={0.86}
                           accessibilityRole="button"
-                          accessibilityLabel="إضافة إلى السلة"
+                          accessibilityLabel={t('إضافة إلى السلة')}
                         >
                           <Ionicons name="bag-add-outline" size={17} color="#FFFFFF" />
                         </TouchableOpacity>

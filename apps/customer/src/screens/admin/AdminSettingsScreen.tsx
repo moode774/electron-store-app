@@ -11,6 +11,7 @@ import {
   getSystemSettings, updateSystemSetting 
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { LanguageSettingCard, t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -107,7 +108,7 @@ export default function AdminSettingsScreen({ navigation }: any) {
     <View style={[s.settingRow, compact && s.settingRowCompact]}>
       <View style={s.settingInfo}>
         <View style={s.settingIconBox}><Ionicons name={icon as any} size={20} color={UI.primary} /></View>
-        <Text style={s.settingLabel}>{label}</Text>
+        <Text style={s.settingLabel}>{tv(label)}</Text>
       </View>
       <View style={[s.settingInputWrap, compact && s.settingInputWrapCompact]}>
         <TextInput
@@ -117,13 +118,13 @@ export default function AdminSettingsScreen({ navigation }: any) {
           keyboardType="numeric"
           textAlign="center"
         />
-        <Text style={s.settingSuffix}>{suffix}</Text>
+        <Text style={s.settingSuffix}>{tv(suffix)}</Text>
         <TouchableOpacity 
           style={s.saveBtn} 
           onPress={() => handleUpdateSetting(key)}
           disabled={savingKey === key}
         >
-          {savingKey === key ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={s.saveBtnText}>حفظ</Text>}
+          {savingKey === key ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={s.saveBtnText}>{t('حفظ')}</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -132,36 +133,39 @@ export default function AdminSettingsScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>إعدادات النظام</Text>
+        <Text style={s.headerTitle}>{t('إعدادات النظام')}</Text>
       </View>
 
       <View style={[s.tabs, { width: contentWidth }]}>
         <TouchableOpacity style={[s.tab, activeTab === 'system' && s.tabActive]} onPress={() => setActiveTab('system')}>
-          <Text style={[s.tabText, activeTab === 'system' && s.tabTextActive]}>الإعدادات العامة</Text>
+          <Text style={[s.tabText, activeTab === 'system' && s.tabTextActive]}>{t('الإعدادات العامة')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.tab, activeTab === 'areas' && s.tabActive]} onPress={() => setActiveTab('areas')}>
-          <Text style={[s.tabText, activeTab === 'areas' && s.tabTextActive]}>مناطق الخدمة</Text>
+          <Text style={[s.tabText, activeTab === 'areas' && s.tabTextActive]}>{t('مناطق الخدمة')}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} keyboardShouldPersistTaps="handled">
+        {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+        <LanguageSettingCard style={s.languageCard} />
+
         {activeTab === 'system' ? (
           settingsLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
           <View style={s.card}>
-            <Text style={s.cardTitle}>التحكم بالإيرادات والرسوم</Text>
-            {renderSettingRow('app_commission_percent', 'نسبة عمولة التطبيق', 'pie-chart', '%')}
+            <Text style={s.cardTitle}>{t('التحكم بالإيرادات والرسوم')}</Text>
+            {renderSettingRow('app_commission_percent', t('نسبة عمولة التطبيق'), 'pie-chart', '%')}
             <View style={s.divider} />
-            {renderSettingRow('delivery_fee', 'رسوم التوصيل الافتراضية', 'bicycle', 'ر.ي')}
+            {renderSettingRow('delivery_fee', t('رسوم التوصيل الافتراضية'), 'bicycle', t('ر.ي'))}
             <View style={s.divider} />
-            {renderSettingRow('tax_percent', 'ضريبة القيمة المضافة', 'receipt', '%')}
+            {renderSettingRow('tax_percent', t('ضريبة القيمة المضافة'), 'receipt', '%')}
             <View style={s.divider} />
-            {renderSettingRow('min_order_amount', 'الحد الأدنى للطلب', 'cart', 'ر.ي')}
+            {renderSettingRow('min_order_amount', t('الحد الأدنى للطلب'), 'cart', t('ر.ي'))}
           </View>
         ) : (
           areasLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
           <View style={s.card}>
             <View style={[s.addAreaBox, compact && s.addAreaBoxCompact]}>
-              <TextInput style={s.areaInput} placeholder="اسم المدينة الجديدة" value={newCity} onChangeText={setNewCity} textAlign="right" />
+              <TextInput style={s.areaInput} placeholder={t('اسم المدينة الجديدة')} value={newCity} onChangeText={setNewCity} textAlign="right" />
               <TouchableOpacity style={s.addBtn} onPress={handleAddArea} disabled={savingArea}>
                 {savingArea ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="add" size={20} color="#FFF" />}
               </TouchableOpacity>
@@ -170,20 +174,20 @@ export default function AdminSettingsScreen({ navigation }: any) {
               <View key={item.id} style={[s.areaItem, compact && s.areaItemCompact]}>
                 <View style={s.areaMeta}>
                   <Ionicons name="location" size={20} color={UI.textMuted} />
-                  <Text style={s.areaCity}>{item.city}</Text>
+                  <Text style={s.areaCity}>{tv(item.city)}</Text>
                 </View>
                 <View style={s.areaToggles}>
                   <TouchableOpacity 
                     style={[s.toggleBtn, item.delivery_available ? s.toggleActive : s.toggleInactive]}
                     onPress={() => handleToggleArea(item, 'delivery_available')}
                   >
-                    <Text style={[s.toggleText, item.delivery_available && s.toggleTextActive]}>توصيل</Text>
+                    <Text style={[s.toggleText, item.delivery_available && s.toggleTextActive]}>{t('توصيل')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[s.toggleBtn, item.is_active ? s.toggleActive : s.toggleInactive]}
                     onPress={() => handleToggleArea(item, 'is_active')}
                   >
-                    <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{item.is_active ? 'نشطة' : 'موقوفة'}</Text>
+                    <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{tv(item.is_active ? t('نشطة') : t('موقوفة'))}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -205,6 +209,7 @@ const s = StyleSheet.create({
   tabText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   tabTextActive: { color: UI.primary, fontFamily: FONTS.bold },
   scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
+  languageCard: { width: '100%', maxWidth: 960, marginBottom: 16 },
   card: { width: '100%', maxWidth: 960, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 20, borderWidth: 1, borderColor: UI.border },
   cardTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 20 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 16 },

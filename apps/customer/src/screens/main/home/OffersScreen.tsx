@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const CARD_COLORS = [COLORS.primary, '#059669', '#7C3AED', '#D97706'];
 
@@ -38,19 +39,19 @@ export default function OffersScreen({ navigation }: any) {
   };
 
   const offerTitle = (c: Coupon) =>
-    c.type === 'percentage' ? `خصم ${c.value}%`
-    : c.type === 'fixed' ? `خصم ${c.value} ر.ي`
-    : `عرض ${c.value}`;
+    c.type === 'percentage' ? t('خصم {0}%', [tv(c.value)])
+    : c.type === 'fixed' ? t('خصم {0} ر.ي', [tv(c.value)])
+    : t('عرض {0}', [tv(c.value)]);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>العروض والكوبونات</Text>
+          <Text style={styles.headerTitle}>{t('العروض والكوبونات')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -62,9 +63,9 @@ export default function OffersScreen({ navigation }: any) {
       ) : loadError ? (
         <View style={styles.errorState} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color="#B91C1C" />
-          <Text style={styles.errorText}>{loadError}</Text>
+          <Text style={styles.errorText}>{tv(loadError)}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -78,7 +79,7 @@ export default function OffersScreen({ navigation }: any) {
         renderItem={({ item, index }) => {
           const isCopied = copiedId === item.id;
           const color = CARD_COLORS[index % CARD_COLORS.length];
-          const expires = item.end_date ? `حتى ${new Date(item.end_date).toLocaleDateString('ar-SA')}` : 'بدون انتهاء';
+          const expires = item.end_date ? t('حتى {0}', [new Date(item.end_date).toLocaleDateString(getLocale())]) : 'بدون انتهاء';
           const store = item.merchant_profiles?.store_name ?? 'كل المتاجر';
           return (
             <View style={[styles.card, { width: cardWidth }]}>
@@ -87,22 +88,22 @@ export default function OffersScreen({ navigation }: any) {
                 <Ionicons name="pricetag-outline" size={24} color={color} />
               </View>
               <View style={styles.info}>
-                <Text style={styles.title}>{offerTitle(item)}</Text>
-                <Text style={styles.meta}>{store} · {expires}</Text>
+                <Text style={styles.title}>{tv(offerTitle(item))}</Text>
+                <Text style={styles.meta}>{tv(store)} · {tv(expires)}</Text>
                 <View style={styles.codeRow}>
                   <View style={styles.codeBox}>
-                    <Text style={styles.codeText}>{item.code}</Text>
+                    <Text style={styles.codeText}>{tv(item.code)}</Text>
                   </View>
                   <TouchableOpacity
                     style={[styles.copyBtn, isCopied && styles.copyBtnDone]}
                     onPress={() => handleCopy(item.id, item.code)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
-                    accessibilityLabel={`نسخ الرمز ${item.code}`}
+                    accessibilityLabel={t('نسخ الرمز {0}', [tv(item.code)])}
                   >
                     <Ionicons name={isCopied ? 'checkmark' : 'copy-outline'} size={14} color={isCopied ? '#FFFFFF' : COLORS.primary} />
                     <Text style={[styles.copyBtnText, isCopied && { color: '#FFFFFF' }]}>
-                      {isCopied ? 'تم النسخ' : 'نسخ'}
+                      {tv(isCopied ? t('تم النسخ') : t('نسخ'))}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -113,7 +114,7 @@ export default function OffersScreen({ navigation }: any) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="pricetag-outline" size={48} color="#D1D5DB" />
-            <Text style={styles.emptyText}>لا توجد عروض حالياً</Text>
+            <Text style={styles.emptyText}>{t('لا توجد عروض حالياً')}</Text>
           </View>
         }
       />

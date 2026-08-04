@@ -32,6 +32,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 type Recommendation = 'approve' | 'reject';
 type Disposition = 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected';
@@ -92,7 +93,7 @@ function itemName(item: PhysicalReturnItem): string {
   return item.order_items?.product_name
     || item.products?.name_ar
     || item.products?.name
-    || `منتج ${item.product_id.slice(0, 8)}`;
+    || t('منتج {0}', [item.product_id.slice(0, 8)]);
 }
 
 function variantLabel(item: PhysicalReturnItem): string {
@@ -103,7 +104,7 @@ function variantLabel(item: PhysicalReturnItem): string {
       .map(([key, value]) => `${key}: ${String(value)}`);
     if (values.length) return values.join(' • ');
   }
-  return item.variant_id ? `متغير #${item.variant_id.slice(0, 8)}` : 'بدون متغير';
+  return item.variant_id ? t('متغير #{0}', [item.variant_id.slice(0, 8)]) : 'بدون متغير';
 }
 
 function isPreviewableImage(path: string): boolean {
@@ -418,26 +419,26 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
     for (const item of returnItems) {
       const draft = inspectionDrafts[item.id];
       if (!draft) {
-        Alert.alert('بيانات غير مكتملة', `تعذر تجهيز نتيجة فحص ${itemName(item)}.`);
+        Alert.alert('بيانات غير مكتملة', t('تعذر تجهيز نتيجة فحص {0}.', [itemName(item)]));
         return;
       }
       if (!draft.acceptedQuantity.trim()) {
-        Alert.alert('نتيجة الفحص مطلوبة', `أدخل الكمية المقبولة فعليًا لـ ${itemName(item)}، حتى لو كانت صفرًا.`);
+        Alert.alert('نتيجة الفحص مطلوبة', t('أدخل الكمية المقبولة فعليًا لـ {0}، حتى لو كانت صفرًا.', [itemName(item)]));
         return;
       }
       const accepted = Number(draft.acceptedQuantity);
       const approved = Number(item.approved_quantity ?? 0);
       if (!Number.isInteger(accepted) || accepted < 0 || accepted > approved) {
-        Alert.alert('كمية غير صحيحة', `الكمية المقبولة لـ ${itemName(item)} يجب أن تكون بين 0 و${approved}.`);
+        Alert.alert('كمية غير صحيحة', t('الكمية المقبولة لـ {0} يجب أن تكون بين 0 و{1}.', [itemName(item), tv(approved)]));
         return;
       }
       if (!draft.disposition) {
-        Alert.alert('نتيجة الفحص مطلوبة', `اختر التصرف بالكمية الخاصة بـ ${itemName(item)}.`);
+        Alert.alert('نتيجة الفحص مطلوبة', t('اختر التصرف بالكمية الخاصة بـ {0}.', [itemName(item)]));
         return;
       }
       if ((accepted === 0 && draft.disposition !== 'rejected')
         || (accepted > 0 && draft.disposition === 'rejected')) {
-        Alert.alert('نتيجة غير متطابقة', `اختر "رفض الكمية" عند قبول صفر من ${itemName(item)}، أو اختر تصرفًا فعليًا للكمية المقبولة.`);
+        Alert.alert('نتيجة غير متطابقة', t('اختر "رفض الكمية" عند قبول صفر من {0}، أو اختر تصرفًا فعليًا للكمية المقبولة.', [itemName(item)]));
         return;
       }
       payload.push({
@@ -470,13 +471,13 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       {evidenceLoading ? (
         <View style={styles.evidenceLoadingRow}>
           <ActivityIndicator size="small" color="#1E3A8A" />
-          <Text style={styles.evidenceHint}>جاري فتح الملفات الخاصة بصلاحية مؤقتة...</Text>
+          <Text style={styles.evidenceHint}>{t('جاري فتح الملفات الخاصة بصلاحية مؤقتة...')}</Text>
         </View>
       ) : null}
-      {evidenceError ? <Text style={styles.evidenceError}>{evidenceError}</Text> : null}
+      {evidenceError ? <Text style={styles.evidenceError}>{tv(evidenceError)}</Text> : null}
       {evidenceLinks.length ? (
         <View>
-          <Text style={styles.evidenceTitle}>أدلة العميل</Text>
+          <Text style={styles.evidenceTitle}>{t('أدلة العميل')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.evidenceRow}>
             {evidenceLinks.map((link, index) => (
               <TouchableOpacity key={link.path} style={styles.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)} accessibilityRole="link">
@@ -485,7 +486,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 ) : (
                   <View style={styles.evidenceFileIcon}><Ionicons name="document-text-outline" size={28} color="#1E3A8A" /></View>
                 )}
-                <Text style={styles.evidenceLabel}>دليل {index + 1}</Text>
+                <Text style={styles.evidenceLabel}>{t('دليل {0}', [index + 1])}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -493,19 +494,19 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       ) : null}
       {proofLinks.length ? (
         <View>
-          <Text style={styles.evidenceTitle}>إثباتات نقل العهدة</Text>
+          <Text style={styles.evidenceTitle}>{t('إثباتات نقل العهدة')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.evidenceRow}>
             {proofLinks.map((link, index) => (
               <TouchableOpacity key={link.path} style={styles.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)} accessibilityRole="link">
                 <Image source={{ uri: link.signedUrl }} style={styles.evidenceImage} />
-                <Text style={styles.evidenceLabel}>إثبات {index + 1}</Text>
+                <Text style={styles.evidenceLabel}>{t('إثبات {0}', [index + 1])}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
       ) : null}
       {!evidenceLoading && !evidenceError && !evidenceLinks.length && !proofLinks.length ? (
-        <Text style={styles.evidenceHint}>لا توجد ملفات مرفقة بهذا المرتجع.</Text>
+        <Text style={styles.evidenceHint}>{t('لا توجد ملفات مرفقة بهذا المرتجع.')}</Text>
       ) : null}
     </View>
   );
@@ -541,46 +542,42 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       <View style={[styles.card, isCompact && styles.cardCompact]}>
         <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
           <View style={[styles.statusBadge, { backgroundColor: meta.background }]}>
-            <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[styles.statusText, { color: meta.color }]}>{tv(meta.label)}</Text>
           </View>
           <View style={styles.orderInfo}>
-            <Text style={styles.orderNumber}>طلب #{item.orders?.order_number ?? item.order_id.slice(0, 8)}</Text>
-            <Text style={styles.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+            <Text style={styles.orderNumber}>{t('طلب #{0}', [item.orders?.order_number ?? item.order_id.slice(0, 8)])}</Text>
+            <Text style={styles.date}>{tv(new Date(item.created_at).toLocaleString(getLocale()))}</Text>
           </View>
         </View>
 
         <View style={[styles.infoGrid, isCompact && styles.infoGridCompact]}>
           <View style={styles.infoBlock}>
-            <Text style={styles.infoLabel}>العميل</Text>
-            <Text style={styles.infoValue}>{item.users?.full_name ?? 'عميل الطلب'}</Text>
-            {item.users?.phone ? <Text style={styles.secondaryValue}>{item.users.phone}</Text> : null}
+            <Text style={styles.infoLabel}>{t('العميل')}</Text>
+            <Text style={styles.infoValue}>{tv(item.users?.full_name ?? t('عميل الطلب'))}</Text>
+            {item.users?.phone ? <Text style={styles.secondaryValue}>{tv(item.users.phone)}</Text> : null}
           </View>
           <View style={styles.infoBlock}>
-            <Text style={styles.infoLabel}>طريقة التسليم</Text>
-            <Text style={styles.infoValue}>{item.pickup_method === 'courier_pickup' ? 'استلام بواسطة مندوب' : 'تسليم العميل للمتجر'}</Text>
+            <Text style={styles.infoLabel}>{t('طريقة التسليم')}</Text>
+            <Text style={styles.infoValue}>{tv(item.pickup_method === 'courier_pickup' ? t('استلام بواسطة مندوب') : t('تسليم العميل للمتجر'))}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>سبب الإرجاع</Text>
-        <Text style={styles.bodyText}>{REASONS[item.reason] ?? item.reason}</Text>
-        {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
+        <Text style={styles.sectionLabel}>{t('سبب الإرجاع')}</Text>
+        <Text style={styles.bodyText}>{tv(REASONS[item.reason] ?? item.reason)}</Text>
+        {item.description ? <Text style={styles.description}>{tv(item.description)}</Text> : null}
 
         <View style={styles.itemsBox}>
-          <Text style={styles.itemsTitle}>العناصر المرتجعة</Text>
+          <Text style={styles.itemsTitle}>{t('العناصر المرتجعة')}</Text>
           {(item.return_items ?? []).map((returnItem) => (
             <View key={returnItem.id} style={[styles.itemRow, isCompact && styles.itemRowCompact]}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.itemName}>{itemName(returnItem)}</Text>
-                <Text style={styles.itemVariant}>{variantLabel(returnItem)}</Text>
-                <Text style={styles.itemMeta}>
-                  مطلوب {returnItem.requested_quantity}
-                  {returnItem.approved_quantity != null ? ` • معتمد ${returnItem.approved_quantity}` : ''}
-                  {returnItem.accepted_quantity != null ? ` • مقبول ${returnItem.accepted_quantity}` : ''}
-                </Text>
+                <Text style={styles.itemName}>{tv(itemName(returnItem))}</Text>
+                <Text style={styles.itemVariant}>{tv(variantLabel(returnItem))}</Text>
+                <Text style={styles.itemMeta}>{t('مطلوب {0}{1}{2}', [tv(returnItem.requested_quantity), returnItem.approved_quantity != null ? ` • معتمد ${returnItem.approved_quantity}` : '', returnItem.accepted_quantity != null ? ` • مقبول ${returnItem.accepted_quantity}` : ''])}</Text>
               </View>
               <View style={styles.itemAmountWrap}>
-                <Text style={styles.itemAmount}>{merchandiseValue(returnItem).amount.toFixed(2)} ر.ي</Text>
-                <Text style={styles.itemAmountStage}>{merchandiseValue(returnItem).stage}</Text>
+                <Text style={styles.itemAmount}>{t('{0} ر.ي', [merchandiseValue(returnItem).amount.toFixed(2)])}</Text>
+                <Text style={styles.itemAmountStage}>{tv(merchandiseValue(returnItem).stage)}</Text>
               </View>
             </View>
           ))}
@@ -589,61 +586,58 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         {item.pickup_scheduled_at ? (
           <View style={styles.scheduleBox}>
             <Ionicons name="calendar-outline" size={17} color="#6D28D9" />
-            <Text style={styles.scheduleText}>موعد الاستلام: {new Date(item.pickup_scheduled_at).toLocaleString('ar-SA')}</Text>
+            <Text style={styles.scheduleText}>{t('موعد الاستلام: {0}', [new Date(item.pickup_scheduled_at).toLocaleString(getLocale())])}</Text>
           </View>
         ) : null}
 
         {item.merchant_response ? (
           <View style={styles.responseBox}>
-            <Text style={styles.sectionLabel}>توصية التاجر: {item.merchant_recommendation === 'approve' ? 'موافقة' : 'رفض'}</Text>
-            <Text style={styles.bodyText}>{item.merchant_response}</Text>
+            <Text style={styles.sectionLabel}>{t('توصية التاجر: {0}', [item.merchant_recommendation === 'approve' ? 'موافقة' : 'رفض'])}</Text>
+            <Text style={styles.bodyText}>{tv(item.merchant_response)}</Text>
           </View>
         ) : null}
 
         {item.review_notes ? (
           <View style={styles.adminBox}>
-            <Text style={styles.sectionLabel}>ملاحظات الإدارة</Text>
-            <Text style={styles.bodyText}>{item.review_notes}</Text>
+            <Text style={styles.sectionLabel}>{t('ملاحظات الإدارة')}</Text>
+            <Text style={styles.bodyText}>{tv(item.review_notes)}</Text>
           </View>
         ) : null}
 
         {receiptEvent?.notes ? (
           <View style={styles.receiptBox}>
-            <Text style={styles.sectionLabel}>ملاحظات استلام المتجر</Text>
-            <Text style={styles.bodyText}>{receiptEvent.notes}</Text>
+            <Text style={styles.sectionLabel}>{t('ملاحظات استلام المتجر')}</Text>
+            <Text style={styles.bodyText}>{tv(receiptEvent.notes)}</Text>
           </View>
         ) : null}
 
         {latestTracking ? (
-          <Text style={styles.latestEvent}>
-            آخر تحديث: {STATUS[latestTracking.status]?.label ?? latestTracking.status}
-            {latestTracking.notes ? ` — ${latestTracking.notes}` : ''}
-          </Text>
+          <Text style={styles.latestEvent}>{t('آخر تحديث: {0}{1}', [STATUS[latestTracking.status]?.label ?? latestTracking.status, latestTracking.notes ? ` — ${latestTracking.notes}` : ''])}</Text>
         ) : null}
 
         <View style={styles.actions}>
           {item.status === 'requested' ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openResponse(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="chatbox-ellipses-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>{item.merchant_response ? 'تحديث التوصية' : 'مراجعة الطلب'}</Text>
+              <Text style={styles.primaryButtonText}>{tv(item.merchant_response ? t('تحديث التوصية') : t('مراجعة الطلب'))}</Text>
             </TouchableOpacity>
           ) : null}
           {canConfirmReceipt ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openReceipt(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               {busy ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="cube-outline" size={18} color="#FFFFFF" />}
-              <Text style={styles.primaryButtonText}>تأكيد وصول المرتجع</Text>
+              <Text style={styles.primaryButtonText}>{t('تأكيد وصول المرتجع')}</Text>
             </TouchableOpacity>
           ) : null}
           {canInspect ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openInspection(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="clipboard-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>فحص الكميات</Text>
+              <Text style={styles.primaryButtonText}>{t('فحص الكميات')}</Text>
             </TouchableOpacity>
           ) : null}
           {(item.evidence_images?.length || item.return_proofs?.length) ? (
             <TouchableOpacity style={styles.outlineButton} onPress={() => openEvidence(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="images-outline" size={18} color="#1E3A8A" />
-              <Text style={styles.outlineButtonText}>عرض الأدلة والإثباتات</Text>
+              <Text style={styles.outlineButtonText}>{t('عرض الأدلة والإثباتات')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -654,12 +648,12 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
   return (
     <View style={styles.page}>
       <View style={[styles.header, isCompact && styles.headerCompact, isDesktop && styles.headerWide]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>المرتجعات الفعلية</Text>
-          <Text style={styles.subtitle}>راجع الطلب، أكد وصول المنتجات، ثم سجل نتيجة الفحص لكل كمية.</Text>
+          <Text style={styles.title}>{t('المرتجعات الفعلية')}</Text>
+          <Text style={styles.subtitle}>{t('راجع الطلب، أكد وصول المنتجات، ثم سجل نتيجة الفحص لكل كمية.')}</Text>
         </View>
       </View>
 
@@ -672,7 +666,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             accessibilityRole="button"
             accessibilityState={{ selected: filter === option.key }}
           >
-            <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{option.label}</Text>
+            <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{tv(option.label)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -682,9 +676,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       ) : loadError ? (
         <View style={styles.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={44} color="#B91C1C" />
-          <Text style={styles.errorText}>{loadError}</Text>
+          <Text style={styles.errorText}>{tv(loadError)}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -703,16 +697,16 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             <ActivityIndicator style={styles.listFooter} color="#111827" />
           ) : loadMoreError ? (
             <View style={styles.listFooter} accessibilityRole="alert">
-              <Text style={styles.errorText}>{loadMoreError}</Text>
+              <Text style={styles.errorText}>{tv(loadMoreError)}</Text>
               <TouchableOpacity style={styles.retryButton} onPress={() => void load('more')} accessibilityRole="button">
-                <Text style={styles.retryText}>إعادة تحميل المزيد</Text>
+                <Text style={styles.retryText}>{t('إعادة تحميل المزيد')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
           ListEmptyComponent={(
             <View style={styles.center}>
               <Ionicons name="return-down-back-outline" size={42} color="#94A3B8" />
-              <Text style={styles.emptyText}>لا توجد مرتجعات ضمن هذا التصنيف.</Text>
+              <Text style={styles.emptyText}>{t('لا توجد مرتجعات ضمن هذا التصنيف.')}</Text>
             </View>
           )}
         />
@@ -726,13 +720,13 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalTitle}>توصية التاجر</Text>
-            <Text style={styles.modalHint}>هذه توصية للإدارة وليست القرار النهائي. اذكر نتيجة مراجعة الطلب بوضوح.</Text>
+            <Text style={styles.modalTitle}>{t('توصية التاجر')}</Text>
+            <Text style={styles.modalHint}>{t('هذه توصية للإدارة وليست القرار النهائي. اذكر نتيجة مراجعة الطلب بوضوح.')}</Text>
             {renderEvidencePanel()}
             <View style={[styles.choiceRow, isCompact && styles.choiceRowCompact]}>
               {([
-                { value: 'approve' as Recommendation, label: 'أوصي بالموافقة', icon: 'checkmark-circle-outline' },
-                { value: 'reject' as Recommendation, label: 'أوصي بالرفض', icon: 'close-circle-outline' },
+                { value: 'approve' as Recommendation, label: t('أوصي بالموافقة'), icon: 'checkmark-circle-outline' },
+                { value: 'reject' as Recommendation, label: t('أوصي بالرفض'), icon: 'close-circle-outline' },
               ]).map((choice) => (
                 <TouchableOpacity
                   key={choice.value}
@@ -742,7 +736,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                   accessibilityState={{ selected: recommendation === choice.value }}
                 >
                   <Ionicons name={choice.icon as any} size={19} color={recommendation === choice.value ? '#FFFFFF' : '#475569'} />
-                  <Text style={[styles.choiceText, recommendation === choice.value && styles.choiceTextActive]}>{choice.label}</Text>
+                  <Text style={[styles.choiceText, recommendation === choice.value && styles.choiceTextActive]}>{tv(choice.label)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -754,15 +748,15 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               maxLength={2000}
               textAlign="right"
               textAlignVertical="top"
-              placeholder="اشرح سبب توصيتك وحالة المنتج قبل التسليم..."
+              placeholder={t('اشرح سبب توصيتك وحالة المنتج قبل التسليم...')}
               placeholderTextColor="#94A3B8"
             />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeResponse} disabled={Boolean(actionId)}>
-                <Text style={styles.secondaryButtonText}>إلغاء</Text>
+                <Text style={styles.secondaryButtonText}>{t('إلغاء')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitButton, (!response.trim() || actionId) && styles.disabled]} onPress={submitResponse} disabled={!response.trim() || Boolean(actionId)}>
-                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>إرسال التوصية</Text>}
+                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('إرسال التوصية')}</Text>}
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -777,8 +771,8 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalTitle}>تأكيد استلام المرتجع</Text>
-            <Text style={styles.modalHint}>راجع إثبات نقل العهدة وحالة الطرد، ثم سجل أي ملاحظة استلام قبل بدء الفحص.</Text>
+            <Text style={styles.modalTitle}>{t('تأكيد استلام المرتجع')}</Text>
+            <Text style={styles.modalHint}>{t('راجع إثبات نقل العهدة وحالة الطرد، ثم سجل أي ملاحظة استلام قبل بدء الفحص.')}</Text>
             {renderEvidencePanel()}
             <TextInput
               style={styles.responseInput}
@@ -788,15 +782,15 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               maxLength={2000}
               textAlign="right"
               textAlignVertical="top"
-              placeholder="ملاحظات حالة الطرد عند الوصول (اختياري)"
+              placeholder={t('ملاحظات حالة الطرد عند الوصول (اختياري)')}
               placeholderTextColor="#94A3B8"
             />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeReceipt} disabled={Boolean(actionId)}>
-                <Text style={styles.secondaryButtonText}>تراجع</Text>
+                <Text style={styles.secondaryButtonText}>{t('تراجع')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitButton, actionId && styles.disabled]} onPress={submitReceipt} disabled={Boolean(actionId)}>
-                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>تأكيد الاستلام</Text>}
+                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('تأكيد الاستلام')}</Text>}
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -810,11 +804,11 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             contentContainerStyle={[styles.modalCardContent, isCompact && styles.modalCardCompact]}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalTitle}>أدلة المرتجع وإثباتات العهدة</Text>
-            <Text style={styles.modalHint}>الروابط خاصة ومؤقتة. افتح الملف لمراجعته بالحجم الكامل.</Text>
+            <Text style={styles.modalTitle}>{t('أدلة المرتجع وإثباتات العهدة')}</Text>
+            <Text style={styles.modalHint}>{t('الروابط خاصة ومؤقتة. افتح الملف لمراجعته بالحجم الكامل.')}</Text>
             {renderEvidencePanel()}
             <TouchableOpacity style={styles.secondaryButton} onPress={closeEvidence} accessibilityRole="button">
-              <Text style={styles.secondaryButtonText}>إغلاق</Text>
+              <Text style={styles.secondaryButtonText}>{t('إغلاق')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -827,8 +821,8 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               <Ionicons name="close" size={23} color="#111827" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>فحص المرتجع</Text>
-              <Text style={styles.subtitle}>حدد الكمية المقبولة ووجهتها لكل عنصر. لا يمكن تعديلها بعد إكمال الإدارة للاسترداد.</Text>
+              <Text style={styles.title}>{t('فحص المرتجع')}</Text>
+              <Text style={styles.subtitle}>{t('حدد الكمية المقبولة ووجهتها لكل عنصر. لا يمكن تعديلها بعد إكمال الإدارة للاسترداد.')}</Text>
             </View>
           </View>
           <ScrollView contentContainerStyle={[styles.inspectionContent, isCompact && styles.inspectionContentCompact]} keyboardShouldPersistTaps="handled">
@@ -837,9 +831,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               const approved = Number(item.approved_quantity ?? 0);
               return (
                 <View key={item.id} style={styles.inspectionItem}>
-                  <Text style={styles.inspectionItemName}>{itemName(item)}</Text>
-                  <Text style={styles.itemMeta}>الكمية المعتمدة من الإدارة: {approved}</Text>
-                  <Text style={styles.fieldLabel}>الكمية المقبولة فعليًا</Text>
+                  <Text style={styles.inspectionItemName}>{tv(itemName(item))}</Text>
+                  <Text style={styles.itemMeta}>{t('الكمية المعتمدة من الإدارة: {0}', [tv(approved)])}</Text>
+                  <Text style={styles.fieldLabel}>{t('الكمية المقبولة فعليًا')}</Text>
                   <TextInput
                     style={styles.quantityInput}
                     value={draft?.acceptedQuantity ?? ''}
@@ -847,9 +841,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                     keyboardType="number-pad"
                     maxLength={4}
                     textAlign="right"
-                    accessibilityLabel={`الكمية المقبولة من ${itemName(item)}`}
+                    accessibilityLabel={t('الكمية المقبولة من {0}', [itemName(item)])}
                   />
-                  <Text style={styles.fieldLabel}>التصرف بالكمية</Text>
+                  <Text style={styles.fieldLabel}>{t('التصرف بالكمية')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dispositions}>
                     {DISPOSITIONS.map((option) => (
                       <TouchableOpacity
@@ -859,7 +853,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                         accessibilityRole="button"
                         accessibilityState={{ selected: draft?.disposition === option.value }}
                       >
-                        <Text style={[styles.dispositionText, draft?.disposition === option.value && styles.dispositionTextActive]}>{option.label}</Text>
+                        <Text style={[styles.dispositionText, draft?.disposition === option.value && styles.dispositionTextActive]}>{tv(option.label)}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -871,13 +865,13 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                     multiline
                     textAlign="right"
                     textAlignVertical="top"
-                    placeholder="ملاحظة على حالة هذا العنصر (اختياري)"
+                    placeholder={t('ملاحظة على حالة هذا العنصر (اختياري)')}
                     placeholderTextColor="#94A3B8"
                   />
                 </View>
               );
             })}
-            <Text style={styles.fieldLabel}>ملاحظات الفحص العامة</Text>
+            <Text style={styles.fieldLabel}>{t('ملاحظات الفحص العامة')}</Text>
             <TextInput
               style={styles.responseInput}
               value={inspectionNotes}
@@ -886,11 +880,11 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               multiline
               textAlign="right"
               textAlignVertical="top"
-              placeholder="ملخص حالة المرتجع (اختياري)"
+              placeholder={t('ملخص حالة المرتجع (اختياري)')}
               placeholderTextColor="#94A3B8"
             />
             <TouchableOpacity style={[styles.submitInspection, actionId && styles.disabled]} onPress={submitInspection} disabled={Boolean(actionId)} accessibilityRole="button">
-              {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>حفظ نتيجة الفحص</Text>}
+              {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('حفظ نتيجة الفحص')}</Text>}
             </TouchableOpacity>
           </ScrollView>
         </View>

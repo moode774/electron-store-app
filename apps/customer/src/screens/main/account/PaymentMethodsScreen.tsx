@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getPaymentMethods, PaymentMethod } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const METHODS = [
   { id: 'cod', title: 'الدفع عند الاستلام', sub: 'ادفع نقداً عند وصول طلبك', icon: 'cash-outline', color: '#059669', available: true },
@@ -40,10 +41,10 @@ export default function PaymentMethodsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>طرق الدفع</Text>
+          <Text style={styles.headerTitle}>{t('طرق الدفع')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -55,37 +56,37 @@ export default function PaymentMethodsScreen({ navigation }: any) {
               <Ionicons name={m.icon as any} size={24} color={m.color} />
             </View>
             <View style={styles.info}>
-              <Text style={styles.title}>{m.title}</Text>
-              <Text style={styles.sub}>{m.sub}</Text>
+              <Text style={styles.title}>{tv(m.title)}</Text>
+              <Text style={styles.sub}>{tv(m.sub)}</Text>
             </View>
             {m.available ? (
               <View style={styles.activeBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                <Text style={styles.activeText}>مفعّل</Text>
+                <Text style={styles.activeText}>{t('مفعّل')}</Text>
               </View>
             ) : (
               <View style={styles.soonBadge}>
-                <Text style={styles.soonText}>قريباً</Text>
+                <Text style={styles.soonText}>{t('قريباً')}</Text>
               </View>
             )}
           </View>
         ))}
 
         {/* البطاقات المحفوظة (بيانات حقيقية) */}
-        <Text style={styles.savedTitle}>بطاقاتي المحفوظة</Text>
+        <Text style={styles.savedTitle}>{t('بطاقاتي المحفوظة')}</Text>
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
         ) : loadError ? (
           <View style={styles.loadError} accessibilityRole="alert">
-            <Text style={styles.loadErrorText}>{loadError}</Text>
+            <Text style={styles.loadErrorText}>{tv(loadError)}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
             </TouchableOpacity>
           </View>
         ) : saved.length === 0 ? (
           <View style={styles.emptySaved}>
             <Ionicons name="card-outline" size={28} color="#D1D5DB" />
-            <Text style={styles.emptySavedText}>لا توجد بطاقات محفوظة</Text>
+            <Text style={styles.emptySavedText}>{t('لا توجد بطاقات محفوظة')}</Text>
           </View>
         ) : (
           saved.map((m) => (
@@ -94,12 +95,12 @@ export default function PaymentMethodsScreen({ navigation }: any) {
                 <Ionicons name="card" size={24} color={COLORS.primary} />
               </View>
               <View style={styles.info}>
-                <Text style={styles.title}>{m.card_brand ?? m.type} •••• {m.card_last4 ?? '----'}</Text>
-                <Text style={styles.sub}>{m.card_expiry ?? ''}</Text>
+                <Text style={styles.title}>{tv(m.card_brand ?? m.type)} •••• {tv(m.card_last4 ?? '----')}</Text>
+                <Text style={styles.sub}>{tv(m.card_expiry ?? '')}</Text>
               </View>
               {m.is_default && (
                 <View style={styles.activeBadge}>
-                  <Text style={styles.activeText}>افتراضي</Text>
+                  <Text style={styles.activeText}>{t('افتراضي')}</Text>
                 </View>
               )}
             </View>
@@ -108,9 +109,7 @@ export default function PaymentMethodsScreen({ navigation }: any) {
 
         <View style={styles.noteBox}>
           <Ionicons name="information-circle-outline" size={18} color={COLORS.info} />
-          <Text style={styles.noteText}>
-            حالياً الدفع متاح نقداً عند الاستلام فقط. سيتم تفعيل المحافظ الإلكترونية والبطاقات قريباً.
-          </Text>
+          <Text style={styles.noteText}>{t('حالياً الدفع متاح نقداً عند الاستلام فقط. سيتم تفعيل المحافظ الإلكترونية والبطاقات قريباً.')}</Text>
         </View>
       </ScrollView>
     </View>

@@ -22,6 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AccountStackParamList } from '../../../navigation/types';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { LanguageSettingRow, t, tv } from '@marketplace/shared-i18n';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -100,7 +101,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
       >
         {/* Header Title Bar */}
         <View style={styles.headerTitleRow}>
-          <Text style={styles.screenHeaderTitleText}>حسابي</Text>
+          <Text style={styles.screenHeaderTitleText}>{t('حسابي')}</Text>
           <TouchableOpacity
             style={styles.headerNotificationBtn}
             onPress={() => navigation.navigate('Notifications')}
@@ -136,12 +137,12 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 {/* Name & Sub */}
                 <View style={styles.profileTextCol}>
                   <View style={styles.nameBadgeRow}>
-                    <Text style={styles.userNameText} numberOfLines={1}>{userName}</Text>
+                    <Text style={styles.userNameText} numberOfLines={1}>{tv(userName)}</Text>
                   </View>
-                  <Text style={styles.userSubText} numberOfLines={1}>{userSub}</Text>
+                  <Text style={styles.userSubText} numberOfLines={1}>{tv(userSub)}</Text>
                   <View style={styles.premiumBadgePill}>
                     <Ionicons name="sparkles" size={12} color={COLORS.primary} />
-                    <Text style={styles.premiumBadgeText}>عضو مميز ✨</Text>
+                    <Text style={styles.premiumBadgeText}>{t('عضو مميز ✨')}</Text>
                   </View>
                 </View>
               </View>
@@ -163,8 +164,8 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                     <View style={styles.statIconCircle}>
                       <Ionicons name={stat.icon as any} size={18} color={COLORS.primary} />
                     </View>
-                    <Text style={styles.statValue}>{stat.value}</Text>
-                    <Text style={styles.statTitle} numberOfLines={1}>{stat.title}</Text>
+                    <Text style={styles.statValue}>{tv(stat.value)}</Text>
+                    <Text style={styles.statTitle} numberOfLines={1}>{tv(stat.title)}</Text>
                   </TouchableOpacity>
                   {index < STATS.length - 1 && <View style={styles.statDivider} />}
                 </View>
@@ -177,7 +178,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 onPress={() => {
                   Alert.alert(
                     'تفاصيل مشكلة الاتصال',
-                    statsErrorDetail ? `سبب الخطأ: ${statsErrorDetail}` : 'تعذّر الاتصال بالخادم مؤقتاً.',
+                    statsErrorDetail ? t('سبب الخطأ: {0}', [tv(statsErrorDetail)]) : 'تعذّر الاتصال بالخادم مؤقتاً.',
                     [
                       { text: 'إلغاء', style: 'cancel' },
                       { text: 'إعادة المحاولة الأن', onPress: () => void loadStats() },
@@ -187,7 +188,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 accessibilityRole="button"
               >
                 <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
-                <Text style={styles.statsErrorText}>{statsError} اضغط للتعرف على السبب وإعادة المحاولة.</Text>
+                <Text style={styles.statsErrorText}>{t('{0} اضغط للتعرف على السبب وإعادة المحاولة.', [tv(statsError)])}</Text>
               </TouchableOpacity>
             )}
 
@@ -199,10 +200,9 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   <Ionicons name="diamond-outline" size={24} color={COLORS.primary} />
                 </View>
                 <View style={styles.loyaltyTextCol}>
-                  <Text style={styles.loyaltyLabel}>رصيد النقاط المتاحة</Text>
+                  <Text style={styles.loyaltyLabel}>{t('رصيد النقاط المتاحة')}</Text>
                   <Text style={styles.loyaltyValue}>
-                    <Text style={styles.loyaltyNumText}>{points}</Text> نقطة
-                  </Text>
+                    <Text style={styles.loyaltyNumText}>{tv(points)}</Text>{' '}{t('نقطة')}</Text>
                 </View>
               </View>
 
@@ -213,7 +213,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 </View>
                 <View style={styles.progressTextCol}>
                   <View style={styles.progressHeaderRow}>
-                    <Text style={styles.progressSubText}>باق 250 نقطة للحصول على قسيمة 50 رس</Text>
+                    <Text style={styles.progressSubText}>{t('باق 250 نقطة للحصول على قسيمة 50 رس')}</Text>
                     <Text style={styles.progressNumText}>75%</Text>
                   </View>
                   <View style={styles.progressBarTrack}>
@@ -230,21 +230,21 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   onPress={() => Alert.alert('متجر المكافآت', 'سيتم تحويل نقاطك إلى خصومات وكوبونات شرائية عند إتمام الطلبات.')}
                 >
                   <Ionicons name="gift-outline" size={16} color="#0F172A" style={{ marginLeft: 6 }} />
-                  <Text style={styles.redeemBtnText}>استبدل النقاط</Text>
+                  <Text style={styles.redeemBtnText}>{t('استبدل النقاط')}</Text>
                 </TouchableOpacity>
 
                 {!!referral && (
                   <View style={styles.referralCol}>
-                    <Text style={styles.referralLabel}>كود الإحالة الخاصة بك</Text>
+                    <Text style={styles.referralLabel}>{t('كود الإحالة الخاصة بك')}</Text>
                     <TouchableOpacity
                       style={styles.referralBadge}
                       activeOpacity={0.85}
                       onPress={() => {
-                        Alert.alert('تم نسخ الكود', `تم نسخ كود الإحالة (${referral}) بنجاح.`);
+                        Alert.alert('تم نسخ الكود', t('تم نسخ كود الإحالة ({0}) بنجاح.', [tv(referral)]));
                       }}
                     >
                       <Ionicons name="copy-outline" size={15} color="#0F172A" style={{ marginLeft: 6 }} />
-                      <Text style={styles.referralCode}>{referral}</Text>
+                      <Text style={styles.referralCode}>{tv(referral)}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -253,7 +253,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
           </View>
 
           <View style={isDesktop ? styles.desktopSettings : undefined}>
-            <Text style={styles.sectionTitle}>إعدادات الحساب</Text>
+            <Text style={styles.sectionTitle}>{t('إعدادات الحساب')}</Text>
 
             {/* Menu List */}
             <View style={styles.menuCard}>
@@ -268,13 +268,16 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       <View style={styles.menuIconBox}>
                         <Ionicons name={item.icon as any} size={20} color={COLORS.primary} />
                       </View>
-                      <Text style={styles.menuItemText}>{item.title}</Text>
+                      <Text style={styles.menuItemText}>{tv(item.title)}</Text>
                     </View>
                     <Ionicons name="chevron-back" size={18} color="#94A3B8" />
                   </TouchableOpacity>
                   {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
                 </React.Fragment>
               ))}
+              {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+              <View style={styles.menuDivider} />
+              <LanguageSettingRow />
             </View>
 
             {/* Logout Button */}
@@ -283,7 +286,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 <View style={[styles.menuIconBox, { backgroundColor: '#EFF6FF' }]}>
                   <Ionicons name="log-out-outline" size={20} color={COLORS.primary} />
                 </View>
-                <Text style={[styles.logoutText, { color: COLORS.primary }]}>تسجيل الخروج</Text>
+                <Text style={[styles.logoutText, { color: COLORS.primary }]}>{t('تسجيل الخروج')}</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color={COLORS.primary} />
             </TouchableOpacity>
@@ -318,7 +321,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 <View style={[styles.menuIconBox, { backgroundColor: '#FEE2E2' }]}>
                   <Ionicons name="trash-outline" size={20} color="#EF4444" />
                 </View>
-                <Text style={[styles.logoutText, { color: '#EF4444' }]}>حذف الحساب نهائياً</Text>
+                <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('حذف الحساب نهائياً')}</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color="#EF4444" />
             </TouchableOpacity>

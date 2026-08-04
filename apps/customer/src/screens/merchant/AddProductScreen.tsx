@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore, createProductWithImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -33,7 +34,7 @@ function FormInput({ label, icon, multiline, ...props }: any) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.inputWrap}>
-      <Text style={styles.inputLabel}>{label}</Text>
+      <Text style={styles.inputLabel}>{tv(label)}</Text>
       <View style={[styles.inputBox, focused && styles.inputBoxFocused, multiline && { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
         <TextInput
           style={[styles.input, multiline && { height: 80, textAlignVertical: 'top' }]}
@@ -168,7 +169,7 @@ export default function AddProductScreen({ navigation }: any) {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitleMobile}>إضافة منتج</Text>
+          <Text style={styles.headerTitleMobile}>{t('إضافة منتج')}</Text>
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -183,11 +184,11 @@ export default function AddProductScreen({ navigation }: any) {
           {isDesktop && (
             <View style={styles.pageHeaderRow}>
               <View>
-                <Text style={styles.pageTitle}>إضافة منتج جديد</Text>
-                <Text style={styles.pageSubtitle}>أدخل بيانات منتجك بدقة لعرضه للعملاء</Text>
+                <Text style={styles.pageTitle}>{t('إضافة منتج جديد')}</Text>
+                <Text style={styles.pageSubtitle}>{t('أدخل بيانات منتجك بدقة لعرضه للعملاء')}</Text>
               </View>
               <TouchableOpacity style={styles.backBtnDesktop} onPress={() => navigation.goBack()}>
-                <Text style={styles.backBtnText}>عودة للمنتجات</Text>
+                <Text style={styles.backBtnText}>{t('عودة للمنتجات')}</Text>
                 <Ionicons name="arrow-back" size={16} color={UI.textDark} />
               </TouchableOpacity>
             </View>
@@ -197,7 +198,7 @@ export default function AddProductScreen({ navigation }: any) {
 
             {/* Image Uploader */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>صور المنتج</Text>
+              <Text style={styles.sectionTitle}>{t('صور المنتج')}</Text>
 
               {selectedImages.length > 0 ? (
                 <View style={styles.imageGrid}>
@@ -206,7 +207,7 @@ export default function AddProductScreen({ navigation }: any) {
                       <Image source={{ uri }} style={styles.imageThumb} />
                       {index === 0 && (
                         <View style={styles.primaryBadge}>
-                          <Text style={styles.primaryBadgeText}>رئيسية</Text>
+                          <Text style={styles.primaryBadgeText}>{t('رئيسية')}</Text>
                         </View>
                       )}
                       <TouchableOpacity
@@ -222,7 +223,7 @@ export default function AddProductScreen({ navigation }: any) {
                   {selectedImages.length < 5 && (
                     <TouchableOpacity style={styles.addMoreBtn} onPress={pickImages} activeOpacity={0.8}>
                       <Ionicons name="add" size={28} color={UI.textMuted} />
-                      <Text style={styles.addMoreText}>إضافة</Text>
+                      <Text style={styles.addMoreText}>{t('إضافة')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -231,8 +232,8 @@ export default function AddProductScreen({ navigation }: any) {
                   <View style={styles.imagePickerIconBox}>
                     <Ionicons name="cloud-upload-outline" size={28} color={UI.textDark} />
                   </View>
-                  <Text style={styles.imagePickerTitle}>اضغط هنا لرفع الصور</Text>
-                  <Text style={styles.imagePickerSub}>PNG, JPG أو WEBP — حتى 5 صور</Text>
+                  <Text style={styles.imagePickerTitle}>{t('اضغط هنا لرفع الصور')}</Text>
+                  <Text style={styles.imagePickerSub}>{t('PNG, JPG أو WEBP — حتى 5 صور')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -241,10 +242,10 @@ export default function AddProductScreen({ navigation }: any) {
 
             {/* Basic Info */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>المعلومات الأساسية</Text>
+              <Text style={styles.sectionTitle}>{t('المعلومات الأساسية')}</Text>
               <FormInput
-                label="اسم المنتج *"
-                placeholder="مثال: سماعات لاسلكية عازلة للضوضاء"
+                label={t('اسم المنتج *')}
+                placeholder={t('مثال: سماعات لاسلكية عازلة للضوضاء')}
                 icon="cube-outline"
                 value={name}
                 onChangeText={setName}
@@ -253,7 +254,7 @@ export default function AddProductScreen({ navigation }: any) {
               <View style={[styles.row, { flexDirection: isTablet ? 'row-reverse' : 'column' }]}>
                 <View style={{ flex: 1 }}>
                   <FormInput
-                    label="السعر (ر.ي) *"
+                    label={t('السعر (ر.ي) *')}
                     placeholder="0.00"
                     icon="cash-outline"
                     keyboardType="numeric"
@@ -263,7 +264,7 @@ export default function AddProductScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <FormInput
-                    label="الكمية المتاحة بالمخزون"
+                    label={t('الكمية المتاحة بالمخزون')}
                     placeholder="0"
                     icon="layers-outline"
                     keyboardType="numeric"
@@ -274,8 +275,8 @@ export default function AddProductScreen({ navigation }: any) {
               </View>
 
               <FormInput
-                label="وصف المنتج"
-                placeholder="اكتب وصفاً مفصلاً يبرز مميزات منتجك..."
+                label={t('وصف المنتج')}
+                placeholder={t('اكتب وصفاً مفصلاً يبرز مميزات منتجك...')}
                 multiline
                 value={description}
                 onChangeText={setDescription}
@@ -286,7 +287,7 @@ export default function AddProductScreen({ navigation }: any) {
 
             {/* Categories */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>التصنيف</Text>
+              <Text style={styles.sectionTitle}>{t('التصنيف')}</Text>
               {categories.length > 0 ? (
                 <View style={styles.categoriesRow}>
                   {categories.map((cat) => {
@@ -299,7 +300,7 @@ export default function AddProductScreen({ navigation }: any) {
                         activeOpacity={0.8}
                       >
                         <Text style={[styles.catChipText, isActive && styles.catChipTextActive]}>
-                          {cat.name_ar ?? cat.name}
+                          {tv(cat.name_ar ?? cat.name)}
                         </Text>
                         {isActive && <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />}
                       </TouchableOpacity>
@@ -307,7 +308,7 @@ export default function AddProductScreen({ navigation }: any) {
                   })}
                 </View>
               ) : (
-                <Text style={{ textAlign: 'right', color: categoriesError ? UI.error : UI.textMuted, fontSize: 13 }}>{categoriesError || 'جاري تحميل التصنيفات...'}</Text>
+                <Text style={{ textAlign: 'right', color: categoriesError ? UI.error : UI.textMuted, fontSize: 13 }}>{tv(categoriesError || t('جاري تحميل التصنيفات...'))}</Text>
               )}
             </View>
 
@@ -322,12 +323,12 @@ export default function AddProductScreen({ navigation }: any) {
                 {isLoading ? (
                   <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                     <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={styles.btnPrimaryText}>{loadingText}</Text>
+                    <Text style={styles.btnPrimaryText}>{tv(loadingText)}</Text>
                   </View>
                 ) : (
                   <>
                     <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                    <Text style={styles.btnPrimaryText}>حفظ المنتج</Text>
+                    <Text style={styles.btnPrimaryText}>{t('حفظ المنتج')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -337,7 +338,7 @@ export default function AddProductScreen({ navigation }: any) {
                 onPress={() => navigation.goBack()}
                 disabled={isLoading}
               >
-                <Text style={styles.btnSecondaryText}>إلغاء</Text>
+                <Text style={styles.btnSecondaryText}>{t('إلغاء')}</Text>
               </TouchableOpacity>
             </View>
 

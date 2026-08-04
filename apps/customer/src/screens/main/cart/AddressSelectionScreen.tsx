@@ -23,6 +23,7 @@ import {
 import { Alert } from '../../../components/appAlert';
 
 import * as Location from 'expo-location';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const REAL_MAP_IMAGE = require('../../../../assets/images/real_map_banner.png');
 
@@ -139,28 +140,28 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           if (detectedStreet) {
             setStreetAddress(detectedStreet);
           } else {
-            setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+            setStreetAddress(t('موقعك الحالي ({0}, {1})', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)]));
           }
           if (place.streetNumber || place.name) {
-            setLandmark(place.name || `مبنى ${place.streetNumber}`);
+            setLandmark(place.name || t('مبنى {0}', [tv(place.streetNumber)]));
           }
 
           Alert.alert(
             'تم تحديد موقعك الحقيقي 📍',
-            `تم جلب إحداثياتك بنجاح: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})\nتمت تعبئة تفاصيل الشارع والمنطقة تلقائياً.`
+            t('تم جلب إحداثياتك بنجاح: ({0}, {1})\nتمت تعبئة تفاصيل الشارع والمنطقة تلقائياً.', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)])
           );
         } else {
-          setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+          setStreetAddress(t('موقعك الحالي ({0}, {1})', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)]));
           Alert.alert(
             'تم تحديد إحداثياتك 📍',
-            `تم جلب الموقع بنجاح: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+            t('تم جلب الموقع بنجاح: ({0}, {1})', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)])
           );
         }
       } catch {
-        setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+        setStreetAddress(t('موقعك الحالي ({0}, {1})', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)]));
         Alert.alert(
           'تم تحديد إحداثيات موقعك 📍',
-          `الموقع: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+          t('الموقع: ({0}, {1})', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)])
         );
       }
     } catch (err: any) {
@@ -225,8 +226,8 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <Ionicons name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>عنوان التوصيل</Text>
-            <Text style={styles.headerSub}>حدد مكان استلام طلبك</Text>
+            <Text style={styles.headerTitle}>{t('عنوان التوصيل')}</Text>
+            <Text style={styles.headerSub}>{t('حدد مكان استلام طلبك')}</Text>
           </View>
           <View style={{ width: 42 }} />
         </View>
@@ -238,7 +239,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
               <Ionicons name="checkmark" size={14} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelDone]}>سلة المشتريات</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelDone]}>{t('سلة المشتريات')}</Text>
           </View>
           <View style={[styles.stepLine, styles.stepLineDone]} />
 
@@ -247,7 +248,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleActive]}>
               <Ionicons name="location" size={15} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelActive]}>العنوان</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelActive]}>{t('العنوان')}</Text>
           </View>
           <View style={styles.stepLine} />
 
@@ -256,7 +257,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={styles.stepCircle}>
               <Ionicons name="card-outline" size={15} color="#94A3B8" />
             </View>
-            <Text style={styles.stepLabel}>الدفع</Text>
+            <Text style={styles.stepLabel}>{t('الدفع')}</Text>
           </View>
           <View style={styles.stepLine} />
 
@@ -265,7 +266,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={styles.stepCircle}>
               <Ionicons name="checkmark-done-outline" size={15} color="#94A3B8" />
             </View>
-            <Text style={styles.stepLabel}>تأكيد الطلب</Text>
+            <Text style={styles.stepLabel}>{t('تأكيد الطلب')}</Text>
           </View>
         </View>
       </View>
@@ -297,7 +298,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             ) : (
               <>
                 <Ionicons name="locate-outline" size={16} color="#172554" />
-                <Text style={styles.floatingLocateText}>استخدام موقعي الحالي</Text>
+                <Text style={styles.floatingLocateText}>{t('استخدام موقعي الحالي')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -316,7 +317,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 1. المدينة */}
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="location-outline" size={16} color="#172554" />
-            <Text style={styles.sectionTitleText}>المدينة</Text>
+            <Text style={styles.sectionTitleText}>{t('المدينة')}</Text>
           </View>
           <View style={styles.cityChipsRow}>
             {Object.values(SERVICE_AREAS).map((cityKey) => {
@@ -330,7 +331,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                 >
                   {isSelected && <Ionicons name="checkmark-circle" size={16} color="#172554" style={{ marginLeft: 4 }} />}
                   <Text style={[styles.cityChipText, isSelected && styles.cityChipTextSelected]}>
-                    {AREA_LABELS[cityKey] || cityKey}
+                    {tv(AREA_LABELS[cityKey] || cityKey)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -340,7 +341,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 2. نوع العنوان */}
           <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
             <Ionicons name="pricetag-outline" size={16} color="#172554" />
-            <Text style={styles.sectionTitleText}>نوع العنوان</Text>
+            <Text style={styles.sectionTitleText}>{t('نوع العنوان')}</Text>
           </View>
           <View style={styles.typeChipsRow}>
             {ADDRESS_TYPES.map((typeObj) => {
@@ -359,7 +360,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                     style={{ marginLeft: 6 }}
                   />
                   <Text style={[styles.typeChipText, isSelected && styles.typeChipTextSelected]}>
-                    {typeObj.label}
+                    {tv(typeObj.label)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -372,10 +373,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <Ionicons name="location-outline" size={18} color="#94A3B8" />
             </View>
             <View style={styles.inputCol}>
-              <Text style={styles.inputLabelText}>الشارع والحي *</Text>
+              <Text style={styles.inputLabelText}>{t('الشارع والحي *')}</Text>
               <TextInput
                 style={styles.textInputStyle}
-                placeholder="مثال : شارع حدة - حي الروضة"
+                placeholder={t('مثال : شارع حدة - حي الروضة')}
                 placeholderTextColor="#94A3B8"
                 value={streetAddress}
                 onChangeText={setStreetAddress}
@@ -390,10 +391,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <Ionicons name="business-outline" size={18} color="#94A3B8" />
             </View>
             <View style={styles.inputCol}>
-              <Text style={styles.inputLabelText}>أقرب معلم بارز (اختياري)</Text>
+              <Text style={styles.inputLabelText}>{t('أقرب معلم بارز (اختياري)')}</Text>
               <TextInput
                 style={styles.textInputStyle}
-                placeholder="مثال : بجانب مسجد التقوى / خلف المول"
+                placeholder={t('مثال : بجانب مسجد التقوى / خلف المول')}
                 placeholderTextColor="#94A3B8"
                 value={landmark}
                 onChangeText={setLandmark}
@@ -408,10 +409,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <Ionicons name="call-outline" size={18} color="#94A3B8" />
             </View>
             <View style={styles.inputCol}>
-              <Text style={styles.inputLabelText}>رقم هاتف جهة التواصل عند التوصيل (اختياري)</Text>
+              <Text style={styles.inputLabelText}>{t('رقم هاتف جهة التواصل عند التوصيل (اختياري)')}</Text>
               <TextInput
                 style={styles.textInputStyle}
-                placeholder="مثال : 77XXXXXXX"
+                placeholder={t('مثال : 77XXXXXXX')}
                 placeholderTextColor="#94A3B8"
                 keyboardType="phone-pad"
                 value={contactPhone}
@@ -431,7 +432,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             />
             <View style={styles.switchRightTextWrap}>
               <Ionicons name="shield-checkmark-outline" size={16} color="#172554" style={{ marginLeft: 6 }} />
-              <Text style={styles.switchLabelText}>حفظ هذا العنوان لاستخدامه مستقبلاً في حسابك</Text>
+              <Text style={styles.switchLabelText}>{t('حفظ هذا العنوان لاستخدامه مستقبلاً في حسابك')}</Text>
             </View>
           </View>
         </View>
@@ -440,7 +441,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="bookmark-outline" size={18} color="#172554" />
-            <Text style={styles.sectionTitleText}>العناوين المحفوظة</Text>
+            <Text style={styles.sectionTitleText}>{t('العناوين المحفوظة')}</Text>
           </View>
 
           {loadingAddresses ? (
@@ -468,7 +469,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                       style={styles.dotsBtn}
                       onPress={() => navigation.getParent()?.navigate('Account', { screen: 'AddressBook' })}
                       accessibilityRole="button"
-                      accessibilityLabel="إدارة العناوين"
+                      accessibilityLabel={t('إدارة العناوين')}
                     >
                       <Ionicons name="ellipsis-vertical" size={16} color="#94A3B8" />
                     </TouchableOpacity>
@@ -476,15 +477,15 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                     {/* Middle Column: Details */}
                     <View style={styles.savedDetailsCol}>
                       <View style={styles.savedTitleRow}>
-                        <Text style={styles.savedLabelText}>{item.label || 'عنوان مخصص'}</Text>
+                        <Text style={styles.savedLabelText}>{tv(item.label || t('عنوان مخصص'))}</Text>
                         {item.is_default && (
                           <View style={styles.preferredBadge}>
-                            <Text style={styles.preferredBadgeText}>مفضل</Text>
+                            <Text style={styles.preferredBadgeText}>{t('مفضل')}</Text>
                           </View>
                         )}
                       </View>
                       <Text style={styles.savedFullAddressText} numberOfLines={2}>
-                        {item.full_address}
+                        {tv(item.full_address)}
                       </Text>
                     </View>
 
@@ -506,7 +507,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               })}
             </View>
           ) : (
-            <Text style={styles.noAddressesText}>لا توجد عناوين محفوظة سابقة. أدخل تفاصيل عنوانك أعلاه.</Text>
+            <Text style={styles.noAddressesText}>{t('لا توجد عناوين محفوظة سابقة. أدخل تفاصيل عنوانك أعلاه.')}</Text>
           )}
         </View>
       </ScrollView>
@@ -515,7 +516,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       <View style={styles.bottomBar}>
         <View style={styles.bottomSubRow}>
           <Ionicons name="shield-checkmark-outline" size={14} color="#64748B" />
-          <Text style={styles.bottomSubText}>سيتم استخدام هذا العنوان لإتمام الطلب</Text>
+          <Text style={styles.bottomSubText}>{t('سيتم استخدام هذا العنوان لإتمام الطلب')}</Text>
         </View>
 
         <TouchableOpacity
@@ -529,7 +530,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           ) : (
             <View style={styles.continueBtnInner}>
               <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
-              <Text style={styles.continueBtnText}>المتابعة إلى الدفع</Text>
+              <Text style={styles.continueBtnText}>{t('المتابعة إلى الدفع')}</Text>
             </View>
           )}
         </TouchableOpacity>

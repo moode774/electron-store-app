@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { LanguageSettingRow, t, tv } from '@marketplace/shared-i18n';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
@@ -57,11 +58,11 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')} accessibilityRole="button" accessibilityLabel="إعدادات بيانات المندوب">
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')} accessibilityRole="button" accessibilityLabel={t('إعدادات بيانات المندوب')}>
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>حساب المندوب</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })} accessibilityRole="button" accessibilityLabel="إشعارات المندوب">
+        <Text style={styles.headerTitle}>{t('حساب المندوب')}</Text>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })} accessibilityRole="button" accessibilityLabel={t('إشعارات المندوب')}>
           <Ionicons name="notifications-outline" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
@@ -77,7 +78,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
 
           {/* Center Zone: Info */}
           <View style={styles.profileZoneCenter}>
-            <Text style={styles.userName}>{user?.full_name ?? 'مندوب التوصيل'}</Text>
+            <Text style={styles.userName}>{tv(user?.full_name ?? t('مندوب التوصيل'))}</Text>
           </View>
 
           {/* Right Zone: Avatar */}
@@ -88,7 +89,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
               </View>
               <View style={styles.premiumBadge}>
                 <Ionicons name="bicycle" size={10} color="#3B82F6" />
-                <Text style={styles.premiumText}>مندوب توصيل</Text>
+                <Text style={styles.premiumText}>{t('مندوب توصيل')}</Text>
               </View>
             </View>
           </View>
@@ -97,9 +98,9 @@ export default function DeliveryAccountScreen({ navigation }: any) {
 
         {loadError ? (
           <View style={styles.errorCard}>
-            <Text style={styles.errorText}>{loadError}</Text>
-            <TouchableOpacity onPress={() => void loadInfo()} accessibilityRole="button" accessibilityLabel="إعادة تحميل ملخص الحساب">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.errorText}>{tv(loadError)}</Text>
+            <TouchableOpacity onPress={() => void loadInfo()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل ملخص الحساب')}>
+              <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -112,15 +113,15 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                 <View style={styles.statIconCircle}>
                   <Ionicons name={stat.icon as any} size={18} color="#111827" />
                 </View>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statTitle} numberOfLines={1} adjustsFontSizeToFit>{stat.title}</Text>
+                <Text style={styles.statValue}>{tv(stat.value)}</Text>
+                <Text style={styles.statTitle} numberOfLines={1} adjustsFontSizeToFit>{tv(stat.title)}</Text>
               </View>
               {index < STATS.length - 1 && <View style={styles.statDivider} />}
             </View>
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>حساب المندوب</Text>
+        <Text style={styles.sectionTitle}>{t('حساب المندوب')}</Text>
 
         {/* Menu List */}
         <View style={styles.menuCard}>
@@ -131,27 +132,30 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                 activeOpacity={0.7}
                 onPress={() => item.screen && navigation.navigate(item.screen as any, item.params as any)}
                 accessibilityRole="button"
-                accessibilityLabel={item.title}
+                accessibilityLabel={tv(item.title)}
               >
                 <View style={styles.menuItemRight}>
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  <Text style={styles.menuItemText}>{tv(item.title)}</Text>
                 </View>
                 <Ionicons name="chevron-back" size={20} color="#9CA3AF" />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
+          {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+          <View style={styles.menuDivider} />
+          <LanguageSettingRow />
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('تسجيل الخروج')}>
           <Ionicons name="log-out-outline" size={24} color="#3B82F6" />
-          <Text style={styles.logoutText}>تسجيل الخروج</Text>
+          <Text style={styles.logoutText}>{t('تسجيل الخروج')}</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper} onPress={() => Alert.alert('قريبًا', 'سيتم نشر برامج ومزايا المندوبين المعتمدة هنا.')} accessibilityRole="button" accessibilityLabel="برامج ومزايا المندوبين">
+        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper} onPress={() => Alert.alert('قريبًا', 'سيتم نشر برامج ومزايا المندوبين المعتمدة هنا.')} accessibilityRole="button" accessibilityLabel={t('برامج ومزايا المندوبين')}>
           <Image
             source={require('../../../assets/images/account_promo.png')}
             style={styles.promoBannerFullImage}

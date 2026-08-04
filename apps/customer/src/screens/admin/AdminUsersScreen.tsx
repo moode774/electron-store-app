@@ -11,6 +11,7 @@ import {
   adminBlockUser, adminUnblockUser, adminSetUserActive, adminUpdateUser,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -81,7 +82,7 @@ const userStatus = (u: AdminUser): UserStatus => {
 };
 
 const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  d ? new Date(d).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 export default function AdminUsersScreen() {
   const { width } = useWindowDimensions();
@@ -171,7 +172,7 @@ export default function AdminUsersScreen() {
   const renderUser = ({ item }: { item: AdminUser }) => {
     const meta = ROLE_META[item.role] ?? { label: item.role, color: UI.textMuted, bg: '#F1F5F9', icon: 'person' };
     const status = userStatus(item);
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const date = new Date(item.created_at).toLocaleDateString(getLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
       <TouchableOpacity style={s.card} activeOpacity={0.7} onPress={() => openDetails(item)}>
         <View style={s.cardRow}>
@@ -179,19 +180,19 @@ export default function AdminUsersScreen() {
             <Ionicons name={meta.icon as any} size={22} color={meta.color} />
           </View>
           <View style={s.userInfo}>
-            <Text style={s.userName}>{item.full_name}</Text>
+            <Text style={s.userName}>{tv(item.full_name)}</Text>
             <View style={s.userPhoneRow}>
               <Ionicons name="call-outline" size={12} color={UI.textMuted} />
-              <Text style={s.userPhone}>{item.phone ?? 'غير متوفر'}</Text>
+              <Text style={s.userPhone}>{tv(item.phone ?? t('غير متوفر'))}</Text>
             </View>
-            <Text style={s.userDate}>تاريخ الانضمام: {date}</Text>
+            <Text style={s.userDate}>{t('تاريخ الانضمام: {0}', [tv(date)])}</Text>
           </View>
           <View style={s.badgeCol}>
             <View style={[s.roleBadge, { backgroundColor: meta.bg }]}>
-              <Text style={[s.roleText, { color: meta.color }]}>{meta.label}</Text>
+              <Text style={[s.roleText, { color: meta.color }]}>{tv(meta.label)}</Text>
             </View>
             <View style={[s.roleBadge, { backgroundColor: status.bg }]}>
-              <Text style={[s.roleText, { color: status.color }]}>{status.label}</Text>
+              <Text style={[s.roleText, { color: status.color }]}>{tv(status.label)}</Text>
             </View>
           </View>
         </View>
@@ -222,9 +223,9 @@ export default function AdminUsersScreen() {
                 <Ionicons name="close" size={24} color={UI.text} />
               </TouchableOpacity>
               <View style={{ alignItems: 'flex-end', flex: 1 }}>
-                <Text style={s.modalTitle}>{selected.full_name}</Text>
-                <Text style={[s.modalStatus, { color: status.color }]}>{status.label}
-                  {selected.blocked_until && new Date(selected.blocked_until) > new Date() ? ` حتى ${fmtDate(selected.blocked_until)}` : ''}
+                <Text style={s.modalTitle}>{tv(selected.full_name)}</Text>
+                <Text style={[s.modalStatus, { color: status.color }]}>{tv(status.label)}
+                  {tv(selected.blocked_until && new Date(selected.blocked_until) > new Date() ? t(' حتى {0}', [fmtDate(selected.blocked_until)]) : '')}
                 </Text>
               </View>
             </View>
@@ -235,70 +236,70 @@ export default function AdminUsersScreen() {
               <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
 
                 {/* معلومات أساسية */}
-                <Section title="المعلومات الأساسية" icon="information-circle-outline">
-                  <InfoRow label="الهاتف" value={selected.phone ?? '—'} />
-                  <InfoRow label="الدور" value={ROLE_META[selected.role]?.label ?? selected.role} />
-                  <InfoRow label="البريد الداخلي" value={details?.auth?.email ?? '—'} />
-                  <InfoRow label="آخر دخول" value={fmtDate(details?.auth?.last_sign_in_at)} />
-                  <InfoRow label="تاريخ التسجيل" value={fmtDate(selected.created_at)} />
-                  {selected.blocked_reason ? <InfoRow label="سبب الحظر" value={selected.blocked_reason} danger /> : null}
+                <Section title={t('المعلومات الأساسية')} icon="information-circle-outline">
+                  <InfoRow label={t('الهاتف')} value={selected.phone ?? '—'} />
+                  <InfoRow label={t('الدور')} value={ROLE_META[selected.role]?.label ?? selected.role} />
+                  <InfoRow label={t('البريد الداخلي')} value={details?.auth?.email ?? '—'} />
+                  <InfoRow label={t('آخر دخول')} value={fmtDate(details?.auth?.last_sign_in_at)} />
+                  <InfoRow label={t('تاريخ التسجيل')} value={fmtDate(selected.created_at)} />
+                  {selected.blocked_reason ? <InfoRow label={t('سبب الحظر')} value={selected.blocked_reason} danger /> : null}
                 </Section>
 
                 {/* إحصائيات */}
                 {st && (
-                  <Section title="الإحصائيات" icon="stats-chart-outline">
+                  <Section title={t('الإحصائيات')} icon="stats-chart-outline">
                     <View style={s.statsGrid}>
-                      <StatBox label="الطلبات" value={String(st.orders_count)} />
-                      <StatBox label="إجمالي الإنفاق" value={`${Number(st.total_spent).toFixed(0)} ر.ي`} />
-                      <StatBox label="طلبات ملغاة" value={String(st.cancelled_orders)} />
-                      <StatBox label="التقييمات" value={String(st.reviews_count)} />
-                      <StatBox label="الشكاوى" value={String(st.complaints_count)} />
-                      <StatBox label="الاسترجاعات" value={String(st.refunds_count)} />
+                      <StatBox label={t('الطلبات')} value={String(st.orders_count)} />
+                      <StatBox label={t('إجمالي الإنفاق')} value={t('{0} ر.ي', [Number(st.total_spent).toFixed(0)])} />
+                      <StatBox label={t('طلبات ملغاة')} value={String(st.cancelled_orders)} />
+                      <StatBox label={t('التقييمات')} value={String(st.reviews_count)} />
+                      <StatBox label={t('الشكاوى')} value={String(st.complaints_count)} />
+                      <StatBox label={t('الاسترجاعات')} value={String(st.refunds_count)} />
                     </View>
                   </Section>
                 )}
 
                 {/* بروفايل حسب الدور */}
                 {details?.profile && selected.role === 'merchant' && (
-                  <Section title="بيانات المتجر" icon="storefront-outline">
-                    <InfoRow label="المتجر" value={details.profile.store_name} />
-                    <InfoRow label="المدينة" value={details.profile.city ?? '—'} />
-                    <InfoRow label="معتمد" value={details.profile.is_approved ? 'نعم' : 'لا'} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
+                  <Section title={t('بيانات المتجر')} icon="storefront-outline">
+                    <InfoRow label={t('المتجر')} value={details.profile.store_name} />
+                    <InfoRow label={t('المدينة')} value={details.profile.city ?? '—'} />
+                    <InfoRow label={t('معتمد')} value={details.profile.is_approved ? t('نعم') : t('لا')} />
+                    <InfoRow label={t('رصيد المحفظة')} value={t('{0} ر.ي', [details.profile.wallet_balance ?? 0])} />
                   </Section>
                 )}
                 {details?.profile && selected.role === 'delivery' && (
-                  <Section title="بيانات المندوب" icon="bicycle-outline">
-                    <InfoRow label="المركبة" value={details.profile.vehicle_type ?? '—'} />
-                    <InfoRow label="اللوحة" value={details.profile.vehicle_plate ?? '—'} />
-                    <InfoRow label="معتمد" value={details.profile.is_approved ? 'نعم' : 'لا'} />
-                    <InfoRow label="متصل الآن" value={details.profile.is_online ? 'نعم' : 'لا'} />
-                    <InfoRow label="التوصيلات" value={String(details.profile.total_deliveries ?? 0)} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
+                  <Section title={t('بيانات المندوب')} icon="bicycle-outline">
+                    <InfoRow label={t('المركبة')} value={details.profile.vehicle_type ?? '—'} />
+                    <InfoRow label={t('اللوحة')} value={details.profile.vehicle_plate ?? '—'} />
+                    <InfoRow label={t('معتمد')} value={details.profile.is_approved ? t('نعم') : t('لا')} />
+                    <InfoRow label={t('متصل الآن')} value={details.profile.is_online ? t('نعم') : t('لا')} />
+                    <InfoRow label={t('التوصيلات')} value={String(details.profile.total_deliveries ?? 0)} />
+                    <InfoRow label={t('رصيد المحفظة')} value={t('{0} ر.ي', [details.profile.wallet_balance ?? 0])} />
                   </Section>
                 )}
                 {details?.profile && selected.role === 'customer' && (
-                  <Section title="بيانات العميل" icon="person-outline">
-                    <InfoRow label="نقاط الولاء" value={String(details.profile.loyalty_points ?? 0)} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
+                  <Section title={t('بيانات العميل')} icon="person-outline">
+                    <InfoRow label={t('نقاط الولاء')} value={String(details.profile.loyalty_points ?? 0)} />
+                    <InfoRow label={t('رصيد المحفظة')} value={t('{0} ر.ي', [details.profile.wallet_balance ?? 0])} />
                   </Section>
                 )}
 
                 {/* ======= أدوات السيطرة ======= */}
                 {!isAdminUser && (
-                  <Section title="أدوات التحكم" icon="shield-half-outline">
+                  <Section title={t('أدوات التحكم')} icon="shield-half-outline">
 
                     {/* تعديل البيانات */}
                     <TouchableOpacity style={s.editToggle} onPress={() => setShowEdit(!showEdit)}>
                       <Ionicons name={showEdit ? 'chevron-up' : 'create-outline'} size={18} color={UI.primary} />
-                      <Text style={s.editToggleText}>تعديل البيانات</Text>
+                      <Text style={s.editToggleText}>{t('تعديل البيانات')}</Text>
                     </TouchableOpacity>
                     {showEdit && (
                       <View style={s.editBox}>
-                        <TextInput style={s.input} value={editName} onChangeText={setEditName} placeholder="الاسم الكامل" textAlign="right" />
-                        <TextInput style={s.input} value={editPhone} onChangeText={setEditPhone} placeholder="رقم الهاتف" textAlign="right" keyboardType="phone-pad" />
+                        <TextInput style={s.input} value={editName} onChangeText={setEditName} placeholder={t('الاسم الكامل')} textAlign="right" />
+                        <TextInput style={s.input} value={editPhone} onChangeText={setEditPhone} placeholder={t('رقم الهاتف')} textAlign="right" keyboardType="phone-pad" />
                         <ActionBtn
-                          label="حفظ التعديلات" color={UI.primary} disabled={processing}
+                          label={t('حفظ التعديلات')} color={UI.primary} disabled={processing}
                           onPress={() => doAction(
                             () => adminUpdateUser(selected.id, { full_name: editName.trim(), phone: editPhone.trim() || undefined }),
                             'تم تحديث البيانات'
@@ -314,11 +315,11 @@ export default function AdminUsersScreen() {
                           style={s.input}
                           value={blockReason}
                           onChangeText={setBlockReason}
-                          placeholder="سبب الحظر (اختياري)"
+                          placeholder={t('سبب الحظر (اختياري)')}
                           placeholderTextColor={UI.textMuted}
                           textAlign="right"
                         />
-                        <Text style={s.subLabel}>حظر مؤقت:</Text>
+                        <Text style={s.subLabel}>{t('حظر مؤقت:')}</Text>
                         <View style={s.durationRow}>
                           {BLOCK_DURATIONS.map(d => (
                             <TouchableOpacity
@@ -327,20 +328,20 @@ export default function AdminUsersScreen() {
                               disabled={processing}
                               onPress={() => confirmAction(
                                 'حظر مؤقت',
-                                `حظر "${selected.full_name}" لمدة ${d.label}؟`,
-                                () => doAction(() => adminBlockUser(selected.id, d.hours, blockReason.trim() || undefined), `تم الحظر لمدة ${d.label}`),
+                                t('حظر "{0}" لمدة {1}؟', [tv(selected.full_name), tv(d.label)]),
+                                () => doAction(() => adminBlockUser(selected.id, d.hours, blockReason.trim() || undefined), t('تم الحظر لمدة {0}', [tv(d.label)])),
                                 true
                               )}
                             >
-                              <Text style={s.durationText}>{d.label}</Text>
+                              <Text style={s.durationText}>{tv(d.label)}</Text>
                             </TouchableOpacity>
                           ))}
                         </View>
                         <ActionBtn
-                          label="🚫 حظر نهائي" color={UI.danger} disabled={processing}
+                          label={t('🚫 حظر نهائي')} color={UI.danger} disabled={processing}
                           onPress={() => confirmAction(
                             'حظر نهائي',
-                            `حظر "${selected.full_name}" نهائياً؟ لن يستطيع الدخول أبداً حتى فك الحظر.`,
+                            t('حظر "{0}" نهائياً؟ لن يستطيع الدخول أبداً حتى فك الحظر.', [tv(selected.full_name)]),
                             () => doAction(() => adminBlockUser(selected.id, null, blockReason.trim() || undefined), 'تم الحظر النهائي'),
                             true
                           )}
@@ -348,10 +349,10 @@ export default function AdminUsersScreen() {
                       </>
                     ) : (
                       <ActionBtn
-                        label="✅ فك الحظر" color={UI.success} disabled={processing}
+                        label={t('✅ فك الحظر')} color={UI.success} disabled={processing}
                         onPress={() => confirmAction(
                           'فك الحظر',
-                          `فك الحظر عن "${selected.full_name}"؟`,
+                          t('فك الحظر عن "{0}"؟', [tv(selected.full_name)]),
                           () => doAction(() => adminUnblockUser(selected.id), 'تم فك الحظر')
                         )}
                       />
@@ -359,12 +360,12 @@ export default function AdminUsersScreen() {
 
                     {/* تفعيل / تعطيل */}
                     <ActionBtn
-                      label={selected.is_active ? '⛔ تعطيل الحساب' : '✅ تفعيل الحساب'}
+                      label={selected.is_active ? t('⛔ تعطيل الحساب') : t('✅ تفعيل الحساب')}
                       color={selected.is_active ? UI.warning : UI.success}
                       disabled={processing}
                       onPress={() => confirmAction(
                         selected.is_active ? 'تعطيل الحساب' : 'تفعيل الحساب',
-                        `${selected.is_active ? 'تعطيل' : 'تفعيل'} حساب "${selected.full_name}"؟`,
+                        t('{0} حساب "{1}"؟', [selected.is_active ? 'تعطيل' : 'تفعيل', tv(selected.full_name)]),
                         () => doAction(() => adminSetUserActive(selected.id, !selected.is_active), 'تم بنجاح'),
                         selected.is_active
                       )}
@@ -373,68 +374,68 @@ export default function AdminUsersScreen() {
                 )}
 
                 {/* سجل التحركات */}
-                <Section title="سجل التحركات" icon="footsteps-outline">
+                <Section title={t('سجل التحركات')} icon="footsteps-outline">
                   {details?.activity?.length ? details.activity.map((a: any, i: number) => (
                     <View key={i} style={s.activityRow}>
-                      <Text style={s.activityTime}>{fmtDate(a.created_at)}</Text>
+                      <Text style={s.activityTime}>{tv(fmtDate(a.created_at))}</Text>
                       <Text style={s.activityAction}>
-                        {ACTIVITY_LABELS[a.action] ?? a.action}
-                        {a.details?.order_number ? ` (${a.details.order_number})` : ''}
-                        {a.details?.total ? ` — ${a.details.total} ر.ي` : ''}
-                        {a.details?.amount ? ` — ${a.details.amount} ر.ي` : ''}
+                        {tv(ACTIVITY_LABELS[a.action] ?? a.action)}
+                        {tv(a.details?.order_number ? ` (${a.details.order_number})` : '')}
+                        {tv(a.details?.total ? t(' — {0} ر.ي', [tv(a.details.total)]) : '')}
+                        {tv(a.details?.amount ? t(' — {0} ر.ي', [tv(a.details.amount)]) : '')}
                       </Text>
                     </View>
-                  )) : <Text style={s.emptySmall}>لا توجد تحركات مسجلة بعد</Text>}
+                  )) : <Text style={s.emptySmall}>{t('لا توجد تحركات مسجلة بعد')}</Text>}
                 </Section>
 
                 {/* آخر الطلبات */}
-                <Section title="آخر الطلبات" icon="receipt-outline">
+                <Section title={t('آخر الطلبات')} icon="receipt-outline">
                   {details?.recent_orders?.length ? details.recent_orders.map((o: any) => (
                     <View key={o.id} style={s.activityRow}>
-                      <Text style={s.activityTime}>{o.status}</Text>
-                      <Text style={s.activityAction}>{o.order_number} — {o.total_amount} ر.ي</Text>
+                      <Text style={s.activityTime}>{tv(o.status)}</Text>
+                      <Text style={s.activityAction}>{t('{0} — {1} ر.ي', [tv(o.order_number), tv(o.total_amount)])}</Text>
                     </View>
-                  )) : <Text style={s.emptySmall}>لا توجد طلبات</Text>}
+                  )) : <Text style={s.emptySmall}>{t('لا توجد طلبات')}</Text>}
                 </Section>
 
                 {/* عمليات البحث والمشاهدات */}
-                <Section title="نشاط التصفح" icon="eye-outline">
+                <Section title={t('نشاط التصفح')} icon="eye-outline">
                   {details?.recent_searches?.length ? (
                     <>
-                      <Text style={s.subLabel}>آخر عمليات البحث:</Text>
+                      <Text style={s.subLabel}>{t('آخر عمليات البحث:')}</Text>
                       {details.recent_searches.map((q: any, i: number) => (
-                        <Text key={i} style={s.browsing}>🔍 "{q.query}" ({q.results_count} نتيجة)</Text>
+                        <Text key={i} style={s.browsing}>{t('🔍 "{0}" ({1} نتيجة)', [tv(q.query), tv(q.results_count)])}</Text>
                       ))}
                     </>
                   ) : null}
                   {details?.recent_views?.length ? (
                     <>
-                      <Text style={s.subLabel}>آخر المنتجات المشاهدة:</Text>
+                      <Text style={s.subLabel}>{t('آخر المنتجات المشاهدة:')}</Text>
                       {details.recent_views.map((v: any, i: number) => (
-                        <Text key={i} style={s.browsing}>👁 {v.product_name}</Text>
+                        <Text key={i} style={s.browsing}>👁 {tv(v.product_name)}</Text>
                       ))}
                     </>
                   ) : null}
                   {!details?.recent_searches?.length && !details?.recent_views?.length && (
-                    <Text style={s.emptySmall}>لا يوجد نشاط تصفح</Text>
+                    <Text style={s.emptySmall}>{t('لا يوجد نشاط تصفح')}</Text>
                   )}
                 </Section>
 
                 {/* المحفظة */}
-                <Section title="حركات المحفظة" icon="wallet-outline">
+                <Section title={t('حركات المحفظة')} icon="wallet-outline">
                   {details?.wallet_transactions?.length ? details.wallet_transactions.map((w: any, i: number) => (
                     <View key={i} style={s.activityRow}>
-                      <Text style={s.activityTime}>{fmtDate(w.created_at)}</Text>
-                      <Text style={s.activityAction}>{w.type === 'credit' ? '⬆️ إيداع' : '⬇️ خصم'} {w.amount} ر.ي (الرصيد: {w.balance_after})</Text>
+                      <Text style={s.activityTime}>{tv(fmtDate(w.created_at))}</Text>
+                      <Text style={s.activityAction}>{t('{0} {1} ر.ي (الرصيد: {2})', [w.type === 'credit' ? '⬆️ إيداع' : '⬇️ خصم', tv(w.amount), tv(w.balance_after)])}</Text>
                     </View>
-                  )) : <Text style={s.emptySmall}>لا توجد حركات</Text>}
+                  )) : <Text style={s.emptySmall}>{t('لا توجد حركات')}</Text>}
                 </Section>
 
                 {/* العناوين */}
-                <Section title="العناوين" icon="location-outline">
+                <Section title={t('العناوين')} icon="location-outline">
                   {details?.addresses?.length ? details.addresses.map((a: any) => (
-                    <Text key={a.id} style={s.browsing}>📍 {a.label ? `${a.label}: ` : ''}{a.full_address} — {a.city}</Text>
-                  )) : <Text style={s.emptySmall}>لا توجد عناوين</Text>}
+                    <Text key={a.id} style={s.browsing}>📍 {tv(a.label ? `${a.label}: ` : '')}{tv(a.full_address)} — {tv(a.city)}</Text>
+                  )) : <Text style={s.emptySmall}>{t('لا توجد عناوين')}</Text>}
                 </Section>
 
               </ScrollView>
@@ -450,8 +451,8 @@ export default function AdminUsersScreen() {
       {/* Modern Header */}
       <View style={s.header}>
         <View style={[s.headerContent, { width: contentWidth }]}>
-          <Text style={s.headerCount}>{users.length} مستخدم</Text>
-          <Text style={s.headerTitle}>المستخدمين</Text>
+          <Text style={s.headerCount}>{t('{0} مستخدم', [tv(users.length)])}</Text>
+          <Text style={s.headerTitle}>{t('المستخدمين')}</Text>
         </View>
 
         {/* Search Input */}
@@ -459,7 +460,7 @@ export default function AdminUsersScreen() {
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
-            placeholder="البحث برقم الهاتف أو الاسم..."
+            placeholder={t('البحث برقم الهاتف أو الاسم...')}
             placeholderTextColor={UI.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -485,10 +486,10 @@ export default function AdminUsersScreen() {
                 onPress={() => setRoleFilter(f.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.filterText, isActive && s.filterTextActive]}>{f.label}</Text>
+                <Text style={[s.filterText, isActive && s.filterTextActive]}>{tv(f.label)}</Text>
                 {count > 0 && (
                   <View style={[s.filterCount, isActive && s.filterCountActive]}>
-                    <Text style={[s.filterCountText, isActive && s.filterCountTextActive]}>{count}</Text>
+                    <Text style={[s.filterCountText, isActive && s.filterCountTextActive]}>{tv(count)}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -512,7 +513,7 @@ export default function AdminUsersScreen() {
           ListEmptyComponent={
             <View style={s.center}>
                <Ionicons name="people-outline" size={48} color={UI.border} />
-               <Text style={s.emptyText}>لا يوجد مستخدمون حالياً</Text>
+               <Text style={s.emptyText}>{t('لا يوجد مستخدمون حالياً')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -530,7 +531,7 @@ function Section({ title, icon, children }: { title: string; icon: string; child
     <View style={s.section}>
       <View style={s.sectionHeader}>
         <Ionicons name={icon as any} size={18} color={UI.primary} />
-        <Text style={s.sectionTitle}>{title}</Text>
+        <Text style={s.sectionTitle}>{tv(title)}</Text>
       </View>
       {children}
     </View>
@@ -540,8 +541,8 @@ function Section({ title, icon, children }: { title: string; icon: string; child
 function InfoRow({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
   return (
     <View style={s.infoRow}>
-      <Text style={[s.infoValue, danger && { color: UI.danger }]}>{value}</Text>
-      <Text style={s.infoLabel}>{label}</Text>
+      <Text style={[s.infoValue, danger && { color: UI.danger }]}>{tv(value)}</Text>
+      <Text style={s.infoLabel}>{tv(label)}</Text>
     </View>
   );
 }
@@ -549,8 +550,8 @@ function InfoRow({ label, value, danger }: { label: string; value: string; dange
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <View style={s.statBox}>
-      <Text style={s.statValue}>{value}</Text>
-      <Text style={s.statLabel}>{label}</Text>
+      <Text style={s.statValue}>{tv(value)}</Text>
+      <Text style={s.statLabel}>{tv(label)}</Text>
     </View>
   );
 }
@@ -563,7 +564,7 @@ function ActionBtn({ label, color, onPress, disabled }: { label: string; color: 
       disabled={disabled}
       activeOpacity={0.8}
     >
-      <Text style={s.actionBtnText}>{label}</Text>
+      <Text style={s.actionBtnText}>{tv(label)}</Text>
     </TouchableOpacity>
   );
 }

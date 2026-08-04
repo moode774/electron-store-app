@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminCoupons, createGlobalCoupon } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -80,31 +81,31 @@ export default function AdminCouponsScreen({ navigation }: any) {
       <View style={s.couponCard}>
         <View style={s.couponTop}>
           <View style={s.codeBox}>
-            <Text style={s.codeText}>{item.code}</Text>
+            <Text style={s.codeText}>{tv(item.code)}</Text>
           </View>
           <View style={[s.badge, isGlobal ? s.badgeGlobal : s.badgeLocal]}>
             <Text style={[s.badgeText, isGlobal ? s.badgeTextGlobal : s.badgeTextLocal]}>
-              {isGlobal ? 'عام (التطبيق)' : 'متجر خاص'}
+              {tv(isGlobal ? t('عام (التطبيق)') : t('متجر خاص'))}
             </Text>
           </View>
         </View>
 
         <View style={s.detailsRow}>
-          <Text style={s.detailLabel}>الخصم:</Text>
-          <Text style={s.detailValue}>{item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.ي`}</Text>
+          <Text style={s.detailLabel}>{t('الخصم:')}</Text>
+          <Text style={s.detailValue}>{tv(item.type === 'percentage' ? `${item.value}%` : t('{0} ر.ي', [tv(item.value)]))}</Text>
         </View>
         
         {item.min_order_amount > 0 && (
           <View style={s.detailsRow}>
-            <Text style={s.detailLabel}>الحد الأدنى:</Text>
-            <Text style={s.detailValue}>{item.min_order_amount} ر.ي</Text>
+            <Text style={s.detailLabel}>{t('الحد الأدنى:')}</Text>
+            <Text style={s.detailValue}>{t('{0} ر.ي', [tv(item.min_order_amount)])}</Text>
           </View>
         )}
 
         {!isGlobal && (
           <View style={s.detailsRow}>
-            <Text style={s.detailLabel}>خاص بمتجر:</Text>
-            <Text style={s.detailValue}>{item.merchant_profiles?.store_name ?? 'غير معروف'}</Text>
+            <Text style={s.detailLabel}>{t('خاص بمتجر:')}</Text>
+            <Text style={s.detailValue}>{tv(item.merchant_profiles?.store_name ?? t('غير معروف'))}</Text>
           </View>
         )}
       </View>
@@ -118,7 +119,7 @@ export default function AdminCouponsScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>إدارة الكوبونات</Text>
+          <Text style={s.headerTitle}>{t('إدارة الكوبونات')}</Text>
         </View>
       </View>
 
@@ -132,21 +133,21 @@ export default function AdminCouponsScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={s.addCard}>
-            <Text style={s.addTitle}>إنشاء كوبون خصم عام للتطبيق</Text>
+            <Text style={s.addTitle}>{t('إنشاء كوبون خصم عام للتطبيق')}</Text>
             
             <View style={[s.formRow, compact && s.formColumn]}>
               <View style={s.inputWrap}>
-                <Text style={s.label}>كود الخصم</Text>
-                <TextInput style={s.input} placeholder="مثال: EID50" value={code} onChangeText={setCode} textAlign="right" autoCapitalize="characters" />
+                <Text style={s.label}>{t('كود الخصم')}</Text>
+                <TextInput style={s.input} placeholder={t('مثال: EID50')} value={code} onChangeText={setCode} textAlign="right" autoCapitalize="characters" />
               </View>
               <View style={s.inputWrap}>
-                <Text style={s.label}>نوع الخصم</Text>
+                <Text style={s.label}>{t('نوع الخصم')}</Text>
                 <View style={s.typeToggle}>
                   <TouchableOpacity style={[s.typeBtn, type === 'fixed' && s.typeBtnActive]} onPress={() => setType('fixed')}>
-                    <Text style={[s.typeText, type === 'fixed' && s.typeTextActive]}>مبلغ</Text>
+                    <Text style={[s.typeText, type === 'fixed' && s.typeTextActive]}>{t('مبلغ')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[s.typeBtn, type === 'percentage' && s.typeBtnActive]} onPress={() => setType('percentage')}>
-                    <Text style={[s.typeText, type === 'percentage' && s.typeTextActive]}>نسبة %</Text>
+                    <Text style={[s.typeText, type === 'percentage' && s.typeTextActive]}>{t('نسبة %')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -154,22 +155,22 @@ export default function AdminCouponsScreen({ navigation }: any) {
 
             <View style={[s.formRow, compact && s.formColumn]}>
               <View style={s.inputWrap}>
-                <Text style={s.label}>الحد الأدنى للطلب</Text>
+                <Text style={s.label}>{t('الحد الأدنى للطلب')}</Text>
                 <TextInput style={s.input} placeholder="0" value={minAmount} onChangeText={setMinAmount} keyboardType="numeric" textAlign="right" />
               </View>
               <View style={s.inputWrap}>
-                <Text style={s.label}>قيمة الخصم</Text>
-                <TextInput style={s.input} placeholder="مثال: 20" value={value} onChangeText={setValue} keyboardType="numeric" textAlign="right" />
+                <Text style={s.label}>{t('قيمة الخصم')}</Text>
+                <TextInput style={s.input} placeholder={t('مثال: 20')} value={value} onChangeText={setValue} keyboardType="numeric" textAlign="right" />
               </View>
             </View>
 
             <TouchableOpacity style={s.saveBtn} onPress={handleAddCoupon} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={s.saveBtnText}>إصدار الكوبون</Text>}
+              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={s.saveBtnText}>{t('إصدار الكوبون')}</Text>}
             </TouchableOpacity>
           </View>
         }
         renderItem={renderCoupon}
-        ListEmptyComponent={!loading ? <Text style={s.emptyText}>لا توجد كوبونات حالياً</Text> : <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} />}
+        ListEmptyComponent={!loading ? <Text style={s.emptyText}>{t('لا توجد كوبونات حالياً')}</Text> : <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} />}
       />
     </KeyboardAvoidingView>
   );

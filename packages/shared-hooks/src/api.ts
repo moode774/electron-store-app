@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { TABLES } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const ADMIN_UPDATE_TIMEOUT_MS = 15_000;
 
@@ -2326,12 +2327,12 @@ export async function confirmOrderPickup(orderId: string, code: string): Promise
 
   switch (result.error) {
     case 'PICKUP_CODE_LOCKED':
-      throw new Error(`تم إيقاف المحاولات مؤقتاً بعد عدة أكواد خاطئة. أعد المحاولة بعد ${minutesLeft} دقيقة.`);
+      throw new Error(t('تم إيقاف المحاولات مؤقتاً بعد عدة أكواد خاطئة. أعد المحاولة بعد {0} دقيقة.', [tv(minutesLeft)]));
     case 'PICKUP_CODE_NOT_ISSUED':
       throw new Error('لم يصدر كود لهذا الطلب بعد. اطلب من التاجر فتح الطلب لعرض الكود.');
     case 'INVALID_PICKUP_CODE':
       throw new Error(
-        `كود الاستلام غير صحيح.${typeof result.attempts_left === 'number' ? ` تبقّى ${result.attempts_left} محاولات.` : ''}`,
+        t('كود الاستلام غير صحيح.{0}', [typeof result.attempts_left === 'number' ? t(' تبقّى {0} محاولات.', [tv(result.attempts_left)]) : '']),
       );
     default:
       throw new Error('تعذّر تأكيد الاستلام. حاول مجدداً.');

@@ -38,6 +38,7 @@ import {
   hasFreshDeliveryLocation,
   hasValidDeliveryCoordinates,
 } from './deliveryProofValidation';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 type JobFilter = 'active' | 'completed';
 
@@ -69,15 +70,15 @@ function dateTime(value: string | null | undefined): string {
   if (!value) return 'غير محدد';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'غير محدد';
-  return date.toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' });
+  return date.toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function locationLabel(job: DeliveryReturnJob, destination: 'customer' | 'merchant'): string {
   if (destination === 'customer') {
-    if (!job.address) return `عنوان العميل (${job.address_id.slice(-8)})`;
+    if (!job.address) return t('عنوان العميل ({0})', [job.address_id.slice(-8)]);
     return [job.address.full_address, job.address.area, job.address.city].filter(Boolean).join('، ');
   }
-  if (!job.merchant) return `المتجر (${job.merchant_id.slice(-8)})`;
+  if (!job.merchant) return t('المتجر ({0})', [job.merchant_id.slice(-8)]);
   return [job.merchant.address, job.merchant.city].filter(Boolean).join('، ') || job.merchant.store_name;
 }
 
@@ -412,14 +413,14 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.orderNumber}>طلب {job.order_number}</Text>
-            <Text style={styles.reason}>{REASON_LABELS[job.reason]} · {quantity} قطعة</Text>
+            <Text style={styles.orderNumber}>{t('طلب {0}', [tv(job.order_number)])}</Text>
+            <Text style={styles.reason}>{t('{0} · {1} قطعة', [tv(REASON_LABELS[job.reason]), tv(quantity)])}</Text>
           </View>
           <Text style={[styles.jobStatus, {
             color: received ? '#047857' : inTransit ? '#1D4ED8' : '#92400E',
             backgroundColor: received ? '#D1FAE5' : inTransit ? '#DBEAFE' : '#FEF3C7',
           }]}>
-            {received ? 'وصل للتاجر' : inTransit ? 'قيد النقل' : 'بانتظار الاستلام'}
+            {tv(received ? t('وصل للتاجر') : inTransit ? t('قيد النقل') : t('بانتظار الاستلام'))}
           </Text>
         </View>
 
@@ -428,27 +429,27 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
             <View style={[styles.timelineDot, (inTransit || received) && styles.timelineDotDone]}>
               {(inTransit || received) ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
             </View>
-            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>استلام العميل</Text>
+            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>{t('استلام العميل')}</Text>
           </View>
           <View style={[styles.timelineLine, (inTransit || received) && styles.timelineLineDone]} />
           <View style={styles.timelineStep}>
             <View style={[styles.timelineDot, inTransit && styles.timelineDotCurrent, received && styles.timelineDotDone]}>
               {received ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
             </View>
-            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>قيد النقل</Text>
+            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>{t('قيد النقل')}</Text>
           </View>
           <View style={[styles.timelineLine, received && styles.timelineLineDone]} />
           <View style={styles.timelineStep}>
             <View style={[styles.timelineDot, received && styles.timelineDotDone]}>
               {received ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
             </View>
-            <Text style={[styles.timelineLabel, received && styles.timelineLabelDone]}>تسليم التاجر</Text>
+            <Text style={[styles.timelineLabel, received && styles.timelineLabelDone]}>{t('تسليم التاجر')}</Text>
           </View>
         </View>
 
         <View style={styles.scheduleBox}>
           <Ionicons name="calendar-outline" size={17} color="#6B7280" />
-          <Text style={styles.scheduleText}>الموعد: {dateTime(job.scheduled_at)}</Text>
+          <Text style={styles.scheduleText}>{t('الموعد: {0}', [dateTime(job.scheduled_at)])}</Text>
         </View>
 
         <View style={styles.destinationCard}>
@@ -457,8 +458,8 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               <Ionicons name="person-outline" size={18} color="#92400E" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.destinationTitle}>الاستلام من العميل</Text>
-              <Text style={styles.destinationAddress}>{customerLocation}</Text>
+              <Text style={styles.destinationTitle}>{t('الاستلام من العميل')}</Text>
+              <Text style={styles.destinationAddress}>{tv(customerLocation)}</Text>
             </View>
             <TouchableOpacity
               style={styles.mapButton}
@@ -468,7 +469,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                 customerLocation,
               )}
               accessibilityRole="button"
-              accessibilityLabel="فتح عنوان العميل في الخريطة"
+              accessibilityLabel={t('فتح عنوان العميل في الخريطة')}
             >
               <Ionicons name="navigate-outline" size={18} color={COLORS.primary} />
             </TouchableOpacity>
@@ -481,10 +482,10 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               <Ionicons name="storefront-outline" size={18} color="#1D4ED8" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.destinationTitle}>{job.merchant?.store_name ?? 'التاجر'}</Text>
-              <Text style={styles.destinationAddress}>{merchantLocation}</Text>
+              <Text style={styles.destinationTitle}>{tv(job.merchant?.store_name ?? t('التاجر'))}</Text>
+              <Text style={styles.destinationAddress}>{tv(merchantLocation)}</Text>
               {job.merchant?.store_phone ? (
-                <Text style={styles.destinationPhone}>{job.merchant.store_phone}</Text>
+                <Text style={styles.destinationPhone}>{tv(job.merchant.store_phone)}</Text>
               ) : null}
             </View>
             <TouchableOpacity
@@ -495,7 +496,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                 merchantLocation,
               )}
               accessibilityRole="button"
-              accessibilityLabel="فتح عنوان التاجر في الخريطة"
+              accessibilityLabel={t('فتح عنوان التاجر في الخريطة')}
             >
               <Ionicons name="navigate-outline" size={18} color={COLORS.primary} />
             </TouchableOpacity>
@@ -508,17 +509,17 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
             onPress={() => openStep(job)}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={pickupPending ? 'تأكيد استلام المرتجع من العميل' : 'تأكيد تسليم المرتجع للتاجر'}
+            accessibilityLabel={pickupPending ? t('تأكيد استلام المرتجع من العميل') : t('تأكيد تسليم المرتجع للتاجر')}
           >
             <Ionicons name="camera-outline" size={19} color="#FFFFFF" />
             <Text style={styles.primaryActionText}>
-              {pickupPending ? 'توثيق الاستلام من العميل' : 'توثيق التسليم للتاجر'}
+              {tv(pickupPending ? t('توثيق الاستلام من العميل') : t('توثيق التسليم للتاجر'))}
             </Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.completedBox}>
             <Ionicons name="shield-checkmark-outline" size={18} color="#047857" />
-            <Text style={styles.completedText}>اكتملت عهدة المندوب وينتظر المرتجع فحص التاجر.</Text>
+            <Text style={styles.completedText}>{t('اكتملت عهدة المندوب وينتظر المرتجع فحص التاجر.')}</Text>
           </View>
         )}
       </View>
@@ -533,20 +534,20 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel="العودة"
+          accessibilityLabel={t('العودة')}
         >
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>مهام الإرجاع</Text>
-          <Text style={styles.headerSubtitle}>مسار مستقل لاستلام المرتجعات وتسليمها للتاجر</Text>
+          <Text style={styles.headerTitle}>{t('مهام الإرجاع')}</Text>
+          <Text style={styles.headerSubtitle}>{t('مسار مستقل لاستلام المرتجعات وتسليمها للتاجر')}</Text>
         </View>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={() => void loadJobs(true)}
           disabled={refreshing}
           accessibilityRole="button"
-          accessibilityLabel="تحديث مهام الإرجاع"
+          accessibilityLabel={t('تحديث مهام الإرجاع')}
         >
           {refreshing
             ? <ActivityIndicator size="small" color={COLORS.primary} />
@@ -560,25 +561,21 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
           onPress={() => setFilter('active')}
           accessibilityRole="button"
         >
-          <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>
-            الجارية ({activeCount})
-          </Text>
+          <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>{t('الجارية ({0})', [tv(activeCount)])}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.filterButton, filter === 'completed' && styles.filterButtonActive]}
           onPress={() => setFilter('completed')}
           accessibilityRole="button"
         >
-          <Text style={[styles.filterText, filter === 'completed' && styles.filterTextActive]}>
-            المسلّمة ({completedCount})
-          </Text>
+          <Text style={[styles.filterText, filter === 'completed' && styles.filterTextActive]}>{t('المسلّمة ({0})', [tv(completedCount)])}</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.centerText}>جاري تحميل مهام الإرجاع…</Text>
+          <Text style={styles.centerText}>{t('جاري تحميل مهام الإرجاع…')}</Text>
         </View>
       ) : (
         <FlatList
@@ -595,9 +592,9 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
           ListHeaderComponent={loadError ? (
             <View style={styles.errorCard}>
               <Ionicons name="alert-circle-outline" size={19} color="#B91C1C" />
-              <Text style={styles.errorText}>{loadError}</Text>
+              <Text style={styles.errorText}>{tv(loadError)}</Text>
               <TouchableOpacity onPress={() => void loadJobs()} accessibilityRole="button">
-                <Text style={styles.retryText}>إعادة المحاولة</Text>
+                <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -609,9 +606,9 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                 color={filter === 'active' ? '#9CA3AF' : '#059669'}
               />
               <Text style={styles.emptyTitle}>
-                {filter === 'active' ? 'لا توجد مهام إرجاع جارية' : 'لا توجد مهام مسلّمة بعد'}
+                {tv(filter === 'active' ? t('لا توجد مهام إرجاع جارية') : t('لا توجد مهام مسلّمة بعد'))}
               </Text>
-              <Text style={styles.emptyText}>تظهر المهمة بعد اعتمادها وإسنادها إليك من الإدارة.</Text>
+              <Text style={styles.emptyText}>{t('تظهر المهمة بعد اعتمادها وإسنادها إليك من الإدارة.')}</Text>
             </View>
           )}
         />
@@ -624,16 +621,16 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               <View style={styles.modalHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modalTitle}>
-                    {targetStatus === 'picked_up' ? 'إثبات استلام المرتجع' : 'إثبات تسليم المرتجع'}
+                    {tv(targetStatus === 'picked_up' ? t('إثبات استلام المرتجع') : t('إثبات تسليم المرتجع'))}
                   </Text>
-                  <Text style={styles.modalSubtitle}>طلب {selectedJob?.order_number}</Text>
+                  <Text style={styles.modalSubtitle}>{t('طلب {0}', [tv(selectedJob?.order_number)])}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={closeStep}
                   disabled={submitting}
                   accessibilityRole="button"
-                  accessibilityLabel="إغلاق إثبات خطوة الإرجاع"
+                  accessibilityLabel={t('إغلاق إثبات خطوة الإرجاع')}
                 >
                   <Ionicons name="close" size={21} color="#374151" />
                 </TouchableOpacity>
@@ -642,9 +639,9 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               <View style={styles.instructionBox}>
                 <Ionicons name="information-circle-outline" size={19} color="#1D4ED8" />
                 <Text style={styles.instructionText}>
-                  {targetStatus === 'picked_up'
-                    ? 'التقط صورة واضحة للمرتجع عند استلامه من العميل. بعد التأكيد ستتحول المهمة تلقائيًا إلى «قيد النقل».'
-                    : 'التقط صورة واضحة عند تسليم المرتجع للتاجر. يجب أن تكون في موقع المتجر وقت التأكيد.'}
+                  {tv(targetStatus === 'picked_up'
+                    ? t('التقط صورة واضحة للمرتجع عند استلامه من العميل. بعد التأكيد ستتحول المهمة تلقائيًا إلى «قيد النقل».')
+                    : t('التقط صورة واضحة عند تسليم المرتجع للتاجر. يجب أن تكون في موقع المتجر وقت التأكيد.'))}
                 </Text>
               </View>
 
@@ -653,7 +650,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                 onPress={() => void captureProof()}
                 disabled={capturing || submitting}
                 accessibilityRole="button"
-                accessibilityLabel="التقاط صورة إثبات الإرجاع"
+                accessibilityLabel={t('التقاط صورة إثبات الإرجاع')}
               >
                 {proofPhoto ? (
                   <Image source={{ uri: proofPhoto.uri }} style={styles.proofPreview} resizeMode="cover" />
@@ -662,14 +659,14 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                     {capturing
                       ? <ActivityIndicator size="large" color={COLORS.primary} />
                       : <Ionicons name="camera-outline" size={38} color={COLORS.primary} />}
-                    <Text style={styles.captureTitle}>التقط صورة الإثبات</Text>
-                    <Text style={styles.captureSubtitle}>JPEG أو PNG · حتى 10 ميجابايت</Text>
+                    <Text style={styles.captureTitle}>{t('التقط صورة الإثبات')}</Text>
+                    <Text style={styles.captureSubtitle}>{t('JPEG أو PNG · حتى 10 ميجابايت')}</Text>
                   </View>
                 )}
                 {proofPhoto ? (
                   <View style={styles.retakeBadge}>
                     <Ionicons name="camera-outline" size={15} color="#FFFFFF" />
-                    <Text style={styles.retakeText}>إعادة الالتقاط</Text>
+                    <Text style={styles.retakeText}>{t('إعادة الالتقاط')}</Text>
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -688,14 +685,14 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.locationTitle}>
-                    {proofLocation && hasFreshDeliveryLocation(proofLocation.timestamp)
-                      ? 'الموقع الحالي موثّق'
-                      : 'يلزم تحديث الموقع الحالي'}
+                    {tv(proofLocation && hasFreshDeliveryLocation(proofLocation.timestamp)
+                      ? t('الموقع الحالي موثّق')
+                      : t('يلزم تحديث الموقع الحالي'))}
                   </Text>
                   <Text style={styles.locationSubtitle}>
-                    {proofLocation
+                    {tv(proofLocation
                       ? `${proofLocation.latitude.toFixed(5)}, ${proofLocation.longitude.toFixed(5)}`
-                      : 'لا توجد إحداثيات صالحة بعد'}
+                      : t('لا توجد إحداثيات صالحة بعد'))}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -703,7 +700,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                   onPress={() => void refreshProofLocation()}
                   disabled={locating || submitting}
                   accessibilityRole="button"
-                  accessibilityLabel="تحديث موقع إثبات الإرجاع"
+                  accessibilityLabel={t('تحديث موقع إثبات الإرجاع')}
                 >
                   {locating
                     ? <ActivityIndicator size="small" color={COLORS.primary} />
@@ -714,7 +711,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               {proofError ? (
                 <View style={styles.proofErrorBox}>
                   <Ionicons name="alert-circle-outline" size={18} color="#B91C1C" />
-                  <Text style={styles.proofErrorText}>{proofError}</Text>
+                  <Text style={styles.proofErrorText}>{tv(proofError)}</Text>
                 </View>
               ) : null}
 
@@ -730,11 +727,11 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
                   ? <ActivityIndicator size="small" color="#FFFFFF" />
                   : <Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" />}
                 <Text style={styles.confirmButtonText}>
-                  {submitting
-                    ? 'جاري حفظ الإثبات…'
+                  {tv(submitting
+                    ? t('جاري حفظ الإثبات…')
                     : targetStatus === 'picked_up'
-                      ? 'تأكيد الاستلام وبدء النقل'
-                      : 'تأكيد التسليم للتاجر'}
+                      ? t('تأكيد الاستلام وبدء النقل')
+                      : t('تأكيد التسليم للتاجر'))}
                 </Text>
               </TouchableOpacity>
             </View>

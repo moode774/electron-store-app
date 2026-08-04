@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 import { TABLES, USER_ROLES, type UserRole } from '@marketplace/shared-utils';
 import type { User } from '@marketplace/shared-types';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 // ---- State Interface ----------------------------------------
 interface AuthState {
@@ -41,11 +42,11 @@ const phoneToPassword = (phone: string): string => `Levi-${phoneDigits(phone)}-a
 // يرجع رسالة الحظر إن كان المستخدم محظوراً (دائم/مؤقت) أو موقوفاً من الإدارة
 const blockedMessage = (u: any): string | null => {
   if (!u || u.role === 'admin') return null;
-  const reason = u.blocked_reason ? ` — السبب: ${u.blocked_reason}` : '';
-  if (u.is_blocked) return `حسابك محظور نهائياً${reason}. تواصل مع الدعم الفني.`;
+  const reason = u.blocked_reason ? t(' — السبب: {0}', [tv(u.blocked_reason)]) : '';
+  if (u.is_blocked) return t('حسابك محظور نهائياً{0}. تواصل مع الدعم الفني.', [tv(reason)]);
   if (u.blocked_until && new Date(u.blocked_until) > new Date()) {
-    const until = new Date(u.blocked_until).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' });
-    return `حسابك محظور مؤقتاً حتى ${until}${reason}.`;
+    const until = new Date(u.blocked_until).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
+    return t('حسابك محظور مؤقتاً حتى {0}{1}.', [tv(until), tv(reason)]);
   }
   if (u.is_active === false) return 'حسابك موقوف من الإدارة. تواصل مع الدعم الفني.';
   return null;

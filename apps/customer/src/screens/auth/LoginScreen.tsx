@@ -19,6 +19,7 @@ import { useAuthStore } from '@marketplace/shared-hooks';
 import { USER_ROLES, COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
+import { LanguageToggleButton, t, tv } from '@marketplace/shared-i18n';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -93,8 +94,8 @@ export default function LoginScreen(): React.JSX.Element {
             source={require('../../../assets/images/logo.png')}
             style={styles.desktopCoverLogo}
           />
-          <Text style={styles.desktopCoverTitle}>منصة متكاملة</Text>
-          <Text style={styles.desktopCoverSub}>الوجهة الأولى لتجارتك ومشترياتك.</Text>
+          <Text style={styles.desktopCoverTitle}>{t('منصة متكاملة')}</Text>
+          <Text style={styles.desktopCoverSub}>{t('الوجهة الأولى لتجارتك ومشترياتك.')}</Text>
         </View>
       )}
 
@@ -113,6 +114,11 @@ export default function LoginScreen(): React.JSX.Element {
       >
         <View style={styles.mainContainer}>
 
+          {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+          <View style={styles.languageBar}>
+            <LanguageToggleButton variant="soft" />
+          </View>
+
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoBox}>
@@ -121,8 +127,8 @@ export default function LoginScreen(): React.JSX.Element {
                 style={{ width: 100, height: 100, resizeMode: 'contain' }}
               />
             </View>
-            <Text style={styles.welcomeText}>مرحباً بك</Text>
-            <Text style={styles.subtitleText}>سجّل دخولك للوصول إلى حسابك</Text>
+            <Text style={styles.welcomeText}>{t('مرحباً بك')}</Text>
+            <Text style={styles.subtitleText}>{t('سجّل دخولك للوصول إلى حسابك')}</Text>
           </View>
 
           {/* Form */}
@@ -137,7 +143,7 @@ export default function LoginScreen(): React.JSX.Element {
 
               <TextInput
                 style={styles.input}
-                placeholder="رقم الهاتف"
+                placeholder={t('رقم الهاتف')}
                 placeholderTextColor="#9CA3AF"
                 keyboardType="phone-pad"
                 value={phone}
@@ -157,8 +163,7 @@ export default function LoginScreen(): React.JSX.Element {
               onPress={() => navigation.navigate('Register')}
               activeOpacity={0.7}
             >
-              <Text style={styles.registerLinkText}>
-                ترغب بالانضمام كشريك؟ <Text style={styles.registerLinkBold}>سجل كتاجر أو مندوب</Text>
+              <Text style={styles.registerLinkText}>{t('ترغب بالانضمام كشريك؟')}{' '}<Text style={styles.registerLinkBold}>{t('سجل كتاجر أو مندوب')}</Text>
               </Text>
             </TouchableOpacity>
 
@@ -172,7 +177,7 @@ export default function LoginScreen(): React.JSX.Element {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
+                  <Text style={styles.loginButtonText}>{t('تسجيل الدخول')}</Text>
                   <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.loginArrow} />
                 </>
               )}
@@ -181,14 +186,14 @@ export default function LoginScreen(): React.JSX.Element {
             {/* Social Logins Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.line} />
-              <Text style={styles.dividerText}>أو</Text>
+              <Text style={styles.dividerText}>{t('أو')}</Text>
               <View style={styles.line} />
             </View>
 
             <View style={styles.socialRow}>
               <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7}>
                 <Ionicons name="logo-apple" size={20} color="#111827" />
-                <Text style={styles.socialText}>تسجيل الدخول باستخدام Apple</Text>
+                <Text style={styles.socialText}>{t('تسجيل الدخول باستخدام Apple')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7} onPress={async () => {
@@ -199,7 +204,7 @@ export default function LoginScreen(): React.JSX.Element {
                   source={require('../../../assets/images/google.png')}
                   style={{ width: 20, height: 20, resizeMode: 'contain' }}
                 />
-                <Text style={styles.socialText}>تسجيل الدخول باستخدام Google</Text>
+                <Text style={styles.socialText}>{t('تسجيل الدخول باستخدام Google')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -209,8 +214,8 @@ export default function LoginScreen(): React.JSX.Element {
 
       <CustomAlert
         visible={alertVisible}
-        title={alertConfig.title}
-        message={alertConfig.message}
+        title={tv(alertConfig.title)}
+        message={tv(alertConfig.message)}
         onClose={() => setAlertVisible(false)}
       />
         </KeyboardAvoidingView>
@@ -279,6 +284,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: Platform.OS === 'ios' ? 80 : 60,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  languageBar: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   header: {
     alignItems: 'center',

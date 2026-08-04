@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type Props = Omit<TextInputProps, 'style'> & {
   containerStyle?: StyleProp<ViewStyle>;
@@ -36,12 +37,12 @@ export function CustomerSearchField({
         <Ionicons name="search" size={19} color={COLORS.primary} />
       </View>
       {onPress ? (
-        <Text style={styles.placeholder} numberOfLines={1}>{placeholder}</Text>
+        <Text style={styles.placeholder} numberOfLines={1}>{tv(placeholder)}</Text>
       ) : (
         <TextInput
           {...inputProps}
           value={value}
-          placeholder={placeholder}
+          placeholder={tv(placeholder)}
           placeholderTextColor={COLORS.textMuted}
           style={styles.input}
         />
@@ -51,7 +52,7 @@ export function CustomerSearchField({
           style={styles.trailingButton}
           onPress={onClear}
           accessibilityRole="button"
-          accessibilityLabel="مسح البحث"
+          accessibilityLabel={t('مسح البحث')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
@@ -62,7 +63,7 @@ export function CustomerSearchField({
           style={styles.filterButton}
           onPress={onFilterPress}
           accessibilityRole="button"
-          accessibilityLabel="خيارات الترتيب"
+          accessibilityLabel={t('خيارات الترتيب')}
         >
           <Ionicons name="options-outline" size={18} color={COLORS.textPrimary} />
         </TouchableOpacity>
@@ -77,7 +78,7 @@ export function CustomerSearchField({
         onPress={onPress}
         activeOpacity={0.84}
         accessibilityRole="button"
-        accessibilityLabel={placeholder}
+        accessibilityLabel={tv(placeholder)}
       >
         {content}
       </TouchableOpacity>

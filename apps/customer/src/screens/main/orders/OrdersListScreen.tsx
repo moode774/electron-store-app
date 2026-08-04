@@ -24,6 +24,7 @@ import {
   supabase,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 type FilterTab = 'all' | 'active' | 'delivering' | 'completed';
 
@@ -156,7 +157,7 @@ export default function OrdersListScreen({ navigation }: any) {
   const formatDate = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString('ar-SA', {
+      return d.toLocaleDateString(getLocale(), {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -245,15 +246,15 @@ export default function OrdersListScreen({ navigation }: any) {
           <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
             <Ionicons name={statusConfig.icon as any} size={14} color={statusConfig.textColor} />
             <Text style={[styles.statusBadgeText, { color: statusConfig.textColor }]}>
-              {statusConfig.label}
+              {tv(statusConfig.label)}
             </Text>
           </View>
 
           <View style={styles.headerRightCol}>
-            <Text style={styles.orderNumberText}># طلب {item.order_number}</Text>
+            <Text style={styles.orderNumberText}>{t('# طلب {0}', [tv(item.order_number)])}</Text>
             <View style={styles.dateSubRow}>
               <Ionicons name="calendar-outline" size={12} color="#94A3B8" />
-              <Text style={styles.orderDateText}>{dateFormatted}</Text>
+              <Text style={styles.orderDateText}>{tv(dateFormatted)}</Text>
             </View>
           </View>
         </View>
@@ -266,14 +267,12 @@ export default function OrdersListScreen({ navigation }: any) {
               size={14}
               color="#172554"
             />
-            <Text style={styles.paymentPillText}>{paymentLabel}</Text>
+            <Text style={styles.paymentPillText}>{tv(paymentLabel)}</Text>
           </View>
 
           <View style={styles.priceCol}>
-            <Text style={styles.priceAmountText}>
-              {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'} ر.ي
-            </Text>
-            <Text style={styles.itemCountText}>{totalItems} منتجات</Text>
+            <Text style={styles.priceAmountText}>{t('{0} ر.ي', [item.total_amount ? Number(item.total_amount).toLocaleString(getLocale()) : '0'])}</Text>
+            <Text style={styles.itemCountText}>{t('{0} منتجات', [tv(totalItems)])}</Text>
           </View>
         </View>
 
@@ -302,7 +301,7 @@ export default function OrdersListScreen({ navigation }: any) {
               <View style={[styles.stepCircle, statusConfig.stepIndex >= 2 && styles.stepCircleDone]}>
                 {statusConfig.stepIndex >= 2 && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
               </View>
-              <Text style={[styles.stepLabel, statusConfig.stepIndex >= 2 && styles.stepLabelDone]}>تم التأكيد</Text>
+              <Text style={[styles.stepLabel, statusConfig.stepIndex >= 2 && styles.stepLabelDone]}>{t('تم التأكيد')}</Text>
             </View>
             <View style={[styles.stepLine, statusConfig.stepIndex >= 2 && styles.stepLineDone]} />
 
@@ -332,9 +331,7 @@ export default function OrdersListScreen({ navigation }: any) {
                   statusConfig.stepIndex >= 2 && styles.stepLabelDone,
                   statusConfig.stepIndex === 2 && styles.stepLabelActive,
                 ]}
-              >
-                جاري التجهيز
-              </Text>
+              >{t('جاري التجهيز')}</Text>
             </View>
             <View style={[styles.stepLine, statusConfig.stepIndex >= 3 && styles.stepLineDone]} />
 
@@ -364,9 +361,7 @@ export default function OrdersListScreen({ navigation }: any) {
                   statusConfig.stepIndex >= 3 && styles.stepLabelDone,
                   statusConfig.stepIndex === 3 && styles.stepLabelActive,
                 ]}
-              >
-                في الطريق
-              </Text>
+              >{t('في الطريق')}</Text>
             </View>
             <View style={[styles.stepLine, statusConfig.stepIndex >= 4 && styles.stepLineDone]} />
 
@@ -375,9 +370,7 @@ export default function OrdersListScreen({ navigation }: any) {
               <View style={[styles.stepCircle, statusConfig.stepIndex >= 4 && styles.stepCircleDone]}>
                 <Ionicons name="checkmark" size={12} color="#FFFFFF" />
               </View>
-              <Text style={[styles.stepLabel, statusConfig.stepIndex >= 4 && styles.stepLabelDone]}>
-                تم التوصيل
-              </Text>
+              <Text style={[styles.stepLabel, statusConfig.stepIndex >= 4 && styles.stepLabelDone]}>{t('تم التوصيل')}</Text>
             </View>
           </View>
         )}
@@ -387,21 +380,21 @@ export default function OrdersListScreen({ navigation }: any) {
           <View style={styles.infoBannerRow}>
             <Ionicons name="location-outline" size={15} color="#64748B" />
             <Text style={styles.infoBannerText} numberOfLines={1}>
-              <Text style={styles.infoBannerLabel}>العنوان: </Text>
-              {addressStr}
+              <Text style={styles.infoBannerLabel}>{t('العنوان: ')}</Text>
+              {tv(addressStr)}
             </Text>
           </View>
           <View style={[styles.infoBannerRow, { marginTop: 4 }]}>
             <Ionicons name="time-outline" size={15} color="#172554" />
             <Text style={styles.infoBannerText}>
               <Text style={styles.infoBannerLabel}>
-                {item.status === ORDER_STATUS.DELIVERED ? 'تم التوصيل في: ' : 'حالة التوصيل: '}
+                {tv(item.status === ORDER_STATUS.DELIVERED ? t('تم التوصيل في: ') : t('حالة التوصيل: '))}
               </Text>
-              {item.status === ORDER_STATUS.DELIVERED
+              {tv(item.status === ORDER_STATUS.DELIVERED
                 ? (item.delivered_at ? formatDate(item.delivered_at) : dateFormatted)
                 : item.status === ORDER_STATUS.CANCELLED
-                  ? 'أُلغي الطلب'
-                  : 'يُحدَّد وقت التسليم بعد إسناد الطلب لمندوب'}
+                  ? t('أُلغي الطلب')
+                  : t('يُحدَّد وقت التسليم بعد إسناد الطلب لمندوب'))}
             </Text>
           </View>
         </View>
@@ -415,7 +408,7 @@ export default function OrdersListScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               <Ionicons name="refresh-outline" size={16} color="#172554" />
-              <Text style={styles.reorderPrimaryBtnText}>إعادة الطلب</Text>
+              <Text style={styles.reorderPrimaryBtnText}>{t('إعادة الطلب')}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -424,7 +417,7 @@ export default function OrdersListScreen({ navigation }: any) {
               activeOpacity={0.85}
             >
               <Ionicons name="map-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.trackPrimaryBtnText}>تتبع الطلب</Text>
+              <Text style={styles.trackPrimaryBtnText}>{t('تتبع الطلب')}</Text>
             </TouchableOpacity>
           )}
 
@@ -433,7 +426,7 @@ export default function OrdersListScreen({ navigation }: any) {
             onPress={() => navigation.navigate('OrderTracking', { orderId: item.id })}
             activeOpacity={0.8}
           >
-            <Text style={styles.detailsSecondaryBtnText}>عرض التفاصيل</Text>
+            <Text style={styles.detailsSecondaryBtnText}>{t('عرض التفاصيل')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -453,12 +446,12 @@ export default function OrdersListScreen({ navigation }: any) {
             activeOpacity={0.8}
           >
             <Ionicons name="headset-outline" size={16} color="#172554" />
-            <Text style={styles.supportPillText}>الدعم</Text>
+            <Text style={styles.supportPillText}>{t('الدعم')}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>طلباتي</Text>
-            <Text style={styles.headerSub}>تابع جميع طلباتك بسهولة</Text>
+            <Text style={styles.headerTitle}>{t('طلباتي')}</Text>
+            <Text style={styles.headerSub}>{t('تابع جميع طلباتك بسهولة')}</Text>
           </View>
 
           {navigation.canGoBack() ? (
@@ -482,9 +475,7 @@ export default function OrdersListScreen({ navigation }: any) {
               onPress={() => setActiveTab('all')}
               activeOpacity={0.8}
             >
-              <Text style={[styles.tabChipText, activeTab === 'all' && styles.tabChipTextActive]}>
-                الكل
-              </Text>
+              <Text style={[styles.tabChipText, activeTab === 'all' && styles.tabChipTextActive]}>{t('الكل')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -492,9 +483,7 @@ export default function OrdersListScreen({ navigation }: any) {
               onPress={() => setActiveTab('active')}
               activeOpacity={0.8}
             >
-              <Text style={[styles.tabChipText, activeTab === 'active' && styles.tabChipTextActive]}>
-                نشطة
-              </Text>
+              <Text style={[styles.tabChipText, activeTab === 'active' && styles.tabChipTextActive]}>{t('نشطة')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -507,9 +496,7 @@ export default function OrdersListScreen({ navigation }: any) {
                   styles.tabChipText,
                   activeTab === 'delivering' && styles.tabChipTextActive,
                 ]}
-              >
-                قيد التوصيل
-              </Text>
+              >{t('قيد التوصيل')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -522,9 +509,7 @@ export default function OrdersListScreen({ navigation }: any) {
                   styles.tabChipText,
                   activeTab === 'completed' && styles.tabChipTextActive,
                 ]}
-              >
-                مكتملة
-              </Text>
+              >{t('مكتملة')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -553,14 +538,12 @@ export default function OrdersListScreen({ navigation }: any) {
             <View style={styles.emptyContainer}>
               <Ionicons name="bag-handle-outline" size={54} color="#CBD5E1" />
               <Text style={styles.emptyTitleText}>
-                {errorMessage || 'لا توجد طلبات في هذه القائمة'}
+                {tv(errorMessage || t('لا توجد طلبات في هذه القائمة'))}
               </Text>
-              <Text style={styles.emptySubText}>
-                تصفح المنتجات في المتجر وأضف مشترياتك المفضلة للسلة!
-              </Text>
+              <Text style={styles.emptySubText}>{t('تصفح المنتجات في المتجر وأضف مشترياتك المفضلة للسلة!')}</Text>
               {errorMessage ? (
                 <TouchableOpacity style={styles.retryBtn} onPress={() => loadOrders()}>
-                  <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+                  <Text style={styles.retryBtnText}>{t('إعادة المحاولة')}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>

@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { LanguageSettingRow, t, tv } from '@marketplace/shared-i18n';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بيانات المتجر', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
@@ -54,7 +55,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
   useFocusEffect(useCallback(() => { void loadAccount(); }, [loadAccount]));
 
   const STATS = [
-    { id: '1', title: 'قيمة طلبات اليوم', value: `${stat.todayRevenue} ر.ي`, icon: 'cash-outline', target: 'Reports' },
+    { id: '1', title: 'قيمة طلبات اليوم', value: t('{0} ر.ي', [tv(stat.todayRevenue)]), icon: 'cash-outline', target: 'Reports' },
     { id: '2', title: 'طلبات اليوم', value: `${stat.todayOrders}`, icon: 'cube-outline', target: 'MerchantOrders' },
     { id: '3', title: 'المنتجات', value: `${stat.totalProducts}`, icon: 'pricetags-outline', target: 'MerchantProducts' },
     { id: '4', title: 'قيد الانتظار', value: `${stat.pendingOrders}`, icon: 'time-outline', target: 'MerchantOrders' },
@@ -64,11 +65,11 @@ export default function MerchantAccountScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, isCompact && styles.headerCompact, isDesktop && styles.headerDesktop]}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel="إعدادات المتجر">
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel={t('إعدادات المتجر')}>
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>حساب التاجر</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })} accessibilityRole="button" accessibilityLabel="إشعارات التاجر">
+        <Text style={styles.headerTitle}>{t('حساب التاجر')}</Text>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })} accessibilityRole="button" accessibilityLabel={t('إشعارات التاجر')}>
           <Ionicons name="notifications-outline" size={24} color="#111827" />
           <View style={styles.badge} />
         </TouchableOpacity>
@@ -80,8 +81,8 @@ export default function MerchantAccountScreen({ navigation }: any) {
       >
 
         {loadError ? (
-          <TouchableOpacity style={styles.errorCard} onPress={() => void loadAccount()} accessibilityRole="button" accessibilityLabel="إعادة تحميل حساب التاجر">
-            <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+          <TouchableOpacity style={styles.errorCard} onPress={() => void loadAccount()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل حساب التاجر')}>
+            <Text style={styles.errorText}>{t('{0} اضغط لإعادة المحاولة.', [tv(loadError)])}</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -94,7 +95,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
 
           {/* Center Zone: Info */}
           <View style={styles.profileZoneCenter}>
-            <Text style={styles.userName}>{profile?.store_name ?? user?.full_name ?? 'متجري'}</Text>
+            <Text style={styles.userName}>{tv(profile?.store_name ?? user?.full_name ?? t('متجري'))}</Text>
           </View>
 
           {/* Right Zone: Avatar */}
@@ -105,7 +106,7 @@ export default function MerchantAccountScreen({ navigation }: any) {
               </View>
               <View style={styles.premiumBadge}>
                 <Ionicons name="sparkles" size={10} color="#3B82F6" />
-                <Text style={styles.premiumText}>{profile?.is_approved ? 'تاجر معتمد' : 'قيد المراجعة'}</Text>
+                <Text style={styles.premiumText}>{tv(profile?.is_approved ? t('تاجر معتمد') : t('قيد المراجعة'))}</Text>
               </View>
             </View>
           </View>
@@ -126,15 +127,15 @@ export default function MerchantAccountScreen({ navigation }: any) {
                 <View style={styles.statIconCircle}>
                   <Ionicons name={stat.icon as any} size={18} color="#111827" />
                 </View>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statTitle} numberOfLines={1} adjustsFontSizeToFit>{stat.title}</Text>
+                <Text style={styles.statValue}>{tv(stat.value)}</Text>
+                <Text style={styles.statTitle} numberOfLines={1} adjustsFontSizeToFit>{tv(stat.title)}</Text>
               </TouchableOpacity>
               {index < STATS.length - 1 && !isCompact && <View style={styles.statDivider} />}
             </View>
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>حساب التاجر</Text>
+        <Text style={styles.sectionTitle}>{t('حساب التاجر')}</Text>
 
         {/* Menu List */}
         <View style={styles.menuCard}>
@@ -145,17 +146,20 @@ export default function MerchantAccountScreen({ navigation }: any) {
                 activeOpacity={0.7}
                 onPress={() => item.screen && navigation.navigate(item.screen as any, item.params as any)}
                 accessibilityRole="button"
-                accessibilityLabel={item.title}
+                accessibilityLabel={tv(item.title)}
               >
                 <View style={styles.menuItemRight}>
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  <Text style={styles.menuItemText}>{tv(item.title)}</Text>
                 </View>
                 <Ionicons name="chevron-back" size={20} color="#9CA3AF" />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
+          {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+          <View style={styles.menuDivider} />
+          <LanguageSettingRow />
         </View>
 
         {/* Logout Button */}
@@ -169,10 +173,10 @@ export default function MerchantAccountScreen({ navigation }: any) {
           }
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="تسجيل الخروج"
+          accessibilityLabel={t('تسجيل الخروج')}
         >
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
-          <Text style={[styles.logoutText, { color: '#EF4444' }]}>تسجيل الخروج</Text>
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('تسجيل الخروج')}</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}

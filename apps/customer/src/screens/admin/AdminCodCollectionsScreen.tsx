@@ -29,6 +29,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -84,13 +85,13 @@ const DECISION_META: Record<ReviewDecision, { label: string; title: string; colo
 };
 
 function money(value?: number | null): string {
-  return `${Number(value ?? 0).toFixed(2)} ر.ي`;
+  return t('{0} ر.ي', [Number(value ?? 0).toFixed(2)]);
 }
 
 function dateTime(value?: string | null): string {
   if (!value) return '—';
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('ar-SA');
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString(getLocale());
 }
 
 function errorText(error: unknown): string {
@@ -201,7 +202,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       })
       .catch((error) => {
         if (generation === proofGeneration.current) {
-          setProofError(`تعذر إنشاء روابط الإثباتات الخاصة: ${errorText(error)}`);
+          setProofError(t('تعذر إنشاء روابط الإثباتات الخاصة: {0}', [errorText(error)]));
         }
       })
       .finally(() => {
@@ -255,10 +256,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
   const renderSummary = () => (
     <View>
       <View style={s.summaryGrid}>
-        <SummaryCard label="النقد المتبقي" value={money(summary.outstanding)} color={UI.warning} icon="cash-outline" />
-        <SummaryCard label="قيد المراجعة" value={money(summary.pending)} color={UI.primary} icon="hourglass-outline" />
-        <SummaryCard label="إثباتات معلقة" value={String(summary.reviews)} color={UI.purple} icon="document-attach-outline" />
-        <SummaryCard label="نزاعات مفتوحة" value={String(summary.disputes)} color={UI.danger} icon="alert-circle-outline" />
+        <SummaryCard label={t('النقد المتبقي')} value={money(summary.outstanding)} color={UI.warning} icon="cash-outline" />
+        <SummaryCard label={t('قيد المراجعة')} value={money(summary.pending)} color={UI.primary} icon="hourglass-outline" />
+        <SummaryCard label={t('إثباتات معلقة')} value={String(summary.reviews)} color={UI.purple} icon="document-attach-outline" />
+        <SummaryCard label={t('نزاعات مفتوحة')} value={String(summary.disputes)} color={UI.danger} icon="alert-circle-outline" />
       </View>
       <ScrollView
         horizontal
@@ -273,7 +274,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
             accessibilityRole="button"
             accessibilityState={{ selected: filter === item.value }}
           >
-            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
+            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{tv(item.label)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -281,8 +282,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
         <View style={s.errorBox}>
           <Ionicons name="alert-circle-outline" size={20} color={UI.danger} />
           <View style={s.errorContent}>
-            <Text style={s.errorText}>{loadError}</Text>
-            <TouchableOpacity onPress={() => void load()}><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+            <Text style={s.errorText}>{tv(loadError)}</Text>
+            <TouchableOpacity onPress={() => void load()}><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
           </View>
         </View>
       ) : null}
@@ -297,33 +298,33 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       <TouchableOpacity style={s.collectionCard} onPress={() => openDetails(item)} activeOpacity={0.8}>
         <View style={s.cardTopRow}>
           <View style={[s.statusBadge, { backgroundColor: meta.background }]}>
-            <Text style={[s.statusBadgeText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[s.statusBadgeText, { color: meta.color }]}>{tv(meta.label)}</Text>
           </View>
           <View style={s.orderInfo}>
-            <Text style={s.orderNumber}>طلب {item.order_number ?? item.order_id.slice(0, 8)}</Text>
-            <Text style={s.cardDate}>استُلم النقد: {dateTime(item.collected_at)}</Text>
+            <Text style={s.orderNumber}>{t('طلب {0}', [item.order_number ?? item.order_id.slice(0, 8)])}</Text>
+            <Text style={s.cardDate}>{t('استُلم النقد: {0}', [dateTime(item.collected_at)])}</Text>
           </View>
         </View>
 
         <View style={s.identityRow}>
           <Ionicons name="bicycle-outline" size={17} color={UI.muted} />
-          <Text style={s.identityText}>المندوب: {item.delivery_name || item.delivery_id.slice(0, 8)}</Text>
+          <Text style={s.identityText}>{t('المندوب: {0}', [item.delivery_name || item.delivery_id.slice(0, 8)])}</Text>
         </View>
 
         <View style={s.amountGrid}>
-          <AmountCell label="المُحصّل" value={money(item.amount_collected)} />
-          <AmountCell label="المعتمد" value={money(item.amount_remitted)} />
-          <AmountCell label="المتبقي" value={money(item.amount_outstanding)} emphasized />
+          <AmountCell label={t('المُحصّل')} value={money(item.amount_collected)} />
+          <AmountCell label={t('المعتمد')} value={money(item.amount_remitted)} />
+          <AmountCell label={t('المتبقي')} value={money(item.amount_outstanding)} emphasized />
         </View>
 
         <View style={s.cardFooter}>
           <View style={[s.reviewPill, reviewCount > 0 && s.reviewPillActive]}>
             <Text style={[s.reviewPillText, reviewCount > 0 && s.reviewPillTextActive]}>
-              {reviewCount > 0 ? `${reviewCount} إثبات يحتاج قرارًا` : `${item.submissions.length} تحويل مسجل`}
+              {tv(reviewCount > 0 ? t('{0} إثبات يحتاج قرارًا', [tv(reviewCount)]) : t('{0} تحويل مسجل', [tv(item.submissions.length)]))}
             </Text>
           </View>
           <View style={s.detailsLink}>
-            <Text style={s.detailsLinkText}>التفاصيل والمراجعة</Text>
+            <Text style={s.detailsLinkText}>{t('التفاصيل والمراجعة')}</Text>
             <Ionicons name="chevron-back" size={17} color={UI.primary} />
           </View>
         </View>
@@ -335,10 +336,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <View style={s.headerText}>
-          <Text style={s.title}>تحصيلات الدفع عند الاستلام</Text>
-          <Text style={s.subtitle}>مراجعة عهدة النقد وإثباتات تحويل المندوبين</Text>
+          <Text style={s.title}>{t('تحصيلات الدفع عند الاستلام')}</Text>
+          <Text style={s.subtitle}>{t('مراجعة عهدة النقد وإثباتات تحويل المندوبين')}</Text>
         </View>
-        <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()} accessibilityLabel="العودة">
+        <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()} accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={22} color={UI.text} />
         </TouchableOpacity>
       </View>
@@ -346,7 +347,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       {loading && collections.length === 0 ? (
         <View style={s.centerState}>
           <ActivityIndicator size="large" color={UI.primary} />
-          <Text style={s.stateText}>جارٍ تحميل سجل العهدة النقدية…</Text>
+          <Text style={s.stateText}>{t('جارٍ تحميل سجل العهدة النقدية…')}</Text>
         </View>
       ) : (
         <FlatList
@@ -360,8 +361,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.emptyState}>
               <Ionicons name="checkmark-done-circle-outline" size={48} color={UI.success} />
-              <Text style={s.emptyTitle}>لا توجد تحصيلات في هذا القسم</Text>
-              <Text style={s.emptyText}>غيّر المرشح أو اسحب للأسفل لتحديث البيانات.</Text>
+              <Text style={s.emptyTitle}>{t('لا توجد تحصيلات في هذا القسم')}</Text>
+              <Text style={s.emptyText}>{t('غيّر المرشح أو اسحب للأسفل لتحديث البيانات.')}</Text>
             </View>
           }
           refreshControl={
@@ -385,8 +386,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                 <Ionicons name="close" size={22} color={UI.text} />
               </TouchableOpacity>
               <View style={s.modalHeaderText}>
-                <Text style={s.modalTitle}>تفاصيل عهدة التحصيل</Text>
-                <Text style={s.modalSubtitle}>طلب {selected?.order_number ?? selected?.order_id.slice(0, 8)}</Text>
+                <Text style={s.modalTitle}>{t('تفاصيل عهدة التحصيل')}</Text>
+                <Text style={s.modalSubtitle}>{t('طلب {0}', [selected?.order_number ?? selected?.order_id.slice(0, 8)])}</Text>
               </View>
             </View>
 
@@ -398,8 +399,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                   <View style={s.disputeBanner}>
                     <Ionicons name="warning-outline" size={22} color={UI.danger} />
                     <View style={s.disputeBannerText}>
-                      <Text style={s.disputeTitle}>هذا التحصيل معلّق بسبب نزاع</Text>
-                      <Text style={s.disputeReason}>{selected.dispute_reason || 'لم يُسجّل سبب ظاهر.'}</Text>
+                      <Text style={s.disputeTitle}>{t('هذا التحصيل معلّق بسبب نزاع')}</Text>
+                      <Text style={s.disputeReason}>{tv(selected.dispute_reason || t('لم يُسجّل سبب ظاهر.'))}</Text>
                     </View>
                   </View>
                 ) : null}
@@ -411,7 +412,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                       onPress={() => startCollectionAction(false)}
                     >
                       <Ionicons name="checkmark-circle-outline" size={18} color={UI.success} />
-                      <Text style={[s.outlineActionText, { color: UI.success }]}>إنهاء نزاع التحصيل</Text>
+                      <Text style={[s.outlineActionText, { color: UI.success }]}>{t('إنهاء نزاع التحصيل')}</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
@@ -419,20 +420,20 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                       onPress={() => startCollectionAction(true)}
                     >
                       <Ionicons name="alert-circle-outline" size={18} color={UI.danger} />
-                      <Text style={[s.outlineActionText, { color: UI.danger }]}>فتح نزاع على التحصيل</Text>
+                      <Text style={[s.outlineActionText, { color: UI.danger }]}>{t('فتح نزاع على التحصيل')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
 
                 <View style={s.sectionHeader}>
-                  <Text style={s.sectionTitle}>إثباتات التحويل ({selected.submissions.length})</Text>
+                  <Text style={s.sectionTitle}>{t('إثباتات التحويل ({0})', [tv(selected.submissions.length)])}</Text>
                   {proofLoading ? <ActivityIndicator size="small" color={UI.primary} /> : null}
                 </View>
-                {proofError ? <Text style={s.inlineError}>{proofError}</Text> : null}
+                {proofError ? <Text style={s.inlineError}>{tv(proofError)}</Text> : null}
 
                 {selected.submissions.length === 0 ? (
                   <View style={s.noSubmissions}>
-                    <Text style={s.emptyText}>لم يرسل المندوب أي إثبات تحويل حتى الآن.</Text>
+                    <Text style={s.emptyText}>{t('لم يرسل المندوب أي إثبات تحويل حتى الآن.')}</Text>
                   </View>
                 ) : selected.submissions.map((submission) => {
                   const submissionMeta = SUBMISSION_STATUS[submission.status];
@@ -442,18 +443,18 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                     <View key={submission.id} style={s.submissionCard}>
                       <View style={s.submissionHeader}>
                         <View style={[s.statusBadge, { backgroundColor: submissionMeta.background }]}>
-                          <Text style={[s.statusBadgeText, { color: submissionMeta.color }]}>{submissionMeta.label}</Text>
+                          <Text style={[s.statusBadgeText, { color: submissionMeta.color }]}>{tv(submissionMeta.label)}</Text>
                         </View>
                         <View style={s.submissionAmountWrap}>
-                          <Text style={s.submissionAmount}>{money(submission.amount)}</Text>
-                          <Text style={s.cardDate}>{dateTime(submission.submitted_at)}</Text>
+                          <Text style={s.submissionAmount}>{tv(money(submission.amount))}</Text>
+                          <Text style={s.cardDate}>{tv(dateTime(submission.submitted_at))}</Text>
                         </View>
                       </View>
 
-                      <InfoLine label="مرجع التحويل" value={submission.reference || '—'} selectable />
-                      <InfoLine label="مسار الإثبات الخاص" value={submission.proof_path} selectable />
-                      {submission.review_note ? <InfoLine label="ملاحظة القرار" value={submission.review_note} /> : null}
-                      {submission.ledger_entry_id ? <InfoLine label="القيد المالي" value={submission.ledger_entry_id} selectable /> : null}
+                      <InfoLine label={t('مرجع التحويل')} value={submission.reference || '—'} selectable />
+                      <InfoLine label={t('مسار الإثبات الخاص')} value={submission.proof_path} selectable />
+                      {submission.review_note ? <InfoLine label={t('ملاحظة القرار')} value={submission.review_note} /> : null}
+                      {submission.ledger_entry_id ? <InfoLine label={t('القيد المالي')} value={submission.ledger_entry_id} selectable /> : null}
 
                       {proofLink ? (
                         <TouchableOpacity
@@ -461,10 +462,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                           onPress={() => void Linking.openURL(proofLink.signedUrl)}
                         >
                           <Ionicons name="open-outline" size={18} color={UI.primary} />
-                          <Text style={s.proofButtonText}>فتح الإثبات برابط خاص مؤقت</Text>
+                          <Text style={s.proofButtonText}>{t('فتح الإثبات برابط خاص مؤقت')}</Text>
                         </TouchableOpacity>
                       ) : !proofLoading ? (
-                        <Text style={s.proofUnavailable}>تعذر تجهيز رابط الإثبات؛ المرجع والمسار ظاهران للمراجعة.</Text>
+                        <Text style={s.proofUnavailable}>{t('تعذر تجهيز رابط الإثبات؛ المرجع والمسار ظاهران للمراجعة.')}</Text>
                       ) : null}
 
                       {reviewable ? (
@@ -478,7 +479,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                                 onPress={() => startSubmissionAction(submission, decision)}
                               >
                                 <Text style={[s.smallActionText, { color: DECISION_META[decision].color }]}>
-                                  {DECISION_META[decision].label}
+                                  {tv(DECISION_META[decision].label)}
                                 </Text>
                               </TouchableOpacity>
                             ))}
@@ -491,31 +492,29 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                 {action ? (
                   <View style={s.decisionPanel}>
                     <Text style={s.decisionTitle}>
-                      {action.kind === 'submission'
+                      {tv(action.kind === 'submission'
                         ? DECISION_META[action.decision].title
-                        : action.disputed ? 'فتح نزاع على كامل التحصيل' : 'إنهاء نزاع التحصيل'}
+                        : action.disputed ? t('فتح نزاع على كامل التحصيل') : t('إنهاء نزاع التحصيل'))}
                     </Text>
                     {action.kind === 'submission' ? (
-                      <Text style={s.decisionContext}>
-                        المبلغ: {money(action.submission.amount)} — المرجع: {action.submission.reference}
-                      </Text>
+                      <Text style={s.decisionContext}>{t('المبلغ: {0} — المرجع: {1}', [money(action.submission.amount), tv(action.submission.reference)])}</Text>
                     ) : null}
-                    <Text style={s.inputLabel}>سبب القرار (إلزامي)</Text>
+                    <Text style={s.inputLabel}>{t('سبب القرار (إلزامي)')}</Text>
                     <TextInput
                       style={s.reasonInput}
                       value={reason}
                       onChangeText={setReason}
-                      placeholder="اكتب ما تحققت منه وسبب القرار بوضوح…"
+                      placeholder={t('اكتب ما تحققت منه وسبب القرار بوضوح…')}
                       placeholderTextColor="#94A3B8"
                       multiline
                       maxLength={2000}
                       editable={!processing}
                       textAlign="right"
                     />
-                    <Text style={s.characterCount}>{reason.trim().length}/2000</Text>
+                    <Text style={s.characterCount}>{tv(reason.trim().length)}/2000</Text>
                     <View style={s.decisionButtons}>
                       <TouchableOpacity style={s.cancelButton} onPress={() => { setAction(null); setReason(''); }} disabled={processing}>
-                        <Text style={s.cancelButtonText}>إلغاء</Text>
+                        <Text style={s.cancelButtonText}>{t('إلغاء')}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[s.confirmButton, processing && s.disabledButton]}
@@ -523,7 +522,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                         disabled={processing}
                       >
                         {processing ? <ActivityIndicator size="small" color="#FFFFFF" /> : null}
-                        <Text style={s.confirmButtonText}>تأكيد وحفظ القرار</Text>
+                        <Text style={s.confirmButtonText}>{t('تأكيد وحفظ القرار')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -543,8 +542,8 @@ function SummaryCard({ label, value, color, icon }: { label: string; value: stri
       <View style={[s.summaryIcon, { backgroundColor: `${color}14` }]}>
         <Ionicons name={icon as any} size={20} color={color} />
       </View>
-      <Text style={s.summaryValue}>{value}</Text>
-      <Text style={s.summaryLabel}>{label}</Text>
+      <Text style={s.summaryValue}>{tv(value)}</Text>
+      <Text style={s.summaryLabel}>{tv(label)}</Text>
     </View>
   );
 }
@@ -552,8 +551,8 @@ function SummaryCard({ label, value, color, icon }: { label: string; value: stri
 function AmountCell({ label, value, emphasized = false }: { label: string; value: string; emphasized?: boolean }) {
   return (
     <View style={s.amountCell}>
-      <Text style={s.amountLabel}>{label}</Text>
-      <Text style={[s.amountValue, emphasized && { color: UI.warning }]}>{value}</Text>
+      <Text style={s.amountLabel}>{tv(label)}</Text>
+      <Text style={[s.amountValue, emphasized && { color: UI.warning }]}>{tv(value)}</Text>
     </View>
   );
 }
@@ -561,8 +560,8 @@ function AmountCell({ label, value, emphasized = false }: { label: string; value
 function InfoLine({ label, value, selectable = false }: { label: string; value: string; selectable?: boolean }) {
   return (
     <View style={s.infoLine}>
-      <Text style={s.infoLabel}>{label}</Text>
-      <Text style={s.infoValue} selectable={selectable}>{value}</Text>
+      <Text style={s.infoLabel}>{tv(label)}</Text>
+      <Text style={s.infoValue} selectable={selectable}>{tv(value)}</Text>
     </View>
   );
 }
@@ -573,19 +572,19 @@ function CollectionOverview({ collection }: { collection: CodCollection }) {
     <View style={s.overviewCard}>
       <View style={s.overviewHeader}>
         <View style={[s.statusBadge, { backgroundColor: meta.background }]}>
-          <Text style={[s.statusBadgeText, { color: meta.color }]}>{meta.label}</Text>
+          <Text style={[s.statusBadgeText, { color: meta.color }]}>{tv(meta.label)}</Text>
         </View>
-        <Text style={s.overviewOrder}>طلب {collection.order_number ?? collection.order_id.slice(0, 8)}</Text>
+        <Text style={s.overviewOrder}>{t('طلب {0}', [collection.order_number ?? collection.order_id.slice(0, 8)])}</Text>
       </View>
-      <InfoLine label="المندوب" value={collection.delivery_name || collection.delivery_id} />
-      <InfoLine label="تاريخ استلام النقد" value={dateTime(collection.collected_at)} />
+      <InfoLine label={t('المندوب')} value={collection.delivery_name || collection.delivery_id} />
+      <InfoLine label={t('تاريخ استلام النقد')} value={dateTime(collection.collected_at)} />
       <View style={s.amountGrid}>
-        <AmountCell label="المُحصّل" value={money(collection.amount_collected)} />
-        <AmountCell label="المعتمد" value={money(collection.amount_remitted)} />
-        <AmountCell label="المتبقي" value={money(collection.amount_outstanding)} emphasized />
+        <AmountCell label={t('المُحصّل')} value={money(collection.amount_collected)} />
+        <AmountCell label={t('المعتمد')} value={money(collection.amount_remitted)} />
+        <AmountCell label={t('المتبقي')} value={money(collection.amount_outstanding)} emphasized />
       </View>
       {Number(collection.amount_pending_review) > 0 ? (
-        <Text style={s.pendingNote}>مبالغ تنتظر قرار الإدارة: {money(collection.amount_pending_review)}</Text>
+        <Text style={s.pendingNote}>{t('مبالغ تنتظر قرار الإدارة: {0}', [money(collection.amount_pending_review)])}</Text>
       ) : null}
     </View>
   );

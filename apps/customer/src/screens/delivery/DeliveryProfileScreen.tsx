@@ -7,6 +7,7 @@ import { COLORS, VEHICLE_TYPE } from '@marketplace/shared-utils';
 import { Input, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getDeliveryProfile, updateDeliveryProfileByUser, updateUserProfile } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const VEHICLES = [
   { key: VEHICLE_TYPE.MOTORCYCLE, label: 'دراجة نارية', icon: 'bicycle-outline' },
@@ -78,27 +79,27 @@ export default function DeliveryProfileScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>بياناتي ومركبتي</Text>
+        <Text style={styles.headerTitle}>{t('بياناتي ومركبتي')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} keyboardShouldPersistTaps="handled">
-        {profileLoading ? <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 20 }} accessibilityLabel="جاري تحميل بيانات المندوب" /> : null}
+        {profileLoading ? <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 20 }} accessibilityLabel={t('جاري تحميل بيانات المندوب')} /> : null}
         {profileError ? (
           <View style={styles.errorCard}>
-            <Text style={styles.errorText}>{profileError}</Text>
-            <TouchableOpacity onPress={() => void loadProfile()} accessibilityRole="button" accessibilityLabel="إعادة تحميل بيانات المندوب">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.errorText}>{tv(profileError)}</Text>
+            <TouchableOpacity onPress={() => void loadProfile()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل بيانات المندوب')}>
+              <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
-        <Input label="الاسم الكامل" placeholder="اسمك" value={name} onChangeText={setName} />
+        <Input label={t('الاسم الكامل')} placeholder={t('اسمك')} value={name} onChangeText={setName} />
 
-        <Text style={styles.label}>نوع المركبة</Text>
+        <Text style={styles.label}>{t('نوع المركبة')}</Text>
         <View style={[styles.vehiclesRow, layout.compact && styles.vehiclesRowCompact]}>
           {VEHICLES.map((v) => {
             const active = vehicle === v.key;
@@ -109,27 +110,27 @@ export default function DeliveryProfileScreen({ navigation }: any) {
                 onPress={() => setVehicle(v.key)}
                 activeOpacity={0.7}
                 accessibilityRole="radio"
-                accessibilityLabel={v.label}
+                accessibilityLabel={tv(v.label)}
                 accessibilityState={{ checked: active }}
               >
                 <Ionicons name={v.icon as any} size={26} color={active ? '#FFFFFF' : '#6B7280'} />
-                <Text style={[styles.vehicleLabel, active && { color: '#FFFFFF' }]}>{v.label}</Text>
+                <Text style={[styles.vehicleLabel, active && { color: '#FFFFFF' }]}>{tv(v.label)}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <Input label="رقم اللوحة (اختياري)" placeholder="مثال: 1-12345" value={plateNumber} onChangeText={setPlateNumber} />
+        <Input label={t('رقم اللوحة (اختياري)')} placeholder={t('مثال: 1-12345')} value={plateNumber} onChangeText={setPlateNumber} />
 
-        <Text style={styles.label}>حالة التحقق</Text>
+        <Text style={styles.label}>{t('حالة التحقق')}</Text>
         <View style={styles.docCard}>
           <View style={styles.docIcon}>
             <Ionicons name="card-outline" size={20} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1, marginHorizontal: 12 }}>
-            <Text style={styles.docTitle}>البطاقة الشخصية</Text>
+            <Text style={styles.docTitle}>{t('البطاقة الشخصية')}</Text>
             <Text style={[styles.docStatus, { color: hasNationalId ? '#059669' : '#D97706' }]}>
-              {hasNationalId ? 'البيانات مسجلة لدى الإدارة' : 'لم تُسجّل بيانات البطاقة بعد'}
+              {tv(hasNationalId ? t('البيانات مسجلة لدى الإدارة') : t('لم تُسجّل بيانات البطاقة بعد'))}
             </Text>
           </View>
         </View>
@@ -138,16 +139,16 @@ export default function DeliveryProfileScreen({ navigation }: any) {
             <Ionicons name={isApproved ? 'shield-checkmark-outline' : 'time-outline'} size={20} color={isApproved ? '#059669' : '#D97706'} />
           </View>
           <View style={{ flex: 1, marginHorizontal: 12 }}>
-            <Text style={styles.docTitle}>اعتماد حساب المندوب</Text>
+            <Text style={styles.docTitle}>{t('اعتماد حساب المندوب')}</Text>
             <Text style={[styles.docStatus, { color: isApproved ? '#059669' : '#D97706' }]}>
-              {isApproved ? 'الحساب معتمد' : 'الحساب بانتظار مراجعة الإدارة'}
+              {tv(isApproved ? t('الحساب معتمد') : t('الحساب بانتظار مراجعة الإدارة'))}
             </Text>
           </View>
         </View>
-        <Text style={styles.verificationNote}>رفع الوثائق والتحقق منها يحتاجان مسارًا آمنًا لدى الإدارة، لذلك لا يعرض التطبيق حالة تحقق غير مؤكدة.</Text>
+        <Text style={styles.verificationNote}>{t('رفع الوثائق والتحقق منها يحتاجان مسارًا آمنًا لدى الإدارة، لذلك لا يعرض التطبيق حالة تحقق غير مؤكدة.')}</Text>
 
         <View style={{ height: 20 }} />
-        <Button title={saving ? 'جاري الحفظ...' : 'حفظ التغييرات'} onPress={handleSave} disabled={saving} />
+        <Button title={saving ? t('جاري الحفظ...') : t('حفظ التغييرات')} onPress={handleSave} disabled={saving} />
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>

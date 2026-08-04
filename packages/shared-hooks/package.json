@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
+    "@marketplace/shared-i18n": "*",
     "@marketplace/shared-utils": "*"
   }
 }

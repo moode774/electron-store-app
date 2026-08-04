@@ -10,6 +10,7 @@ import {
   ApiKeyInfo, API_V1_URL,
 } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: '#1E3A8A', primaryLight: '#EEF2FF', bg: '#F8FAFC', card: '#FFFFFF',
@@ -18,7 +19,7 @@ const UI = {
 };
 
 const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  d ? new Date(d).toLocaleString(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 async function copyText(text: string): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -65,7 +66,7 @@ export default function ApiKeysScreen() {
   };
 
   const handleRevoke = (k: ApiKeyInfo) => {
-    Alert.alert('إلغاء المفتاح', `إلغاء "${k.name}"؟ أي تكامل يستخدمه سيتوقف فوراً.`, [
+    Alert.alert('إلغاء المفتاح', t('إلغاء "{0}"؟ أي تكامل يستخدمه سيتوقف فوراً.', [tv(k.name)]), [
       { text: 'تراجع', style: 'cancel' },
       {
         text: 'إلغاء المفتاح', style: 'destructive',
@@ -78,7 +79,7 @@ export default function ApiKeysScreen() {
   };
 
   const handleDelete = (k: ApiKeyInfo) => {
-    Alert.alert('حذف المفتاح', `حذف "${k.name}" نهائياً من السجل؟`, [
+    Alert.alert('حذف المفتاح', t('حذف "{0}" نهائياً من السجل؟', [tv(k.name)]), [
       { text: 'تراجع', style: 'cancel' },
       {
         text: 'حذف', style: 'destructive',
@@ -97,21 +98,19 @@ export default function ApiKeysScreen() {
           <Ionicons name="key" size={20} color={item.is_active ? UI.success : UI.danger} />
         </View>
         <View style={{ flex: 1, alignItems: 'flex-end' }}>
-          <Text style={s.keyName}>{item.name}</Text>
-          <Text style={s.keyPrefix}>{item.key_prefix}</Text>
-          <Text style={s.keyMeta}>
-            {item.is_active ? '🟢 نشط' : '🔴 ملغى'} · آخر استخدام: {fmtDate(item.last_used_at)}
-          </Text>
+          <Text style={s.keyName}>{tv(item.name)}</Text>
+          <Text style={s.keyPrefix}>{tv(item.key_prefix)}</Text>
+          <Text style={s.keyMeta}>{t('{0} · آخر استخدام: {1}', [item.is_active ? '🟢 نشط' : '🔴 ملغى', fmtDate(item.last_used_at)])}</Text>
         </View>
       </View>
       <View style={s.actionsRow}>
         {item.is_active && (
           <TouchableOpacity style={[s.smallBtn, { backgroundColor: '#FFFBEB' }]} onPress={() => handleRevoke(item)}>
-            <Text style={[s.smallBtnText, { color: UI.warning }]}>إلغاء</Text>
+            <Text style={[s.smallBtnText, { color: UI.warning }]}>{t('إلغاء')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity style={[s.smallBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => handleDelete(item)}>
-          <Text style={[s.smallBtnText, { color: UI.danger }]}>حذف</Text>
+          <Text style={[s.smallBtnText, { color: UI.danger }]}>{t('حذف')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -120,10 +119,8 @@ export default function ApiKeysScreen() {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: layout.gutter }, layout.desktop && s.headerDesktop]}>
-        <Text style={s.headerTitle}>مفاتيح API</Text>
-        <Text style={s.headerSub}>
-          اربط حسابك مع Claude أو أي نموذج ذكاء اصطناعي. المفتاح يمنح صلاحيات حسابك فقط — لا تشاركه مع أحد.
-        </Text>
+        <Text style={s.headerTitle}>{t('مفاتيح API')}</Text>
+        <Text style={s.headerSub}>{t('اربط حسابك مع Claude أو أي نموذج ذكاء اصطناعي. المفتاح يمنح صلاحيات حسابك فقط — لا تشاركه مع أحد.')}</Text>
       </View>
 
       {/* إنشاء مفتاح */}
@@ -132,7 +129,7 @@ export default function ApiKeysScreen() {
           style={s.input}
           value={newName}
           onChangeText={setNewName}
-          placeholder="اسم المفتاح (مثل: تكامل كلود)"
+          placeholder={t('اسم المفتاح (مثل: تكامل كلود)')}
           placeholderTextColor={UI.textMuted}
           textAlign="right"
         />
@@ -140,7 +137,7 @@ export default function ApiKeysScreen() {
           {creating ? <ActivityIndicator color="#fff" /> : (
             <>
               <Ionicons name="add-circle-outline" size={18} color="#fff" />
-              <Text style={s.createBtnText}>إنشاء مفتاح جديد</Text>
+              <Text style={s.createBtnText}>{t('إنشاء مفتاح جديد')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -158,7 +155,7 @@ export default function ApiKeysScreen() {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="key-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد مفاتيح بعد — أنشئ أول مفتاح للربط مع الذكاء الاصطناعي</Text>
+              <Text style={s.emptyText}>{t('لا توجد مفاتيح بعد — أنشئ أول مفتاح للربط مع الذكاء الاصطناعي')}</Text>
             </View>
           }
         />
@@ -169,12 +166,10 @@ export default function ApiKeysScreen() {
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, layout.compact && s.modalCardCompact]}>
             <Ionicons name="shield-checkmark" size={40} color={UI.success} style={{ alignSelf: 'center' }} />
-            <Text style={s.modalTitle}>تم إنشاء المفتاح ✓</Text>
-            <Text style={s.modalWarn}>
-              انسخه الآن واحفظه في مكان آمن — لن يظهر مرة أخرى أبداً.
-            </Text>
+            <Text style={s.modalTitle}>{t('تم إنشاء المفتاح ✓')}</Text>
+            <Text style={s.modalWarn}>{t('انسخه الآن واحفظه في مكان آمن — لن يظهر مرة أخرى أبداً.')}</Text>
             <ScrollView style={s.keyBox} horizontal showsHorizontalScrollIndicator={false}>
-              <Text style={s.keyText} selectable>{freshKey}</Text>
+              <Text style={s.keyText} selectable>{tv(freshKey)}</Text>
             </ScrollView>
 
             <TouchableOpacity
@@ -185,10 +180,10 @@ export default function ApiKeysScreen() {
               }}
             >
               <Ionicons name="copy-outline" size={18} color="#fff" />
-              <Text style={s.copyBtnText}>{Platform.OS === 'web' ? 'نسخ المفتاح' : 'مشاركة / نسخ'}</Text>
+              <Text style={s.copyBtnText}>{tv(Platform.OS === 'web' ? t('نسخ المفتاح') : t('مشاركة / نسخ'))}</Text>
             </TouchableOpacity>
 
-            <Text style={s.usageTitle}>طريقة الاستخدام مع أي AI:</Text>
+            <Text style={s.usageTitle}>{t('طريقة الاستخدام مع أي AI:')}</Text>
             <ScrollView style={s.usageBox} horizontal showsHorizontalScrollIndicator={false}>
               <Text style={s.usageCode} selectable>
                 {`GET ${API_V1_URL}/me\nx-api-key: ${freshKey}`}
@@ -196,7 +191,7 @@ export default function ApiKeysScreen() {
             </ScrollView>
 
             <TouchableOpacity style={s.doneBtn} onPress={() => setFreshKey(null)}>
-              <Text style={s.doneBtnText}>حفظته، إغلاق</Text>
+              <Text style={s.doneBtnText}>{t('حفظته، إغلاق')}</Text>
             </TouchableOpacity>
           </View>
         </View>

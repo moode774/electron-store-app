@@ -10,6 +10,7 @@ import {
   getOrderTransitionErrorMessage,
   merchantOrderProgress,
 } from './merchantOrderState';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -168,13 +169,13 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
     return (
       <View style={styles.loadErrorWrap}>
         <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
-        <Text style={styles.loadErrorTitle}>تعذر فتح الطلب</Text>
-        <Text style={styles.loadErrorText}>{loadError ?? 'لم يتم العثور على الطلب.'}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel="إعادة تحميل تفاصيل الطلب">
-          <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+        <Text style={styles.loadErrorTitle}>{t('تعذر فتح الطلب')}</Text>
+        <Text style={styles.loadErrorText}>{tv(loadError ?? t('لم يتم العثور على الطلب.'))}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل تفاصيل الطلب')}>
+          <Text style={styles.retryBtnText}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة للطلبات">
-          <Text style={styles.backLinkText}>العودة للطلبات</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة للطلبات')}>
+          <Text style={styles.backLinkText}>{t('العودة للطلبات')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -183,7 +184,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   let dateStr = '';
   try {
     const d = new Date(order.created_at);
-    dateStr = d.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    dateStr = d.toLocaleDateString(getLocale(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   } catch (e) {
     dateStr = order.created_at;
   }
@@ -192,9 +193,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   let nextActionBtn: React.ReactNode = null;
   let actionNotice = '';
   if (status === ORDER_STATUS.PENDING) {
-    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.PREPARING)} disabled={updating} accessibilityRole="button" accessibilityLabel="قبول الطلب وبدء التجهيز" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>قبول الطلب وبدء التجهيز</Text>}</TouchableOpacity>;
+    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.PREPARING)} disabled={updating} accessibilityRole="button" accessibilityLabel={t('قبول الطلب وبدء التجهيز')} accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>{t('قبول الطلب وبدء التجهيز')}</Text>}</TouchableOpacity>;
   } else if (status === ORDER_STATUS.PREPARING) {
-    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.READY)} disabled={updating} accessibilityRole="button" accessibilityLabel="تحديد الطلب جاهزًا للمندوب" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>الطلب جاهز للمندوب</Text>}</TouchableOpacity>;
+    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.READY)} disabled={updating} accessibilityRole="button" accessibilityLabel={t('تحديد الطلب جاهزًا للمندوب')} accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>{t('الطلب جاهز للمندوب')}</Text>}</TouchableOpacity>;
   } else if (status === ORDER_STATUS.READY) {
     // مسار الطلب بعد "جاهز" حصري للمندوب بحسب قواعد القاعدة —
     // التاجر لا يستطيع on_the_way أو delivered (تتطلب إثبات تسليم من مندوب).
@@ -217,7 +218,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitleMobile}>تفاصيل الطلب</Text>
+          <Text style={styles.headerTitleMobile}>{t('تفاصيل الطلب')}</Text>
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -227,11 +228,11 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
         {isDesktop && (
           <View style={styles.pageHeaderRow}>
              <View>
-               <Text style={styles.pageTitle}>تفاصيل الطلب</Text>
-               <Text style={styles.pageSubtitle}>نظرة شاملة لجميع بيانات الطلب والعميل والفاتورة</Text>
+               <Text style={styles.pageTitle}>{t('تفاصيل الطلب')}</Text>
+               <Text style={styles.pageSubtitle}>{t('نظرة شاملة لجميع بيانات الطلب والعميل والفاتورة')}</Text>
              </View>
              <TouchableOpacity style={styles.backBtnDesktop} onPress={() => navigation.goBack()}>
-                <Text style={styles.backBtnText}>العودة للطلبات</Text>
+                <Text style={styles.backBtnText}>{t('العودة للطلبات')}</Text>
                 <Ionicons name="arrow-back" size={16} color={UI.textDark} />
              </TouchableOpacity>
           </View>
@@ -247,62 +248,62 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
             <View style={[styles.card, isCompact && styles.cardCompact]}>
               <View style={[styles.cardHeaderRow, isCompact && styles.cardHeaderCompact]}>
                 <View>
-                  <Text style={styles.orderIdText}>{order.order_number}</Text>
-                  <Text style={styles.dateText}>{dateStr}</Text>
+                  <Text style={styles.orderIdText}>{tv(order.order_number)}</Text>
+                  <Text style={styles.dateText}>{tv(dateStr)}</Text>
                 </View>
                 <View style={[styles.badge, { backgroundColor: info.background }]}>
-                  <Text style={[styles.badgeText, { color: info.color }]}>{info.label}</Text>
+                  <Text style={[styles.badgeText, { color: info.color }]}>{tv(info.label)}</Text>
                 </View>
               </View>
               {notes ? (
                 <View style={styles.notesBox}>
                   <Ionicons name="reader-outline" size={18} color={UI.textDark} />
-                  <Text style={styles.notesText}>{notes}</Text>
+                  <Text style={styles.notesText}>{tv(notes)}</Text>
                 </View>
               ) : null}
             </View>
 
             {/* Timeline */}
             <View style={[styles.card, isCompact && styles.cardCompact]}>
-              <Text style={styles.sectionTitle}>مسار الطلب</Text>
+              <Text style={styles.sectionTitle}>{t('مسار الطلب')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timelineScrollContent}>
               <View style={[styles.timelineRow, isCompact && styles.timelineRowCompact]}>
                 <View style={[styles.timelineStep, { flex: 1 }]}>
                   <View style={[styles.timelineDot, { backgroundColor: progress >= 1 ? UI.orange : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: UI.textDark }]}>جديد</Text>
+                  <Text style={[styles.timelineText, { color: UI.textDark }]}>{t('جديد')}</Text>
                 </View>
                 <View style={[styles.timelineLine, { backgroundColor: progress >= 2 ? UI.blue : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
                   <View style={[styles.timelineDot, { backgroundColor: progress >= 2 ? UI.blue : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 2 ? UI.textDark : UI.textMuted }]}>تجهيز</Text>
+                  <Text style={[styles.timelineText, { color: progress >= 2 ? UI.textDark : UI.textMuted }]}>{t('تجهيز')}</Text>
                 </View>
                 <View style={[styles.timelineLine, { backgroundColor: progress >= 3 ? '#7C3AED' : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
                   <View style={[styles.timelineDot, { backgroundColor: progress >= 3 ? '#7C3AED' : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 3 ? UI.textDark : UI.textMuted }]}>جاهز</Text>
+                  <Text style={[styles.timelineText, { color: progress >= 3 ? UI.textDark : UI.textMuted }]}>{t('جاهز')}</Text>
                 </View>
                 <View style={[styles.timelineLine, { backgroundColor: progress >= 4 ? '#0369A1' : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
                   <View style={[styles.timelineDot, { backgroundColor: progress >= 4 ? '#0369A1' : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 4 ? UI.textDark : UI.textMuted }]}>التوصيل</Text>
+                  <Text style={[styles.timelineText, { color: progress >= 4 ? UI.textDark : UI.textMuted }]}>{t('التوصيل')}</Text>
                 </View>
                 <View style={[styles.timelineLine, { backgroundColor: progress >= 5 ? UI.green : UI.border }]} />
                 <View style={[styles.timelineStep, { flex: 1 }]}>
                   <View style={[styles.timelineDot, { backgroundColor: progress >= 5 ? UI.green : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 5 ? UI.textDark : UI.textMuted }]}>مكتمل</Text>
+                  <Text style={[styles.timelineText, { color: progress >= 5 ? UI.textDark : UI.textMuted }]}>{t('مكتمل')}</Text>
                 </View>
               </View>
               </ScrollView>
               {progress === 0 && (
-                <Text style={styles.terminalStatusNote}>الحالة الحالية: {info.label}</Text>
+                <Text style={styles.terminalStatusNote}>{t('الحالة الحالية: {0}', [tv(info.label)])}</Text>
               )}
             </View>
 
             {/* Receipt (Items) */}
             <View style={[styles.card, isCompact && styles.cardCompact]}>
               <View style={[styles.cardHeaderRow, isCompact && styles.cardHeaderCompact]}>
-                <Text style={styles.sectionTitle}>المنتجات المطلوبة</Text>
-                <Text style={styles.itemsCount}>{items.length} منتجات</Text>
+                <Text style={styles.sectionTitle}>{t('المنتجات المطلوبة')}</Text>
+                <Text style={styles.itemsCount}>{t('{0} منتجات', [tv(items.length)])}</Text>
               </View>
               <View style={styles.itemsWrapper}>
                 {items.map((item, i) => (
@@ -311,12 +312,12 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                       <Ionicons name="cube-outline" size={24} color={UI.textMuted} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.itemName}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
-                      <Text style={styles.itemMeta}>السعر: {item.unit_price} ر.ي</Text>
+                      <Text style={styles.itemName}>{tv(item.products?.name ?? item.product_name ?? t('منتج'))}</Text>
+                      <Text style={styles.itemMeta}>{t('السعر: {0} ر.ي', [tv(item.unit_price)])}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-start' }}>
-                      <Text style={styles.itemTotal}>{item.total_price} ر.ي</Text>
-                      <Text style={styles.itemQtyBadge}>الكمية: {item.quantity}</Text>
+                      <Text style={styles.itemTotal}>{t('{0} ر.ي', [tv(item.total_price)])}</Text>
+                      <Text style={styles.itemQtyBadge}>{t('الكمية: {0}', [tv(item.quantity)])}</Text>
                     </View>
                   </View>
                 ))}
@@ -330,13 +331,13 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
              
              {/* Customer Box */}
              <View style={[styles.card, isCompact && styles.cardCompact]}>
-               <Text style={styles.sectionTitle}>معلومات العميل</Text>
+               <Text style={styles.sectionTitle}>{t('معلومات العميل')}</Text>
                <View style={styles.customerRow}>
                  <View style={styles.avatarBig}>
-                   <Text style={styles.avatarBigText}>{customerName.substring(0, 1)}</Text>
+                   <Text style={styles.avatarBigText}>{tv(customerName.substring(0, 1))}</Text>
                  </View>
                  <View style={{ flex: 1 }}>
-                   <Text style={styles.customerNameBig}>{customerName}</Text>
+                   <Text style={styles.customerNameBig}>{tv(customerName)}</Text>
                  </View>
                </View>
 
@@ -344,11 +345,11 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                  <View style={styles.infoRow}>
                    <Ionicons name="call-outline" size={20} color={UI.textGrey} style={styles.infoIcon} />
                    <View style={{ flex: 1 }}>
-                     <Text style={styles.infoLabel}>رقم الجوال</Text>
-                     <Text style={styles.infoValue}>{customerPhone || 'غير متوفر'}</Text>
+                     <Text style={styles.infoLabel}>{t('رقم الجوال')}</Text>
+                     <Text style={styles.infoValue}>{tv(customerPhone || t('غير متوفر'))}</Text>
                    </View>
                    {!!customerPhone && (
-                      <TouchableOpacity style={styles.callIconBtn} onPress={() => Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert('تعذر الاتصال', 'لا يمكن فتح تطبيق الاتصال على هذا الجهاز.'))} accessibilityRole="button" accessibilityLabel={`الاتصال بالعميل ${customerName}`}>
+                      <TouchableOpacity style={styles.callIconBtn} onPress={() => Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert('تعذر الاتصال', 'لا يمكن فتح تطبيق الاتصال على هذا الجهاز.'))} accessibilityRole="button" accessibilityLabel={t('الاتصال بالعميل {0}', [tv(customerName)])}>
                        <Ionicons name="call" size={16} color="#FFFFFF" />
                      </TouchableOpacity>
                    )}
@@ -357,8 +358,8 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                  <View style={styles.infoRow}>
                    <Ionicons name="location-outline" size={20} color={UI.textGrey} style={styles.infoIcon} />
                    <View style={{ flex: 1 }}>
-                     <Text style={styles.infoLabel}>عنوان التوصيل</Text>
-                     <Text style={styles.infoValue}>{customerCity ? `${customerCity} - ` : ''}{customerAddress}</Text>
+                     <Text style={styles.infoLabel}>{t('عنوان التوصيل')}</Text>
+                     <Text style={styles.infoValue}>{tv(customerCity ? `${customerCity} - ` : '')}{tv(customerAddress)}</Text>
                    </View>
                  </View>
                </View>
@@ -366,39 +367,39 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
              {/* Payment Summary */}
              <View style={[styles.card, isCompact && styles.cardCompact]}>
-               <Text style={styles.sectionTitle}>ملخص الدفع</Text>
+               <Text style={styles.sectionTitle}>{t('ملخص الدفع')}</Text>
                
                 <View style={styles.paymentMethodBox}>
                   <Ionicons name="card-outline" size={20} color={UI.primary} />
-                  <Text style={styles.paymentMethodText}>{paymentMethod} · {order.payment_status === 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'}</Text>
+                  <Text style={styles.paymentMethodText}>{tv(paymentMethod)} · {tv(order.payment_status === 'paid' ? t('مدفوع') : t('غير مؤكد الدفع'))}</Text>
                </View>
 
                <View style={styles.summaryLines}>
                  <View style={styles.summaryLine}>
-                   <Text style={styles.summaryLineLabel}>المجموع الفرعي</Text>
-                   <Text style={styles.summaryLineValue}>{subtotal} ر.ي</Text>
+                   <Text style={styles.summaryLineLabel}>{t('المجموع الفرعي')}</Text>
+                   <Text style={styles.summaryLineValue}>{t('{0} ر.ي', [tv(subtotal)])}</Text>
                  </View>
                  <View style={styles.summaryLine}>
-                   <Text style={styles.summaryLineLabel}>رسوم التوصيل</Text>
-                   <Text style={styles.summaryLineValue}>{deliveryFee} ر.ي</Text>
+                   <Text style={styles.summaryLineLabel}>{t('رسوم التوصيل')}</Text>
+                   <Text style={styles.summaryLineValue}>{t('{0} ر.ي', [tv(deliveryFee)])}</Text>
                  </View>
                  {/* بدون هذين السطرين لا يتطابق الإجمالي مع مكوّناته */}
                  {discountAmount > 0 && (
                    <View style={styles.summaryLine}>
-                     <Text style={styles.summaryLineLabel}>الخصم</Text>
-                     <Text style={[styles.summaryLineValue, { color: UI.green }]}>- {discountAmount} ر.ي</Text>
+                     <Text style={styles.summaryLineLabel}>{t('الخصم')}</Text>
+                     <Text style={[styles.summaryLineValue, { color: UI.green }]}>{t('- {0} ر.ي', [tv(discountAmount)])}</Text>
                    </View>
                  )}
                  {taxAmount > 0 && (
                    <View style={styles.summaryLine}>
-                     <Text style={styles.summaryLineLabel}>الضريبة</Text>
-                     <Text style={styles.summaryLineValue}>{taxAmount} ر.ي</Text>
+                     <Text style={styles.summaryLineLabel}>{t('الضريبة')}</Text>
+                     <Text style={styles.summaryLineValue}>{t('{0} ر.ي', [tv(taxAmount)])}</Text>
                    </View>
                  )}
                </View>
                <View style={styles.summaryTotalLine}>
-                 <Text style={styles.summaryTotalLabel}>الإجمالي المستحق</Text>
-                 <Text style={styles.summaryTotalValue}>{order?.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount)} <Text style={{ fontSize: 14 }}>ر.ي</Text></Text>
+                 <Text style={styles.summaryTotalLabel}>{t('الإجمالي المستحق')}</Text>
+                 <Text style={styles.summaryTotalValue}>{tv(order?.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount))} <Text style={{ fontSize: 14 }}>{t('ر.ي')}</Text></Text>
                </View>
              </View>
 
@@ -406,10 +407,10 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
              {!!pickupCode && (
                <View style={styles.pickupCodeCard}>
                  <View style={{ flex: 1 }}>
-                   <Text style={styles.pickupCodeTitle}>كود تسليم الطلب للمندوب</Text>
-                   <Text style={styles.pickupCodeHint}>لا تُعطِ الكود إلا عند تسليم الطلب للمندوب فعلياً — هو إثبات الاستلام.</Text>
+                   <Text style={styles.pickupCodeTitle}>{t('كود تسليم الطلب للمندوب')}</Text>
+                   <Text style={styles.pickupCodeHint}>{t('لا تُعطِ الكود إلا عند تسليم الطلب للمندوب فعلياً — هو إثبات الاستلام.')}</Text>
                  </View>
-                 <Text style={styles.pickupCodeValue}>{pickupCode}</Text>
+                 <Text style={styles.pickupCodeValue}>{tv(pickupCode)}</Text>
                </View>
              )}
 
@@ -419,7 +420,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                  {!!actionNotice && (
                    <View style={styles.waitingDriverNotice}>
                      <Ionicons name="information-circle-outline" size={20} color="#5B21B6" />
-                     <Text style={styles.waitingDriverText}>{actionNotice}</Text>
+                     <Text style={styles.waitingDriverText}>{tv(actionNotice)}</Text>
                    </View>
                  )}
                  {nextActionBtn}
@@ -432,20 +433,20 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                      disabled={updating || cancelling}
                      activeOpacity={0.8}
                      accessibilityRole="button"
-                     accessibilityLabel="إلغاء الطلب"
+                     accessibilityLabel={t('إلغاء الطلب')}
                    >
-                     <Text style={styles.btnCancelOutlineText}>إلغاء الطلب</Text>
+                     <Text style={styles.btnCancelOutlineText}>{t('إلغاء الطلب')}</Text>
                    </TouchableOpacity>
                  )}
                  {canCancel && showCancel && (
                    <View style={styles.cancelReasonsCard}>
-                     <Text style={styles.cancelReasonsTitle}>سبب الإلغاء</Text>
+                     <Text style={styles.cancelReasonsTitle}>{t('سبب الإلغاء')}</Text>
                      {(cancelReasons.length > 0
                        ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? 'سبب آخر' }))
                        : [
-                           { key: 'out_of_stock', label: 'المنتج غير متوفر حالياً' },
-                           { key: 'cannot_fulfill', label: 'تعذّر تجهيز الطلب' },
-                           { key: 'other', label: 'سبب آخر' },
+                           { key: 'out_of_stock', label: t('المنتج غير متوفر حالياً') },
+                           { key: 'cannot_fulfill', label: t('تعذّر تجهيز الطلب') },
+                           { key: 'other', label: t('سبب آخر') },
                          ]
                      ).map((r) => (
                        <TouchableOpacity
@@ -455,12 +456,12 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
                          disabled={cancelling}
                          activeOpacity={0.7}
                        >
-                         <Text style={styles.cancelReasonText}>{r.label}</Text>
+                         <Text style={styles.cancelReasonText}>{tv(r.label)}</Text>
                          {cancelling ? <ActivityIndicator size="small" color={UI.red} /> : <Ionicons name="chevron-back" size={16} color={UI.textMuted} />}
                        </TouchableOpacity>
                      ))}
                      <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.cancelBackBtn}>
-                       <Text style={styles.cancelBackText}>تراجع</Text>
+                       <Text style={styles.cancelBackText}>{t('تراجع')}</Text>
                      </TouchableOpacity>
                    </View>
                  )}

@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -100,17 +101,17 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
     const statusInfo = STATUS_LABELS[item.status] ?? { label: item.status, color: UI.textMuted, bg: '#F1F5F9' };
     const merchant = item.merchant_profiles;
     const address = item.addresses;
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const date = new Date(item.created_at).toLocaleDateString(getLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     return (
       <View style={s.card}>
         <View style={s.cardTop}>
           <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
-            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            <Text style={[s.statusText, { color: statusInfo.color }]}>{tv(statusInfo.label)}</Text>
           </View>
           <View style={s.orderMeta}>
-            <Text style={s.orderNum}>#{item.order_number ?? item.id.slice(0, 8)}</Text>
-            <Text style={s.orderDate}>{date}</Text>
+            <Text style={s.orderNum}>#{tv(item.order_number ?? item.id.slice(0, 8))}</Text>
+            <Text style={s.orderDate}>{tv(date)}</Text>
           </View>
         </View>
 
@@ -119,23 +120,23 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
         <View style={s.detailsBlock}>
           <View style={s.detailRow}>
             <View style={s.detailIcon}><Ionicons name="storefront" size={14} color={UI.primary} /></View>
-            <Text style={s.detailText}>{merchant?.store_name ?? 'غير متوفر'}</Text>
+            <Text style={s.detailText}>{tv(merchant?.store_name ?? t('غير متوفر'))}</Text>
           </View>
           {address && (
             <View style={s.detailRow}>
               <View style={[s.detailIcon, { backgroundColor: '#F1F5F9' }]}><Ionicons name="location" size={14} color={UI.textMuted} /></View>
-              <Text style={s.detailText}>{address.full_address ?? address.city ?? 'غير متوفر'}</Text>
+              <Text style={s.detailText}>{tv(address.full_address ?? address.city ?? t('غير متوفر'))}</Text>
             </View>
           )}
         </View>
 
         <View style={s.cardBottom}>
           <View style={s.amountWrap}>
-            <Text style={s.totalAmount}>{item.total_amount?.toFixed(2)} ر.ي</Text>
-            <Text style={s.deliveryFee}>التوصيل: {item.delivery_fee?.toFixed(2) ?? '0.00'} ر.ي</Text>
+            <Text style={s.totalAmount}>{t('{0} ر.ي', [item.total_amount?.toFixed(2)])}</Text>
+            <Text style={s.deliveryFee}>{t('التوصيل: {0} ر.ي', [item.delivery_fee?.toFixed(2) ?? '0.00'])}</Text>
           </View>
-          <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)} accessibilityRole="button" accessibilityLabel={`تفاصيل الطلب ${item.order_number ?? item.id}`}>
-             <Text style={s.viewDetailsText}>التفاصيل</Text>
+          <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)} accessibilityRole="button" accessibilityLabel={t('تفاصيل الطلب {0}', [item.order_number ?? item.id])}>
+             <Text style={s.viewDetailsText}>{t('التفاصيل')}</Text>
              <Ionicons name="chevron-back" size={14} color={UI.primary} />
           </TouchableOpacity>
         </View>
@@ -152,9 +153,9 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>الطلبات</Text>
+            <Text style={s.headerTitle}>{t('الطلبات')}</Text>
           </View>
-          <Text style={s.headerCount}>{visibleOrders.length} طلب</Text>
+          <Text style={s.headerCount}>{t('{0} طلب', [tv(visibleOrders.length)])}</Text>
         </View>
         <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
@@ -162,12 +163,12 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
             style={s.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="رقم الطلب، العميل، الهاتف أو المتجر..."
+            placeholder={t('رقم الطلب، العميل، الهاتف أو المتجر...')}
             placeholderTextColor={UI.textMuted}
             textAlign="right"
-            accessibilityLabel="البحث في طلبات الإدارة"
+            accessibilityLabel={t('البحث في طلبات الإدارة')}
           />
-          {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel="مسح البحث"><Ionicons name="close-circle" size={20} color={UI.textMuted} /></TouchableOpacity>}
+          {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel={t('مسح البحث')}><Ionicons name="close-circle" size={20} color={UI.textMuted} /></TouchableOpacity>}
         </View>
       </View>
 
@@ -180,7 +181,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
               onPress={() => setFilter(f.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{tv(f.label)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -191,8 +192,8 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
       ) : error ? (
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
-          <Text style={s.errorText}>{error}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={s.errorText}>{tv(error)}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -207,7 +208,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="receipt-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد طلبات لعرضها</Text>
+              <Text style={s.emptyText}>{t('لا توجد طلبات لعرضها')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -218,51 +219,51 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
         <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
           <View style={[s.modalBox, !compact && s.modalBoxDesktop, { width: Math.min(Math.max(width - 24, 280), 720) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>تفاصيل الطلب #{selected?.order_number ?? ''}</Text>
+              <Text style={s.modalTitle}>{t('تفاصيل الطلب #{0}', [selected?.order_number ?? ''])}</Text>
               <TouchableOpacity onPress={() => setSelected(null)} style={s.closeBtn}>
                 <Ionicons name="close" size={22} color={UI.textMuted} />
               </TouchableOpacity>
             </View>
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingBottom: 20 }}>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>الحالة</Text>
-                  <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{STATUS_LABELS[selected.status]?.label ?? selected.status}</Text>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('الحالة')}</Text>
+                  <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{tv(STATUS_LABELS[selected.status]?.label ?? selected.status)}</Text>
                 </View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المتجر</Text><Text style={s.detailVal}>{selected.merchant_profiles?.store_name ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>العميل</Text><Text style={s.detailVal}>{selected.customer?.full_name ?? selected.users?.full_name ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>هاتف العميل</Text><Text style={s.detailVal}>{selected.customer?.phone ?? selected.users?.phone ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المندوب</Text><Text style={s.detailVal}>{selected.delivery_profiles?.users?.full_name ?? selected.drivers?.full_name ?? 'لم يتم التعيين'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>العنوان</Text><Text style={s.detailVal}>{selected.addresses?.full_address ?? selected.addresses?.city ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>الإجمالي الفرعي</Text><Text style={s.detailVal}>{Number(selected.subtotal ?? 0).toFixed(2)} ر.ي</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المبلغ الإجمالي</Text><Text style={s.detailVal}>{selected.total_amount?.toFixed(2)} ر.ي</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>رسوم التوصيل</Text><Text style={s.detailVal}>{selected.delivery_fee?.toFixed(2) ?? '0.00'} ر.ي</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>طريقة الدفع</Text><Text style={s.detailVal}>{PAYMENT_METHOD_LABELS[selected.payment_method] ?? selected.payment_method ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>حالة الدفع</Text><Text style={s.detailVal}>{PAYMENT_STATUS_LABELS[selected.payment_status] ?? selected.payment_status ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>التاريخ</Text><Text style={s.detailVal}>{new Date(selected.created_at).toLocaleString('ar-SA')}</Text></View>
-                {selected.delivered_at ? <View style={s.detailBlock}><Text style={s.detailLbl}>وقت التسليم</Text><Text style={s.detailVal}>{new Date(selected.delivered_at).toLocaleString('ar-SA')}</Text></View> : null}
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('المتجر')}</Text><Text style={s.detailVal}>{tv(selected.merchant_profiles?.store_name ?? '—')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('العميل')}</Text><Text style={s.detailVal}>{tv(selected.customer?.full_name ?? selected.users?.full_name ?? '—')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('هاتف العميل')}</Text><Text style={s.detailVal}>{tv(selected.customer?.phone ?? selected.users?.phone ?? '—')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('المندوب')}</Text><Text style={s.detailVal}>{tv(selected.delivery_profiles?.users?.full_name ?? selected.drivers?.full_name ?? t('لم يتم التعيين'))}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('العنوان')}</Text><Text style={s.detailVal}>{tv(selected.addresses?.full_address ?? selected.addresses?.city ?? '—')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('الإجمالي الفرعي')}</Text><Text style={s.detailVal}>{t('{0} ر.ي', [Number(selected.subtotal ?? 0).toFixed(2)])}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('المبلغ الإجمالي')}</Text><Text style={s.detailVal}>{t('{0} ر.ي', [selected.total_amount?.toFixed(2)])}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('رسوم التوصيل')}</Text><Text style={s.detailVal}>{t('{0} ر.ي', [selected.delivery_fee?.toFixed(2) ?? '0.00'])}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('طريقة الدفع')}</Text><Text style={s.detailVal}>{tv(PAYMENT_METHOD_LABELS[selected.payment_method] ?? selected.payment_method ?? '—')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('حالة الدفع')}</Text><Text style={s.detailVal}>{tv(PAYMENT_STATUS_LABELS[selected.payment_status] ?? selected.payment_status ?? '—')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('التاريخ')}</Text><Text style={s.detailVal}>{tv(new Date(selected.created_at).toLocaleString(getLocale()))}</Text></View>
+                {selected.delivered_at ? <View style={s.detailBlock}><Text style={s.detailLbl}>{t('وقت التسليم')}</Text><Text style={s.detailVal}>{tv(new Date(selected.delivered_at).toLocaleString(getLocale()))}</Text></View> : null}
                 {Array.isArray(selected.order_items) && selected.order_items.length > 0 ? (
                   <View style={s.sectionBlock}>
-                    <Text style={s.sectionTitle}>العناصر</Text>
+                    <Text style={s.sectionTitle}>{t('العناصر')}</Text>
                     {selected.order_items.map((item: any) => (
                       <View key={item.id} style={s.itemRow}>
-                        <Text style={s.itemPrice}>{Number(item.total_price ?? ((item.unit_price ?? 0) * (item.quantity ?? 0))).toFixed(2)} ر.ي</Text>
-                        <Text style={s.itemName}>{item.product_name ?? item.products?.name ?? 'منتج'} × {item.quantity}</Text>
+                        <Text style={s.itemPrice}>{t('{0} ر.ي', [Number(item.total_price ?? ((item.unit_price ?? 0) * (item.quantity ?? 0))).toFixed(2)])}</Text>
+                        <Text style={s.itemName}>{tv(item.product_name ?? item.products?.name ?? t('منتج'))} × {tv(item.quantity)}</Text>
                       </View>
                     ))}
                   </View>
                 ) : null}
                 {Array.isArray(selected.order_tracking) && selected.order_tracking.length > 0 ? (
                   <View style={s.sectionBlock}>
-                    <Text style={s.sectionTitle}>سجل الحالة</Text>
+                    <Text style={s.sectionTitle}>{t('سجل الحالة')}</Text>
                     {selected.order_tracking.map((entry: any) => (
                       <View key={entry.id} style={s.trackingRow}>
-                        <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString('ar-SA')}</Text>
-                        <Text style={s.trackingStatus}>{STATUS_LABELS[entry.status]?.label ?? entry.status}</Text>
+                        <Text style={s.trackingDate}>{tv(new Date(entry.created_at).toLocaleString(getLocale()))}</Text>
+                        <Text style={s.trackingStatus}>{tv(STATUS_LABELS[entry.status]?.label ?? entry.status)}</Text>
                       </View>
                     ))}
                   </View>
-                ) : <Text style={s.noTracking}>لا توجد أحداث تتبع مسجلة لهذا الطلب.</Text>}
-                {selected.notes ? <View style={s.detailBlock}><Text style={s.detailLbl}>ملاحظات</Text><Text style={s.detailVal}>{selected.notes}</Text></View> : null}
+                ) : <Text style={s.noTracking}>{t('لا توجد أحداث تتبع مسجلة لهذا الطلب.')}</Text>}
+                {selected.notes ? <View style={s.detailBlock}><Text style={s.detailLbl}>{t('ملاحظات')}</Text><Text style={s.detailVal}>{tv(selected.notes)}</Text></View> : null}
               </ScrollView>
             )}
           </View>

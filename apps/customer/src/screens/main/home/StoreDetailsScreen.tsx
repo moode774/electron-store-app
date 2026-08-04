@@ -9,6 +9,7 @@ import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishli
 import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -164,13 +165,13 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     return (
       <View style={styles.errorState} accessibilityRole="alert">
         <Ionicons name="storefront-outline" size={52} color="#B91C1C" />
-        <Text style={styles.errorTitle}>تعذّر فتح المتجر</Text>
-        <Text style={styles.errorMessage}>{loadError || 'المتجر غير موجود أو غير متاح حاليًا.'}</Text>
+        <Text style={styles.errorTitle}>{t('تعذّر فتح المتجر')}</Text>
+        <Text style={styles.errorMessage}>{tv(loadError || t('المتجر غير موجود أو غير متاح حاليًا.'))}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void loadData(); }} accessibilityRole="button">
-          <Text style={styles.retryText}>إعادة المحاولة</Text>
+          <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backLinkButton} onPress={() => navigation.goBack()} accessibilityRole="button">
-          <Text style={styles.backLink}>العودة</Text>
+          <Text style={styles.backLink}>{t('العودة')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -195,7 +196,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         <View style={[styles.page, layout.tablet && styles.pageWide]}>
         {/* Cover & Header */}
         <View style={[styles.cover, layout.desktop && styles.coverDesktop, { backgroundColor: STORE.coverColor }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.coverContent}>
@@ -210,23 +211,23 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
           </View>
           
           <View style={styles.titleRow}>
-            <Text style={styles.storeName}>{STORE.name}</Text>
+            <Text style={styles.storeName}>{tv(STORE.name)}</Text>
             {STORE.isVerified && <Ionicons name="checkmark-circle" size={18} color="#059669" />}
           </View>
-          <Text style={styles.storeDesc}>{STORE.description}</Text>
+          <Text style={styles.storeDesc}>{tv(STORE.description)}</Text>
           
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <View style={styles.statValRow}>
                 <Ionicons name="star" size={14} color="#B45309" />
-                <Text style={styles.statValue}>{STORE.rating}</Text>
+                <Text style={styles.statValue}>{tv(STORE.rating)}</Text>
               </View>
-              <Text style={styles.statLabel}>{STORE.reviews} تقييم</Text>
+              <Text style={styles.statLabel}>{t('{0} تقييم', [tv(STORE.reviews)])}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{followers}</Text>
-              <Text style={styles.statLabel}>متابع</Text>
+              <Text style={styles.statValue}>{tv(followers)}</Text>
+              <Text style={styles.statLabel}>{t('متابع')}</Text>
             </View>
             <View style={styles.statDivider} />
             <TouchableOpacity
@@ -234,11 +235,11 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
               activeOpacity={0.8}
               onPress={toggleFollow}
               accessibilityRole="button"
-              accessibilityLabel={following ? 'إلغاء متابعة المتجر' : 'متابعة المتجر'}
+              accessibilityLabel={following ? t('إلغاء متابعة المتجر') : t('متابعة المتجر')}
               accessibilityState={{ selected: following }}
             >
               <Text style={[styles.followBtnText, following && styles.followBtnTextActive]}>
-                {following ? '✓ متابَع' : '+ متابعة'}
+                {tv(following ? t('✓ متابَع') : t('+ متابعة'))}
               </Text>
             </TouchableOpacity>
           </View>
@@ -251,14 +252,14 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
             onPress={() => setActiveTab('products')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>المنتجات</Text>
+            <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>{t('المنتجات')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.tab, activeTab === 'about' && styles.activeTab]}
             onPress={() => setActiveTab('about')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>عن المتجر</Text>
+            <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>{t('عن المتجر')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -267,7 +268,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
           <View style={[styles.productsGrid, { paddingHorizontal: productGutter, paddingVertical: 24, gap: productGap }]}>
             {products.length === 0 ? (
               <View style={{ width: '100%', alignItems: 'center', paddingVertical: 40 }}>
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد منتجات حتى الآن</Text>
+                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>{t('لا توجد منتجات حتى الآن')}</Text>
               </View>
             ) : products.map((product) => {
               const needsOptions = (product.product_variants ?? []).some((variant) => variant.is_active !== false);
@@ -297,8 +298,8 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                 <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.primary} />
               </View>
               <View style={styles.aboutContent}>
-                <Text style={styles.aboutTitle}>سياسة الاسترجاع</Text>
-                <Text style={styles.aboutText}>يقبل المتجر إرجاع المنتجات خلال 3 أيام من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية.</Text>
+                <Text style={styles.aboutTitle}>{t('سياسة الاسترجاع')}</Text>
+                <Text style={styles.aboutText}>{t('يقبل المتجر إرجاع المنتجات خلال 3 أيام من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية.')}</Text>
               </View>
             </View>
             
@@ -309,8 +310,8 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                 <Ionicons name="location-outline" size={20} color={COLORS.primary} />
               </View>
               <View style={styles.aboutContent}>
-                <Text style={styles.aboutTitle}>موقع المتجر</Text>
-                <Text style={styles.aboutText}>{store?.city ?? 'غير محدد'}</Text>
+                <Text style={styles.aboutTitle}>{t('موقع المتجر')}</Text>
+                <Text style={styles.aboutText}>{tv(store?.city ?? t('غير محدد'))}</Text>
               </View>
             </View>
 
@@ -322,12 +323,12 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                     <Ionicons name="time-outline" size={20} color={COLORS.primary} />
                   </View>
                   <View style={styles.aboutContent}>
-                    <Text style={styles.aboutTitle}>ساعات العمل</Text>
+                    <Text style={styles.aboutTitle}>{t('ساعات العمل')}</Text>
                     {hours.map((h) => (
                       <View key={h.id} style={styles.hourRow}>
-                        <Text style={styles.hourDay}>{DAY_NAMES[h.day_of_week]}</Text>
+                        <Text style={styles.hourDay}>{tv(DAY_NAMES[h.day_of_week])}</Text>
                         <Text style={[styles.hourTime, h.is_closed && { color: '#EF4444' }]}>
-                          {h.is_closed ? 'مغلق' : `${(h.open_time ?? '').slice(0,5)} - ${(h.close_time ?? '').slice(0,5)}`}
+                          {tv(h.is_closed ? t('مغلق') : `${(h.open_time ?? '').slice(0,5)} - ${(h.close_time ?? '').slice(0,5)}`)}
                         </Text>
                       </View>
                     ))}
@@ -344,11 +345,11 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                     <Ionicons name="star-outline" size={20} color={COLORS.primary} />
                   </View>
                   <View style={styles.aboutContent}>
-                    <Text style={styles.aboutTitle}>التقييمات ({reviews.length})</Text>
+                    <Text style={styles.aboutTitle}>{t('التقييمات ({0})', [tv(reviews.length)])}</Text>
                     {reviews.slice(0, 5).map((r) => (
                       <View key={r.id} style={styles.reviewRow}>
-                        <Text style={styles.reviewStars}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</Text>
-                        {!!r.comment && <Text style={styles.reviewComment}>{r.comment}</Text>}
+                        <Text style={styles.reviewStars}>{tv('★'.repeat(r.rating))}{tv('☆'.repeat(5 - r.rating))}</Text>
+                        {!!r.comment && <Text style={styles.reviewComment}>{tv(r.comment)}</Text>}
                       </View>
                     ))}
                   </View>
@@ -358,7 +359,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 
             <TouchableOpacity style={styles.chatStoreBtn} onPress={openChat} activeOpacity={0.85}>
               <Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.chatStoreBtnText}>مراسلة المتجر</Text>
+              <Text style={styles.chatStoreBtnText}>{t('مراسلة المتجر')}</Text>
             </TouchableOpacity>
           </View>
         )}

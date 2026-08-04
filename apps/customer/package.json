@@ -14,6 +14,7 @@
     "@expo-google-fonts/ibm-plex-sans-arabic": "^0.4.2",
     "@expo/metro-runtime": "~6.1.2",
     "@marketplace/shared-hooks": "*",
+    "@marketplace/shared-i18n": "*",
     "@marketplace/shared-types": "*",
     "@marketplace/shared-ui": "*",
     "@marketplace/shared-utils": "*",

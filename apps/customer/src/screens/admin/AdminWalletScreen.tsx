@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminWithdrawals, processWithdrawal, AdminWithdrawal, type WithdrawalDecisionStatus } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -156,49 +157,49 @@ export default function AdminWalletScreen({ navigation }: any) {
   const renderRequest = ({ item }: { item: AdminWithdrawal }) => {
     const statusInfo = STATUS_META[item.status] ?? { label: item.status, color: UI.textMuted, bg: '#F1F5F9' };
     const user = item.users as any;
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const date = new Date(item.created_at).toLocaleDateString(getLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
     const destinationLines = payoutDestinationLines(item.payout_destination);
     return (
       <View style={s.card}>
         <View style={s.cardTop}>
           <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
-            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            <Text style={[s.statusText, { color: statusInfo.color }]}>{tv(statusInfo.label)}</Text>
           </View>
           <View style={s.userInfo}>
-            <Text style={s.userName}>{user?.full_name ?? 'مستخدم غير معروف'}</Text>
+            <Text style={s.userName}>{tv(user?.full_name ?? t('مستخدم غير معروف'))}</Text>
             <View style={s.roleBadge}>
-              <Text style={s.userRole}>{ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? 'غير محدد'}</Text>
+              <Text style={s.userRole}>{tv(ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? t('غير محدد'))}</Text>
             </View>
           </View>
         </View>
 
         <View style={s.amountBox}>
           <View style={s.amountRow}>
-            <Text style={s.amountText}>{item.amount.toFixed(2)} ر.ي</Text>
+            <Text style={s.amountText}>{t('{0} ر.ي', [item.amount.toFixed(2)])}</Text>
             <Ionicons name="wallet" size={24} color={UI.primary} />
           </View>
-          <Text style={s.dateText}>{date}</Text>
+          <Text style={s.dateText}>{tv(date)}</Text>
         </View>
 
         {(item.requester_notes ?? item.notes) && (
           <View style={s.notesBox}>
             <Ionicons name="document-text-outline" size={14} color={UI.textMuted} />
-            <Text style={s.notesText}>{item.requester_notes ?? item.notes}</Text>
+            <Text style={s.notesText}>{tv(item.requester_notes ?? item.notes)}</Text>
           </View>
         )}
         <View style={s.destinationBox}>
           <View style={s.destinationTitleRow}>
             <Ionicons name="business-outline" size={16} color={UI.primary} />
-            <Text style={s.destinationTitle}>وجهة الصرف المحفوظة وقت الطلب</Text>
+            <Text style={s.destinationTitle}>{t('وجهة الصرف المحفوظة وقت الطلب')}</Text>
           </View>
-          {destinationLines.length ? destinationLines.map((line) => <Text key={line} style={s.destinationLine}>{line}</Text>) : (
-            <Text style={s.missingDestination}>لا توجد وجهة صرف محفوظة؛ لا تبدأ التحويل قبل التحقق منها.</Text>
+          {destinationLines.length ? destinationLines.map((line) => <Text key={line} style={s.destinationLine}>{tv(line)}</Text>) : (
+            <Text style={s.missingDestination}>{t('لا توجد وجهة صرف محفوظة؛ لا تبدأ التحويل قبل التحقق منها.')}</Text>
           )}
         </View>
-        {!!item.admin_notes && <Text style={s.auditText}>ملاحظة الإدارة: {item.admin_notes}</Text>}
-        {!!item.external_reference && <Text style={s.auditText}>مرجع التحويل: {item.external_reference}</Text>}
-        {!!item.processed_at && <Text style={s.auditText}>آخر معالجة: {new Date(item.processed_at).toLocaleString('ar-SA')}</Text>}
-        {!!item.paid_at && <Text style={s.auditText}>وقت الدفع: {new Date(item.paid_at).toLocaleString('ar-SA')}</Text>}
+        {!!item.admin_notes && <Text style={s.auditText}>{t('ملاحظة الإدارة: {0}', [tv(item.admin_notes)])}</Text>}
+        {!!item.external_reference && <Text style={s.auditText}>{t('مرجع التحويل: {0}', [tv(item.external_reference)])}</Text>}
+        {!!item.processed_at && <Text style={s.auditText}>{t('آخر معالجة: {0}', [new Date(item.processed_at).toLocaleString(getLocale())])}</Text>}
+        {!!item.paid_at && <Text style={s.auditText}>{t('وقت الدفع: {0}', [new Date(item.paid_at).toLocaleString(getLocale())])}</Text>}
 
         {item.status === 'pending' && (
           <>
@@ -208,11 +209,11 @@ export default function AdminWalletScreen({ navigation }: any) {
             ) : (
               <View style={s.actionsRow}>
                 <TouchableOpacity style={s.rejectBtn} onPress={() => openModal(item, 'rejected')} activeOpacity={0.8}>
-                  <Text style={s.rejectBtnText}>رفض الطلب</Text>
+                  <Text style={s.rejectBtnText}>{t('رفض الطلب')}</Text>
                   <Ionicons name="close-circle" size={18} color={UI.danger} />
                 </TouchableOpacity>
                 <TouchableOpacity style={s.approveBtn} onPress={() => openModal(item, 'approved')} activeOpacity={0.8}>
-                  <Text style={s.approveBtnText}>مراجعة واعتماد</Text>
+                  <Text style={s.approveBtnText}>{t('مراجعة واعتماد')}</Text>
                   <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
@@ -223,7 +224,7 @@ export default function AdminWalletScreen({ navigation }: any) {
           <>
             <View style={s.divider} />
             <TouchableOpacity style={s.approveBtn} onPress={() => openModal(item, 'processing')} disabled={processing === item.id} accessibilityRole="button">
-              <Text style={s.approveBtnText}>بدء التحويل الخارجي</Text>
+              <Text style={s.approveBtnText}>{t('بدء التحويل الخارجي')}</Text>
               <Ionicons name="swap-horizontal" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </>
@@ -233,10 +234,10 @@ export default function AdminWalletScreen({ navigation }: any) {
             <View style={s.divider} />
             <View style={s.actionsRow}>
               <TouchableOpacity style={s.rejectBtn} onPress={() => openModal(item, 'failed')} disabled={processing === item.id} accessibilityRole="button">
-                <Text style={s.rejectBtnText}>فشل التحويل</Text>
+                <Text style={s.rejectBtnText}>{t('فشل التحويل')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.approveBtn} onPress={() => openModal(item, 'paid')} disabled={processing === item.id} accessibilityRole="button">
-                <Text style={s.approveBtnText}>تأكيد الدفع</Text>
+                <Text style={s.approveBtnText}>{t('تأكيد الدفع')}</Text>
                 <Ionicons name="checkmark-done" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -264,10 +265,10 @@ export default function AdminWalletScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>طلبات السحب</Text>
+            <Text style={s.headerTitle}>{t('طلبات السحب')}</Text>
           </View>
           <View style={s.headerBadge}>
-            <Text style={s.headerBadgeText}>{requests.length} نتيجة</Text>
+            <Text style={s.headerBadgeText}>{t('{0} نتيجة', [tv(requests.length)])}</Text>
           </View>
         </View>
       </View>
@@ -281,7 +282,7 @@ export default function AdminWalletScreen({ navigation }: any) {
               onPress={() => setFilter(f.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{tv(f.label)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -292,8 +293,8 @@ export default function AdminWalletScreen({ navigation }: any) {
       ) : loadError ? (
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
-          <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={s.errorText}>{tv(loadError)}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -308,7 +309,7 @@ export default function AdminWalletScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="wallet-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد طلبات سحب حالياً</Text>
+              <Text style={s.emptyText}>{t('لا توجد طلبات سحب حالياً')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -319,44 +320,44 @@ export default function AdminWalletScreen({ navigation }: any) {
         <View style={s.modalOverlay}>
           <View style={[s.modalBox, { width: Math.min(Math.max(width - 24, 280), 420) }]}>
             <View style={s.modalHeader}>
-               <Text style={s.modalTitle}>{currentAction.title}</Text>
+               <Text style={s.modalTitle}>{tv(currentAction.title)}</Text>
                <TouchableOpacity onPress={() => setModalVisible(false)} style={s.closeBtn} disabled={!!processing}>
                   <Ionicons name="close" size={20} color={UI.textMuted} />
                </TouchableOpacity>
             </View>
-            <Text style={s.modalSub}>{currentAction.detail} المبلغ: {selectedRequest?.amount.toFixed(2)} ر.ي.</Text>
+            <Text style={s.modalSub}>{t('{0} المبلغ: {1} ر.ي.', [tv(currentAction.detail), selectedRequest?.amount.toFixed(2)])}</Text>
             
             <View style={s.inputWrapper}>
               <TextInput
                 style={s.modalInput}
-                placeholder={modalAction === 'rejected' || modalAction === 'failed' ? 'سبب القرار (مطلوب)...' : 'ملاحظات المعالجة (اختياري)...'}
+                placeholder={modalAction === 'rejected' || modalAction === 'failed' ? t('سبب القرار (مطلوب)...') : t('ملاحظات المعالجة (اختياري)...')}
                 placeholderTextColor={UI.textMuted}
                 value={notes}
                 onChangeText={setNotes}
                 multiline
                 maxLength={2000}
                 textAlign="right"
-                accessibilityLabel="ملاحظات معالجة طلب السحب"
+                accessibilityLabel={t('ملاحظات معالجة طلب السحب')}
               />
             </View>
             {modalAction === 'paid' && (
               <View style={s.inputWrapper}>
                 <TextInput
                   style={s.referenceInput}
-                  placeholder="مرجع التحويل الخارجي (مطلوب)"
+                  placeholder={t('مرجع التحويل الخارجي (مطلوب)')}
                   placeholderTextColor={UI.textMuted}
                   value={externalReference}
                   onChangeText={setExternalReference}
                   maxLength={200}
                   textAlign="right"
-                  accessibilityLabel="مرجع التحويل الخارجي"
+                  accessibilityLabel={t('مرجع التحويل الخارجي')}
                 />
               </View>
             )}
             
             <View style={s.modalActions}>
               <TouchableOpacity style={s.modalCancel} onPress={() => setModalVisible(false)} activeOpacity={0.8} disabled={!!processing}>
-                <Text style={s.modalCancelText}>تراجع</Text>
+                <Text style={s.modalCancelText}>{t('تراجع')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.modalConfirm, (modalAction === 'rejected' || modalAction === 'failed') && s.modalConfirmReject]}
@@ -364,7 +365,7 @@ export default function AdminWalletScreen({ navigation }: any) {
                 activeOpacity={0.8}
                 disabled={!!processing}
               >
-                {processing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.modalConfirmText}>{currentAction.confirm}</Text>}
+                {processing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.modalConfirmText}>{tv(currentAction.confirm)}</Text>}
               </TouchableOpacity>
             </View>
           </View>

@@ -15,6 +15,7 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 export default function FavoritesScreen({ navigation }: any): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -67,13 +68,13 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
             onPress={() => navigation.goBack()}
             activeOpacity={0.72}
             accessibilityRole="button"
-            accessibilityLabel="العودة"
+            accessibilityLabel={t('العودة')}
           >
             <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCopy}>
-            <Text style={styles.headerTitle}>المفضلة</Text>
-            <Text style={styles.headerSubtitle}>كل اختياراتك المحفوظة في مكان واحد</Text>
+            <Text style={styles.headerTitle}>{t('المفضلة')}</Text>
+            <Text style={styles.headerSubtitle}>{t('كل اختياراتك المحفوظة في مكان واحد')}</Text>
           </View>
           <View style={styles.headerSpacer} />
         </CustomerResponsiveShell>
@@ -88,14 +89,14 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
           <View style={[styles.stateIcon, styles.errorIcon]}>
             <Ionicons name="cloud-offline-outline" size={38} color={COLORS.error} />
           </View>
-          <Text style={styles.emptyTitle}>تعذّر تحميل المفضلة</Text>
-          <Text style={styles.emptyText}>{loadError}</Text>
+          <Text style={styles.emptyTitle}>{t('تعذّر تحميل المفضلة')}</Text>
+          <Text style={styles.emptyText}>{tv(loadError)}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => { setLoading(true); void load(); }}
             accessibilityRole="button"
           >
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       ) : favorites.length === 0 ? (
@@ -103,8 +104,8 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
           <View style={styles.stateIcon}>
             <Ionicons name="heart-outline" size={40} color={COLORS.primary} />
           </View>
-          <Text style={styles.emptyTitle}>قائمتك بانتظار اختياراتك</Text>
-          <Text style={styles.emptyText}>اضغط على أيقونة القلب في أي منتج ليظهر هنا.</Text>
+          <Text style={styles.emptyTitle}>{t('قائمتك بانتظار اختياراتك')}</Text>
+          <Text style={styles.emptyText}>{t('اضغط على أيقونة القلب في أي منتج ليظهر هنا.')}</Text>
         </View>
       ) : (
         <FlatList
@@ -125,8 +126,8 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
           columnWrapperStyle={columns > 1 ? [styles.row, { gap }] : undefined}
           ListHeaderComponent={(
             <View style={styles.listHeader}>
-              <Text style={styles.listCount}>{favorites.length} منتج محفوظ</Text>
-              <Text style={styles.listTitle}>اختياراتك</Text>
+              <Text style={styles.listCount}>{t('{0} منتج محفوظ', [tv(favorites.length)])}</Text>
+              <Text style={styles.listTitle}>{t('اختياراتك')}</Text>
             </View>
           )}
           renderItem={({ item }) => item.products ? (
@@ -141,9 +142,9 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
           ) : (
             <View style={[styles.unavailableCard, { width: cardWidth }]}>
               <Ionicons name="alert-circle-outline" size={25} color={COLORS.textMuted} />
-              <Text style={styles.unavailableText}>هذا المنتج لم يعد متاحاً</Text>
+              <Text style={styles.unavailableText}>{t('هذا المنتج لم يعد متاحاً')}</Text>
               <TouchableOpacity style={styles.removeButton} onPress={() => void removeFavorite(item.product_id)} accessibilityRole="button">
-                <Text style={styles.removeText}>إزالة من القائمة</Text>
+                <Text style={styles.removeText}>{t('إزالة من القائمة')}</Text>
               </TouchableOpacity>
             </View>
           )}

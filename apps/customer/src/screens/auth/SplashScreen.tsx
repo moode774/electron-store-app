@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,14 @@ import {
   Image,
   Easing,
 } from 'react-native';
+import { LanguageToggleButton, t } from '@marketplace/shared-i18n';
 
 const { width, height } = Dimensions.get('window');
+
+// تبقى شاشة البداية ظاهرة هذه المدة حتى يكون زر تغيير اللغة قابلاً للضغط فعلياً،
+// وكل تبديل للغة يمدّد المهلة ليرى المستخدم النتيجة قبل الانتقال.
+const SPLASH_HOLD_MS = 1300;
+const LANGUAGE_HOLD_MS = 2400;
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -21,6 +27,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const textTranslateY = useRef(new Animated.Value(15)).current;
+  const [holdMs, setHoldMs] = useState(SPLASH_HOLD_MS);
+  const finished = useRef(false);
+
+  const finishOnce = useCallback(() => {
+    if (finished.current) return;
+    finished.current = true;
+    onFinish();
+  }, [onFinish]);
 
   useEffect(() => {
     // Ultra minimal elegant entrance (Fast)
@@ -29,15 +43,25 @@ export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX
       Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
       Animated.timing(textOpacity, { toValue: 1, duration: 400, delay: 100, useNativeDriver: true }),
       Animated.timing(textTranslateY, { toValue: 0, duration: 400, delay: 100, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-    ]).start(() => {
-      // Navigate away immediately without holding
-      onFinish();
-    });
+    ]).start();
   }, []);
+
+  // مهلة الانتقال — تُعاد جدولتها عند تبديل اللغة.
+  useEffect(() => {
+    const timer = setTimeout(finishOnce, holdMs);
+    return () => clearTimeout(timer);
+  }, [finishOnce, holdMs]);
+
+  const handleLanguageChange = useCallback(() => setHoldMs(LANGUAGE_HOLD_MS), []);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* زر تغيير اللغة — متاح قبل الدخول إلى التطبيق */}
+      <View style={styles.languageBar}>
+        <LanguageToggleButton variant="soft" onChange={handleLanguageChange} />
+      </View>
 
       {/* Main Content */}
       <View style={styles.content}>
@@ -50,9 +74,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX
         </Animated.View>
 
         {/* Text */}
-        <Animated.Text style={[styles.tagline, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>
-          تجربة تسوق أفضل
-        </Animated.Text>
+        <Animated.Text style={[styles.tagline, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>{t('تجربة تسوق أفضل')}</Animated.Text>
       </View>
     </View>
   );
@@ -65,6 +87,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  languageBar: {
+    position: 'absolute',
+    top: 56,
+    alignSelf: 'center',
+    zIndex: 20,
   },
   content: {
     alignItems: 'center',

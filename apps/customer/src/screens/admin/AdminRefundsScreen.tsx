@@ -13,6 +13,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary, bg: COLORS.background, card: COLORS.surface, text: COLORS.textPrimary,
@@ -144,63 +145,61 @@ export default function AdminRefundsScreen() {
       <View style={s.card}>
         <View style={s.cardHeader}>
           <View style={[s.statusBadge, { backgroundColor: meta.bg }]}>
-            <Text style={[s.statusText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[s.statusText, { color: meta.color }]}>{tv(meta.label)}</Text>
           </View>
           <View style={s.headingWrap}>
-            <Text style={s.name}>طلب #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8) ?? '—'}</Text>
-            <Text style={s.store}>{item.orders?.merchant_profiles?.store_name ?? 'متجر غير متوفر'}</Text>
+            <Text style={s.name}>{t('طلب #{0}', [item.orders?.order_number ?? item.order_id?.slice?.(0, 8) ?? '—'])}</Text>
+            <Text style={s.store}>{tv(item.orders?.merchant_profiles?.store_name ?? t('متجر غير متوفر'))}</Text>
           </View>
         </View>
 
         <View style={s.infoGrid}>
-          <View style={s.infoBox}><Text style={s.infoLabel}>العميل</Text><Text style={s.infoValue}>{item.users?.full_name ?? '—'}</Text></View>
-          <View style={s.infoBox}><Text style={s.infoLabel}>المبلغ المطلوب</Text><Text style={s.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} ر.ي</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('العميل')}</Text><Text style={s.infoValue}>{tv(item.users?.full_name ?? '—')}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('المبلغ المطلوب')}</Text><Text style={s.amount}>{t('{0} ر.ي', [Number(item.refund_amount ?? 0).toFixed(2)])}</Text></View>
         </View>
         <View style={s.infoGrid}>
-          <View style={s.infoBox}><Text style={s.infoLabel}>الدفع الأصلي</Text><Text style={s.infoValue}>{item.orders?.payment_method ?? '—'} / {item.orders?.payment_status ?? '—'}</Text></View>
-          <View style={s.infoBox}><Text style={s.infoLabel}>طريقة الاسترداد</Text><Text style={s.infoValue}>{item.refund_method === 'original_payment' ? 'وسيلة الدفع الأصلية' : 'المحفظة'}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('الدفع الأصلي')}</Text><Text style={s.infoValue}>{tv(item.orders?.payment_method ?? '—')} / {tv(item.orders?.payment_status ?? '—')}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('طريقة الاسترداد')}</Text><Text style={s.infoValue}>{tv(item.refund_method === 'original_payment' ? t('وسيلة الدفع الأصلية') : t('المحفظة'))}</Text></View>
         </View>
         <View style={s.infoGrid}>
-          <View style={s.infoBox}><Text style={s.infoLabel}>إجمالي الطلب</Text><Text style={s.infoValue}>{Number(item.orders?.total_amount ?? 0).toFixed(2)} ر.ي</Text></View>
-          <View style={s.infoBox}><Text style={s.infoLabel}>وقت التسليم المسجل</Text><Text style={s.infoValue}>{item.orders?.delivered_at ? new Date(item.orders.delivered_at).toLocaleString('ar-SA') : 'غير مسجل'}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('إجمالي الطلب')}</Text><Text style={s.infoValue}>{t('{0} ر.ي', [Number(item.orders?.total_amount ?? 0).toFixed(2)])}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('وقت التسليم المسجل')}</Text><Text style={s.infoValue}>{tv(item.orders?.delivered_at ? new Date(item.orders.delivered_at).toLocaleString(getLocale()) : t('غير مسجل'))}</Text></View>
         </View>
-        <Text style={s.label}>السبب</Text>
-        <Text style={s.reason}>{item.reason || 'لم يذكر سبب'}</Text>
-        {!!item.description && <Text style={s.description}>{item.description}</Text>}
+        <Text style={s.label}>{t('السبب')}</Text>
+        <Text style={s.reason}>{tv(item.reason || t('لم يذكر سبب'))}</Text>
+        {!!item.description && <Text style={s.description}>{tv(item.description)}</Text>}
         {orderItems.length ? (
           <View style={s.detailSection}>
-            <Text style={s.noteTitle}>عناصر الطلب</Text>
+            <Text style={s.noteTitle}>{t('عناصر الطلب')}</Text>
             {orderItems.map((orderItem: any, index: number) => (
-              <Text key={`${orderItem.product_name ?? 'item'}-${index}`} style={s.itemLine}>
-                {orderItem.product_name ?? 'منتج'} × {orderItem.quantity ?? 0} — {Number(orderItem.total_price ?? 0).toFixed(2)} ر.ي
-              </Text>
+              <Text key={`${orderItem.product_name ?? 'item'}-${index}`} style={s.itemLine}>{t('{0} × {1} — {2} ر.ي', [orderItem.product_name ?? 'منتج', orderItem.quantity ?? 0, Number(orderItem.total_price ?? 0).toFixed(2)])}</Text>
             ))}
           </View>
         ) : null}
         {evidenceImages.length ? (
           <View style={s.detailSection}>
-            <Text style={s.noteTitle}>أدلة العميل ({evidenceImages.length})</Text>
+            <Text style={s.noteTitle}>{t('أدلة العميل ({0})', [tv(evidenceImages.length)])}</Text>
             <ScrollView horizontal contentContainerStyle={s.evidenceRow} showsHorizontalScrollIndicator={false}>
               {evidenceImages.map((url: string, index: number) => (
-                <TouchableOpacity key={`${url}-${index}`} onPress={() => void Linking.openURL(url)} accessibilityRole="link" accessibilityLabel={`فتح صورة الدليل ${index + 1}`}>
+                <TouchableOpacity key={`${url}-${index}`} onPress={() => void Linking.openURL(url)} accessibilityRole="link" accessibilityLabel={t('فتح صورة الدليل {0}', [index + 1])}>
                   <Image source={{ uri: url }} style={s.evidenceImage} />
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
         ) : null}
-        {!!item.merchant_response && <View style={s.noteBox}><Text style={s.noteTitle}>رد التاجر</Text><Text style={s.noteText}>{item.merchant_response}</Text></View>}
-        {!!item.admin_notes && <View style={s.noteBox}><Text style={s.noteTitle}>ملاحظة الإدارة</Text><Text style={s.noteText}>{item.admin_notes}</Text></View>}
-        <Text style={s.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+        {!!item.merchant_response && <View style={s.noteBox}><Text style={s.noteTitle}>{t('رد التاجر')}</Text><Text style={s.noteText}>{tv(item.merchant_response)}</Text></View>}
+        {!!item.admin_notes && <View style={s.noteBox}><Text style={s.noteTitle}>{t('ملاحظة الإدارة')}</Text><Text style={s.noteText}>{tv(item.admin_notes)}</Text></View>}
+        <Text style={s.date}>{tv(new Date(item.created_at).toLocaleString(getLocale()))}</Text>
 
         {item.status === 'pending' && (
           processingId === item.id ? <ActivityIndicator color={UI.primary} style={{ marginTop: 16 }} /> : (
             <View style={s.actions}>
-              <TouchableOpacity style={s.reject} onPress={() => openDecision(item, 'rejected')} accessibilityRole="button" accessibilityLabel="رفض طلب الاسترداد">
-                <Text style={s.rejectText}>رفض</Text>
+              <TouchableOpacity style={s.reject} onPress={() => openDecision(item, 'rejected')} accessibilityRole="button" accessibilityLabel={t('رفض طلب الاسترداد')}>
+                <Text style={s.rejectText}>{t('رفض')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'approved')} accessibilityRole="button" accessibilityLabel="قبول طلب الاسترداد للمسار المالي">
-                <Text style={s.approveText}>قبول للمسار المالي</Text>
+              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'approved')} accessibilityRole="button" accessibilityLabel={t('قبول طلب الاسترداد للمسار المالي')}>
+                <Text style={s.approveText}>{t('قبول للمسار المالي')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -208,8 +207,8 @@ export default function AdminRefundsScreen() {
         {item.status === 'approved' && (
           processingId === item.id ? <ActivityIndicator color={UI.primary} style={{ marginTop: 16 }} /> : (
             <View style={s.actions}>
-              <TouchableOpacity style={s.secondaryAction} onPress={() => openDecision(item, 'processing')} accessibilityRole="button" accessibilityLabel="بدء تنفيذ الاسترداد المالي">
-                <Text style={s.processingText}>بدء التنفيذ</Text>
+              <TouchableOpacity style={s.secondaryAction} onPress={() => openDecision(item, 'processing')} accessibilityRole="button" accessibilityLabel={t('بدء تنفيذ الاسترداد المالي')}>
+                <Text style={s.processingText}>{t('بدء التنفيذ')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -217,8 +216,8 @@ export default function AdminRefundsScreen() {
         {item.status === 'processing' && (
           processingId === item.id ? <ActivityIndicator color={UI.primary} style={{ marginTop: 16 }} /> : (
             <View style={s.actions}>
-              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'completed')} accessibilityRole="button" accessibilityLabel="تأكيد اكتمال الاسترداد">
-                <Text style={s.approveText}>تأكيد اكتمال القيود المالية</Text>
+              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'completed')} accessibilityRole="button" accessibilityLabel={t('تأكيد اكتمال الاسترداد')}>
+                <Text style={s.approveText}>{t('تأكيد اكتمال القيود المالية')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -230,13 +229,13 @@ export default function AdminRefundsScreen() {
   return (
     <View style={s.page}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
-        <Text style={s.title}>طلبات الاسترداد</Text>
-        <Text style={s.sub}>قرار القبول منفصل عن تنفيذ رد المبلغ، وتظهر كل مرحلة بحالتها الفعلية.</Text>
+        <Text style={s.title}>{t('طلبات الاسترداد')}</Text>
+        <Text style={s.sub}>{t('قرار القبول منفصل عن تنفيذ رد المبلغ، وتظهر كل مرحلة بحالتها الفعلية.')}</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>
         {REFUND_FILTERS.map((option) => (
           <TouchableOpacity key={option.key} style={[s.filter, filter === option.key && s.filterActive]} onPress={() => setFilter(option.key)} accessibilityRole="button" accessibilityState={{ selected: filter === option.key }}>
-            <Text style={[s.filterText, filter === option.key && s.filterTextActive]}>{option.label}</Text>
+            <Text style={[s.filterText, filter === option.key && s.filterTextActive]}>{tv(option.label)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -244,8 +243,8 @@ export default function AdminRefundsScreen() {
       {loading ? <ActivityIndicator style={{ marginTop: 48 }} color={UI.primary} /> : error ? (
         <View style={s.empty} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={46} color={UI.danger} />
-          <Text style={s.errorText}>{error}</Text>
-          <TouchableOpacity style={s.retry} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={s.errorText}>{tv(error)}</Text>
+          <TouchableOpacity style={s.retry} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -257,15 +256,15 @@ export default function AdminRefundsScreen() {
           renderItem={renderItem}
           contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={UI.primary} />}
-          ListEmptyComponent={<View style={s.empty}><Ionicons name="refresh-circle-outline" size={48} color={UI.border} /><Text style={s.emptyText}>لا توجد طلبات بهذه الحالة</Text></View>}
+          ListEmptyComponent={<View style={s.empty}><Ionicons name="refresh-circle-outline" size={48} color={UI.border} /><Text style={s.emptyText}>{t('لا توجد طلبات بهذه الحالة')}</Text></View>}
         />
       )}
 
       <Modal visible={!!decision} transparent animationType="fade" onRequestClose={() => !processingId && setDecision(null)} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
           <View style={[s.modal, { width: Math.min(Math.max(width - 24, 280), 480) }]}>
-            <Text style={s.modalTitle}>{decision ? DECISION_COPY[decision.status].title : ''}</Text>
-            <Text style={s.modalText}>{decision ? DECISION_COPY[decision.status].detail : ''}</Text>
+            <Text style={s.modalTitle}>{tv(decision ? DECISION_COPY[decision.status].title : '')}</Text>
+            <Text style={s.modalText}>{tv(decision ? DECISION_COPY[decision.status].detail : '')}</Text>
             <TextInput
               style={s.input}
               value={notes}
@@ -275,24 +274,24 @@ export default function AdminRefundsScreen() {
               multiline
               maxLength={2000}
               textAlign="right"
-              accessibilityLabel="ملاحظات قرار الاسترداد"
+              accessibilityLabel={t('ملاحظات قرار الاسترداد')}
             />
             {decision?.status === 'completed' && decision.item.refund_method === 'original_payment' && (
               <TextInput
                 style={s.referenceInput}
                 value={externalReference}
                 onChangeText={setExternalReference}
-                placeholder="مرجع عملية رد المبلغ (مطلوب)"
+                placeholder={t('مرجع عملية رد المبلغ (مطلوب)')}
                 placeholderTextColor={UI.muted}
                 maxLength={200}
                 textAlign="right"
-                accessibilityLabel="مرجع عملية رد المبلغ"
+                accessibilityLabel={t('مرجع عملية رد المبلغ')}
               />
             )}
             <View style={s.modalActions}>
-              <TouchableOpacity style={s.cancel} onPress={() => setDecision(null)} disabled={!!processingId}><Text style={s.cancelText}>تراجع</Text></TouchableOpacity>
+              <TouchableOpacity style={s.cancel} onPress={() => setDecision(null)} disabled={!!processingId}><Text style={s.cancelText}>{t('تراجع')}</Text></TouchableOpacity>
               <TouchableOpacity style={[s.confirm, decision?.status === 'rejected' && s.confirmDanger]} onPress={submitDecision} disabled={!!processingId}>
-                {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmText}>تأكيد القرار</Text>}
+                {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmText}>{t('تأكيد القرار')}</Text>}
               </TouchableOpacity>
             </View>
           </View>

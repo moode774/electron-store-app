@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, ActivityIndi
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
 import { OrderSummary } from '@marketplace/shared-hooks';
+import { t, tv } from '@marketplace/shared-i18n';
 
 interface Props {
   visible: boolean;
@@ -55,27 +56,25 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
             <Ionicons name="notifications-outline" size={40} color="#FFFFFF" />
           </View>
           
-          <Text style={styles.title}>طلب توصيل جديد!</Text>
-          <Text style={styles.subtitle}>يوجد طلب قريب منك، هل تود قبوله؟</Text>
+          <Text style={styles.title}>{t('طلب توصيل جديد!')}</Text>
+          <Text style={styles.subtitle}>{t('يوجد طلب قريب منك، هل تود قبوله؟')}</Text>
           
           <View style={styles.detailsBox}>
             <View style={styles.detailRow}>
               <Ionicons name="storefront-outline" size={18} color="#6B7280" />
-              <Text style={styles.detailText}>{order.merchant_profiles?.store_name ?? 'مطعم/متجر'}</Text>
+              <Text style={styles.detailText}>{tv(order.merchant_profiles?.store_name ?? t('مطعم/متجر'))}</Text>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={18} color="#6B7280" />
-              <Text style={styles.detailText} numberOfLines={2}>
-                يظهر عنوان العميل بالتفصيل بعد قبول الطلب
-              </Text>
+              <Text style={styles.detailText} numberOfLines={2}>{t('يظهر عنوان العميل بالتفصيل بعد قبول الطلب')}</Text>
             </View>
             <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }]}>
-              <Text style={styles.amountLabel}>أجر التوصيل المتوقع:</Text>
-              <Text style={styles.amountValue}>{order.delivery_fee ?? 0} ر.ي</Text>
+              <Text style={styles.amountLabel}>{t('أجر التوصيل المتوقع:')}</Text>
+              <Text style={styles.amountValue}>{t('{0} ر.ي', [order.delivery_fee ?? 0])}</Text>
             </View>
           </View>
 
-          <Text style={styles.timerText}>يختفي الطلب خلال <Text style={{ color: '#DC2626' }}>{timeLeft}</Text> ثانية</Text>
+          <Text style={styles.timerText}>{t('يختفي الطلب خلال')}{' '}<Text style={{ color: '#DC2626' }}>{tv(timeLeft)}</Text>{' '}{t('ثانية')}</Text>
 
           <View style={styles.actions}>
             <TouchableOpacity
@@ -84,10 +83,10 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
               activeOpacity={0.7}
               disabled={accepting}
               accessibilityRole="button"
-              accessibilityLabel="تخطي عرض التوصيل الحالي"
+              accessibilityLabel={t('تخطي عرض التوصيل الحالي')}
               accessibilityState={{ disabled: accepting }}
             >
-              <Text style={styles.rejectText}>تخطي</Text>
+              <Text style={styles.rejectText}>{t('تخطي')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.acceptBtn, accepting && styles.disabledBtn]}
@@ -95,14 +94,14 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
               activeOpacity={0.7}
               disabled={accepting}
               accessibilityRole="button"
-              accessibilityLabel="قبول طلب التوصيل"
+              accessibilityLabel={t('قبول طلب التوصيل')}
               accessibilityState={{ disabled: accepting, busy: accepting }}
             >
               {accepting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Text style={styles.acceptText}>قبول الطلب</Text>
+                  <Text style={styles.acceptText}>{t('قبول الطلب')}</Text>
                   <Ionicons name="bicycle" size={20} color="#FFFFFF" />
                 </>
               )}

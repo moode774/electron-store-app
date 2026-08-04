@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ProductSummary } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type Props = {
   product: ProductSummary;
@@ -59,7 +60,7 @@ export function CustomerProductCard({
       activeOpacity={0.9}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}، السعر ${price} ريال يمني`}
+      accessibilityLabel={t('{0}، السعر {1} ريال يمني', [tv(product.name), tv(price)])}
     >
       <View style={[styles.media, isList && styles.mediaList]}>
         {imageUrl ? (
@@ -76,7 +77,7 @@ export function CustomerProductCard({
         )}
         {discount > 0 ? (
           <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>-{discount}%</Text>
+            <Text style={styles.discountText}>-{tv(discount)}%</Text>
           </View>
         ) : null}
         {onToggleFavorite ? (
@@ -87,7 +88,7 @@ export function CustomerProductCard({
               onToggleFavorite();
             }}
             accessibilityRole="button"
-            accessibilityLabel={favorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+            accessibilityLabel={favorite ? t('إزالة من المفضلة') : t('إضافة إلى المفضلة')}
             accessibilityState={{ selected: favorite }}
           >
             <Ionicons
@@ -101,17 +102,17 @@ export function CustomerProductCard({
 
       <View style={[styles.info, isList && styles.infoList]}>
         {product.merchant_profiles?.store_name ? (
-          <Text style={styles.storeName} numberOfLines={1}>{product.merchant_profiles.store_name}</Text>
+          <Text style={styles.storeName} numberOfLines={1}>{tv(product.merchant_profiles.store_name)}</Text>
         ) : null}
-        <Text style={[styles.name, isList && styles.nameList]} numberOfLines={2}>{product.name}</Text>
+        <Text style={[styles.name, isList && styles.nameList]} numberOfLines={2}>{tv(product.name)}</Text>
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={13} color="#F4B740" />
-          <Text style={styles.ratingText}>{Number(product.rating ?? 0).toFixed(1)}</Text>
-          {product.total_sold > 0 ? <Text style={styles.soldText}>• {product.total_sold} مبيع</Text> : null}
+          <Text style={styles.ratingText}>{tv(Number(product.rating ?? 0).toFixed(1))}</Text>
+          {product.total_sold > 0 ? <Text style={styles.soldText}>{t('• {0} مبيع', [tv(product.total_sold)])}</Text> : null}
         </View>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{price} <Text style={styles.currency}>ر.ي</Text></Text>
-          {product.sale_price ? <Text style={styles.oldPrice}>{product.base_price}</Text> : null}
+          <Text style={styles.price}>{tv(price)} <Text style={styles.currency}>{t('ر.ي')}</Text></Text>
+          {product.sale_price ? <Text style={styles.oldPrice}>{tv(product.base_price)}</Text> : null}
         </View>
       </View>
 
@@ -125,7 +126,7 @@ export function CustomerProductCard({
           disabled={quickActionDisabled}
           activeOpacity={0.82}
           accessibilityRole="button"
-          accessibilityLabel={quickActionNeedsOptions ? `اختيار خيارات ${product.name}` : `إضافة ${product.name} إلى السلة`}
+          accessibilityLabel={quickActionNeedsOptions ? t('اختيار خيارات {0}', [tv(product.name)]) : t('إضافة {0} إلى السلة', [tv(product.name)])}
           accessibilityState={{ disabled: quickActionDisabled }}
         >
           <Ionicons

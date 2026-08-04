@@ -8,6 +8,7 @@ import { useAuthStore } from '@marketplace/shared-hooks';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AdminMoreStackParamList } from '../../navigation/AdminTabNavigator';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { LanguageSettingCard, t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -151,9 +152,9 @@ export default function AdminMoreScreen() {
             <Ionicons name="shield-checkmark" size={26} color="#FFFFFF" />
           </View>
           <View style={s.profileInfo}>
-            <Text style={s.profileName}>{user?.full_name ?? 'مدير النظام'}</Text>
+            <Text style={s.profileName}>{tv(user?.full_name ?? t('مدير النظام'))}</Text>
             <View style={s.roleBadge}>
-              <Text style={s.profileRole}>المدير العام</Text>
+              <Text style={s.profileRole}>{t('المدير العام')}</Text>
             </View>
           </View>
         </View>
@@ -161,7 +162,7 @@ export default function AdminMoreScreen() {
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} showsVerticalScrollIndicator={false}>
         <View style={[s.content, { width: contentWidth }]}>
-        <Text style={s.sectionTitle}>الوصول السريع للأدوات</Text>
+        <Text style={s.sectionTitle}>{t('الوصول السريع للأدوات')}</Text>
         
         <View style={s.menuGrid}>
           {MENU_ITEMS.map((item) => (
@@ -175,8 +176,8 @@ export default function AdminMoreScreen() {
                 <Ionicons name={item.icon as any} size={26} color={item.color} />
               </View>
               <View style={s.menuTextGroup}>
-                <Text style={s.menuTitle}>{item.title}</Text>
-                <Text style={s.menuDesc}>{item.description}</Text>
+                <Text style={s.menuTitle}>{tv(item.title)}</Text>
+                <Text style={s.menuDesc}>{tv(item.description)}</Text>
               </View>
               <View style={s.menuArrowWrap}>
                 <Ionicons name="chevron-back" size={20} color={UI.textMuted} />
@@ -187,12 +188,17 @@ export default function AdminMoreScreen() {
 
         <View style={s.divider} />
 
+        {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+        <LanguageSettingCard style={s.languageCard} />
+
+        <View style={s.divider} />
+
         <TouchableOpacity style={s.logoutBtn} onPress={signOut} activeOpacity={0.8}>
-          <Text style={s.logoutText}>تسجيل الخروج من الحساب</Text>
+          <Text style={s.logoutText}>{t('تسجيل الخروج من الحساب')}</Text>
           <Ionicons name="log-out" size={22} color={UI.danger} />
         </TouchableOpacity>
 
-        <Text style={s.versionText}>منصة الإدارة الذكية — الإصدار 1.0.0</Text>
+        <Text style={s.versionText}>{t('منصة الإدارة الذكية — الإصدار 1.0.0')}</Text>
         </View>
       </ScrollView>
     </View>
@@ -228,6 +234,7 @@ const s = StyleSheet.create({
   menuDesc: { fontSize: 13, color: UI.textMuted, textAlign: 'right', fontFamily: FONTS.regular, lineHeight: 20 },
   menuArrowWrap: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 12 },
+  languageCard: { width: '100%' },
   logoutBtn: { minHeight: 52, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: COLORS.accentCoralSoft, borderRadius: RADIUS.md, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.accentCoralSoft },
   logoutText: { fontSize: 16, fontFamily: FONTS.bold, color: UI.danger },
   versionText: { fontSize: 12, color: UI.textMuted, textAlign: 'center', marginTop: 24, fontFamily: FONTS.medium, letterSpacing: 0.5 },
