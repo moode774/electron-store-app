@@ -650,8 +650,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   placeholder="أدخل كود الخصم (مثال: WELCOME15)"
                   placeholderTextColor="#94A3B8"
                   value={couponCode}
-                  onChangeText={(t: string) => {
-                    setCouponCode(t);
+                  onChangeText={(codeText: string) => {
+                    setCouponCode(codeText);
                     setCouponMsg('');
                   }}
                   autoCapitalize="characters"

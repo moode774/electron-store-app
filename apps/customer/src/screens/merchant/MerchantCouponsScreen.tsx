@@ -353,7 +353,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
                 placeholder="SUMMER20"
                 placeholderTextColor={UI.textMuted}
                 value={code}
-                onChangeText={(t) => setCode(t.toUpperCase())}
+                onChangeText={(codeText) => setCode(codeText.toUpperCase())}
                 autoCapitalize="characters"
               />
 

@@ -69,7 +69,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
     void loadData();
   }, [loadData]));
 
-  const isIncome = (t: WalletTransaction) => t.type === 'credit';
+  const isIncome = (tx: WalletTransaction) => tx.type === 'credit';
   const blockingWithdrawal = withdrawals.find((request) => BLOCKING_WITHDRAWAL_STATUSES.has(request.status));
   const hasBlockingWithdrawal = Boolean(blockingWithdrawal);
 

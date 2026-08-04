@@ -311,7 +311,7 @@ export default function AdminMerchantsScreen() {
               placeholder="أو اكتب سبباً آخر هنا..."
               placeholderTextColor={UI.textMuted}
               value={pauseModal.reason}
-              onChangeText={(t) => setPauseModal(p => ({ ...p, reason: t }))}
+              onChangeText={(reasonText) => setPauseModal(p => ({ ...p, reason: reasonText }))}
               multiline
               textAlign="right"
             />

@@ -100,14 +100,14 @@ export default function HelpCenterScreen({ navigation }: any) {
           <>
             <Text style={styles.sectionTitle}>تذاكري</Text>
             <View style={styles.faqContainer}>
-              {tickets.map((t, i) => (
-                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
+              {tickets.map((ticket, i) => (
+                <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${ticket.subject}`}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.ticketSubject}>{t.subject}</Text>
-                    <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
+                    <Text style={styles.ticketSubject}>{ticket.subject}</Text>
+                    <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString('ar-SA')}</Text>
                   </View>
                   <View style={styles.ticketStatusBadge}>
-                    <Text style={styles.ticketStatusText}>{TICKET_STATUS[t.status] ?? t.status}</Text>
+                    <Text style={styles.ticketStatusText}>{TICKET_STATUS[ticket.status] ?? ticket.status}</Text>
                   </View>
                 </TouchableOpacity>
               ))}

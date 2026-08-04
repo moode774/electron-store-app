@@ -186,13 +186,13 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {tickets.length > 0 && (
                 <View style={[styles.card, isCompact && styles.cardCompact]}>
                   <Text style={styles.sectionTitle}>تذاكري السابقة</Text>
-                  {tickets.map((t, i) => {
-                    const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
+                  {tickets.map((ticket, i) => {
+                    const st = TICKET_STATUS[ticket.status] || { label: ticket.status, color: UI.textGrey };
                     return (
-                      <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
+                      <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${ticket.subject}`}>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.ticketSubject}>{t.subject}</Text>
-                          <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
+                          <Text style={styles.ticketSubject}>{ticket.subject}</Text>
+                          <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString('ar-SA')}</Text>
                         </View>
                         <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
                           <Text style={[styles.ticketStatusText, { color: st.color }]}>{st.label}</Text>

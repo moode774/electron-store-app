@@ -38,7 +38,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
     void loadWallet();
   }, [loadWallet]));
 
-  const isIncome = (t: WalletTransaction) => t.type === 'credit';
+  const isIncome = (tx: WalletTransaction) => tx.type === 'credit';
 
   return (
     <View style={styles.container}>

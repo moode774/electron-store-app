@@ -91,9 +91,9 @@ export default function AdminNotificationsScreen({ navigation }: any) {
     );
   };
 
-  const applyTemplate = (t: { title: string; body: string }) => {
-    setTitle(t.title);
-    setBody(t.body);
+  const applyTemplate = (template: { title: string; body: string }) => {
+    setTitle(template.title);
+    setBody(template.body);
     setSentCount(null);
   };
 
@@ -145,10 +145,10 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         <View style={s.card}>
           <Text style={s.sectionTitle}>قوالب الإشعارات الجاهزة</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.templatesRow}>
-            {QUICK_TEMPLATES.map((t, idx) => (
-              <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(t)} activeOpacity={0.8}>
+            {QUICK_TEMPLATES.map((template, idx) => (
+              <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(template)} activeOpacity={0.8}>
                 <Ionicons name="flash" size={14} color={UI.primary} />
-                <Text style={s.templateChipText}>{t.title}</Text>
+                <Text style={s.templateChipText}>{template.title}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
