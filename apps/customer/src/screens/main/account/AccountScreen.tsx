@@ -22,7 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AccountStackParamList } from '../../../navigation/types';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { t, tv } from '@marketplace/shared-i18n';
+import { LanguageSettingRow, t, tv } from '@marketplace/shared-i18n';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -275,6 +275,9 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
                 </React.Fragment>
               ))}
+              {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+              <View style={styles.menuDivider} />
+              <LanguageSettingRow />
             </View>
 
             {/* Logout Button */}

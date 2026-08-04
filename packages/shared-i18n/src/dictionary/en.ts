@@ -7,7 +7,7 @@
 //
 // This file is generated from the app sources; keep it in sync by re-running
 // the extraction whenever new Arabic strings are added.
-// Entries: 2583
+// Entries: 2585
 // ============================================================
 import type { Dictionary } from '../types';
 
@@ -2784,4 +2784,8 @@ export const en: Dictionary = {
 
   // ---- packages/shared-utils/src/constants.ts ------------------------------------
   "متجر اليمن": "Yemen Store",
+
+  // ---- packages/shared-i18n/src/components/LanguageToggle.tsx --------------------
+  "تغيير اللغة": "Change Language",
+  "من اللغة العربية إلى اللغة الإنجليزية": "From Arabic to English",
 };

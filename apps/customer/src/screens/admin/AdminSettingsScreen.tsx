@@ -11,7 +11,7 @@ import {
   getSystemSettings, updateSystemSetting 
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { t, tv } from '@marketplace/shared-i18n';
+import { LanguageSettingCard, t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -146,6 +146,9 @@ export default function AdminSettingsScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} keyboardShouldPersistTaps="handled">
+        {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+        <LanguageSettingCard style={s.languageCard} />
+
         {activeTab === 'system' ? (
           settingsLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
           <View style={s.card}>
@@ -206,6 +209,7 @@ const s = StyleSheet.create({
   tabText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   tabTextActive: { color: UI.primary, fontFamily: FONTS.bold },
   scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
+  languageCard: { width: '100%', maxWidth: 960, marginBottom: 16 },
   card: { width: '100%', maxWidth: 960, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 20, borderWidth: 1, borderColor: UI.border },
   cardTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 20 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 16 },

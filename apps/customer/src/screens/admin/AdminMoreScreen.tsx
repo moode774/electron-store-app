@@ -8,7 +8,7 @@ import { useAuthStore } from '@marketplace/shared-hooks';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AdminMoreStackParamList } from '../../navigation/AdminTabNavigator';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { t, tv } from '@marketplace/shared-i18n';
+import { LanguageSettingCard, t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -188,6 +188,11 @@ export default function AdminMoreScreen() {
 
         <View style={s.divider} />
 
+        {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+        <LanguageSettingCard style={s.languageCard} />
+
+        <View style={s.divider} />
+
         <TouchableOpacity style={s.logoutBtn} onPress={signOut} activeOpacity={0.8}>
           <Text style={s.logoutText}>{t('تسجيل الخروج من الحساب')}</Text>
           <Ionicons name="log-out" size={22} color={UI.danger} />
@@ -229,6 +234,7 @@ const s = StyleSheet.create({
   menuDesc: { fontSize: 13, color: UI.textMuted, textAlign: 'right', fontFamily: FONTS.regular, lineHeight: 20 },
   menuArrowWrap: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 12 },
+  languageCard: { width: '100%' },
   logoutBtn: { minHeight: 52, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: COLORS.accentCoralSoft, borderRadius: RADIUS.md, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.accentCoralSoft },
   logoutText: { fontSize: 16, fontFamily: FONTS.bold, color: UI.danger },
   versionText: { fontSize: 12, color: UI.textMuted, textAlign: 'center', marginTop: 24, fontFamily: FONTS.medium, letterSpacing: 0.5 },

@@ -18,6 +18,8 @@ export interface LanguageToggleButtonProps {
   variant?: 'solid' | 'soft' | 'outline';
   /** يظهر اسم اللغة بجانب الأيقونة (افتراضياً: نعم). */
   showLabel?: boolean;
+  /** لون الأيقونة — يُستخدم فوق الخلفيات الداكنة. */
+  iconColor?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   /** يُستدعى بعد تغيير اللغة (مثلاً لإيقاف مؤقّت شاشة البداية). */
@@ -31,6 +33,7 @@ export interface LanguageToggleButtonProps {
 export const LanguageToggleButton = ({
   variant = 'soft',
   showLabel = true,
+  iconColor,
   style,
   textStyle,
   onChange,
@@ -59,7 +62,7 @@ export const LanguageToggleButton = ({
       accessibilityLabel={`${t('تغيير اللغة')} — ${nextLanguageName}`}
       testID="language-toggle-button"
     >
-      <Ionicons name="language-outline" size={16} color={solid ? '#FFFFFF' : COLORS.primary} />
+      <Ionicons name="language-outline" size={16} color={iconColor ?? (solid ? '#FFFFFF' : COLORS.primary)} />
       {showLabel && (
         <Text style={[pillStyles.pillText, solid && pillStyles.pillTextSolid, textStyle]} numberOfLines={1}>
           {nextLanguageName}

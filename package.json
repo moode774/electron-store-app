@@ -17,9 +17,13 @@
     "build:web": "npm run build:web --workspace @marketplace/customer",
     "check:rpc-contract": "node scripts/check-rpc-contract.mjs",
     "check:sql-migrations": "node scripts/check-sql-migrations.mjs",
-    "check:edge-contract": "node scripts/check-edge-contract.mjs"
+    "check:edge-contract": "node scripts/check-edge-contract.mjs",
+    "check:i18n": "node scripts/i18n/check-dictionary.mjs",
+    "i18n:keys": "node scripts/i18n/extract-keys.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.8",
+    "@babel/traverse": "^7.29.8",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",

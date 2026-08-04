@@ -14,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
-import { t, tv } from '@marketplace/shared-i18n';
+import { LanguageSettingRow, t, tv } from '@marketplace/shared-i18n';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
@@ -143,6 +143,9 @@ export default function DeliveryAccountScreen({ navigation }: any) {
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
+          {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+          <View style={styles.menuDivider} />
+          <LanguageSettingRow />
         </View>
 
         {/* Logout Button */}

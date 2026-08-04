@@ -15,7 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
-import { t, tv } from '@marketplace/shared-i18n';
+import { LanguageSettingRow, t, tv } from '@marketplace/shared-i18n';
 
 const MENU_ITEMS = [
   { id: '1', title: 'بيانات المتجر', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
@@ -157,6 +157,9 @@ export default function MerchantAccountScreen({ navigation }: any) {
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
+          {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+          <View style={styles.menuDivider} />
+          <LanguageSettingRow />
         </View>
 
         {/* Logout Button */}

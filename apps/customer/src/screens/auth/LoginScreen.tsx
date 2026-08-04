@@ -19,7 +19,7 @@ import { useAuthStore } from '@marketplace/shared-hooks';
 import { USER_ROLES, COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
-import { t, tv } from '@marketplace/shared-i18n';
+import { LanguageToggleButton, t, tv } from '@marketplace/shared-i18n';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -113,6 +113,11 @@ export default function LoginScreen(): React.JSX.Element {
         bounces={false}
       >
         <View style={styles.mainContainer}>
+
+          {/* تغيير اللغة — من اللغة العربية إلى اللغة الإنجليزية */}
+          <View style={styles.languageBar}>
+            <LanguageToggleButton variant="soft" />
+          </View>
 
           {/* Header */}
           <View style={styles.header}>
@@ -279,6 +284,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: Platform.OS === 'ios' ? 80 : 60,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  languageBar: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   header: {
     alignItems: 'center',
