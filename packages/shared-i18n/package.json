@@ -1,10 +1,9 @@
 {
-  "name": "@marketplace/shared-hooks",
+  "name": "@marketplace/shared-i18n",
   "version": "1.0.0",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
-    "@marketplace/shared-i18n": "*",
     "@marketplace/shared-utils": "*"
   }
 }

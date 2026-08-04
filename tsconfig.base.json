@@ -30,7 +30,9 @@
       "@marketplace/shared-hooks": ["./packages/shared-hooks/src/index.ts"],
       "@marketplace/shared-hooks/*": ["./packages/shared-hooks/src/*"],
       "@marketplace/shared-utils": ["./packages/shared-utils/src/index.ts"],
-      "@marketplace/shared-utils/*": ["./packages/shared-utils/src/*"]
+      "@marketplace/shared-utils/*": ["./packages/shared-utils/src/*"],
+      "@marketplace/shared-i18n": ["./packages/shared-i18n/src/index.ts"],
+      "@marketplace/shared-i18n/*": ["./packages/shared-i18n/src/*"]
     }
   },
   "exclude": [
