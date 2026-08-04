@@ -17,6 +17,7 @@ import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
@@ -178,7 +179,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                 ]}
                 numberOfLines={2}
               >
-                {item.logo_text}
+                {tv(item.logo_text)}
               </Text>
             </View>
           ) : (
@@ -194,16 +195,16 @@ export default function StoresListScreen({ navigation, route }: any) {
         {/* Center-Right: Title, Categories, Free Delivery Pill */}
         <View style={styles.storeRowMainInfo}>
           <Text style={styles.storeRowName} numberOfLines={1}>
-            {item.store_name}
+            {tv(item.store_name)}
           </Text>
           <Text style={styles.storeRowCategory} numberOfLines={1}>
-            {item.store_category}
+            {tv(item.store_category)}
           </Text>
 
           {item.city ? (
             <View style={styles.freeDeliveryPill}>
               <Ionicons name="location-outline" size={11} color="#059669" />
-              <Text style={styles.freeDeliveryText}>{item.city}</Text>
+              <Text style={styles.freeDeliveryText}>{tv(item.city)}</Text>
             </View>
           ) : null}
         </View>
@@ -213,17 +214,17 @@ export default function StoresListScreen({ navigation, route }: any) {
           <View style={styles.statSubCol}>
             <View style={styles.statIconRow}>
               <Ionicons name="star" size={13} color={item.rating > 0 ? '#F59E0B' : '#CBD5E1'} />
-              <Text style={styles.statValText}>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</Text>
+              <Text style={styles.statValText}>{tv(item.rating > 0 ? item.rating.toFixed(1) : '—')}</Text>
             </View>
-            <Text style={styles.statLabelText}>التقييم</Text>
+            <Text style={styles.statLabelText}>{t('التقييم')}</Text>
           </View>
 
           <View style={styles.statSubCol}>
             <View style={styles.statIconRow}>
               <Ionicons name="chatbubble-ellipses-outline" size={13} color="#64748B" />
-              <Text style={styles.statValText}>{item.reviews_count}</Text>
+              <Text style={styles.statValText}>{tv(item.reviews_count)}</Text>
             </View>
-            <Text style={styles.statLabelText}>التقييمات</Text>
+            <Text style={styles.statLabelText}>{t('التقييمات')}</Text>
           </View>
         </View>
 
@@ -254,7 +255,7 @@ export default function StoresListScreen({ navigation, route }: any) {
             <Ionicons name="search-outline" size={19} color="#94A3B8" />
             <TextInput
               style={styles.searchInput}
-              placeholder="ابحث عن متجر أو منتج..."
+              placeholder={t('ابحث عن متجر أو منتج...')}
               placeholderTextColor="#94A3B8"
               value={search}
               onChangeText={setSearch}
@@ -299,7 +300,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                   />
                 </View>
                 <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                  {chip.name}
+                  {tv(chip.name)}
                 </Text>
               </TouchableOpacity>
             );
@@ -330,15 +331,15 @@ export default function StoresListScreen({ navigation, route }: any) {
           {STORE_CAROUSEL_CARDS.map((card) => (
             <View key={card.id} style={[styles.heroCardContainer, { width: layout.usableWidth || '100%' }]}>
               <View style={styles.heroTextCol}>
-                <Text style={styles.heroTitleText}>{card.title}</Text>
-                <Text style={styles.heroSubTitleText}>{card.sub}</Text>
+                <Text style={styles.heroTitleText}>{tv(card.title)}</Text>
+                <Text style={styles.heroSubTitleText}>{tv(card.sub)}</Text>
 
                 <TouchableOpacity
                   style={styles.heroCtaBtn}
                   onPress={() => setActiveCategory('all')}
                   activeOpacity={0.88}
                 >
-                  <Text style={styles.heroCtaText}>{card.btnText}</Text>
+                  <Text style={styles.heroCtaText}>{tv(card.btnText)}</Text>
                   <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
@@ -361,14 +362,14 @@ export default function StoresListScreen({ navigation, route }: any) {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleGroup}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleText}>المتاجر المميزة</Text>
+              <Text style={styles.sectionTitleText}>{t('المتاجر المميزة')}</Text>
               <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
             </View>
-            <Text style={styles.sectionSubTitleText}>متاجر موثوقة وتجربة تسوق رائعة</Text>
+            <Text style={styles.sectionSubTitleText}>{t('متاجر موثوقة وتجربة تسوق رائعة')}</Text>
           </View>
 
           <TouchableOpacity onPress={() => setActiveCategory('all')} activeOpacity={0.75}>
-            <Text style={styles.viewAllText}>عرض الكل ›</Text>
+            <Text style={styles.viewAllText}>{t('عرض الكل ›')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -382,10 +383,8 @@ export default function StoresListScreen({ navigation, route }: any) {
             {filteredStores.length === 0 ? (
               <View style={styles.emptyStoresState}>
                 <Ionicons name="storefront-outline" size={44} color="#CBD5E1" />
-                <Text style={styles.emptyStoresTitle}>لا توجد متاجر متاحة حالياً</Text>
-                <Text style={styles.emptyStoresSub}>
-                  نعمل على إضافة متاجر جديدة في منطقتك. عاود المحاولة قريباً.
-                </Text>
+                <Text style={styles.emptyStoresTitle}>{t('لا توجد متاجر متاحة حالياً')}</Text>
+                <Text style={styles.emptyStoresSub}>{t('نعمل على إضافة متاجر جديدة في منطقتك. عاود المحاولة قريباً.')}</Text>
               </View>
             ) : (
               filteredStores.map((item) => renderStoreRow(item))

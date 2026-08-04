@@ -11,6 +11,7 @@ import {
   updateSupportTicketStatus, SupportMessage,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -153,27 +154,27 @@ export default function AdminSupportScreen({ navigation }: any) {
   const renderTicket = ({ item }: { item: any }) => {
     const statusInfo = STATUS_META[item.status] ?? { label: item.status, color: UI.textMuted, bg: '#F1F5F9' };
     const user = item.users as any;
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const date = new Date(item.created_at).toLocaleDateString(getLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
-      <TouchableOpacity style={s.card} onPress={() => openTicket(item)} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${item.subject}`}>
+      <TouchableOpacity style={s.card} onPress={() => openTicket(item)} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel={t('فتح تذكرة {0}', [tv(item.subject)])}>
         <View style={s.cardTop}>
           <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
-            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            <Text style={[s.statusText, { color: statusInfo.color }]}>{tv(statusInfo.label)}</Text>
           </View>
           <View style={s.categoryBadge}>
-            <Text style={s.categoryText}>{CATEGORY_LABELS[item.category ?? ''] ?? item.category ?? 'أخرى'}</Text>
+            <Text style={s.categoryText}>{tv(CATEGORY_LABELS[item.category ?? ''] ?? item.category ?? t('أخرى'))}</Text>
           </View>
         </View>
-        <Text style={s.subject} numberOfLines={2}>{item.subject}</Text>
+        <Text style={s.subject} numberOfLines={2}>{tv(item.subject)}</Text>
         
         <View style={s.divider} />
 
         <View style={s.cardBottom}>
           <View style={s.userInfoRow}>
              <View style={s.userAvatar}><Ionicons name="person" size={14} color={UI.primary} /></View>
-             <Text style={s.userName}>{user?.full_name ?? 'غير معروف'}</Text>
+             <Text style={s.userName}>{tv(user?.full_name ?? t('غير معروف'))}</Text>
           </View>
-          <Text style={s.dateText}>{date}</Text>
+          <Text style={s.dateText}>{tv(date)}</Text>
         </View>
         {processing === item.id && <ActivityIndicator size="small" color={UI.primary} style={{ marginTop: 12 }} />}
       </TouchableOpacity>
@@ -189,9 +190,9 @@ export default function AdminSupportScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>الدعم الفني</Text>
+            <Text style={s.headerTitle}>{t('الدعم الفني')}</Text>
           </View>
-          <Text style={s.headerCount}>{tickets.length} تذكرة</Text>
+          <Text style={s.headerCount}>{t('{0} تذكرة', [tv(tickets.length)])}</Text>
         </View>
       </View>
 
@@ -204,7 +205,7 @@ export default function AdminSupportScreen({ navigation }: any) {
               onPress={() => setFilter(f.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{tv(f.label)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -215,8 +216,8 @@ export default function AdminSupportScreen({ navigation }: any) {
       ) : loadError ? (
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
-          <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={s.errorText}>{tv(loadError)}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -231,7 +232,7 @@ export default function AdminSupportScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="headset-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد تذاكر دعم حالياً</Text>
+              <Text style={s.emptyText}>{t('لا توجد تذاكر دعم حالياً')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -242,7 +243,7 @@ export default function AdminSupportScreen({ navigation }: any) {
         <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
           <View style={[s.modalBox, !compact && s.modalBoxDesktop, { width: Math.min(Math.max(width - 24, 280), 760) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>تفاصيل التذكرة</Text>
+              <Text style={s.modalTitle}>{t('تفاصيل التذكرة')}</Text>
               <TouchableOpacity onPress={() => setSelected(null)} style={s.closeBtn}>
                 <Ionicons name="close" size={24} color={UI.textMuted} />
               </TouchableOpacity>
@@ -250,42 +251,42 @@ export default function AdminSupportScreen({ navigation }: any) {
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{gap: 20}}>
                 <View style={s.detailBlock}>
-                  <Text style={s.detailLabel}>الموضوع</Text>
-                  <Text style={s.detailValueMain}>{selected.subject}</Text>
+                  <Text style={s.detailLabel}>{t('الموضوع')}</Text>
+                  <Text style={s.detailValueMain}>{tv(selected.subject)}</Text>
                 </View>
                 
                 <View style={s.detailBlock}>
-                  <Text style={s.detailLabel}>المحادثة</Text>
+                  <Text style={s.detailLabel}>{t('المحادثة')}</Text>
                   {threadLoading ? <ActivityIndicator color={UI.primary} style={{ alignSelf: 'center', marginVertical: 20 }} /> : threadError ? (
                     <View style={s.threadErrorBox}>
-                      <Text style={s.errorText}>{threadError}</Text>
-                      <TouchableOpacity onPress={() => openTicket(selected)} style={s.smallRetry}><Text style={s.retryText}>إعادة تحميل المحادثة</Text></TouchableOpacity>
+                      <Text style={s.errorText}>{tv(threadError)}</Text>
+                      <TouchableOpacity onPress={() => openTicket(selected)} style={s.smallRetry}><Text style={s.retryText}>{t('إعادة تحميل المحادثة')}</Text></TouchableOpacity>
                     </View>
                   ) : messages.length ? messages.map((message) => {
                     const isAdmin = message.users?.role === 'admin';
                     return (
                       <View key={message.id} style={[s.messageBubble, isAdmin ? s.adminBubble : s.userBubble]}>
-                        <Text style={s.messageSender}>{message.users?.full_name ?? (isAdmin ? 'الإدارة' : 'المستخدم')}</Text>
-                        <Text style={s.detailValueMsg}>{message.message}</Text>
-                        <Text style={s.messageDate}>{new Date(message.created_at).toLocaleString('ar-SA')}</Text>
+                        <Text style={s.messageSender}>{tv(message.users?.full_name ?? (isAdmin ? t('الإدارة') : t('المستخدم')))}</Text>
+                        <Text style={s.detailValueMsg}>{tv(message.message)}</Text>
+                        <Text style={s.messageDate}>{tv(new Date(message.created_at).toLocaleString(getLocale()))}</Text>
                       </View>
                     );
-                  }) : <Text style={s.noMessages}>لا توجد رسائل ظاهرة في هذه التذكرة.</Text>}
+                  }) : <Text style={s.noMessages}>{t('لا توجد رسائل ظاهرة في هذه التذكرة.')}</Text>}
                 </View>
                 
                 <View style={s.detailRow2}>
                   <View style={s.detailBlockHalf}>
-                    <Text style={s.detailLabel}>المستخدم</Text>
-                    <Text style={s.detailValueInfo}>{(selected.users as any)?.full_name ?? 'غير متوفر'}</Text>
+                    <Text style={s.detailLabel}>{t('المستخدم')}</Text>
+                    <Text style={s.detailValueInfo}>{tv((selected.users as any)?.full_name ?? t('غير متوفر'))}</Text>
                   </View>
                   <View style={s.detailBlockHalf}>
-                    <Text style={s.detailLabel}>القسم / الفئة</Text>
-                    <Text style={s.detailValueInfo}>{CATEGORY_LABELS[selected.category ?? ''] ?? 'أخرى'}</Text>
+                    <Text style={s.detailLabel}>{t('القسم / الفئة')}</Text>
+                    <Text style={s.detailValueInfo}>{tv(CATEGORY_LABELS[selected.category ?? ''] ?? t('أخرى'))}</Text>
                   </View>
                 </View>
                 
                 <View style={s.actionsContainer}>
-                  <Text style={s.actionLabel}>تغيير حالة التذكرة إلى:</Text>
+                  <Text style={s.actionLabel}>{t('تغيير حالة التذكرة إلى:')}</Text>
                   <View style={s.statusActionsRow}>
                     {NEXT_STATUSES.filter(n => n.key !== selected.status).map(n => (
                       <TouchableOpacity
@@ -296,7 +297,7 @@ export default function AdminSupportScreen({ navigation }: any) {
                         activeOpacity={0.8}
                         accessibilityState={{ disabled: processing === selected.id, busy: processing === selected.id }}
                       >
-                        <Text style={[s.statusActionText, { color: n.color }]}>{n.label}</Text>
+                        <Text style={[s.statusActionText, { color: n.color }]}>{tv(n.label)}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -304,17 +305,17 @@ export default function AdminSupportScreen({ navigation }: any) {
 
                 {selected.status !== 'closed' && (
                   <View style={s.replySection}>
-                    <Text style={s.actionLabel}>رد الإدارة</Text>
+                    <Text style={s.actionLabel}>{t('رد الإدارة')}</Text>
                     <TextInput
                       style={s.replyInput}
                       value={reply}
                       onChangeText={setReply}
-                      placeholder="اكتب رداً واضحاً للمستخدم..."
+                      placeholder={t('اكتب رداً واضحاً للمستخدم...')}
                       placeholderTextColor={UI.textMuted}
                       multiline
                       maxLength={4000}
                       textAlign="right"
-                      accessibilityLabel="نص رد الإدارة"
+                      accessibilityLabel={t('نص رد الإدارة')}
                     />
                     <TouchableOpacity
                       style={[s.sendBtn, (!reply.trim() || sendingReply) && s.sendBtnDisabled]}
@@ -322,7 +323,7 @@ export default function AdminSupportScreen({ navigation }: any) {
                       disabled={!reply.trim() || sendingReply}
                       accessibilityRole="button"
                     >
-                      {sendingReply ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="send" size={17} color="#FFF" /><Text style={s.sendText}>إرسال الرد</Text></>}
+                      {sendingReply ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="send" size={17} color="#FFF" /><Text style={s.sendText}>{t('إرسال الرد')}</Text></>}
                     </TouchableOpacity>
                   </View>
                 )}

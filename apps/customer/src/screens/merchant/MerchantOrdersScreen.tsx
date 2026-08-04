@@ -11,6 +11,7 @@ import {
   getMerchantOrderStatusInfo,
   getOrderTransitionErrorMessage,
 } from './merchantOrderState';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -105,24 +106,24 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         activeOpacity={0.8}
         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
         accessibilityRole="button"
-        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
+        accessibilityLabel={t('فتح تفاصيل الطلب {0}', [tv(item.order_number)])}
       >
         <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
           <View style={styles.customerInfo}>
              <View style={styles.avatar}>
-               <Text style={styles.avatarText}>{customerName.substring(0, 1)}</Text>
+               <Text style={styles.avatarText}>{tv(customerName.substring(0, 1))}</Text>
              </View>
              <View>
-               <Text style={styles.customerName}>{customerName}</Text>
-               <Text style={styles.orderId}>{item.order_number}</Text>
+               <Text style={styles.customerName}>{tv(customerName)}</Text>
+               <Text style={styles.orderId}>{tv(item.order_number)}</Text>
              </View>
           </View>
           <View style={styles.headerRight}>
             <View style={[styles.badge, { backgroundColor: info.background }]}>
               <View style={[styles.badgeDot, { backgroundColor: info.color }]} />
-              <Text style={[styles.badgeText, { color: info.color }]}>{info.label}</Text>
+              <Text style={[styles.badgeText, { color: info.color }]}>{tv(info.label)}</Text>
             </View>
-            <Text style={styles.timeText}>{timeStr}</Text>
+            <Text style={styles.timeText}>{tv(timeStr)}</Text>
           </View>
         </View>
 
@@ -130,16 +131,16 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         <View style={[styles.quickInfoRow, isCompact && styles.quickInfoRowCompact]}>
            <View style={styles.quickInfoItem}>
              <Ionicons name={info.icon as any} size={16} color={UI.textGrey} />
-             <Text style={styles.quickInfoText}>{info.label}</Text>
+             <Text style={styles.quickInfoText}>{tv(info.label)}</Text>
            </View>
            <View style={styles.quickInfoItem}>
              <Ionicons name="card-outline" size={16} color={UI.textGrey} />
-             <Text style={styles.quickInfoText}>{item.payment_method === 'cash' ? 'الدفع عند الاستلام' : 'دفع إلكتروني'}</Text>
+             <Text style={styles.quickInfoText}>{tv(item.payment_method === 'cash' ? t('الدفع عند الاستلام') : t('دفع إلكتروني'))}</Text>
            </View>
         </View>
 
         <View style={[styles.cardFooter, isCompact && styles.cardFooterCompact]}>
-          <Text style={styles.total}>{item.total_amount ?? 0} <Text style={styles.currency}>ر.ي</Text></Text>
+          <Text style={styles.total}>{tv(item.total_amount ?? 0)} <Text style={styles.currency}>{t('ر.ي')}</Text></Text>
           <View style={[styles.actionsRow, isCompact && styles.actionsRowCompact]}>
             {action && (
               <TouchableOpacity
@@ -148,12 +149,12 @@ export default function MerchantOrdersScreen({ navigation }: any) {
                 onPress={() => updateStatus(item.id, action.next)}
                 disabled={isUpdating || !!updatingId}
                 accessibilityRole="button"
-                accessibilityLabel={`${action.label} للطلب ${item.order_number}`}
+                accessibilityLabel={t('{0} للطلب {1}', [tv(action.label), tv(item.order_number)])}
                 accessibilityState={{ disabled: isUpdating || !!updatingId, busy: isUpdating }}
               >
                 {isUpdating ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
                   <>
-                    <Text style={styles.acceptBtnText}>{action.label}</Text>
+                    <Text style={styles.acceptBtnText}>{tv(action.label)}</Text>
                     <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
                   </>
                 )}
@@ -161,7 +162,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
             )}
             {!action && (
               <Text style={styles.statusHint}>
-                {item.status === ORDER_STATUS.READY ? 'بانتظار استلام المندوب' : info.label}
+                {tv(item.status === ORDER_STATUS.READY ? t('بانتظار استلام المندوب') : info.label)}
               </Text>
             )}
           </View>
@@ -176,7 +177,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
       
       {!isDesktop && (
         <View style={styles.headerMobile}>
-          <Text style={styles.headerTitleMobile}>الطلبات النشطة</Text>
+          <Text style={styles.headerTitleMobile}>{t('الطلبات النشطة')}</Text>
         </View>
       )}
 
@@ -185,8 +186,8 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         {isDesktop && (
           <View style={styles.pageHeaderRow}>
             <View>
-              <Text style={styles.pageTitle}>الطلبات النشطة</Text>
-              <Text style={styles.pageSubtitle}>قم بإدارة الطلبات الجديدة والمجهزة حالياً</Text>
+              <Text style={styles.pageTitle}>{t('الطلبات النشطة')}</Text>
+              <Text style={styles.pageSubtitle}>{t('قم بإدارة الطلبات الجديدة والمجهزة حالياً')}</Text>
             </View>
           </View>
         )}
@@ -206,10 +207,10 @@ export default function MerchantOrdersScreen({ navigation }: any) {
                   onPress={() => setFilter(item.key)}
                   activeOpacity={0.8}
                   accessibilityRole="button"
-                  accessibilityLabel={`فلتر ${item.label}`}
+                  accessibilityLabel={t('فلتر {0}', [tv(item.label)])}
                   accessibilityState={{ selected: filter === item.key }}
                 >
-                  <Text style={[styles.filterText, filter === item.key && styles.filterTextActive]}>{item.label}</Text>
+                  <Text style={[styles.filterText, filter === item.key && styles.filterTextActive]}>{tv(item.label)}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -218,7 +219,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
           {realtimeError || (error && orders.length > 0) ? (
             <View style={styles.inlineWarning} accessibilityRole="alert">
               <Ionicons name="cloud-offline-outline" size={18} color="#92400E" />
-              <Text style={styles.inlineWarningText}>{realtimeError ?? error}</Text>
+              <Text style={styles.inlineWarningText}>{tv(realtimeError ?? error)}</Text>
             </View>
           ) : null}
 
@@ -229,10 +230,10 @@ export default function MerchantOrdersScreen({ navigation }: any) {
           ) : error && orders.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
-              <Text style={styles.emptyTitle}>تعذر تحميل الطلبات</Text>
-              <Text style={styles.emptyText}>{error}</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل الطلبات">
-                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+              <Text style={styles.emptyTitle}>{t('تعذر تحميل الطلبات')}</Text>
+              <Text style={styles.emptyText}>{tv(error)}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل الطلبات')}>
+                <Text style={styles.retryBtnText}>{t('إعادة المحاولة')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -246,8 +247,8 @@ export default function MerchantOrdersScreen({ navigation }: any) {
               ListEmptyComponent={
                 <View style={styles.empty}>
                   <Ionicons name="checkmark-done-circle-outline" size={64} color={UI.border} />
-                  <Text style={styles.emptyTitle}>لا توجد طلبات نشطة</Text>
-                  <Text style={styles.emptyText}>{filter === 'all' ? 'لا توجد طلبات قيد التنفيذ حالياً.' : 'لا توجد طلبات ضمن هذا التصنيف.'}</Text>
+                  <Text style={styles.emptyTitle}>{t('لا توجد طلبات نشطة')}</Text>
+                  <Text style={styles.emptyText}>{tv(filter === 'all' ? t('لا توجد طلبات قيد التنفيذ حالياً.') : t('لا توجد طلبات ضمن هذا التصنيف.'))}</Text>
                 </View>
               }
             />

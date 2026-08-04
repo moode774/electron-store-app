@@ -5,6 +5,7 @@ import { Card, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getAddresses, deleteAddress, setDefaultAddress, Address } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { Alert } from '../../../components/appAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 export default function AddressBookScreen({ navigation }: any) {
   const layout = useCustomerLayout(1040);
@@ -33,7 +34,7 @@ export default function AddressBookScreen({ navigation }: any) {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = (item: Address) => {
-    Alert.alert('حذف العنوان', `هل تريد حذف "${item.full_address}"؟`, [
+    Alert.alert('حذف العنوان', t('هل تريد حذف "{0}"؟', [tv(item.full_address)]), [
       { text: 'تراجع', style: 'cancel' },
       {
         text: 'حذف',
@@ -60,9 +61,9 @@ export default function AddressBookScreen({ navigation }: any) {
     <Card style={{ ...styles.addressCard, width: cardWidth }} variant="outlined">
       <View style={styles.addressHeader}>
         <View style={styles.labelRow}>
-          <Text style={styles.labelIcon}>{item.label === 'home' ? '🏠' : '🏢'}</Text>
-          <Text style={styles.labelText}>{item.label === 'home' ? 'المنزل' : item.label}</Text>
-          {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>الافتراضي</Text></View>}
+          <Text style={styles.labelIcon}>{tv(item.label === 'home' ? '🏠' : '🏢')}</Text>
+          <Text style={styles.labelText}>{tv(item.label === 'home' ? t('المنزل') : item.label)}</Text>
+          {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>{t('الافتراضي')}</Text></View>}
         </View>
         {busyId === item.id ? (
           <ActivityIndicator size="small" color={COLORS.primary} />
@@ -71,15 +72,15 @@ export default function AddressBookScreen({ navigation }: any) {
             style={styles.editButton}
             onPress={() => handleDelete(item)}
             accessibilityRole="button"
-            accessibilityLabel="حذف العنوان"
+            accessibilityLabel={t('حذف العنوان')}
           >
             <Text style={styles.editIcon}>🗑️</Text>
           </TouchableOpacity>
         )}
       </View>
       <View style={styles.addressBody}>
-        <Text style={styles.areaText}>📍 {item.city ?? ''}</Text>
-        <Text style={styles.streetText}>{item.full_address}</Text>
+        <Text style={styles.areaText}>📍 {tv(item.city ?? '')}</Text>
+        <Text style={styles.streetText}>{tv(item.full_address)}</Text>
       </View>
       {!item.is_default && (
         <TouchableOpacity
@@ -87,9 +88,9 @@ export default function AddressBookScreen({ navigation }: any) {
           onPress={() => handleSetDefault(item)}
           disabled={busyId === item.id}
           accessibilityRole="button"
-          accessibilityLabel="تعيين كعنوان افتراضي"
+          accessibilityLabel={t('تعيين كعنوان افتراضي')}
         >
-          <Text style={styles.makeDefaultText}>تعيين كافتراضي</Text>
+          <Text style={styles.makeDefaultText}>{t('تعيين كافتراضي')}</Text>
         </TouchableOpacity>
       )}
     </Card>
@@ -102,10 +103,10 @@ export default function AddressBookScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>عناويني</Text>
+          <Text style={styles.headerTitle}>{t('عناويني')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -127,15 +128,15 @@ export default function AddressBookScreen({ navigation }: any) {
           loading ? null : loadError ? (
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>⚠️</Text>
-              <Text style={styles.emptyText}>{loadError}</Text>
-              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة المحاولة">
-                <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <Text style={styles.emptyText}>{tv(loadError)}</Text>
+              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel={t('إعادة المحاولة')}>
+                <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>📍</Text>
-              <Text style={styles.emptyText}>لم تقم بإضافة أي عناوين بعد</Text>
+              <Text style={styles.emptyText}>{t('لم تقم بإضافة أي عناوين بعد')}</Text>
             </View>
           )
         }
@@ -145,7 +146,7 @@ export default function AddressBookScreen({ navigation }: any) {
       <View style={styles.bottomBar}>
         <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
           <Button
-            title="+ إضافة عنوان جديد"
+            title={t('+ إضافة عنوان جديد')}
             onPress={() => navigation.navigate('AddAddress')}
           />
         </View>

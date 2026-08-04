@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -62,7 +63,7 @@ export default function AdminBroadcastScreen({ navigation }: any) {
           });
           pendingCampaign.current = null;
           Alert.alert(result.sent > 0 ? 'تم إنشاء الإشعارات' : 'لا يوجد مستلمون', result.sent > 0
-            ? `تم إنشاء ${result.sent} إشعار داخل التطبيق من أصل ${result.matched} مستلم مطابق. لا يؤكد هذا وصول Push إلى الهاتف.`
+            ? t('تم إنشاء {0} إشعار داخل التطبيق من أصل {1} مستلم مطابق. لا يؤكد هذا وصول Push إلى الهاتف.', [tv(result.sent), tv(result.matched)])
             : 'لم يوجد مستخدمون مطابقون للجمهور المحدد، ولم يُنشأ أي إشعار.');
           setTitle('');
           setBody('');
@@ -82,17 +83,17 @@ export default function AdminBroadcastScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>حملات الإشعارات</Text>
+          <Text style={s.headerTitle}>{t('حملات الإشعارات')}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} keyboardShouldPersistTaps="handled">
         <View style={[s.card, { width: contentWidth }]}>
-          <Text style={s.cardTitle}>إنشاء إشعار داخل التطبيق</Text>
-          <Text style={s.cardDesc}>يُنشئ هذا الإجراء إشعاراً في صندوق المستخدم. إرسال Push للهاتف يحتاج جهازاً مسجلاً ونتيجة منفصلة من خدمة الإرسال.</Text>
+          <Text style={s.cardTitle}>{t('إنشاء إشعار داخل التطبيق')}</Text>
+          <Text style={s.cardDesc}>{t('يُنشئ هذا الإجراء إشعاراً في صندوق المستخدم. إرسال Push للهاتف يحتاج جهازاً مسجلاً ونتيجة منفصلة من خدمة الإرسال.')}</Text>
           
           <View style={s.formGroup}>
-            <Text style={s.label}>الجمهور المستهدف</Text>
+            <Text style={s.label}>{t('الجمهور المستهدف')}</Text>
             <View style={s.audienceRow}>
               {AUDIENCES.map(aud => (
                 <TouchableOpacity 
@@ -101,17 +102,17 @@ export default function AdminBroadcastScreen({ navigation }: any) {
                   onPress={() => setAudience(aud.id)}
                 >
                   <Ionicons name={aud.icon as any} size={18} color={audience === aud.id ? UI.primary : UI.textMuted} />
-                  <Text style={[s.audText, audience === aud.id && s.audTextActive]}>{aud.label}</Text>
+                  <Text style={[s.audText, audience === aud.id && s.audTextActive]}>{tv(aud.label)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={s.formGroup}>
-            <Text style={s.label}>عنوان الإشعار</Text>
+            <Text style={s.label}>{t('عنوان الإشعار')}</Text>
             <TextInput 
               style={s.input} 
-              placeholder="مثال: خصم 50% بمناسبة العيد!" 
+              placeholder={t('مثال: خصم 50% بمناسبة العيد!')} 
               value={title} 
               onChangeText={setTitle} 
               textAlign="right"
@@ -120,10 +121,10 @@ export default function AdminBroadcastScreen({ navigation }: any) {
           </View>
 
           <View style={s.formGroup}>
-            <Text style={s.label}>محتوى الإشعار</Text>
+            <Text style={s.label}>{t('محتوى الإشعار')}</Text>
             <TextInput 
               style={[s.input, s.inputArea]} 
-              placeholder="اكتب تفاصيل الإشعار هنا..." 
+              placeholder={t('اكتب تفاصيل الإشعار هنا...')} 
               value={body} 
               onChangeText={setBody} 
               textAlign="right"
@@ -131,13 +132,13 @@ export default function AdminBroadcastScreen({ navigation }: any) {
               numberOfLines={4}
               maxLength={200}
             />
-            <Text style={s.charCount}>{body.length}/200</Text>
+            <Text style={s.charCount}>{tv(body.length)}/200</Text>
           </View>
 
           <TouchableOpacity style={s.sendBtn} onPress={handleSend} disabled={sending}>
             {sending ? <ActivityIndicator color="#FFF" /> : (
               <>
-                <Text style={s.sendBtnText}>إرسال الإشعار الآن</Text>
+                <Text style={s.sendBtnText}>{t('إرسال الإشعار الآن')}</Text>
                 <Ionicons name="send" size={20} color="#FFF" />
               </>
             )}

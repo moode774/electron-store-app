@@ -31,6 +31,7 @@ import {
   OrderDetail,
   supabase,
 } from '@marketplace/shared-hooks';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const REAL_MAP_IMAGE = require('../../../../assets/images/real_map_banner.png');
 
@@ -286,10 +287,10 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     try {
       await createSupportTicket({
         user_id: user.id,
-        subject: `شكوى بخصوص الطلب ${order?.order_number ?? orderId}`,
+        subject: t('شكوى بخصوص الطلب {0}', [order?.order_number ?? orderId]),
         category: 'order_complaint',
         order_id: orderId,
-        message: `رقم الطلب: ${order?.order_number ?? orderId}\n\n${supportMessage.trim()}`,
+        message: t('رقم الطلب: {0}\n\n{1}', [order?.order_number ?? orderId, supportMessage.trim()]),
       });
       setSupportMessage('');
       setShowSupport(false);
@@ -338,10 +339,10 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={56} color="#DC2626" />
-        <Text style={styles.errorTitle}>تعذّر فتح الطلب</Text>
-        <Text style={styles.errorSub}>{loadError}</Text>
+        <Text style={styles.errorTitle}>{t('تعذّر فتح الطلب')}</Text>
+        <Text style={styles.errorSub}>{tv(loadError)}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => reload()}>
-          <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+          <Text style={styles.retryBtnText}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -360,12 +361,12 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             activeOpacity={0.8}
           >
             <Ionicons name="headset-outline" size={16} color="#172554" />
-            <Text style={styles.supportPillText}>الدعم</Text>
+            <Text style={styles.supportPillText}>{t('الدعم')}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>تتبع الطلب</Text>
-            <Text style={styles.headerSub}># طلب {order?.order_number}</Text>
+            <Text style={styles.headerTitle}>{t('تتبع الطلب')}</Text>
+            <Text style={styles.headerSub}>{t('# طلب {0}', [tv(order?.order_number)])}</Text>
           </View>
 
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -400,11 +401,11 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               color="#172554"
             />
             <Text style={styles.liveStatusText}>
-              {terminalLabel
+              {tv(terminalLabel
                 ? terminalLabel
                 : currentStatus === ORDER_STATUS.ON_THE_WAY
-                ? 'المندوب في الطريق إليك 🚚'
-                : TRACKING_STEPS[currentStatusIndex]?.label || 'جاري التتبع...'}
+                ? t('المندوب في الطريق إليك 🚚')
+                : TRACKING_STEPS[currentStatusIndex]?.label || t('جاري التتبع...'))}
             </Text>
           </View>
 
@@ -429,8 +430,8 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               </TouchableOpacity>
 
               <View style={styles.driverInfoCol}>
-                <Text style={styles.driverNameText}>أحمد سعيد (مندوب التوصيل)</Text>
-                <Text style={styles.driverVehicleText}>درّاجة نارية • 4821-أ-ي</Text>
+                <Text style={styles.driverNameText}>{t('أحمد سعيد (مندوب التوصيل)')}</Text>
+                <Text style={styles.driverVehicleText}>{t('درّاجة نارية • 4821-أ-ي')}</Text>
               </View>
 
               <View style={styles.driverAvatarCircle}>
@@ -444,7 +445,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="git-commit-outline" size={18} color="#172554" />
-            <Text style={styles.cardTitle}>مراحل تنفيذ الطلب</Text>
+            <Text style={styles.cardTitle}>{t('مراحل تنفيذ الطلب')}</Text>
           </View>
 
           <View style={styles.verticalTimeline}>
@@ -489,9 +490,9 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                         isCurrent && styles.stepTitleCurrent,
                       ]}
                     >
-                      {step.label}
+                      {tv(step.label)}
                     </Text>
-                    <Text style={styles.stepDescText}>{step.desc}</Text>
+                    <Text style={styles.stepDescText}>{tv(step.desc)}</Text>
                   </View>
                 </View>
               );
@@ -503,23 +504,23 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="location-outline" size={18} color="#172554" />
-            <Text style={styles.cardTitle}>تفاصيل التوصيل والمستلم</Text>
+            <Text style={styles.cardTitle}>{t('تفاصيل التوصيل والمستلم')}</Text>
           </View>
 
           <View style={styles.infoBannerBox}>
             <View style={styles.infoRow}>
               <Text style={styles.infoValueText}>
-                {order?.addresses?.full_address || 'شارع الملك فهد - حي الروضة، الرياض'}
+                {tv(order?.addresses?.full_address || t('شارع الملك فهد - حي الروضة، الرياض'))}
               </Text>
 
-              <Text style={styles.infoLabelText}> :عنوان التسليم 📍</Text>
+              <Text style={styles.infoLabelText}>{t(' :عنوان التسليم 📍')}</Text>
             </View>
             <View style={[styles.infoRow, { marginTop: 8 }]}>
               <Text style={styles.infoValueText}>
-                {order?.merchant_profiles?.store_name || 'المتجر الرئيسي'}
+                {tv(order?.merchant_profiles?.store_name || t('المتجر الرئيسي'))}
               </Text>
 
-              <Text style={styles.infoLabelText}>:اسم المتجر 🏪</Text>
+              <Text style={styles.infoLabelText}>{t(':اسم المتجر 🏪')}</Text>
             </View>
           </View>
         </View>
@@ -528,34 +529,30 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="receipt-outline" size={18} color="#172554" />
-            <Text style={styles.cardTitle}>ملخص منتجات الطلب</Text>
+            <Text style={styles.cardTitle}>{t('ملخص منتجات الطلب')}</Text>
           </View>
 
           {order?.order_items && order.order_items.length > 0 ? (
             <View style={styles.itemsList}>
               {order.order_items.map((item) => (
                 <View key={item.id} style={styles.itemRow}>
-                  <Text style={styles.itemPriceText}>
-                    {Number(item.total_price || 0).toLocaleString('ar-SA')} ر.ي
-                  </Text>
+                  <Text style={styles.itemPriceText}>{t('{0} ر.ي', [Number(item.total_price || 0).toLocaleString(getLocale())])}</Text>
                   <View style={styles.itemDetailsCol}>
-                    <Text style={styles.itemNameText}>{item.product_name || 'منتج متميز'}</Text>
-                    <Text style={styles.itemQtyText}>الكمية: {item.quantity}</Text>
+                    <Text style={styles.itemNameText}>{tv(item.product_name || t('منتج متميز'))}</Text>
+                    <Text style={styles.itemQtyText}>{t('الكمية: {0}', [tv(item.quantity)])}</Text>
                   </View>
                 </View>
               ))}
             </View>
           ) : (
-            <Text style={styles.noItemsText}>يحتوي الطلب على منتجات متعددة.</Text>
+            <Text style={styles.noItemsText}>{t('يحتوي الطلب على منتجات متعددة.')}</Text>
           )}
 
           <View style={styles.costDivider} />
 
           <View style={styles.summaryTotalRow}>
-            <Text style={styles.totalPriceAmountText}>
-              {Number(order?.total_amount || 0).toLocaleString('ar-SA')} ر.ي
-            </Text>
-            <Text style={styles.totalPriceLabelText}>إجمالي المبلغ المدفوع:</Text>
+            <Text style={styles.totalPriceAmountText}>{t('{0} ر.ي', [Number(order?.total_amount || 0).toLocaleString(getLocale())])}</Text>
+            <Text style={styles.totalPriceLabelText}>{t('إجمالي المبلغ المدفوع:')}</Text>
           </View>
         </View>
 
@@ -563,17 +560,17 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <TouchableOpacity style={styles.merchantChatBtn} onPress={contactMerchant}>
             <Ionicons name="chatbubbles-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.merchantChatBtnText}>مراسلة المتجر المباشرة</Text>
+            <Text style={styles.merchantChatBtnText}>{t('مراسلة المتجر المباشرة')}</Text>
           </TouchableOpacity>
 
           {showSupport && (
             <View style={styles.supportFormBox}>
-              <Text style={styles.supportFormTitle}>اشرح مشكلتك وسيرى فريق الدعم الطلب فوراً</Text>
+              <Text style={styles.supportFormTitle}>{t('اشرح مشكلتك وسيرى فريق الدعم الطلب فوراً')}</Text>
               <TextInput
                 style={styles.supportInput}
                 value={supportMessage}
                 onChangeText={setSupportMessage}
-                placeholder="اكتب التفاصيل هنا..."
+                placeholder={t('اكتب التفاصيل هنا...')}
                 placeholderTextColor="#94A3B8"
                 multiline
                 textAlign="right"
@@ -589,7 +586,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                 {sendingSupport ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitSupportBtnText}>إرسال الشكوى للإدارة</Text>
+                  <Text style={styles.submitSupportBtnText}>{t('إرسال الشكوى للإدارة')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -600,16 +597,16 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {canCancel && (
           <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCancel(true)}>
             <Ionicons name="close-circle-outline" size={18} color="#DC2626" />
-            <Text style={styles.cancelBtnText}>إلغاء هذا الطلب</Text>
+            <Text style={styles.cancelBtnText}>{t('إلغاء هذا الطلب')}</Text>
           </TouchableOpacity>
         )}
 
         {/* Review Order Card when Delivered */}
         {order?.status === ORDER_STATUS.DELIVERED && (
           <View style={styles.card}>
-            <Text style={styles.reviewTitle}>قيّم تجربتك مع هذا الطلب ⭐</Text>
+            <Text style={styles.reviewTitle}>{t('قيّم تجربتك مع هذا الطلب ⭐')}</Text>
             {reviewed ? (
-              <Text style={styles.reviewedText}>✅ شكرًا لك! تم إرسال تقييمك بنجاح.</Text>
+              <Text style={styles.reviewedText}>{t('✅ شكرًا لك! تم إرسال تقييمك بنجاح.')}</Text>
             ) : (
               <View style={styles.reviewStarsWrap}>
                 <View style={styles.starsRow}>
@@ -635,7 +632,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   {submittingReview ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.submitReviewBtnText}>إرسال التقييم</Text>
+                    <Text style={styles.submitReviewBtnText}>{t('إرسال التقييم')}</Text>
                   )}
                 </TouchableOpacity>
               </View>

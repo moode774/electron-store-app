@@ -45,6 +45,7 @@ import {
   getDeliveryProofValidationError,
   hasFreshDeliveryLocation,
 } from './deliveryProofValidation';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const ACTIVE_DELIVERY_STATUSES = new Set(['assigned', ORDER_STATUS.PICKED_UP, ORDER_STATUS.ON_THE_WAY]);
 const FALLBACK_REFRESH_MS = 20_000;
@@ -409,7 +410,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       setProofPhoto(null);
       setUploadedProofPath(null);
       proofIdempotencyKeyRef.current = null;
-      Alert.alert('تم تأكيد التسليم', `تحقق الخادم من إثبات التوصيلة ${order.order_number} وسجّل اكتمالها.`, [
+      Alert.alert('تم تأكيد التسليم', t('تحقق الخادم من إثبات التوصيلة {0} وسجّل اكتمالها.', [tv(order.order_number)]), [
         { text: 'العودة للرئيسية', onPress: goHome },
       ]);
     };
@@ -512,7 +513,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   if (loading) {
     return (
       <View style={styles.centeredState}>
-        <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="جاري تحميل التوصيلة" />
+        <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel={t('جاري تحميل التوصيلة')} />
       </View>
     );
   }
@@ -523,22 +524,22 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
         <View style={[styles.header, { paddingHorizontal: pageGutter }]}>
           <View style={{ width: 40 }} />
-          <Text style={styles.headerTitle}>توصيلة نشطة</Text>
+          <Text style={styles.headerTitle}>{t('توصيلة نشطة')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyState}>
           <Ionicons name={loadError ? 'cloud-offline-outline' : 'bicycle-outline'} size={48} color={loadError ? '#DC2626' : '#D1D5DB'} />
-          <Text style={styles.emptyTitle}>{loadError ? 'تعذّر تحميل التوصيلة' : 'لا توجد توصيلة نشطة'}</Text>
+          <Text style={styles.emptyTitle}>{tv(loadError ? t('تعذّر تحميل التوصيلة') : t('لا توجد توصيلة نشطة'))}</Text>
           <Text style={[styles.emptySubtitle, loadError && { color: '#DC2626' }]}>
-            {loadError || 'اقبل طلبًا من الرئيسية لبدء التوصيل.'}
+            {tv(loadError || t('اقبل طلبًا من الرئيسية لبدء التوصيل.'))}
           </Text>
           <TouchableOpacity
             style={styles.retryBtn}
             onPress={() => void loadOrder(true)}
             accessibilityRole="button"
-            accessibilityLabel="إعادة تحميل التوصيلة"
+            accessibilityLabel={t('إعادة تحميل التوصيلة')}
           >
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -554,11 +555,11 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           onPress={goBack}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="العودة"
+          accessibilityLabel={t('العودة')}
         >
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>توصيلة نشطة</Text>
+        <Text style={styles.headerTitle}>{t('توصيلة نشطة')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -566,11 +567,9 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         <View style={styles.mapContainer}>
           <View style={styles.mapPlaceholder} accessibilityLiveRegion="polite">
             <Ionicons name="location" size={44} color={location ? '#059669' : '#9CA3AF'} />
-            <Text style={[styles.mapText, { color: location ? '#059669' : '#6B7280' }]}>{locationStatus}</Text>
+            <Text style={[styles.mapText, { color: location ? '#059669' : '#6B7280' }]}>{tv(locationStatus)}</Text>
             {location && (
-              <Text style={styles.locationTime}>
-                آخر تحديث: {new Date(location.timestamp).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-              </Text>
+              <Text style={styles.locationTime}>{t('آخر تحديث: {0}', [new Date(location.timestamp).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' })])}</Text>
             )}
           </View>
         </View>
@@ -590,7 +589,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   {index < STEPS.length - 1 && <View style={[styles.stepLine, isDone && { backgroundColor: '#059669' }]} />}
                 </View>
                 <Text style={[styles.stepLabel, isCurrent && styles.stepLabelCurrent, isDone && { color: '#059669' }]}>
-                  {step.label}
+                  {tv(step.label)}
                 </Text>
               </View>
             );
@@ -598,20 +597,20 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.detailsCard}>
-          <Text style={styles.detailsTitle}>تفاصيل الطلب {order.order_number}</Text>
+          <Text style={styles.detailsTitle}>{t('تفاصيل الطلب {0}', [tv(order.order_number)])}</Text>
 
           <View style={styles.detailRow}>
             <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
             <View style={styles.detailInfo}>
-              <Text style={styles.detailLabel}>الاستلام من</Text>
-              <Text style={styles.detailValue}>{orderView.store}</Text>
+              <Text style={styles.detailLabel}>{t('الاستلام من')}</Text>
+              <Text style={styles.detailValue}>{tv(orderView.store)}</Text>
             </View>
             <TouchableOpacity
               style={styles.mapsBtn}
               activeOpacity={0.7}
               onPress={() => openInMaps(orderView.storeMapsQuery)}
               accessibilityRole="button"
-              accessibilityLabel="التوجه إلى المتجر عبر الخرائط"
+              accessibilityLabel={t('التوجه إلى المتجر عبر الخرائط')}
             >
               <Ionicons name="navigate" size={16} color="#FFFFFF" />
             </TouchableOpacity>
@@ -620,15 +619,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           <View style={styles.detailRow}>
             <Ionicons name="person-outline" size={18} color="#059669" />
             <View style={styles.detailInfo}>
-              <Text style={styles.detailLabel}>التسليم إلى</Text>
-              <Text style={styles.detailValue}>{orderView.customer} — {orderView.dropoff}</Text>
+              <Text style={styles.detailLabel}>{t('التسليم إلى')}</Text>
+              <Text style={styles.detailValue}>{tv(orderView.customer)} — {tv(orderView.dropoff)}</Text>
             </View>
             <TouchableOpacity
               style={styles.mapsBtn}
               activeOpacity={0.7}
               onPress={() => openInMaps(orderView.dropoffMapsQuery)}
               accessibilityRole="button"
-              accessibilityLabel="التوجه إلى العميل عبر الخرائط"
+              accessibilityLabel={t('التوجه إلى العميل عبر الخرائط')}
             >
               <Ionicons name="navigate" size={16} color="#FFFFFF" />
             </TouchableOpacity>
@@ -638,7 +637,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               disabled={!orderView.customerPhone}
               onPress={() => { void Linking.openURL(`tel:${orderView.customerPhone}`); }}
               accessibilityRole="button"
-              accessibilityLabel="الاتصال بالعميل"
+              accessibilityLabel={t('الاتصال بالعميل')}
               accessibilityState={{ disabled: !orderView.customerPhone }}
             >
               <Ionicons name="call" size={18} color="#FFFFFF" />
@@ -647,8 +646,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
           {order.payment_method === 'cash' && (
             <View style={[styles.codBox, isCompact && styles.codBoxCompact]}>
-              <Text style={styles.codLabel}>المبلغ المطلوب تحصيله نقدًا</Text>
-              <Text style={styles.codValue}>{orderView.codAmount.toLocaleString()} ر.ي</Text>
+              <Text style={styles.codLabel}>{t('المبلغ المطلوب تحصيله نقدًا')}</Text>
+              <Text style={styles.codValue}>{t('{0} ر.ي', [orderView.codAmount.toLocaleString()])}</Text>
             </View>
           )}
         </View>
@@ -661,14 +660,14 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             <View style={styles.pickupCodeRow}>
               <TextInput
                 style={styles.pickupCodeInput}
-                placeholder="كود الاستلام من التاجر (6 أرقام)"
+                placeholder={t('كود الاستلام من التاجر (6 أرقام)')}
                 placeholderTextColor="#9CA3AF"
                 value={pickupCode}
                 onChangeText={setPickupCode}
                 keyboardType="number-pad"
                 maxLength={6}
                 textAlign="center"
-                accessibilityLabel="كود الاستلام من التاجر"
+                accessibilityLabel={t('كود الاستلام من التاجر')}
               />
             </View>
           )}
@@ -678,12 +677,12 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             activeOpacity={0.8}
             disabled={advancing}
             accessibilityRole="button"
-            accessibilityLabel={currentStep.action}
+            accessibilityLabel={tv(currentStep.action)}
             accessibilityState={{ disabled: advancing, busy: advancing }}
           >
             {advancing
               ? <ActivityIndicator color="#FFFFFF" size="small" />
-              : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
+              : <Text style={styles.actionBtnText}>{tv(currentStep.action)}</Text>}
           </TouchableOpacity>
           </View>
         </View>
@@ -699,15 +698,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           <View style={[styles.proofModalSheet, isDesktop && styles.proofModalSheetDesktop]}>
             <View style={styles.proofModalHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.proofModalTitle}>إثبات تسليم الطلب</Text>
-                <Text style={styles.proofModalSubtitle}>لن تتغير حالة الطلب قبل تحقق الخادم من الإثبات.</Text>
+                <Text style={styles.proofModalTitle}>{t('إثبات تسليم الطلب')}</Text>
+                <Text style={styles.proofModalSubtitle}>{t('لن تتغير حالة الطلب قبل تحقق الخادم من الإثبات.')}</Text>
               </View>
               <TouchableOpacity
                 style={styles.proofCloseBtn}
                 onPress={() => setProofVisible(false)}
                 disabled={completingDelivery}
                 accessibilityRole="button"
-                accessibilityLabel="إغلاق إثبات التسليم"
+                accessibilityLabel={t('إغلاق إثبات التسليم')}
                 accessibilityState={{ disabled: completingDelivery }}
               >
                 <Ionicons name="close" size={22} color="#6B7280" />
@@ -721,10 +720,10 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.proofMethodTitleRow}>
-                    <Text style={styles.proofMethodTitle}>كود تسليم قصير</Text>
-                    <Text style={styles.unavailableBadge}>غير مفعّل</Text>
+                    <Text style={styles.proofMethodTitle}>{t('كود تسليم قصير')}</Text>
+                    <Text style={styles.unavailableBadge}>{t('غير مفعّل')}</Text>
                   </View>
-                  <Text style={styles.proofMethodDescription}>لا توجد آلية تحقق خادمية للكود حاليًا، لذلك لن نستخدم تحققًا محليًا غير موثوق.</Text>
+                  <Text style={styles.proofMethodDescription}>{t('لا توجد آلية تحقق خادمية للكود حاليًا، لذلك لن نستخدم تحققًا محليًا غير موثوق.')}</Text>
                 </View>
               </View>
 
@@ -734,8 +733,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                     <Ionicons name="camera-outline" size={20} color="#047857" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.proofSectionTitle}>صورة التسليم</Text>
-                    <Text style={styles.proofSectionSubtitle}>التقط صورة واضحة عند موقع العميل.</Text>
+                    <Text style={styles.proofSectionTitle}>{t('صورة التسليم')}</Text>
+                    <Text style={styles.proofSectionSubtitle}>{t('التقط صورة واضحة عند موقع العميل.')}</Text>
                   </View>
                 </View>
 
@@ -744,7 +743,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 ) : (
                   <View style={styles.proofPhotoPlaceholder}>
                     <Ionicons name="image-outline" size={32} color="#9CA3AF" />
-                    <Text style={styles.proofPhotoPlaceholderText}>لم تُلتقط صورة بعد</Text>
+                    <Text style={styles.proofPhotoPlaceholderText}>{t('لم تُلتقط صورة بعد')}</Text>
                   </View>
                 )}
 
@@ -753,12 +752,12 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   onPress={() => void captureProofPhoto()}
                   disabled={completingDelivery || Boolean(uploadedProofPath)}
                   accessibilityRole="button"
-                  accessibilityLabel={proofPhoto ? 'إعادة التقاط صورة التسليم' : 'التقاط صورة التسليم'}
+                  accessibilityLabel={proofPhoto ? t('إعادة التقاط صورة التسليم') : t('التقاط صورة التسليم')}
                   accessibilityState={{ disabled: completingDelivery || Boolean(uploadedProofPath) }}
                 >
                   <Ionicons name="camera" size={18} color="#111827" />
                   <Text style={styles.secondaryProofBtnText}>
-                    {uploadedProofPath ? 'تم رفع الصورة للمحاولة الحالية' : proofPhoto ? 'إعادة التقاط الصورة' : 'التقاط صورة'}
+                    {tv(uploadedProofPath ? t('تم رفع الصورة للمحاولة الحالية') : proofPhoto ? t('إعادة التقاط الصورة') : t('التقاط صورة'))}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -769,17 +768,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                     <Ionicons name="location-outline" size={20} color={proofLocationFresh ? '#047857' : '#B45309'} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.proofSectionTitle}>موقع التسليم</Text>
+                    <Text style={styles.proofSectionTitle}>{t('موقع التسليم')}</Text>
                     <Text style={styles.proofSectionSubtitle}>
-                      {proofLocationFresh ? 'الموقع حديث وجاهز للإرفاق.' : 'يلزم تحديث الموقع قبل الإرسال.'}
+                      {tv(proofLocationFresh ? t('الموقع حديث وجاهز للإرفاق.') : t('يلزم تحديث الموقع قبل الإرسال.'))}
                     </Text>
                   </View>
                 </View>
 
                 {location && (
-                  <Text style={styles.proofCoordinates}>
-                    {location.coords.latitude.toFixed(5)}، {location.coords.longitude.toFixed(5)}
-                  </Text>
+                  <Text style={styles.proofCoordinates}>{t('{0}، {1}', [location.coords.latitude.toFixed(5), location.coords.longitude.toFixed(5)])}</Text>
                 )}
 
                 <TouchableOpacity
@@ -787,13 +784,13 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   onPress={() => void refreshProofLocation()}
                   disabled={refreshingProofLocation || completingDelivery}
                   accessibilityRole="button"
-                  accessibilityLabel="تحديث موقع إثبات التسليم"
+                  accessibilityLabel={t('تحديث موقع إثبات التسليم')}
                   accessibilityState={{ disabled: refreshingProofLocation || completingDelivery, busy: refreshingProofLocation }}
                 >
                   {refreshingProofLocation
                     ? <ActivityIndicator size="small" color="#111827" />
                     : <Ionicons name="locate" size={18} color="#111827" />}
-                  <Text style={styles.secondaryProofBtnText}>تحديث الموقع</Text>
+                  <Text style={styles.secondaryProofBtnText}>{t('تحديث الموقع')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -804,7 +801,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   color={proofError ? '#B91C1C' : '#1D4ED8'}
                 />
                 <Text style={[styles.proofNoticeText, proofError ? styles.proofErrorText : null]}>
-                  {proofError || proofValidationMessage || 'الصورة والموقع جاهزان. سيؤكد الخادم التسليم والتسوية مرة واحدة فقط.'}
+                  {tv(proofError || proofValidationMessage || t('الصورة والموقع جاهزان. سيؤكد الخادم التسليم والتسوية مرة واحدة فقط.'))}
                 </Text>
               </View>
 
@@ -813,14 +810,14 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 onPress={() => void submitDeliveryProof()}
                 disabled={Boolean(proofValidationMessage) || completingDelivery}
                 accessibilityRole="button"
-                accessibilityLabel="إرسال إثبات التسليم وتأكيد الطلب"
+                accessibilityLabel={t('إرسال إثبات التسليم وتأكيد الطلب')}
                 accessibilityState={{ disabled: Boolean(proofValidationMessage) || completingDelivery, busy: completingDelivery }}
               >
                 {completingDelivery
                   ? <ActivityIndicator color="#FFFFFF" size="small" />
                   : <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" />}
                 <Text style={styles.confirmProofBtnText}>
-                  {completingDelivery ? 'جاري التحقق من الخادم...' : 'إرسال الإثبات وتأكيد التسليم'}
+                  {tv(completingDelivery ? t('جاري التحقق من الخادم...') : t('إرسال الإثبات وتأكيد التسليم'))}
                 </Text>
               </TouchableOpacity>
 
@@ -829,10 +826,10 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 onPress={() => setProofVisible(false)}
                 disabled={completingDelivery}
                 accessibilityRole="button"
-                accessibilityLabel="إلغاء وإبقاء الطلب قيد التوصيل"
+                accessibilityLabel={t('إلغاء وإبقاء الطلب قيد التوصيل')}
                 accessibilityState={{ disabled: completingDelivery }}
               >
-                <Text style={styles.cancelProofBtnText}>إلغاء — إبقاء الطلب قيد التوصيل</Text>
+                <Text style={styles.cancelProofBtnText}>{t('إلغاء — إبقاء الطلب قيد التوصيل')}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

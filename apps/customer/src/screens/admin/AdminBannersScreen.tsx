@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAppBanners, upsertAppBanner, deleteAppBanner, AppBanner } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -98,15 +99,15 @@ export default function AdminBannersScreen({ navigation }: any) {
       <Image source={{ uri: item.image_url }} style={s.bannerImg} resizeMode="cover" />
       <View style={s.bannerInfo}>
         <View style={s.bannerMeta}>
-          <Text style={s.bannerTitle}>{item.title}</Text>
-          {item.target_url ? <Text style={s.bannerLink} numberOfLines={1}>{item.target_url}</Text> : null}
+          <Text style={s.bannerTitle}>{tv(item.title)}</Text>
+          {item.target_url ? <Text style={s.bannerLink} numberOfLines={1}>{tv(item.target_url)}</Text> : null}
         </View>
         <View style={s.actions}>
           <TouchableOpacity 
             style={[s.toggleBtn, item.is_active ? s.toggleActive : s.toggleInactive]}
             onPress={() => handleToggleStatus(item)}
           >
-            <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{item.is_active ? 'نشط' : 'مخفي'}</Text>
+            <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{tv(item.is_active ? t('نشط') : t('مخفي'))}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.delBtn} onPress={() => handleDelete(item.id)}>
             <Ionicons name="trash" size={18} color={UI.danger} />
@@ -123,7 +124,7 @@ export default function AdminBannersScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>إدارة البنرات والإعلانات</Text>
+          <Text style={s.headerTitle}>{t('إدارة البنرات والإعلانات')}</Text>
         </View>
       </View>
 
@@ -137,17 +138,17 @@ export default function AdminBannersScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={s.addCard}>
-            <Text style={s.addTitle}>إضافة بنر جديد</Text>
-            <TextInput style={s.input} placeholder="عنوان الإعلان" value={newTitle} onChangeText={setNewTitle} textAlign="right" />
-            <TextInput style={s.input} placeholder="رابط الصورة (URL)" value={newImage} onChangeText={setNewImage} textAlign="right" />
-            <TextInput style={s.input} placeholder="رابط التوجيه عند الضغط (اختياري)" value={newLink} onChangeText={setNewLink} textAlign="right" />
+            <Text style={s.addTitle}>{t('إضافة بنر جديد')}</Text>
+            <TextInput style={s.input} placeholder={t('عنوان الإعلان')} value={newTitle} onChangeText={setNewTitle} textAlign="right" />
+            <TextInput style={s.input} placeholder={t('رابط الصورة (URL)')} value={newImage} onChangeText={setNewImage} textAlign="right" />
+            <TextInput style={s.input} placeholder={t('رابط التوجيه عند الضغط (اختياري)')} value={newLink} onChangeText={setNewLink} textAlign="right" />
             <TouchableOpacity style={s.saveBtn} onPress={handleAddBanner} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={s.saveBtnText}>نشر البنر</Text>}
+              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={s.saveBtnText}>{t('نشر البنر')}</Text>}
             </TouchableOpacity>
           </View>
         }
         renderItem={renderBanner}
-        ListEmptyComponent={!loading ? <Text style={s.emptyText}>لا توجد بنرات حالياً</Text> : <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} />}
+        ListEmptyComponent={!loading ? <Text style={s.emptyText}>{t('لا توجد بنرات حالياً')}</Text> : <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} />}
       />
     </KeyboardAvoidingView>
   );

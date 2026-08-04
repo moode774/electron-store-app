@@ -12,6 +12,7 @@ import {
   getMyWithdrawalRequests, requestWithdrawal, WalletTransaction, WithdrawalRequest, WithdrawalStatus,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'pending',
@@ -105,7 +106,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
       return;
     }
     if (amount > balance) {
-      Alert.alert('تنبيه', `المبلغ المطلوب يتجاوز رصيدك المتاح (${balance.toLocaleString()} ر.ي)`);
+      Alert.alert('تنبيه', t('المبلغ المطلوب يتجاوز رصيدك المتاح ({0} ر.ي)', [balance.toLocaleString()]));
       return;
     }
     if (amount < 50) {
@@ -121,7 +122,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
       await loadData();
       Alert.alert(
         'تم إرسال طلب السحب ✅',
-        `تم إرسال طلب بقيمة ${amount.toLocaleString()} ر.ي للمراجعة. لا يُعد المبلغ محولاً حتى تعتمد الإدارة الطلب.`,
+        t('تم إرسال طلب بقيمة {0} ر.ي للمراجعة. لا يُعد المبلغ محولاً حتى تعتمد الإدارة الطلب.', [amount.toLocaleString()]),
         [{ text: 'حسناً' }]
       );
     } catch (e: any) {
@@ -140,7 +141,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>المحفظة والمدفوعات</Text>
+        <Text style={styles.headerTitle}>{t('المحفظة والمدفوعات')}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -157,17 +158,17 @@ export default function MerchantWalletScreen({ navigation }: any) {
             <>
               {loadError ? (
                 <View style={styles.errorCard} accessibilityRole="alert">
-                  <Text style={styles.errorText}>{loadError}</Text>
-                  <TouchableOpacity onPress={() => void loadData()} accessibilityRole="button" accessibilityLabel="إعادة تحميل المحفظة">
-                    <Text style={styles.retryText}>إعادة المحاولة</Text>
+                  <Text style={styles.errorText}>{tv(loadError)}</Text>
+                  <TouchableOpacity onPress={() => void loadData()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل المحفظة')}>
+                    <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : null}
               {/* Balance Card */}
               <View style={styles.balanceCard}>
-                <Text style={styles.balanceLabel}>الرصيد المسجل</Text>
-                <Text style={styles.balanceValue}>{balance.toLocaleString()} ر.ي</Text>
-                <Text style={styles.balanceNote}>تحقق من سجل المعاملات قبل طلب السحب</Text>
+                <Text style={styles.balanceLabel}>{t('الرصيد المسجل')}</Text>
+                <Text style={styles.balanceValue}>{t('{0} ر.ي', [balance.toLocaleString()])}</Text>
+                <Text style={styles.balanceNote}>{t('تحقق من سجل المعاملات قبل طلب السحب')}</Text>
                 <TouchableOpacity
                   style={[styles.withdrawBtn, (balance < 50 || hasBlockingWithdrawal || submitting) && { opacity: 0.5 }]}
                   activeOpacity={0.8}
@@ -177,23 +178,23 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   accessibilityState={{ disabled: balance < 50 || hasBlockingWithdrawal || submitting }}
                 >
                   <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
-                  <Text style={styles.withdrawBtnText}>طلب سحب</Text>
+                  <Text style={styles.withdrawBtnText}>{t('طلب سحب')}</Text>
                 </TouchableOpacity>
                 {balance < 50 && (
-                  <Text style={styles.minNote}>الحد الأدنى للسحب 50 ر.ي</Text>
+                  <Text style={styles.minNote}>{t('الحد الأدنى للسحب 50 ر.ي')}</Text>
                 )}
               </View>
 
               {withdrawals.length ? (
                 <View style={styles.withdrawalSection}>
-                  <Text style={styles.sectionTitle}>طلبات السحب</Text>
+                  <Text style={styles.sectionTitle}>{t('طلبات السحب')}</Text>
                   {withdrawals.slice(0, 5).map((request) => {
                     const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
                     return (
                       <View key={request.id} style={[styles.withdrawalRow, isCompact && styles.withdrawalRowCompact]}>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
-                          <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-SA')}</Text>
+                          <Text style={styles.withdrawalAmount}>{t('{0} ر.ي', [request.amount.toLocaleString()])}</Text>
+                          <Text style={styles.withdrawalDate}>{tv(new Date(request.created_at).toLocaleDateString(getLocale()))}</Text>
                         </View>
                         <Text
                           style={[
@@ -201,7 +202,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                             { color: statusInfo.color, backgroundColor: statusInfo.backgroundColor },
                           ]}
                         >
-                          {statusInfo.label}
+                          {tv(statusInfo.label)}
                         </Text>
                       </View>
                     );
@@ -209,13 +210,13 @@ export default function MerchantWalletScreen({ navigation }: any) {
                 </View>
               ) : null}
 
-              <Text style={styles.sectionTitle}>سجل المعاملات</Text>
+              <Text style={styles.sectionTitle}>{t('سجل المعاملات')}</Text>
             </>
           }
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 48, gap: 12 }}>
               <Ionicons name="receipt-outline" size={40} color="#D1D5DB" />
-              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد معاملات بعد</Text>
+              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>{t('لا توجد معاملات بعد')}</Text>
             </View>
           }
           renderItem={({ item }) => {
@@ -227,12 +228,10 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Ionicons name={income ? 'arrow-down' : 'arrow-up'} size={18} color={income ? '#059669' : '#EF4444'} />
                 </View>
                 <View style={{ flex: 1, marginHorizontal: 12 }}>
-                  <Text style={styles.txTitle}>{item.notes ?? item.source ?? item.type}</Text>
-                  <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+                  <Text style={styles.txTitle}>{tv(item.notes ?? item.source ?? item.type)}</Text>
+                  <Text style={styles.txDate}>{tv(new Date(item.created_at).toLocaleDateString(getLocale()))}</Text>
                 </View>
-                <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>
-                  {income ? '+' : '-'}{absoluteAmount.toLocaleString()} ر.ي
-                </Text>
+                <Text style={[styles.txAmount, { color: income ? '#059669' : '#EF4444' }]}>{t('{0}{1} ر.ي', [income ? '+' : '-', absoluteAmount.toLocaleString()])}</Text>
               </View>
             );
           }}
@@ -261,7 +260,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
+              <Text style={styles.modalTitle}>{t('طلب سحب الأرباح')}</Text>
               <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => !submitting && setShowWithdrawModal(false)}
@@ -273,15 +272,15 @@ export default function MerchantWalletScreen({ navigation }: any) {
             </View>
 
             <View style={styles.modalBalanceRow}>
-              <Text style={styles.modalBalanceLabel}>الرصيد المتاح</Text>
-              <Text style={styles.modalBalanceValue}>{balance.toLocaleString()} ر.ي</Text>
+              <Text style={styles.modalBalanceLabel}>{t('الرصيد المتاح')}</Text>
+              <Text style={styles.modalBalanceValue}>{t('{0} ر.ي', [balance.toLocaleString()])}</Text>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>المبلغ المطلوب (ر.ي) *</Text>
+              <Text style={styles.inputLabel}>{t('المبلغ المطلوب (ر.ي) *')}</Text>
               <TextInput
                 style={styles.inputBox}
-                placeholder="أدخل المبلغ"
+                placeholder={t('أدخل المبلغ')}
                 placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 value={withdrawAmount}
@@ -292,10 +291,10 @@ export default function MerchantWalletScreen({ navigation }: any) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>ملاحظات (اختياري)</Text>
+              <Text style={styles.inputLabel}>{t('ملاحظات (اختياري)')}</Text>
               <TextInput
                 style={[styles.inputBox, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]}
-                placeholder="أي تعليمات إضافية..."
+                placeholder={t('أي تعليمات إضافية...')}
                 placeholderTextColor="#9CA3AF"
                 value={withdrawNotes}
                 onChangeText={setWithdrawNotes}
@@ -307,9 +306,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
 
             <View style={styles.modalInfoBox}>
               <Ionicons name="information-circle-outline" size={16} color="#1D4ED8" />
-              <Text style={styles.modalInfoText}>
-                سيُرسل الطلب للمراجعة على الحساب البنكي المسجل في إعدادات المتجر.
-              </Text>
+              <Text style={styles.modalInfoText}>{t('سيُرسل الطلب للمراجعة على الحساب البنكي المسجل في إعدادات المتجر.')}</Text>
             </View>
 
             <TouchableOpacity
@@ -324,7 +321,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               ) : (
                 <>
                   <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.submitBtnText}>إرسال طلب السحب</Text>
+                  <Text style={styles.submitBtnText}>{t('إرسال طلب السحب')}</Text>
                 </>
               )}
             </TouchableOpacity>

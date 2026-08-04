@@ -7,6 +7,7 @@ import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransac
 
 import CodRemittancePanel from './CodRemittancePanel';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 export default function DeliveryWalletScreen({ navigation }: any) {
   const layout = useResponsiveLayout(960);
@@ -44,10 +45,10 @@ export default function DeliveryWalletScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>المحفظة والتحصيلات</Text>
+        <Text style={styles.headerTitle}>{t('المحفظة والتحصيلات')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -64,33 +65,33 @@ export default function DeliveryWalletScreen({ navigation }: any) {
           <>
             {loadError ? (
               <View style={styles.errorCard}>
-                <Text style={styles.errorText}>{loadError}</Text>
-                <TouchableOpacity onPress={() => void loadWallet()} accessibilityRole="button" accessibilityLabel="إعادة تحميل المحفظة">
-                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                <Text style={styles.errorText}>{tv(loadError)}</Text>
+                <TouchableOpacity onPress={() => void loadWallet()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل المحفظة')}>
+                  <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
             <View style={[styles.cardsRow, layout.compact && styles.cardsRowCompact]}>
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
-                <Text style={styles.summaryLabel}>مستحقاتك (ر.ي)</Text>
+                <Text style={styles.summaryValue}>{tv(earnings.toLocaleString())}</Text>
+                <Text style={styles.summaryLabel}>{t('مستحقاتك (ر.ي)')}</Text>
               </View>
               <View style={[styles.summaryCard, { backgroundColor: '#B45309' }]}>
                 <Ionicons name="cash-outline" size={20} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.summaryValue}>{transactions.length}</Text>
-                <Text style={styles.summaryLabel}>عدد المعاملات</Text>
+                <Text style={styles.summaryValue}>{tv(transactions.length)}</Text>
+                <Text style={styles.summaryLabel}>{t('عدد المعاملات')}</Text>
               </View>
             </View>
 
             <CodRemittancePanel />
 
-            <Text style={styles.sectionTitle}>سجل المعاملات</Text>
+            <Text style={styles.sectionTitle}>{t('سجل المعاملات')}</Text>
           </>
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: '#9CA3AF', fontSize: 13 }}>لا توجد معاملات بعد</Text>
+            <Text style={{ color: '#9CA3AF', fontSize: 13 }}>{t('لا توجد معاملات بعد')}</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -102,11 +103,11 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               <Ionicons name={income ? 'arrow-down' : 'cash-outline'} size={18} color={income ? '#059669' : '#B45309'} />
             </View>
             <View style={{ flex: 1, marginHorizontal: 12 }}>
-              <Text style={styles.txTitle}>{item.notes ?? item.source ?? item.type}</Text>
-              <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+              <Text style={styles.txTitle}>{tv(item.notes ?? item.source ?? item.type)}</Text>
+              <Text style={styles.txDate}>{tv(new Date(item.created_at).toLocaleDateString(getLocale()))}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#B45309' }]}>
-              {income ? '+' : '-'}{absoluteAmount.toLocaleString()}
+              {tv(income ? '+' : '-')}{tv(absoluteAmount.toLocaleString())}
             </Text>
           </View>
           );

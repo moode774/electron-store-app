@@ -5,6 +5,7 @@ import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-u
 import { Card } from '@marketplace/shared-ui';
 import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 export default function ReviewsScreen({ navigation }: any) {
   const layout = useCustomerLayout(1040);
@@ -35,10 +36,10 @@ export default function ReviewsScreen({ navigation }: any) {
     <Card style={{ ...styles.reviewCard, width: cardWidth }} variant="outlined">
       <View style={styles.reviewHeader}>
         <View style={styles.reviewTitleRow}>
-          <Text style={styles.reviewIcon}>{isDriver(item.target_type) ? '🛵' : '🏪'}</Text>
-          <Text style={styles.reviewTarget}>{isDriver(item.target_type) ? 'مندوب توصيل' : 'متجر'}</Text>
+          <Text style={styles.reviewIcon}>{tv(isDriver(item.target_type) ? '🛵' : '🏪')}</Text>
+          <Text style={styles.reviewTarget}>{tv(isDriver(item.target_type) ? t('مندوب توصيل') : t('متجر'))}</Text>
         </View>
-        <Text style={styles.reviewDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+        <Text style={styles.reviewDate}>{tv(new Date(item.created_at).toLocaleDateString(getLocale()))}</Text>
       </View>
 
       <View style={styles.starsRow}>
@@ -50,7 +51,7 @@ export default function ReviewsScreen({ navigation }: any) {
       </View>
 
       {item.comment ? (
-        <Text style={styles.comment}>{item.comment}</Text>
+        <Text style={styles.comment}>{tv(item.comment)}</Text>
       ) : null}
     </Card>
   );
@@ -62,10 +63,10 @@ export default function ReviewsScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>التقييمات والمراجعات</Text>
+          <Text style={styles.headerTitle}>{t('التقييمات والمراجعات')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -77,13 +78,13 @@ export default function ReviewsScreen({ navigation }: any) {
           style={[styles.tabBtn, activeTab === 'store' && styles.tabBtnActive]}
           onPress={() => setActiveTab('store')}
         >
-          <Text style={[styles.tabText, activeTab === 'store' && styles.tabTextActive]}>المتاجر</Text>
+          <Text style={[styles.tabText, activeTab === 'store' && styles.tabTextActive]}>{t('المتاجر')}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tabBtn, activeTab === 'driver' && styles.tabBtnActive]}
           onPress={() => setActiveTab('driver')}
         >
-          <Text style={[styles.tabText, activeTab === 'driver' && styles.tabTextActive]}>المندوبين</Text>
+          <Text style={[styles.tabText, activeTab === 'driver' && styles.tabTextActive]}>{t('المندوبين')}</Text>
         </TouchableOpacity>
         </View>
       </View>
@@ -95,8 +96,8 @@ export default function ReviewsScreen({ navigation }: any) {
       ) : loadError ? (
         <View style={styles.emptyWrap} accessibilityRole="alert">
           <Text style={styles.emptyEmoji}>⚠️</Text>
-          <Text style={styles.emptyText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={styles.emptyText}>{tv(loadError)}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -110,7 +111,7 @@ export default function ReviewsScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>⭐</Text>
-              <Text style={styles.emptyText}>لا توجد تقييمات حالياً</Text>
+              <Text style={styles.emptyText}>{t('لا توجد تقييمات حالياً')}</Text>
             </View>
           }
         />

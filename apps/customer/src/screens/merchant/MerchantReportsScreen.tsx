@@ -11,6 +11,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const PERIODS = [
   { label: 'اليوم', days: 1 },
@@ -157,7 +158,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
     } catch (e: any) {
       // نُظهر السبب الحقيقي (صلاحيات/بيانات/شبكة) بدل رسالة عامة تخفي المشكلة
       const detail = e?.message ? ` (${e.message})` : '';
-      setError(`تعذر تحميل التقرير. تحقق من الاتصال ثم أعد المحاولة.${detail}`);
+      setError(t('تعذر تحميل التقرير. تحقق من الاتصال ثم أعد المحاولة.{0}', [tv(detail)]));
     } finally {
       setLoading(false);
     }
@@ -189,22 +190,22 @@ export default function MerchantReportsScreen({ navigation }: any) {
     setExporting(true);
     try {
       const lines = [
-        `تقرير ${period.label} — ${new Date().toLocaleDateString('ar-SA')}`,
+        t('تقرير {0} — {1}', [tv(period.label), new Date().toLocaleDateString(getLocale())]),
         '',
         'قيمة الطلبات والعدد',
-        `إجمالي قيمة الطلبات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
-        `إجمالي الطلبات,${periodStats.currentOrders}`,
-        `متوسط قيمة الطلب,${avgValue.toFixed(2)} ر.ي`,
-        `مكتملة,${periodStats.deliveredCount} (${deliveredPct}%)`,
-        `قيد التنفيذ,${periodStats.inProgressCount} (${inProgressPct}%)`,
-        `ملغاة,${periodStats.cancelledCount} (${cancelledPct}%)`,
+        t('إجمالي قيمة الطلبات,{0} ر.ي', [periodStats.currentRevenue.toFixed(2)]),
+        t('إجمالي الطلبات,{0}', [tv(periodStats.currentOrders)]),
+        t('متوسط قيمة الطلب,{0} ر.ي', [avgValue.toFixed(2)]),
+        t('مكتملة,{0} ({1}%)', [tv(periodStats.deliveredCount), tv(deliveredPct)]),
+        t('قيد التنفيذ,{0} ({1}%)', [tv(periodStats.inProgressCount), tv(inProgressPct)]),
+        t('ملغاة,{0} ({1}%)', [tv(periodStats.cancelledCount), tv(cancelledPct)]),
         '',
         'أفضل المنتجات',
         'الاسم,الكمية المباعة,الإيرادات',
         ...topProducts.map(p => `"${p.name}",${p.total_sold},${Number(p.revenue ?? 0).toFixed(2)}`),
         '',
         'مبيعات الفترة',
-        chartLabels.map((l, i) => `${l}: ${chartData[i]?.toFixed(2) ?? 0} ر.ي`).join('\n'),
+        chartLabels.map((l, i) => t('{0}: {1} ر.ي', [tv(l), chartData[i]?.toFixed(2) ?? 0])).join('\n'),
       ];
       const csv = lines.join('\n');
 
@@ -217,10 +218,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
         a.click();
         (URL as any).revokeObjectURL(url);
       } else {
-        await Share.share({ message: csv, title: `تقرير ${period.label}` });
+        await Share.share({ message: csv, title: t('تقرير {0}', [tv(period.label)]) });
       }
     } catch (e: any) {
-      Alert.alert('خطأ', `تعذّر تصدير التقرير${e?.message ? `: ${e.message}` : ''}`);
+      Alert.alert('خطأ', t('تعذّر تصدير التقرير{0}', [e?.message ? `: ${e.message}` : '']));
     } finally {
       setExporting(false);
     }
@@ -232,12 +233,12 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={styles.kpiIconBox}>
           <Ionicons name={icon} size={18} color={UI.primary} />
         </View>
-        <Text style={styles.kpiTitle}>{title}</Text>
+        <Text style={styles.kpiTitle}>{tv(title)}</Text>
       </View>
-      <Text style={styles.kpiValue}>{value}</Text>
+      <Text style={styles.kpiValue}>{tv(value)}</Text>
       <View style={styles.kpiFooter}>
         <Text style={[styles.kpiTrendText, { color: trendUp ? UI.green : UI.red }]}>
-          <Ionicons name={trendUp ? 'arrow-up' : 'arrow-down'} size={10} /> {trend}
+          <Ionicons name={trendUp ? 'arrow-up' : 'arrow-down'} size={10} /> {tv(trend)}
         </Text>
         {showChart && chartData.length > 1 && (
           <MiniBarChart w={40} h={16} points={chartData.slice(-5)} color={UI.primary} />
@@ -255,7 +256,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>التقارير المتقدمة</Text>
+          <Text style={styles.headerTitle}>{t('التقارير المتقدمة')}</Text>
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -264,8 +265,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
         <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
           <View>
-            <Text style={styles.pageTitle}>لوحة أداء الطلبات</Text>
-            <Text style={styles.pageSubtitle}>القيم المعروضة هي قيمة الطلبات المسجلة وليست رصيدًا ماليًا مسوّى</Text>
+            <Text style={styles.pageTitle}>{t('لوحة أداء الطلبات')}</Text>
+            <Text style={styles.pageSubtitle}>{t('القيم المعروضة هي قيمة الطلبات المسجلة وليست رصيدًا ماليًا مسوّى')}</Text>
           </View>
           <View style={[styles.periodRow, isCompact && styles.periodRowCompact]}>
             {PERIODS.map((p, idx) => (
@@ -275,15 +276,15 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 onPress={() => handlePeriodChange(idx)}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel={`عرض تقرير ${p.label}`}
+                accessibilityLabel={t('عرض تقرير {0}', [tv(p.label)])}
                 accessibilityState={{ selected: periodIndex === idx }}
               >
-                <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{p.label}</Text>
+                <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{tv(p.label)}</Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.downloadBtn} onPress={handleExportCSV} activeOpacity={0.8} disabled={exporting || loading} accessibilityRole="button" accessibilityLabel="تصدير التقرير بصيغة CSV" accessibilityState={{ disabled: exporting || loading, busy: exporting }}>
+            <TouchableOpacity style={styles.downloadBtn} onPress={handleExportCSV} activeOpacity={0.8} disabled={exporting || loading} accessibilityRole="button" accessibilityLabel={t('تصدير التقرير بصيغة CSV')} accessibilityState={{ disabled: exporting || loading, busy: exporting }}>
               <Ionicons name={exporting ? 'hourglass-outline' : 'download-outline'} size={16} color={UI.textDark} />
-              <Text style={styles.downloadText}>تصدير CSV</Text>
+              <Text style={styles.downloadText}>{t('تصدير CSV')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -291,9 +292,9 @@ export default function MerchantReportsScreen({ navigation }: any) {
         {loading && <ActivityIndicator size="large" color={UI.primary} style={{ marginVertical: 24 }} />}
         {!!error && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={() => void load(period.days)} accessibilityRole="button" accessibilityLabel="إعادة تحميل التقرير">
-              <Text style={styles.errorRetry}>إعادة المحاولة</Text>
+            <Text style={styles.errorText}>{tv(error)}</Text>
+            <TouchableOpacity onPress={() => void load(period.days)} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل التقرير')}>
+              <Text style={styles.errorRetry}>{t('إعادة المحاولة')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -302,8 +303,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={[styles.row, { flexDirection: isTablet ? 'row-reverse' : 'column', flexWrap: isTablet ? 'wrap' : 'nowrap' }]}>
           <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
-              title="إجمالي قيمة الطلبات"
-              value={`${periodStats.currentRevenue.toLocaleString()} ر.ي`}
+              title={t('إجمالي قيمة الطلبات')}
+              value={t('{0} ر.ي', [periodStats.currentRevenue.toLocaleString()])}
               icon="wallet-outline"
               trend={revenueTrend.text}
               trendUp={revenueTrend.up}
@@ -312,7 +313,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
-              title="إجمالي الطلبات"
+              title={t('إجمالي الطلبات')}
               value={periodStats.currentOrders.toString()}
               icon="cube-outline"
               trend={ordersTrend.text}
@@ -322,8 +323,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
-              title="متوسط قيمة الطلب"
-              value={`${avgValue.toFixed(2)} ر.ي`}
+              title={t('متوسط قيمة الطلب')}
+              value={t('{0} ر.ي', [avgValue.toFixed(2)])}
               icon="bar-chart-outline"
               trend={avgTrend.text}
               trendUp={avgTrend.up}
@@ -332,10 +333,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
             <KPICard
-              title="معدل الإتمام"
+              title={t('معدل الإتمام')}
               value={`${deliveredPct}%`}
               icon="pie-chart-outline"
-              trend={total > 0 ? `${total} طلب` : 'لا يوجد بيانات'}
+              trend={total > 0 ? t('{0} طلب', [tv(total)]) : t('لا يوجد بيانات')}
               trendUp={deliveredPct >= 70}
               showChart={false}
             />
@@ -346,8 +347,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
-              <Text style={styles.cardTitle}>التدفق المالي — {period.label}</Text>
-              <Text style={styles.cardSubtitle}>مبيعات المتجر خلال هذه الفترة بالريال</Text>
+              <Text style={styles.cardTitle}>{t('التدفق المالي — {0}', [tv(period.label)])}</Text>
+              <Text style={styles.cardSubtitle}>{t('مبيعات المتجر خلال هذه الفترة بالريال')}</Text>
             </View>
           </View>
           <View style={{ height: 260, marginTop: 32, alignItems: 'center' }}>
@@ -360,7 +361,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.chartXAxis}>
             {chartLabels.map((l, idx) => (
-              <Text key={idx} style={styles.chartLabel}>{l}</Text>
+              <Text key={idx} style={styles.chartLabel}>{tv(l)}</Text>
             ))}
           </View>
         </View>
@@ -372,22 +373,22 @@ export default function MerchantReportsScreen({ navigation }: any) {
           <View style={[styles.card, { flex: 6 }]}>
             <View style={styles.cardHeader}>
               <View>
-                <Text style={styles.cardTitle}>المنتجات الأعلى أداءً</Text>
-                <Text style={styles.cardSubtitle}>أفضل المنتجات حسب المبيعات والإيرادات</Text>
+                <Text style={styles.cardTitle}>{t('المنتجات الأعلى أداءً')}</Text>
+                <Text style={styles.cardSubtitle}>{t('أفضل المنتجات حسب المبيعات والإيرادات')}</Text>
               </View>
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
             <View style={[styles.tableViewport, isCompact && styles.tableViewportCompact]}>
             <View style={styles.tableHeader}>
-              <Text style={[styles.th, { flex: 3 }]}>المنتج</Text>
-              <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>الكمية</Text>
-              <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>الإيرادات</Text>
-              <Text style={[styles.th, { flex: 1.5, textAlign: 'left' }]}>المساهمة</Text>
+              <Text style={[styles.th, { flex: 3 }]}>{t('المنتج')}</Text>
+              <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('الكمية')}</Text>
+              <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('الإيرادات')}</Text>
+              <Text style={[styles.th, { flex: 1.5, textAlign: 'left' }]}>{t('المساهمة')}</Text>
             </View>
 
             {topProducts.length === 0 ? (
-              <Text style={styles.emptyText}>لا توجد بيانات كافية</Text>
+              <Text style={styles.emptyText}>{t('لا توجد بيانات كافية')}</Text>
             ) : topProducts.map((p, i) => {
               const rev = Number(p.revenue ?? 0);
               const maxRev = Number(topProducts[0]?.revenue ?? 0);
@@ -401,17 +402,17 @@ export default function MerchantReportsScreen({ navigation }: any) {
                         : <Ionicons name="cube-outline" size={18} color={UI.textMuted} />}
                     </View>
                     <View>
-                      <Text style={styles.productName}>{p.name}</Text>
-                      <Text style={styles.productCat}>{p.category || 'عام'}</Text>
+                      <Text style={styles.productName}>{tv(p.name)}</Text>
+                      <Text style={styles.productCat}>{tv(p.category || t('عام'))}</Text>
                     </View>
                   </View>
-                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{p.total_sold}</Text>
-                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{rev.toLocaleString()} ر.ي</Text>
+                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{tv(p.total_sold)}</Text>
+                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{t('{0} ر.ي', [rev.toLocaleString()])}</Text>
                   <View style={{ flex: 1.5, flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                     <View style={styles.progressTrack}>
                       <View style={[styles.progressFill, { width: `${progress}%` as any }]} />
                     </View>
-                    <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
+                    <Text style={styles.progressText}>{tv(progress.toFixed(0))}%</Text>
                   </View>
                 </View>
               );
@@ -423,7 +424,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           {/* Order Status Donut */}
           <View style={[styles.card, { flex: 4 }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>حالة الطلبات — {period.label}</Text>
+              <Text style={styles.cardTitle}>{t('حالة الطلبات — {0}', [tv(period.label)])}</Text>
             </View>
 
             <View style={{ alignItems: 'center', marginVertical: 32 }}>
@@ -444,8 +445,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
                   />
                 </Svg>
                 <View style={styles.donutInner}>
-                  <Text style={styles.donutValue}>{total}</Text>
-                  <Text style={styles.donutLabel}>إجمالي</Text>
+                  <Text style={styles.donutValue}>{tv(total)}</Text>
+                  <Text style={styles.donutLabel}>{t('إجمالي')}</Text>
                 </View>
               </View>
             </View>
@@ -454,23 +455,23 @@ export default function MerchantReportsScreen({ navigation }: any) {
               <View style={styles.legendRow}>
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                   <View style={[styles.dot, { backgroundColor: UI.primary }]} />
-                  <Text style={styles.legendText}>مكتملة</Text>
+                  <Text style={styles.legendText}>{t('مكتملة')}</Text>
                 </View>
-                <Text style={styles.legendValue}>{deliveredPct}% ({periodStats.deliveredCount})</Text>
+                <Text style={styles.legendValue}>{tv(deliveredPct)}% ({tv(periodStats.deliveredCount)})</Text>
               </View>
               <View style={styles.legendRow}>
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                   <View style={[styles.dot, { backgroundColor: UI.textGrey }]} />
-                  <Text style={styles.legendText}>قيد التنفيذ</Text>
+                  <Text style={styles.legendText}>{t('قيد التنفيذ')}</Text>
                 </View>
-                <Text style={styles.legendValue}>{inProgressPct}% ({periodStats.inProgressCount})</Text>
+                <Text style={styles.legendValue}>{tv(inProgressPct)}% ({tv(periodStats.inProgressCount)})</Text>
               </View>
               <View style={styles.legendRow}>
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                   <View style={[styles.dot, { backgroundColor: UI.red }]} />
-                  <Text style={styles.legendText}>ملغاة</Text>
+                  <Text style={styles.legendText}>{t('ملغاة')}</Text>
                 </View>
-                <Text style={styles.legendValue}>{cancelledPct}% ({periodStats.cancelledCount})</Text>
+                <Text style={styles.legendValue}>{tv(cancelledPct)}% ({tv(periodStats.cancelledCount)})</Text>
               </View>
             </View>
           </View>

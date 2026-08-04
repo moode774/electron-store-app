@@ -29,7 +29,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAuthStore, useCartStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
-import { useLanguageStore } from '@marketplace/shared-i18n';
+import { t, tv, useLanguageStore } from '@marketplace/shared-i18n';
 
 import SplashScreen from './src/screens/auth/SplashScreen';
 import OnboardingScreen from './src/screens/auth/OnboardingScreen';
@@ -182,14 +182,14 @@ function RootNavigator(): React.JSX.Element {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: 28, gap: 12 }} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={50} color="#B91C1C" />
-        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'center' }}>تعذّر فتح مساحة العمل</Text>
-        <Text style={{ color: '#6B7280', textAlign: 'center', lineHeight: 22 }}>{profileCheckError}</Text>
+        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'center' }}>{t('تعذّر فتح مساحة العمل')}</Text>
+        <Text style={{ color: '#6B7280', textAlign: 'center', lineHeight: 22 }}>{tv(profileCheckError)}</Text>
         <TouchableOpacity
           style={{ minHeight: 46, minWidth: 160, borderRadius: 13, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 }}
           onPress={() => setProfileCheckAttempt((value) => value + 1)}
           accessibilityRole="button"
         >
-          <Text style={{ color: '#fff', fontWeight: '800' }}>إعادة المحاولة</Text>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
       </View>
     );

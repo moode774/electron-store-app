@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { getServiceAreas } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type Zone = { id: string; name: string; orders: string; available: boolean };
 
@@ -42,32 +43,30 @@ export default function DeliveryZonesScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>نطاقات التغطية</Text>
+        <Text style={styles.headerTitle}>{t('نطاقات التغطية')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]}>
         <View style={styles.infoCard}>
           <Ionicons name="map-outline" size={20} color={COLORS.primary} />
-          <Text style={styles.infoText}>
-            يعرض النظام المناطق المتاحة للتوصيل حاليًا. توجد <Text style={{ fontWeight: '800' }}>{availableCount}</Text> مناطق متاحة.
-          </Text>
+          <Text style={styles.infoText}>{t('يعرض النظام المناطق المتاحة للتوصيل حاليًا. توجد')}{' '}<Text style={{ fontWeight: '800' }}>{tv(availableCount)}</Text>{' '}{t('مناطق متاحة.')}</Text>
         </View>
 
         {loading && <ActivityIndicator color={COLORS.primary} style={{ marginTop: 20 }} />}
         {loadError ? (
           <View style={styles.errorCard}>
-            <Text style={styles.errorText}>{loadError}</Text>
-            <TouchableOpacity onPress={() => void loadZones()} accessibilityRole="button" accessibilityLabel="إعادة تحميل نطاقات التغطية">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.errorText}>{tv(loadError)}</Text>
+            <TouchableOpacity onPress={() => void loadZones()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل نطاقات التغطية')}>
+              <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
         {!loading && zones.length === 0 && (
-          <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginTop: 20 }}>لا توجد مناطق متاحة</Text>
+          <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginTop: 20 }}>{t('لا توجد مناطق متاحة')}</Text>
         )}
         {zones.map((zone) => (
           <View key={zone.id} style={[styles.zoneCard, zone.available && styles.zoneCardActive]} accessibilityLabel={`${zone.name}: ${zone.orders}`}>
@@ -75,11 +74,11 @@ export default function DeliveryZonesScreen({ navigation }: any) {
               <Ionicons name="location" size={18} color={zone.available ? '#059669' : '#9CA3AF'} />
             </View>
             <View style={{ flex: 1, marginHorizontal: 12 }}>
-              <Text style={styles.zoneName}>{zone.name}</Text>
-              <Text style={styles.zoneOrders}>{zone.orders}</Text>
+              <Text style={styles.zoneName}>{tv(zone.name)}</Text>
+              <Text style={styles.zoneOrders}>{tv(zone.orders)}</Text>
             </View>
             <View style={[styles.statusBadge, zone.available && styles.statusBadgeAvailable]}>
-              <Text style={[styles.statusText, zone.available && styles.statusTextAvailable]}>{zone.available ? 'متاحة' : 'متوقفة'}</Text>
+              <Text style={[styles.statusText, zone.available && styles.statusTextAvailable]}>{tv(zone.available ? t('متاحة') : t('متوقفة'))}</Text>
             </View>
           </View>
         ))}

@@ -5,6 +5,7 @@ import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../components/NotificationPreferencesCard';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 export default function RoleNotificationsScreen({ navigation, route }: any) {
   const layout = useResponsiveLayout(960);
@@ -77,7 +78,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>الإشعارات</Text>
+        <Text style={styles.headerTitle}>{t('الإشعارات')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -88,8 +89,8 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
       ) : loadError ? (
         <View style={styles.errorState} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={46} color="#B91C1C" />
-          <Text style={styles.errorText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={styles.errorText}>{tv(loadError)}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -99,7 +100,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
           ListHeaderComponent={<NotificationPreferencesCard />}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
-              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد إشعارات</Text>
+              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>{t('لا توجد إشعارات')}</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -108,7 +109,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
               activeOpacity={0.7}
               onPress={() => openNotification(item)}
               accessibilityRole="button"
-              accessibilityLabel={`${item.title ?? 'إشعار'}. ${item.body ?? ''}`}
+              accessibilityLabel={`${item.title ?? t('إشعار')}. ${item.body ?? ''}`}
               accessibilityState={{ selected: !item.is_read }}
             >
               <View style={[styles.iconWrap, { backgroundColor: `${COLORS.primary}15` }]}>
@@ -116,11 +117,11 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
               </View>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.title}>{tv(item.title)}</Text>
                   {!item.is_read && <View style={styles.unreadDot} />}
                 </View>
-                <Text style={styles.body} numberOfLines={2}>{item.body}</Text>
-                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+                <Text style={styles.body} numberOfLines={2}>{tv(item.body)}</Text>
+                <Text style={styles.time}>{tv(new Date(item.created_at).toLocaleDateString(getLocale()))}</Text>
               </View>
             </TouchableOpacity>
           )}

@@ -11,6 +11,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'مفتوحة',
@@ -97,12 +98,12 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={[styles.threadShell, layout.desktop && styles.threadShellDesktop]}>
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.title} numberOfLines={1}>{ticket?.subject ?? 'تذكرة الدعم'}</Text>
-          {ticket ? <Text style={styles.status}>{STATUS_LABELS[ticket.status] ?? ticket.status}</Text> : null}
+          <Text style={styles.title} numberOfLines={1}>{tv(ticket?.subject ?? t('تذكرة الدعم'))}</Text>
+          {ticket ? <Text style={styles.status}>{tv(STATUS_LABELS[ticket.status] ?? ticket.status)}</Text> : null}
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -112,22 +113,22 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
       ) : error && !ticket ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={42} color="#B91C1C" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button" accessibilityLabel="إعادة تحميل التذكرة">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+          <Text style={styles.errorText}>{tv(error)}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل التذكرة')}>
+            <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           {error ? (
             <TouchableOpacity style={styles.inlineError} onPress={() => void load()} accessibilityRole="button">
-              <Text style={styles.inlineErrorText}>{error} — اضغط لإعادة المحاولة</Text>
+              <Text style={styles.inlineErrorText}>{t('{0} — اضغط لإعادة المحاولة', [tv(error)])}</Text>
             </TouchableOpacity>
           ) : null}
           {ticket?.order_id ? (
             <View style={styles.orderReference}>
               <Ionicons name="receipt-outline" size={17} color="#1D4ED8" />
-              <Text style={styles.orderReferenceText}>هذه التذكرة مرتبطة بطلب</Text>
+              <Text style={styles.orderReferenceText}>{t('هذه التذكرة مرتبطة بطلب')}</Text>
             </View>
           ) : null}
           <FlatList
@@ -139,39 +140,39 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
               return (
                 <View style={[styles.messageRow, mine ? styles.mineRow : styles.otherRow]}>
                   <View style={[styles.messageBubble, mine ? styles.mineBubble : styles.otherBubble]}>
-                    {!mine ? <Text style={styles.senderName}>{item.users?.full_name ?? 'فريق الدعم'}</Text> : null}
-                    <Text style={[styles.messageText, mine && styles.mineText]}>{item.message}</Text>
-                    <Text style={[styles.messageTime, mine && styles.mineTime]}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+                    {!mine ? <Text style={styles.senderName}>{tv(item.users?.full_name ?? t('فريق الدعم'))}</Text> : null}
+                    <Text style={[styles.messageText, mine && styles.mineText]}>{tv(item.message)}</Text>
+                    <Text style={[styles.messageTime, mine && styles.mineTime]}>{tv(new Date(item.created_at).toLocaleString(getLocale()))}</Text>
                   </View>
                 </View>
               );
             }}
-            ListEmptyComponent={<Text style={styles.emptyText}>لا توجد رسائل ظاهرة في هذه التذكرة.</Text>}
+            ListEmptyComponent={<Text style={styles.emptyText}>{t('لا توجد رسائل ظاهرة في هذه التذكرة.')}</Text>}
           />
         </>
       )}
 
       {!loading && ticket ? (
         isClosed ? (
-          <View style={styles.closedBar}><Text style={styles.closedText}>هذه التذكرة مغلقة. افتح تذكرة جديدة إذا احتجت متابعة أخرى.</Text></View>
+          <View style={styles.closedBar}><Text style={styles.closedText}>{t('هذه التذكرة مغلقة. افتح تذكرة جديدة إذا احتجت متابعة أخرى.')}</Text></View>
         ) : (
           <View style={styles.inputBar}>
             <TextInput
               style={styles.input}
               value={reply}
               onChangeText={setReply}
-              placeholder="اكتب ردك..."
+              placeholder={t('اكتب ردك...')}
               placeholderTextColor="#9CA3AF"
               multiline
               maxLength={4000}
-              accessibilityLabel="رد تذكرة الدعم"
+              accessibilityLabel={t('رد تذكرة الدعم')}
             />
             <TouchableOpacity
               style={[styles.sendButton, (!reply.trim() || sending) && styles.disabled]}
               onPress={sendReply}
               disabled={!reply.trim() || sending}
               accessibilityRole="button"
-              accessibilityLabel="إرسال الرد"
+              accessibilityLabel={t('إرسال الرد')}
               accessibilityState={{ disabled: !reply.trim() || sending, busy: sending }}
             >
               {sending ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons name="send" size={19} color="#FFFFFF" />}

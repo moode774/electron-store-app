@@ -131,6 +131,7 @@ const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
+import { t, tv } from '@marketplace/shared-i18n';
 
 function DesktopSidebar() {
   const navigation = useNavigation<any>();
@@ -171,7 +172,7 @@ function DesktopSidebar() {
               onPress={() => navigation.navigate(tab.name as any)}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={tab.label}
+              accessibilityLabel={tv(tab.label)}
               accessibilityState={{ selected: isActive }}
             >
               <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={21} color={isActive ? COLORS.surface : COLORS.textMuted} />
@@ -181,7 +182,7 @@ function DesktopSidebar() {
       </View>
 
       <View style={sidebarStyles.footer}>
-        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('تسجيل الخروج')}>
           <Ionicons name="log-out-outline" size={22} color={COLORS.textMuted} />
         </TouchableOpacity>
       </View>
@@ -273,8 +274,8 @@ export default function MerchantTabNavigator() {
         name="MerchantDashboard"
         component={MerchantDashboardScreen}
         options={{
-          tabBarLabel: 'الرئيسية',
-          tabBarAccessibilityLabel: 'الرئيسية',
+          tabBarLabel: t('الرئيسية'),
+          tabBarAccessibilityLabel: t('الرئيسية'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={size} color={color} />,
         }}
       />
@@ -282,8 +283,8 @@ export default function MerchantTabNavigator() {
         name="MerchantOrders"
         component={OrdersNavigator}
         options={{
-          tabBarLabel: 'الطلبات',
-          tabBarAccessibilityLabel: 'الطلبات النشطة',
+          tabBarLabel: t('الطلبات'),
+          tabBarAccessibilityLabel: t('الطلبات النشطة'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={color} />,
         }}
       />
@@ -291,8 +292,8 @@ export default function MerchantTabNavigator() {
         name="MerchantProducts"
         component={ProductsNavigator}
         options={{
-          tabBarLabel: 'منتجاتي',
-          tabBarAccessibilityLabel: 'منتجات المتجر',
+          tabBarLabel: t('منتجاتي'),
+          tabBarAccessibilityLabel: t('منتجات المتجر'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'cube' : 'cube-outline'} size={size} color={color} />,
         }}
       />
@@ -300,8 +301,8 @@ export default function MerchantTabNavigator() {
         name="MerchantHistory"
         component={HistoryNavigator}
         options={{
-          tabBarLabel: 'السجل',
-          tabBarAccessibilityLabel: 'سجل الطلبات',
+          tabBarLabel: t('السجل'),
+          tabBarAccessibilityLabel: t('سجل الطلبات'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />,
         }}
       />
@@ -309,8 +310,8 @@ export default function MerchantTabNavigator() {
         name="MerchantAccount"
         component={AccountNavigator}
         options={{
-          tabBarLabel: 'حسابي',
-          tabBarAccessibilityLabel: 'حساب التاجر',
+          tabBarLabel: t('حسابي'),
+          tabBarAccessibilityLabel: t('حساب التاجر'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />,
         }}
       />
@@ -318,7 +319,7 @@ export default function MerchantTabNavigator() {
         name="MerchantWallet"
         component={MerchantWalletScreen}
         options={{
-          tabBarLabel: 'المحفظة',
+          tabBarLabel: t('المحفظة'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={size} color={color} />,
           tabBarStyle: { display: 'none' },
         }}
@@ -327,7 +328,7 @@ export default function MerchantTabNavigator() {
         name="MerchantSupport"
         component={SupportNavigator}
         options={{
-          tabBarLabel: 'الدعم',
+          tabBarLabel: t('الدعم'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'headset' : 'headset-outline'} size={size} color={color} />,
           tabBarStyle: { display: 'none' },
         }}
@@ -336,7 +337,7 @@ export default function MerchantTabNavigator() {
         name="MerchantStoreSettings"
         component={StoreSettingsScreen}
         options={{
-          tabBarLabel: 'المعلومات',
+          tabBarLabel: t('المعلومات'),
           tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={size} color={color} />,
           tabBarStyle: { display: 'none' },
         }}
@@ -407,55 +408,55 @@ function DesktopTopHeader() {
   return (
     <View style={topHeaderStyles.topHeader}>
       <View style={topHeaderStyles.workspaceIdentity}>
-        <View style={topHeaderStyles.workspaceMark}><Text style={topHeaderStyles.workspaceMarkText}>م</Text></View>
+        <View style={topHeaderStyles.workspaceMark}><Text style={topHeaderStyles.workspaceMarkText}>{t('م')}</Text></View>
         <View style={topHeaderStyles.workspaceCopy}>
-          <Text style={topHeaderStyles.workspaceTitle}>مساحة التاجر</Text>
-          <Text style={topHeaderStyles.workspaceSubtitle}>إدارة المتجر</Text>
+          <Text style={topHeaderStyles.workspaceTitle}>{t('مساحة التاجر')}</Text>
+          <Text style={topHeaderStyles.workspaceSubtitle}>{t('إدارة المتجر')}</Text>
         </View>
       </View>
 
       {showFullNavigation ? (
         <View style={topHeaderStyles.navLinks}>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
-            <Text style={getStyle('MerchantDashboard')}>الرئيسية</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantDashboard')} accessibilityRole="button" accessibilityLabel={t('الرئيسية')}>
+            <Text style={getStyle('MerchantDashboard')}>{t('الرئيسية')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel="التقارير">
-            <Text style={getStyle('MerchantAccount', 'Reports')}>التقارير</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel={t('التقارير')}>
+            <Text style={getStyle('MerchantAccount', 'Reports')}>{t('التقارير')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantProducts')} accessibilityRole="button" accessibilityLabel="المنتجات">
-            <Text style={getStyle('MerchantProducts')}>المنتجات</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantProducts')} accessibilityRole="button" accessibilityLabel={t('المنتجات')}>
+            <Text style={getStyle('MerchantProducts')}>{t('المنتجات')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
-            <Text style={getStyle('MerchantOrders')}>الطلبات</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel={t('الطلبات')}>
+            <Text style={getStyle('MerchantOrders')}>{t('الطلبات')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel="سجل الطلبات">
-            <Text style={getStyle('MerchantHistory')}>السجل</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel={t('سجل الطلبات')}>
+            <Text style={getStyle('MerchantHistory')}>{t('السجل')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantWallet')} accessibilityRole="button" accessibilityLabel="المحفظة">
-            <Text style={getStyle('MerchantWallet')}>المحفظة</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantWallet')} accessibilityRole="button" accessibilityLabel={t('المحفظة')}>
+            <Text style={getStyle('MerchantWallet')}>{t('المحفظة')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantSupport')} accessibilityRole="button" accessibilityLabel="الدعم">
-            <Text style={getStyle('MerchantSupport')}>الدعم</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantSupport')} accessibilityRole="button" accessibilityLabel={t('الدعم')}>
+            <Text style={getStyle('MerchantSupport')}>{t('الدعم')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantStoreSettings')} accessibilityRole="button" accessibilityLabel="بيانات المتجر">
-            <Text style={getStyle('MerchantStoreSettings')}>المعلومات</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MerchantStoreSettings')} accessibilityRole="button" accessibilityLabel={t('بيانات المتجر')}>
+            <Text style={getStyle('MerchantStoreSettings')}>{t('المعلومات')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={topHeaderStyles.currentContext}>
           <View style={topHeaderStyles.currentContextDot} />
-          <Text style={topHeaderStyles.currentContextText}>{currentLabel}</Text>
+          <Text style={topHeaderStyles.currentContextText}>{tv(currentLabel)}</Text>
         </View>
       )}
 
       <View style={topHeaderStyles.headerRight}>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="فتح الطلبات">
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel={t('فتح الطلبات')}>
           <Ionicons name="search-outline" size={20} color={UI.textDark} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantAccount', { screen: 'RoleNotifications', params: { role: 'merchant' } })} accessibilityRole="button" accessibilityLabel="الإشعارات">
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('MerchantAccount', { screen: 'RoleNotifications', params: { role: 'merchant' } })} accessibilityRole="button" accessibilityLabel={t('الإشعارات')}>
           <Ionicons name="notifications-outline" size={20} color={UI.textDark} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('MerchantAccount')} accessibilityRole="button" accessibilityLabel="حساب التاجر">
+        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('MerchantAccount')} accessibilityRole="button" accessibilityLabel={t('حساب التاجر')}>
           <Ionicons name="person" size={16} color={COLORS.surface} />
         </TouchableOpacity>
       </View>

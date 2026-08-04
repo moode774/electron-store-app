@@ -26,6 +26,7 @@ import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
 import AdminPhysicalReturnsScreen from '../screens/admin/AdminPhysicalReturnsScreen';
 import AdminFinancialReconciliationScreen from '../screens/admin/AdminFinancialReconciliationScreen';
 import AdminCodCollectionsScreen from '../screens/admin/AdminCodCollectionsScreen';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const softShadow = {
   shadowColor: COLORS.primaryDark,
@@ -143,7 +144,7 @@ function DesktopSidebar() {
               onPress={() => handleNavigate(tab)}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={tab.label}
+              accessibilityLabel={tv(tab.label)}
               accessibilityState={{ selected: isActive }}
             >
               <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={22} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
@@ -154,7 +155,7 @@ function DesktopSidebar() {
       </View>
 
       <View style={sidebarStyles.footer}>
-        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('تسجيل الخروج')}>
           <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
         </TouchableOpacity>
       </View>
@@ -281,46 +282,46 @@ function DesktopTopHeader() {
     <View style={topHeaderStyles.topHeader}>
       {showFullNavigation ? (
       <View style={topHeaderStyles.navLinks}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
-          <Text style={getStyle('AdminDashboard')}>الرئيسية</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel={t('الرئيسية')}>
+          <Text style={getStyle('AdminDashboard')}>{t('الرئيسية')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
-          <Text style={getStyle('AdminOrders')}>الطلبات</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel={t('الطلبات')}>
+          <Text style={getStyle('AdminOrders')}>{t('الطلبات')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMerchants')} accessibilityRole="button" accessibilityLabel="المتاجر">
-          <Text style={getStyle('AdminMerchants')}>المتاجر</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMerchants')} accessibilityRole="button" accessibilityLabel={t('المتاجر')}>
+          <Text style={getStyle('AdminMerchants')}>{t('المتاجر')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminUsers')} accessibilityRole="button" accessibilityLabel="المستخدمون">
-          <Text style={getStyle('AdminUsers')}>المستخدمون</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminUsers')} accessibilityRole="button" accessibilityLabel={t('المستخدمون')}>
+          <Text style={getStyle('AdminUsers')}>{t('المستخدمون')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminDelivery' })} accessibilityRole="button" accessibilityLabel="السائقون">
-          <Text style={getStyle('AdminDelivery')}>السائقون</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminDelivery' })} accessibilityRole="button" accessibilityLabel={t('السائقون')}>
+          <Text style={getStyle('AdminDelivery')}>{t('السائقون')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminWallet' })} accessibilityRole="button" accessibilityLabel="السحب">
-          <Text style={getStyle('AdminWallet')}>السحب</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminWallet' })} accessibilityRole="button" accessibilityLabel={t('السحب')}>
+          <Text style={getStyle('AdminWallet')}>{t('السحب')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel="الإعدادات">
-          <Text style={getStyle('AdminSettings')}>الإعدادات</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel={t('الإعدادات')}>
+          <Text style={getStyle('AdminSettings')}>{t('الإعدادات')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSupport' })} accessibilityRole="button" accessibilityLabel="الدعم">
-          <Text style={getStyle('AdminSupport')}>الدعم</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSupport' })} accessibilityRole="button" accessibilityLabel={t('الدعم')}>
+          <Text style={getStyle('AdminSupport')}>{t('الدعم')}</Text>
         </TouchableOpacity>
       </View>
       ) : (
         <View style={topHeaderStyles.currentContext}>
           <View style={topHeaderStyles.currentContextDot} />
-          <Text style={topHeaderStyles.currentContextText}>{currentLabel}</Text>
+          <Text style={topHeaderStyles.currentContextText}>{tv(currentLabel)}</Text>
         </View>
       )}
       <View style={topHeaderStyles.headerRight}>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="البحث">
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel={t('البحث')}>
           <Ionicons name="search-outline" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })} accessibilityRole="button" accessibilityLabel="الإشعارات">
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })} accessibilityRole="button" accessibilityLabel={t('الإشعارات')}>
           <Ionicons name="notifications-outline" size={20} color={COLORS.textPrimary} />
           <View style={topHeaderStyles.notificationDot} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel="حساب المدير">
+        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel={t('حساب المدير')}>
           <Ionicons name="person" size={17} color={COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -377,15 +378,15 @@ export default function AdminTabNavigator() {
       }}
     >
       <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen}
-        options={{ tabBarLabel: 'الرئيسية', tabBarAccessibilityLabel: 'الرئيسية', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('الرئيسية'), tabBarAccessibilityLabel: t('الرئيسية'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMerchants" component={AdminMerchantsScreen}
-        options={{ tabBarLabel: 'التجار', tabBarAccessibilityLabel: 'التجار', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('التجار'), tabBarAccessibilityLabel: t('التجار'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminOrders" component={AdminOrdersScreen}
-        options={{ tabBarLabel: 'الطلبات', tabBarAccessibilityLabel: 'الطلبات', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('الطلبات'), tabBarAccessibilityLabel: t('الطلبات'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminUsers" component={AdminUsersScreen}
-        options={{ tabBarLabel: 'المستخدمون', tabBarAccessibilityLabel: 'المستخدمون', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('المستخدمون'), tabBarAccessibilityLabel: t('المستخدمون'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMore" component={MoreNavigator}
-        options={{ tabBarLabel: 'المزيد', tabBarAccessibilityLabel: 'المزيد', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('المزيد'), tabBarAccessibilityLabel: t('المزيد'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
     </Tab.Navigator>
   );
 

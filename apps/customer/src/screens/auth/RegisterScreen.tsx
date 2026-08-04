@@ -52,6 +52,7 @@ const ROLE_OPTIONS: RoleOption[] = [
 
 
 import { useNavigation } from '@react-navigation/native';
+import { t, tv } from '@marketplace/shared-i18n';
 
 export default function RegisterScreen(): React.JSX.Element {
   const navigation = useNavigation<any>();
@@ -103,8 +104,8 @@ export default function RegisterScreen(): React.JSX.Element {
             source={require('../../../assets/images/logo.png')}
             style={styles.desktopCoverLogo}
           />
-          <Text style={styles.desktopCoverTitle}>انضم إلينا كشريك نجاح</Text>
-          <Text style={styles.desktopCoverSub}>ابدأ رحلتك معنا اليوم وحقق أهدافك.</Text>
+          <Text style={styles.desktopCoverTitle}>{t('انضم إلينا كشريك نجاح')}</Text>
+          <Text style={styles.desktopCoverSub}>{t('ابدأ رحلتك معنا اليوم وحقق أهدافك.')}</Text>
         </View>
       )}
 
@@ -150,12 +151,12 @@ export default function RegisterScreen(): React.JSX.Element {
 
                 {/* Welcome Text */}
                 <View style={styles.welcomeTextContainer}>
-                  <Text style={styles.welcomeTitle}>مرحباً بك!</Text>
-                  <Text style={styles.welcomeSub}>اختر نوع الحساب الذي يناسبك للبدء</Text>
+                  <Text style={styles.welcomeTitle}>{t('مرحباً بك!')}</Text>
+                  <Text style={styles.welcomeSub}>{t('اختر نوع الحساب الذي يناسبك للبدء')}</Text>
                 </View>
                 <View style={styles.sectionTitleRow}>
                   <View style={styles.sectionTitleDot} />
-                  <Text style={styles.sectionTitleSmall}>اختر نوع الحساب</Text>
+                  <Text style={styles.sectionTitleSmall}>{t('اختر نوع الحساب')}</Text>
                 </View>
                 <View style={styles.rolesRow}>
                   {ROLE_OPTIONS.map((opt) => {
@@ -189,10 +190,10 @@ export default function RegisterScreen(): React.JSX.Element {
                           )}
                         </View>
                         <Text style={[styles.roleTitle, isActive && styles.roleTitleActive]}>
-                          {opt.title}
+                          {tv(opt.title)}
                         </Text>
                         <Text style={[styles.roleDesc, isActive && styles.roleDescActive]}>
-                          {opt.description}
+                          {tv(opt.description)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -205,19 +206,19 @@ export default function RegisterScreen(): React.JSX.Element {
                     <View style={styles.featureIconBox}>
                       <Ionicons name="headset-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>دعم 24/7</Text>
+                    <Text style={styles.featureText}>{t('دعم 24/7')}</Text>
                   </View>
                   <View style={styles.featureItem}>
                     <View style={styles.featureIconBox}>
                       <Ionicons name="flash-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>سهولة وسرعة</Text>
+                    <Text style={styles.featureText}>{t('سهولة وسرعة')}</Text>
                   </View>
                   <View style={styles.featureItem}>
                     <View style={styles.featureIconBox}>
                       <Ionicons name="shield-checkmark-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>آمن وموثوق</Text>
+                    <Text style={styles.featureText}>{t('آمن وموثوق')}</Text>
                   </View>
                 </View>
 
@@ -226,13 +227,13 @@ export default function RegisterScreen(): React.JSX.Element {
                   onPress={() => setStep(2)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.submitBtnText}>التالي</Text>
+                  <Text style={styles.submitBtnText}>{t('التالي')}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.loginHintRow}>
-                  <Text style={styles.loginHintText}>لديك حساب بالفعل؟</Text>
+                  <Text style={styles.loginHintText}>{t('لديك حساب بالفعل؟')}</Text>
                   <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-                    <Text style={styles.loginHintLink}>تسجيل الدخول</Text>
+                    <Text style={styles.loginHintLink}>{t('تسجيل الدخول')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -254,30 +255,30 @@ export default function RegisterScreen(): React.JSX.Element {
                     </View>
                   )}
                   <Text style={styles.roleHeaderTitle}>
-                    {selectedRole === USER_ROLES.DELIVERY
-                      ? 'انضم لفريق التوصيل'
+                    {tv(selectedRole === USER_ROLES.DELIVERY
+                      ? t('انضم لفريق التوصيل')
                       : selectedRole === USER_ROLES.MERCHANT
-                        ? 'انضم كشريك تجاري'
-                        : 'أنشئ حسابك'}
+                        ? t('انضم كشريك تجاري')
+                        : t('أنشئ حسابك'))}
                   </Text>
                   <Text style={styles.roleHeaderSub}>
-                    {selectedRole === USER_ROLES.DELIVERY
-                      ? 'سجل بياناتك كـ(مندوب) للبدء في استقبال الطلبات وزيادة دخلك اليومي'
+                    {tv(selectedRole === USER_ROLES.DELIVERY
+                      ? t('سجل بياناتك كـ(مندوب) للبدء في استقبال الطلبات وزيادة دخلك اليومي')
                       : selectedRole === USER_ROLES.MERCHANT
-                        ? 'سجل بيانات متجرك للبدء في عرض منتجاتك والوصول لملايين العملاء'
-                        : 'أدخل بياناتك للبدء في التسوّق وتتبّع طلباتك بسهولة'}
+                        ? t('سجل بيانات متجرك للبدء في عرض منتجاتك والوصول لملايين العملاء')
+                        : t('أدخل بياناتك للبدء في التسوّق وتتبّع طلباتك بسهولة'))}
                   </Text>
                 </View>
 
                 {/* Input Fields */}
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>الاسم الكامل</Text>
+                  <Text style={styles.fieldLabel}>{t('الاسم الكامل')}</Text>
                   <View style={styles.inputWrapper}>
                     <Ionicons name="person-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                     <View style={styles.verticalDivider} />
                     <TextInput
                       style={styles.input}
-                      placeholder="الاسم الأول والأخير"
+                      placeholder={t('الاسم الأول والأخير')}
                       placeholderTextColor="#9CA3AF"
                       value={fullName}
                       onChangeText={setFullName}
@@ -288,7 +289,7 @@ export default function RegisterScreen(): React.JSX.Element {
                 </View>
 
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>رقم الجوال</Text>
+                  <Text style={styles.fieldLabel}>{t('رقم الجوال')}</Text>
                   <View style={styles.inputWrapper}>
                     <View style={styles.countryCodeBox}>
                       <Text style={styles.flagEmoji}>🇸🇦</Text>
@@ -318,7 +319,7 @@ export default function RegisterScreen(): React.JSX.Element {
                   {isLoading ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
-                    <Text style={styles.submitBtnText}>إرسال وتسجيل</Text>
+                    <Text style={styles.submitBtnText}>{t('إرسال وتسجيل')}</Text>
                   )}
                 </TouchableOpacity>
               </View>

@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getMyWithdrawalRequests, requestWithdrawal, DeliveryEarning, WithdrawalRequest, WithdrawalStatus } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'pending',
@@ -96,7 +97,7 @@ export default function EarningsScreen() {
       setShowWithdraw(false);
       setWithdrawAmount('');
       await loadEarnings();
-      Alert.alert('تم إنشاء الطلب', `تم تسجيل طلب سحب ${amount} ر.ي للمراجعة. يمكنك متابعة حالته في هذه الصفحة، ولا يُعد المبلغ مدفوعاً حتى تظهر حالة «مدفوع».`);
+      Alert.alert('تم إنشاء الطلب', t('تم تسجيل طلب سحب {0} ر.ي للمراجعة. يمكنك متابعة حالته في هذه الصفحة، ولا يُعد المبلغ مدفوعاً حتى تظهر حالة «مدفوع».', [tv(amount)]));
     } catch (error) {
       Alert.alert('تعذّر طلب السحب', withdrawalErrorMessage(error));
     } finally {
@@ -109,18 +110,18 @@ export default function EarningsScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <Text style={styles.headerTitle}>أرباحي</Text>
+        <Text style={styles.headerTitle}>{t('أرباحي')}</Text>
       </View>
 
       {/* Withdrawal Modal */}
       <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => !withdrawing && setShowWithdraw(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, layout.compact && styles.modalCardCompact]}>
-            <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
-            <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: '#111827' }}>{balance} ر.ي</Text></Text>
+            <Text style={styles.modalTitle}>{t('طلب سحب الأرباح')}</Text>
+            <Text style={styles.modalSub}>{t('رصيدك الحالي:')}{' '}<Text style={{ fontWeight: '800', color: '#111827' }}>{t('{0} ر.ي', [tv(balance)])}</Text></Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="المبلغ المراد سحبه (ر.ي)"
+              placeholder={t('المبلغ المراد سحبه (ر.ي)')}
               placeholderTextColor="#9CA3AF"
               value={withdrawAmount}
               onChangeText={setWithdrawAmount}
@@ -137,14 +138,14 @@ export default function EarningsScreen() {
             >
               {withdrawing
                 ? <ActivityIndicator color="#FFFFFF" size="small" />
-                : <Text style={styles.modalBtnText}>إرسال طلب السحب</Text>}
+                : <Text style={styles.modalBtnText}>{t('إرسال طلب السحب')}</Text>}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalCancel, withdrawing && { opacity: 0.5 }]}
               onPress={() => { setShowWithdraw(false); setWithdrawAmount(''); }}
               disabled={withdrawing}
             >
-              <Text style={styles.modalCancelText}>إلغاء</Text>
+              <Text style={styles.modalCancelText}>{t('إلغاء')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -163,25 +164,25 @@ export default function EarningsScreen() {
           <>
             {loadError ? (
               <View style={styles.errorCard}>
-                <Text style={styles.errorText}>{loadError}</Text>
-                <TouchableOpacity onPress={() => void loadEarnings()} accessibilityRole="button" accessibilityLabel="إعادة تحميل الأرباح">
-                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                <Text style={styles.errorText}>{tv(loadError)}</Text>
+                <TouchableOpacity onPress={() => void loadEarnings()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل الأرباح')}>
+                  <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
             {/* Summary Card */}
             <View style={[styles.summaryCard, layout.compact && styles.summaryCardCompact]}>
-              <Text style={styles.summaryLabel}>رصيد المحفظة</Text>
-              <Text style={styles.summaryValue}>{balance} ر.ي</Text>
+              <Text style={styles.summaryLabel}>{t('رصيد المحفظة')}</Text>
+              <Text style={styles.summaryValue}>{t('{0} ر.ي', [tv(balance)])}</Text>
               <View style={[styles.summaryRow, layout.compact && styles.summaryRowCompact]}>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryItemValue}>{recordedCount}</Text>
-                  <Text style={styles.summaryItemLabel}>توصيلات مسجّلة</Text>
+                  <Text style={styles.summaryItemValue}>{tv(recordedCount)}</Text>
+                  <Text style={styles.summaryItemLabel}>{t('توصيلات مسجّلة')}</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryItemValue}>{totalDeliveries}</Text>
-                  <Text style={styles.summaryItemLabel}>إجمالي التوصيلات</Text>
+                  <Text style={styles.summaryItemValue}>{tv(totalDeliveries)}</Text>
+                  <Text style={styles.summaryItemLabel}>{t('إجمالي التوصيلات')}</Text>
                 </View>
               </View>
               <TouchableOpacity
@@ -190,24 +191,24 @@ export default function EarningsScreen() {
                 activeOpacity={0.8}
                 disabled={balance < 50 || hasBlockingWithdrawal || withdrawing}
                 accessibilityRole="button"
-                accessibilityLabel="طلب سحب الأرباح"
+                accessibilityLabel={t('طلب سحب الأرباح')}
                 accessibilityState={{ disabled: balance < 50 || hasBlockingWithdrawal || withdrawing }}
               >
                 <Ionicons name="arrow-up-circle-outline" size={18} color="#111827" />
-                <Text style={styles.withdrawBtnText}>طلب سحب الأرباح</Text>
+                <Text style={styles.withdrawBtnText}>{t('طلب سحب الأرباح')}</Text>
               </TouchableOpacity>
             </View>
 
             {withdrawals.length ? (
               <View style={styles.withdrawalSection}>
-                <Text style={styles.sectionTitle}>طلبات السحب</Text>
+                <Text style={styles.sectionTitle}>{t('طلبات السحب')}</Text>
                 {withdrawals.slice(0, 5).map((request) => {
                   const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
                   return (
                     <View key={request.id} style={styles.withdrawalRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
-                        <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-SA')}</Text>
+                        <Text style={styles.withdrawalAmount}>{t('{0} ر.ي', [request.amount.toLocaleString()])}</Text>
+                        <Text style={styles.withdrawalDate}>{tv(new Date(request.created_at).toLocaleDateString(getLocale()))}</Text>
                       </View>
                       <Text
                         style={[
@@ -215,7 +216,7 @@ export default function EarningsScreen() {
                           { color: statusInfo.color, backgroundColor: statusInfo.backgroundColor },
                         ]}
                       >
-                        {statusInfo.label}
+                        {tv(statusInfo.label)}
                       </Text>
                     </View>
                   );
@@ -223,14 +224,12 @@ export default function EarningsScreen() {
               </View>
             ) : null}
 
-            <Text style={styles.sectionTitle}>
-              سجل التوصيلات{recordedCount > history.length ? ` (أحدث ${history.length} من ${recordedCount})` : ''}
-            </Text>
+            <Text style={styles.sectionTitle}>{t('سجل التوصيلات{0}', [recordedCount > history.length ? ` (أحدث ${history.length} من ${recordedCount})` : ''])}</Text>
           </>
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: '#9CA3AF', fontSize: 13 }}>لا توجد أرباح مسجّلة بعد</Text>
+            <Text style={{ color: '#9CA3AF', fontSize: 13 }}>{t('لا توجد أرباح مسجّلة بعد')}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -239,10 +238,10 @@ export default function EarningsScreen() {
               <Ionicons name="checkmark-done" size={20} color="#059669" />
             </View>
             <View style={styles.info}>
-              <Text style={styles.route}>توصيلة مكتملة</Text>
-              <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+              <Text style={styles.route}>{t('توصيلة مكتملة')}</Text>
+              <Text style={styles.meta}>{tv(new Date(item.created_at).toLocaleDateString(getLocale()))}</Text>
             </View>
-            <Text style={styles.fee}>+{item.total_earning} ر.ي</Text>
+            <Text style={styles.fee}>{t('+{0} ر.ي', [tv(item.total_earning)])}</Text>
           </View>
         )}
       />

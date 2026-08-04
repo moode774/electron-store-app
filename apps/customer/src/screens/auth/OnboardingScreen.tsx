@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const { width, height } = Dimensions.get('window');
 
@@ -74,7 +75,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
           activeOpacity={0.7}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <Text style={styles.skipText}>تخطّي</Text>
+          <Text style={styles.skipText}>{t('تخطّي')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -93,8 +94,8 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
             <View style={styles.iconCircle}>
               <Ionicons name={item.icon as any} size={50} color="#FFFFFF" />
             </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.body}>{item.body}</Text>
+            <Text style={styles.title}>{tv(item.title)}</Text>
+            <Text style={styles.body}>{tv(item.body)}</Text>
           </View>
         )}
       />
@@ -108,7 +109,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
         </View>
 
         <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.9}>
-          <Text style={styles.nextBtnText}>{isLast ? 'ابدأ تجربتك' : 'التالي'}</Text>
+          <Text style={styles.nextBtnText}>{tv(isLast ? t('ابدأ تجربتك') : t('التالي'))}</Text>
           <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </View>

@@ -39,6 +39,7 @@ import EditProfileScreen from '../screens/main/account/EditProfileScreen';
 import PaymentMethodsScreen from '../screens/main/account/PaymentMethodsScreen';
 import LegalScreen from '../screens/main/account/LegalScreen';
 import { CustomerTabBar } from '../components/customer/CustomerTabBar';
+import { t } from '@marketplace/shared-i18n';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 function HomeNavigator() {
@@ -125,27 +126,27 @@ export default function MainTabNavigator() {
       <Tab.Screen
         name="Cart"
         component={CartNavigator}
-        options={{ tabBarLabel: 'السلة' }}
+        options={{ tabBarLabel: t('السلة') }}
       />
       <Tab.Screen
         name="Orders"
         component={OrdersNavigator}
-        options={{ tabBarLabel: 'طلباتي' }}
+        options={{ tabBarLabel: t('طلباتي') }}
       />
       <Tab.Screen
         name="Home"
         component={HomeNavigator}
-        options={{ tabBarLabel: 'الرئيسية' }}
+        options={{ tabBarLabel: t('الرئيسية') }}
       />
       <Tab.Screen
         name="Categories"
         component={CategoriesNavigator}
-        options={{ tabBarLabel: 'المتاجر' }}
+        options={{ tabBarLabel: t('المتاجر') }}
       />
       <Tab.Screen
         name="More"
         component={AccountNavigator}
-        options={{ tabBarLabel: 'حسابي' }}
+        options={{ tabBarLabel: t('حسابي') }}
       />
     </Tab.Navigator>
   );

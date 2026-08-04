@@ -23,6 +23,7 @@ import {
   reconcileLegacyDeliveredOrder,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const C = {
   primary: COLORS.primary,
@@ -219,64 +220,64 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
         <View style={s.cardHeader}>
           <View style={[s.badge, item.is_reconcilable ? s.readyBadge : s.blockedBadge]}>
             <Text style={[s.badgeText, { color: item.is_reconcilable ? C.success : C.danger }]}>
-              {item.is_reconcilable ? 'جاهز للمراجعة' : 'موقوف للفحص اليدوي'}
+              {tv(item.is_reconcilable ? t('جاهز للمراجعة') : t('موقوف للفحص اليدوي'))}
             </Text>
           </View>
           <View style={s.orderTitleWrap}>
-            <Text style={s.orderNumber}>طلب {item.order_number}</Text>
-            <Text style={s.meta}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+            <Text style={s.orderNumber}>{t('طلب {0}', [tv(item.order_number)])}</Text>
+            <Text style={s.meta}>{tv(new Date(item.created_at).toLocaleString(getLocale()))}</Text>
           </View>
         </View>
 
         <View style={s.participants}>
-          <Text style={s.participant}>التاجر: {item.merchant_name ?? 'غير معروف'}</Text>
-          <Text style={s.participant}>المندوب: {item.delivery_name ?? 'غير معروف'}</Text>
-          <Text style={s.participant}>الدفع: {PAYMENT_STATUS_LABELS[item.payment_status] ?? item.payment_status}</Text>
+          <Text style={s.participant}>{t('التاجر: {0}', [item.merchant_name ?? 'غير معروف'])}</Text>
+          <Text style={s.participant}>{t('المندوب: {0}', [item.delivery_name ?? 'غير معروف'])}</Text>
+          <Text style={s.participant}>{t('الدفع: {0}', [PAYMENT_STATUS_LABELS[item.payment_status] ?? item.payment_status])}</Text>
         </View>
 
         <View style={s.moneyGrid}>
-          <Text style={s.money}>الإجمالي: {amount(item.gross_amount)} ر.ي</Text>
-          <Text style={s.money}>التاجر: {amount(item.merchant_proceeds)} ر.ي</Text>
-          <Text style={s.money}>التوصيل: {amount(item.delivery_earning)} ر.ي</Text>
-          <Text style={s.money}>المنصة والضريبة: {amount(item.platform_amount)} ر.ي</Text>
+          <Text style={s.money}>{t('الإجمالي: {0} ر.ي', [amount(item.gross_amount)])}</Text>
+          <Text style={s.money}>{t('التاجر: {0} ر.ي', [amount(item.merchant_proceeds)])}</Text>
+          <Text style={s.money}>{t('التوصيل: {0} ر.ي', [amount(item.delivery_earning)])}</Text>
+          <Text style={s.money}>{t('المنصة والضريبة: {0} ر.ي', [amount(item.platform_amount)])}</Text>
         </View>
 
         {!item.stored_delivered_at && (
           <View style={s.warningBox}>
             <Ionicons name="time-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>وقت التسليم مفقود ويجب إدخاله من دليل موثوق.</Text>
+            <Text style={s.warningText}>{t('وقت التسليم مفقود ويجب إدخاله من دليل موثوق.')}</Text>
           </View>
         )}
         {item.cod_custody_requires_review && (
           <View style={s.warningBox}>
             <Ionicons name="cash-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>طلب نقدي: التسوية لا تعني استلام الإدارة للنقد؛ إثبات الحوالة مسار منفصل.</Text>
+            <Text style={s.warningText}>{t('طلب نقدي: التسوية لا تعني استلام الإدارة للنقد؛ إثبات الحوالة مسار منفصل.')}</Text>
           </View>
         )}
         {item.has_active_refund && (
           <View style={s.warningBox}>
             <Ionicons name="wallet-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>يوجد طلب استرداد مالي نشط. قد تكون التسوية الموثقة متطلبًا لمعالجته، ويجب مراجعته فور نجاح المطابقة.</Text>
+            <Text style={s.warningText}>{t('يوجد طلب استرداد مالي نشط. قد تكون التسوية الموثقة متطلبًا لمعالجته، ويجب مراجعته فور نجاح المطابقة.')}</Text>
           </View>
         )}
         {item.has_active_physical_return && (
           <View style={s.warningBox}>
             <Ionicons name="return-down-back-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>يوجد إرجاع فعلي نشط مرتبط بهذا الطلب؛ راجع عهدة البضاعة والفحص بعد إنشاء التسوية.</Text>
+            <Text style={s.warningText}>{t('يوجد إرجاع فعلي نشط مرتبط بهذا الطلب؛ راجع عهدة البضاعة والفحص بعد إنشاء التسوية.')}</Text>
           </View>
         )}
 
         {conflicts.length > 0 && (
           <View style={s.conflictBox}>
             {conflicts.map((code) => (
-              <Text key={code} style={s.conflictText}>• {CONFLICT_LABELS[code] ?? code}</Text>
+              <Text key={code} style={s.conflictText}>• {tv(CONFLICT_LABELS[code] ?? code)}</Text>
             ))}
           </View>
         )}
 
         {item.is_reconcilable && (
           <TouchableOpacity style={s.reviewButton} onPress={() => open(item)} accessibilityRole="button">
-            <Text style={s.reviewButtonText}>فتح المراجعة الموثقة</Text>
+            <Text style={s.reviewButtonText}>{t('فتح المراجعة الموثقة')}</Text>
             <Ionicons name="shield-checkmark" size={19} color="#FFFFFF" />
           </TouchableOpacity>
         )}
@@ -291,8 +292,8 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           <Ionicons name="arrow-forward" size={24} color={C.text} />
         </TouchableOpacity>
         <View style={s.headerText}>
-          <Text style={s.title}>مطابقة الطلبات المالية القديمة</Text>
-          <Text style={s.subtitle}>لا تُنشأ أي تسوية بلا أرقام ودليل وقرار صريح عن العدادات.</Text>
+          <Text style={s.title}>{t('مطابقة الطلبات المالية القديمة')}</Text>
+          <Text style={s.subtitle}>{t('لا تُنشأ أي تسوية بلا أرقام ودليل وقرار صريح عن العدادات.')}</Text>
         </View>
       </View>
 
@@ -301,9 +302,9 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
       ) : loadError ? (
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="alert-circle-outline" size={48} color={C.danger} />
-          <Text style={s.centerText}>{loadError}</Text>
+          <Text style={s.centerText}>{tv(loadError)}</Text>
           <TouchableOpacity style={s.retryButton} onPress={() => { setLoading(true); load(); }}>
-            <Text style={s.retryText}>إعادة المحاولة</Text>
+            <Text style={s.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -319,7 +320,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           ListEmptyComponent={(
             <View style={s.center}>
               <Ionicons name="checkmark-done-circle-outline" size={52} color={C.success} />
-              <Text style={s.centerText}>لا توجد طلبات مسلّمة قديمة بلا تسوية.</Text>
+              <Text style={s.centerText}>{t('لا توجد طلبات مسلّمة قديمة بلا تسوية.')}</Text>
             </View>
           )}
         />
@@ -339,26 +340,26 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
                   <Ionicons name="close" size={22} color={C.muted} />
                 </TouchableOpacity>
                 <View style={s.modalTitleWrap}>
-                  <Text style={s.modalTitle}>مطابقة {selected?.order_number}</Text>
-                  <Text style={s.modalSubtitle}>راجع الدليل خارج التطبيق أولًا، ثم أكد البيانات هنا.</Text>
+                  <Text style={s.modalTitle}>{t('مطابقة {0}', [tv(selected?.order_number)])}</Text>
+                  <Text style={s.modalSubtitle}>{t('راجع الدليل خارج التطبيق أولًا، ثم أكد البيانات هنا.')}</Text>
                 </View>
               </View>
 
-              <Field label="وقت التسليم المؤكد (ISO)" value={form?.deliveredAt ?? ''} onChangeText={(v) => update('deliveredAt', v)} placeholder="2026-07-10T14:30:00+03:00" />
+              <Field label={t('وقت التسليم المؤكد (ISO)')} value={form?.deliveredAt ?? ''} onChangeText={(v) => update('deliveredAt', v)} placeholder="2026-07-10T14:30:00+03:00" />
               <View style={[s.twoColumns, compact && s.stack]}>
-                <Field compact label="الإجمالي" value={form?.gross ?? ''} onChangeText={(v) => update('gross', v)} keyboardType="decimal-pad" />
-                <Field compact label="مستحق التاجر" value={form?.merchant ?? ''} onChangeText={(v) => update('merchant', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('الإجمالي')} value={form?.gross ?? ''} onChangeText={(v) => update('gross', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('مستحق التاجر')} value={form?.merchant ?? ''} onChangeText={(v) => update('merchant', v)} keyboardType="decimal-pad" />
               </View>
               <View style={[s.twoColumns, compact && s.stack]}>
-                <Field compact label="مستحق التوصيل" value={form?.delivery ?? ''} onChangeText={(v) => update('delivery', v)} keyboardType="decimal-pad" />
-                <Field compact label="عمولة المنصة" value={form?.commission ?? ''} onChangeText={(v) => update('commission', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('مستحق التوصيل')} value={form?.delivery ?? ''} onChangeText={(v) => update('delivery', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('عمولة المنصة')} value={form?.commission ?? ''} onChangeText={(v) => update('commission', v)} keyboardType="decimal-pad" />
               </View>
-              <Field label="الضريبة" value={form?.tax ?? ''} onChangeText={(v) => update('tax', v)} keyboardType="decimal-pad" />
+              <Field label={t('الضريبة')} value={form?.tax ?? ''} onChangeText={(v) => update('tax', v)} keyboardType="decimal-pad" />
 
-              <Text style={s.fieldLabel}>هل أضيفت إحصاءات الطلب سابقًا؟</Text>
+              <Text style={s.fieldLabel}>{t('هل أضيفت إحصاءات الطلب سابقًا؟')}</Text>
               <View style={[s.choiceRow, compact && s.stack]}>
-                <Choice selected={form?.statsState === 'already_counted'} label="نعم، محسوبة" onPress={() => update('statsState', 'already_counted')} />
-                <Choice selected={form?.statsState === 'not_counted'} label="لا، غير محسوبة" onPress={() => update('statsState', 'not_counted')} />
+                <Choice selected={form?.statsState === 'already_counted'} label={t('نعم، محسوبة')} onPress={() => update('statsState', 'already_counted')} />
+                <Choice selected={form?.statsState === 'not_counted'} label={t('لا، غير محسوبة')} onPress={() => update('statsState', 'not_counted')} />
               </View>
 
               {selected?.cod_custody_requires_review && (
@@ -369,18 +370,18 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
                   accessibilityState={{ checked: !!form?.acknowledgeCod }}
                 >
                   <Ionicons name={form?.acknowledgeCod ? 'checkbox' : 'square-outline'} size={22} color={C.primary} />
-                  <Text style={s.ackText}>أقرّ أن النقد سيبقى معلقًا، ولن يُعد مستلمًا حتى يرفع المندوب إثبات الحوالة وتراجعه إدارة أخرى.</Text>
+                  <Text style={s.ackText}>{t('أقرّ أن النقد سيبقى معلقًا، ولن يُعد مستلمًا حتى يرفع المندوب إثبات الحوالة وتراجعه إدارة أخرى.')}</Text>
                 </TouchableOpacity>
               )}
 
-              <Field label="مرجع الدليل" value={form?.evidence ?? ''} onChangeText={(v) => update('evidence', v)} placeholder="رقم تذكرة، رابط ملف خاص، أو مرجع كشف موثوق" maxLength={1000} />
-              <Field label="سبب المطابقة (20 حرفًا على الأقل)" value={form?.reason ?? ''} onChangeText={(v) => update('reason', v)} multiline maxLength={2000} />
-              <Field label={`اكتب رقم الطلب للتأكيد: ${selected?.order_number ?? ''}`} value={form?.confirmOrderNumber ?? ''} onChangeText={(v) => update('confirmOrderNumber', v)} />
+              <Field label={t('مرجع الدليل')} value={form?.evidence ?? ''} onChangeText={(v) => update('evidence', v)} placeholder={t('رقم تذكرة، رابط ملف خاص، أو مرجع كشف موثوق')} maxLength={1000} />
+              <Field label={t('سبب المطابقة (20 حرفًا على الأقل)')} value={form?.reason ?? ''} onChangeText={(v) => update('reason', v)} multiline maxLength={2000} />
+              <Field label={t('اكتب رقم الطلب للتأكيد: {0}', [selected?.order_number ?? ''])} value={form?.confirmOrderNumber ?? ''} onChangeText={(v) => update('confirmOrderNumber', v)} />
 
               <TouchableOpacity style={[s.submitButton, submitting && s.disabled]} onPress={submit} disabled={submitting}>
                 {submitting ? <ActivityIndicator color="#FFFFFF" /> : (
                   <>
-                    <Text style={s.submitText}>تأكيد وإنشاء التسوية مرة واحدة</Text>
+                    <Text style={s.submitText}>{t('تأكيد وإنشاء التسوية مرة واحدة')}</Text>
                     <Ionicons name="lock-closed" size={18} color="#FFFFFF" />
                   </>
                 )}
@@ -396,7 +397,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
 function Field({ label, compact, ...props }: React.ComponentProps<typeof TextInput> & { label: string; compact?: boolean }) {
   return (
     <View style={compact ? s.compactField : s.field}>
-      <Text style={s.fieldLabel}>{label}</Text>
+      <Text style={s.fieldLabel}>{tv(label)}</Text>
       <TextInput
         {...props}
         style={[s.input, props.multiline && s.multiline]}
@@ -411,7 +412,7 @@ function Choice({ selected, label, onPress }: { selected: boolean; label: string
   return (
     <TouchableOpacity style={[s.choice, selected && s.choiceSelected]} onPress={onPress} accessibilityRole="radio" accessibilityState={{ selected }}>
       <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? C.primary : C.muted} />
-      <Text style={[s.choiceText, selected && s.choiceTextSelected]}>{label}</Text>
+      <Text style={[s.choiceText, selected && s.choiceTextSelected]}>{tv(label)}</Text>
     </TouchableOpacity>
   );
 }

@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAdminMerchants, approveMerchant, toggleMerchantActive, AdminMerchant } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -91,7 +92,7 @@ export default function AdminMerchantsScreen() {
     }
     Alert.alert(
       'تفعيل التاجر',
-      `هل تريد تفعيل المتجر "${merchant.store_name}"؟`,
+      t('هل تريد تفعيل المتجر "{0}"؟', [tv(merchant.store_name)]),
       [
         { text: 'إلغاء', style: 'cancel' },
         {
@@ -148,19 +149,19 @@ export default function AdminMerchantsScreen() {
             <Ionicons name="storefront" size={24} color={UI.primary} />
           </View>
           <View style={s.cardInfo}>
-            <Text style={s.storeName}>{item.store_name}</Text>
+            <Text style={s.storeName}>{tv(item.store_name)}</Text>
             <View style={s.ownerRow}>
               <Ionicons name="person-outline" size={12} color={UI.textMuted} />
-              <Text style={s.ownerName}>{userName}</Text>
+              <Text style={s.ownerName}>{tv(userName)}</Text>
             </View>
             <View style={s.ownerRow}>
               <Ionicons name="call-outline" size={12} color={UI.textMuted} />
-              <Text style={s.phoneText}>{phone}</Text>
+              <Text style={s.phoneText}>{tv(phone)}</Text>
             </View>
           </View>
           <View style={[s.statusBadge, item.is_approved ? s.statusApproved : s.statusPending]}>
             <Text style={[s.statusText, item.is_approved ? s.statusTextApproved : s.statusTextPending]}>
-              {item.is_approved ? 'معتمد' : 'انتظار'}
+              {tv(item.is_approved ? t('معتمد') : t('انتظار'))}
             </Text>
           </View>
         </View>
@@ -170,17 +171,17 @@ export default function AdminMerchantsScreen() {
         <View style={s.cardMeta}>
           <View style={s.metaItem}>
             <View style={s.metaIconBox}><Ionicons name="location" size={14} color={UI.primary} /></View>
-            <Text style={s.metaText}>{item.city ?? 'غير محدد'}</Text>
+            <Text style={s.metaText}>{tv(item.city ?? t('غير محدد'))}</Text>
           </View>
           <View style={s.metaItem}>
             <View style={[s.metaIconBox, { backgroundColor: '#ECFDF5' }]}><Ionicons name="wallet" size={14} color={UI.success} /></View>
-            <Text style={[s.metaText, { color: UI.success, fontWeight: '800' }]}>{(item.wallet_balance || 0).toFixed(2)} ر.ي</Text>
+            <Text style={[s.metaText, { color: UI.success, fontWeight: '800' }]}>{t('{0} ر.ي', [(item.wallet_balance || 0).toFixed(2)])}</Text>
           </View>
           {item.is_approved && (
             <View style={[s.metaItem, item.is_active ? s.activePill : s.inactivePill]}>
               <Ionicons name={item.is_active ? 'checkmark-circle' : 'pause-circle'} size={14} color={item.is_active ? '#10B981' : '#9CA3AF'} />
               <Text style={[s.metaText, { color: item.is_active ? '#10B981' : '#9CA3AF', fontWeight: '700' }]}>
-                {item.is_active ? 'نشط' : 'موقوف'}
+                {tv(item.is_active ? t('نشط') : t('موقوف'))}
               </Text>
             </View>
           )}
@@ -194,18 +195,18 @@ export default function AdminMerchantsScreen() {
               <>
                 <TouchableOpacity style={s.approveBtn} onPress={() => handleApprove(item, true)} activeOpacity={0.8}>
                   <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-                  <Text style={s.approveBtnText}>موافقة</Text>
+                  <Text style={s.approveBtnText}>{t('موافقة')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.rejectBtn} onPress={() => handleApprove(item, false)} activeOpacity={0.8}>
                   <Ionicons name="close-circle-outline" size={18} color={UI.danger} />
-                  <Text style={s.rejectBtnText}>رفض</Text>
+                  <Text style={s.rejectBtnText}>{t('رفض')}</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity style={[s.toggleBtn, item.is_active ? s.toggleBtnStop : s.toggleBtnActive]} onPress={() => handleToggleActive(item)} activeOpacity={0.8}>
                 <Ionicons name={item.is_active ? 'pause-outline' : 'play-outline'} size={18} color={item.is_active ? UI.textMuted : UI.primary} />
                 <Text style={[s.toggleBtnText, { color: item.is_active ? UI.textMuted : UI.primary }]}>
-                  {item.is_active ? 'إيقاف المتجر' : 'تفعيل المتجر'}
+                  {tv(item.is_active ? t('إيقاف المتجر') : t('تفعيل المتجر'))}
                 </Text>
               </TouchableOpacity>
             )}
@@ -220,15 +221,15 @@ export default function AdminMerchantsScreen() {
       {/* Modern Header */}
       <View style={s.header}>
         <View style={[s.headerContent, { width: contentWidth }]}>
-          <Text style={s.headerCount}>{merchants.length} متجر</Text>
-          <Text style={s.headerTitle}>التجار</Text>
+          <Text style={s.headerCount}>{t('{0} متجر', [tv(merchants.length)])}</Text>
+          <Text style={s.headerTitle}>{t('التجار')}</Text>
         </View>
         
         <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
-            placeholder="البحث باسم المتجر أو المالك..."
+            placeholder={t('البحث باسم المتجر أو المالك...')}
             placeholderTextColor={UI.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -253,7 +254,7 @@ export default function AdminMerchantsScreen() {
                 onPress={() => setFilter(f.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.filterText, isActive && s.filterTextActive]}>{f.label}</Text>
+                <Text style={[s.filterText, isActive && s.filterTextActive]}>{tv(f.label)}</Text>
               </TouchableOpacity>
             );
           }}
@@ -275,7 +276,7 @@ export default function AdminMerchantsScreen() {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="storefront-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا يوجد تجار لعرضهم</Text>
+              <Text style={s.emptyText}>{t('لا يوجد تجار لعرضهم')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -287,28 +288,28 @@ export default function AdminMerchantsScreen() {
         <View style={s.modalOverlay}>
           <View style={[s.modalContent, { width: Math.min(Math.max(width - 24, 280), 420) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>إيقاف المتجر</Text>
+              <Text style={s.modalTitle}>{t('إيقاف المتجر')}</Text>
               <TouchableOpacity onPress={() => setPauseModal(p => ({ ...p, visible: false }))}>
                 <Ionicons name="close" size={24} color={UI.textMuted} />
               </TouchableOpacity>
             </View>
-            <Text style={s.modalSubtitle}>سيتم إيقاف متجر "{pauseModal.merchant?.store_name}" وإخفاؤه عن العملاء. يرجى توضيح السبب ليظهر للتاجر:</Text>
+            <Text style={s.modalSubtitle}>{t('سيتم إيقاف متجر "{0}" وإخفاؤه عن العملاء. يرجى توضيح السبب ليظهر للتاجر:', [tv(pauseModal.merchant?.store_name)])}</Text>
             
             <View style={s.reasonPresets}>
-              {['مخالفة شروط الاستخدام', 'كثرة شكاوى العملاء', 'عدم توفر التراخيص اللازمة'].map((r) => (
+              {[t('مخالفة شروط الاستخدام'), t('كثرة شكاوى العملاء'), t('عدم توفر التراخيص اللازمة')].map((r) => (
                 <TouchableOpacity 
                   key={r} 
                   style={[s.reasonPresetBtn, pauseModal.reason === r && s.reasonPresetBtnActive]}
                   onPress={() => setPauseModal(p => ({ ...p, reason: r }))}
                 >
-                  <Text style={[s.reasonPresetText, pauseModal.reason === r && s.reasonPresetTextActive]}>{r}</Text>
+                  <Text style={[s.reasonPresetText, pauseModal.reason === r && s.reasonPresetTextActive]}>{tv(r)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <TextInput
               style={s.reasonInput}
-              placeholder="أو اكتب سبباً آخر هنا..."
+              placeholder={t('أو اكتب سبباً آخر هنا...')}
               placeholderTextColor={UI.textMuted}
               value={pauseModal.reason}
               onChangeText={(reasonText) => setPauseModal(p => ({ ...p, reason: reasonText }))}
@@ -318,10 +319,10 @@ export default function AdminMerchantsScreen() {
 
             <View style={s.modalActions}>
               <TouchableOpacity style={s.modalCancelBtn} onPress={() => setPauseModal(p => ({ ...p, visible: false }))}>
-                <Text style={s.modalCancelText}>إلغاء</Text>
+                <Text style={s.modalCancelText}>{t('إلغاء')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.modalSubmitBtn} onPress={submitPause}>
-                <Text style={s.modalSubmitText}>تأكيد الإيقاف</Text>
+                <Text style={s.modalSubmitText}>{t('تأكيد الإيقاف')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -332,41 +333,41 @@ export default function AdminMerchantsScreen() {
         <View style={s.modalOverlay}>
           <View style={[s.modalContent, { width: Math.min(Math.max(width - 24, 280), 420) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>{reviewModal.approve ? 'مراجعة واعتماد التاجر' : 'رفض طلب اعتماد التاجر'}</Text>
-              <TouchableOpacity onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing} accessibilityRole="button" accessibilityLabel="إغلاق مراجعة التاجر">
+              <Text style={s.modalTitle}>{tv(reviewModal.approve ? t('مراجعة واعتماد التاجر') : t('رفض طلب اعتماد التاجر'))}</Text>
+              <TouchableOpacity onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing} accessibilityRole="button" accessibilityLabel={t('إغلاق مراجعة التاجر')}>
                 <Ionicons name="close" size={24} color={UI.textMuted} />
               </TouchableOpacity>
             </View>
             {reviewModal.merchant && (() => {
               const merchant = reviewModal.merchant as AdminMerchant & Record<string, any>;
               return <View style={s.verificationBox}>
-                <Text style={s.verificationTitle}>{merchant.store_name}</Text>
-                <Text style={s.verificationRow}>المالك: {(merchant.users as any)?.full_name ?? merchant.owner_name ?? 'غير متوفر'}</Text>
-                <Text style={s.verificationRow}>رقم الهوية: {merchant.national_id || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>السجل التجاري: {merchant.commercial_register || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>الرقم الضريبي: {merchant.tax_number || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>البنك: {merchant.bank_name || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>اسم صاحب الحساب: {merchant.bank_account_name || 'غير مرفق'}</Text>
+                <Text style={s.verificationTitle}>{tv(merchant.store_name)}</Text>
+                <Text style={s.verificationRow}>{t('المالك: {0}', [(merchant.users as any)?.full_name ?? merchant.owner_name ?? 'غير متوفر'])}</Text>
+                <Text style={s.verificationRow}>{t('رقم الهوية: {0}', [merchant.national_id || 'غير مرفق'])}</Text>
+                <Text style={s.verificationRow}>{t('السجل التجاري: {0}', [merchant.commercial_register || 'غير مرفق'])}</Text>
+                <Text style={s.verificationRow}>{t('الرقم الضريبي: {0}', [merchant.tax_number || 'غير مرفق'])}</Text>
+                <Text style={s.verificationRow}>{t('البنك: {0}', [merchant.bank_name || 'غير مرفق'])}</Text>
+                <Text style={s.verificationRow}>{t('اسم صاحب الحساب: {0}', [merchant.bank_account_name || 'غير مرفق'])}</Text>
                 <View style={s.evidenceWarning}>
                   <Ionicons name="warning-outline" size={17} color={UI.warning} />
-                  <Text style={s.evidenceWarningText}>لا يعرض النظام حالياً مستندات أو صور إثبات قابلة للمطابقة؛ لا تعتمد الطلب إذا لم تتحقق خارجياً.</Text>
+                  <Text style={s.evidenceWarningText}>{t('لا يعرض النظام حالياً مستندات أو صور إثبات قابلة للمطابقة؛ لا تعتمد الطلب إذا لم تتحقق خارجياً.')}</Text>
                 </View>
               </View>;
             })()}
             <TextInput
               style={s.reasonInput}
-              placeholder={reviewModal.approve ? 'ملاحظة المراجع (اختياري)...' : 'سبب الرفض (مطلوب)...'}
+              placeholder={reviewModal.approve ? t('ملاحظة المراجع (اختياري)...') : t('سبب الرفض (مطلوب)...')}
               placeholderTextColor={UI.textMuted}
               value={reviewModal.reason}
               onChangeText={(reason) => setReviewModal((current) => ({ ...current, reason }))}
               multiline
               textAlign="right"
-              accessibilityLabel="ملاحظات مراجعة التاجر"
+              accessibilityLabel={t('ملاحظات مراجعة التاجر')}
             />
             <View style={s.modalActions}>
-              <TouchableOpacity style={s.modalCancelBtn} onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing}><Text style={s.modalCancelText}>تراجع</Text></TouchableOpacity>
+              <TouchableOpacity style={s.modalCancelBtn} onPress={() => setReviewModal((current) => ({ ...current, visible: false }))} disabled={!!processing}><Text style={s.modalCancelText}>{t('تراجع')}</Text></TouchableOpacity>
               <TouchableOpacity style={[s.modalSubmitBtn, !reviewModal.approve && { backgroundColor: UI.danger }]} onPress={submitReview} disabled={!!processing}>
-                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalSubmitText}>{reviewModal.approve ? 'اعتماد بعد المراجعة' : 'تأكيد الرفض'}</Text>}
+                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalSubmitText}>{tv(reviewModal.approve ? t('اعتماد بعد المراجعة') : t('تأكيد الرفض'))}</Text>}
               </TouchableOpacity>
             </View>
           </View>

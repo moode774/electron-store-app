@@ -17,6 +17,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { configurePushNotifications } from '../services/pushNotifications';
 import { Alert } from './appAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 type PreferenceKey = keyof NotificationPreferences;
 
@@ -118,21 +119,21 @@ export function NotificationPreferencesCard() {
           <Ionicons name="options-outline" size={20} color={COLORS.primary} />
         </View>
         <View style={styles.headingText}>
-          <Text style={styles.title}>إعدادات الإشعارات</Text>
-          <Text style={styles.subtitle}>تُحفظ على حسابك وتُطبق على كل الأجهزة.</Text>
+          <Text style={styles.title}>{t('إعدادات الإشعارات')}</Text>
+          <Text style={styles.subtitle}>{t('تُحفظ على حسابك وتُطبق على كل الأجهزة.')}</Text>
         </View>
       </View>
 
       {!preferences && !loadError ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.muted}>جاري تحميل الإعدادات…</Text>
+          <Text style={styles.muted}>{t('جاري تحميل الإعدادات…')}</Text>
         </View>
       ) : loadError ? (
         <View style={styles.errorBox} accessibilityRole="alert">
-          <Text style={styles.errorText}>{loadError}</Text>
+          <Text style={styles.errorText}>{tv(loadError)}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
           </TouchableOpacity>
         </View>
       ) : preferences ? (
@@ -140,8 +141,8 @@ export function NotificationPreferencesCard() {
           {preferenceRows.map((row) => (
             <View key={row.key} style={styles.preferenceRow}>
               <View style={styles.preferenceText}>
-                <Text style={styles.preferenceTitle}>{row.title}</Text>
-                <Text style={styles.preferenceDescription}>{row.description}</Text>
+                <Text style={styles.preferenceTitle}>{tv(row.title)}</Text>
+                <Text style={styles.preferenceDescription}>{tv(row.description)}</Text>
               </View>
               <Switch
                 value={preferences[row.key]}
@@ -149,7 +150,7 @@ export function NotificationPreferencesCard() {
                 disabled={savingKey !== null}
                 trackColor={{ false: '#D1D5DB', true: `${COLORS.primary}70` }}
                 thumbColor={preferences[row.key] ? COLORS.primary : '#F9FAFB'}
-                accessibilityLabel={row.title}
+                accessibilityLabel={tv(row.title)}
                 accessibilityState={{ checked: preferences[row.key], disabled: savingKey !== null }}
               />
             </View>
@@ -161,7 +162,7 @@ export function NotificationPreferencesCard() {
               onPress={() => void connectDevice()}
               disabled={savingKey !== null}
               accessibilityRole="button"
-              accessibilityLabel="ربط هذا الجهاز بإشعارات الحساب"
+              accessibilityLabel={t('ربط هذا الجهاز بإشعارات الحساب')}
               accessibilityState={{ busy: savingKey === 'device', disabled: savingKey !== null }}
             >
               {savingKey === 'device' ? (
@@ -169,7 +170,7 @@ export function NotificationPreferencesCard() {
               ) : (
                 <>
                   <Ionicons name="phone-portrait-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.deviceButtonText}>ربط أو تحديث هذا الجهاز</Text>
+                  <Text style={styles.deviceButtonText}>{t('ربط أو تحديث هذا الجهاز')}</Text>
                 </>
               )}
             </TouchableOpacity>

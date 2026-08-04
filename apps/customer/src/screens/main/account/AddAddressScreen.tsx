@@ -6,6 +6,7 @@ import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '@marke
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 export default function AddAddressScreen({ navigation }: any) {
   const layout = useCustomerLayout(820);
@@ -53,7 +54,7 @@ export default function AddAddressScreen({ navigation }: any) {
       }
 
       if (!street) {
-        setStreet((prev) => prev || `موقعي الحالي (${current.latitude.toFixed(4)}, ${current.longitude.toFixed(4)})`);
+        setStreet((prev) => prev || t('موقعي الحالي ({0}, {1})', [current.latitude.toFixed(4), current.longitude.toFixed(4)]));
       }
       Alert.alert('تم تحديد موقعك 📍', 'تم جلب إحداثياتك وسيتم حفظها مع العنوان.');
     } catch {
@@ -91,10 +92,10 @@ export default function AddAddressScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('العودة')}>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>إضافة عنوان</Text>
+          <Text style={styles.headerTitle}>{t('إضافة عنوان')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -104,14 +105,14 @@ export default function AddAddressScreen({ navigation }: any) {
         
         {/* تحديد الموقع الحالي */}
         <View style={styles.mapContainer}>
-          <Text style={styles.mapEmoji}>{coords ? '📍' : '🗺️'}</Text>
+          <Text style={styles.mapEmoji}>{tv(coords ? '📍' : '🗺️')}</Text>
           <Text style={styles.mapText}>
-            {coords
-              ? `تم تحديد موقعك (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
-              : 'حدد موقعك لتعبئة العنوان تلقائياً'}
+            {tv(coords
+              ? t('تم تحديد موقعك ({0}, {1})', [coords.latitude.toFixed(4), coords.longitude.toFixed(4)])
+              : t('حدد موقعك لتعبئة العنوان تلقائياً'))}
           </Text>
           <Button
-            title={locating ? 'جاري تحديد الموقع...' : coords ? 'إعادة تحديد الموقع' : 'تحديد الموقع الحالي'}
+            title={locating ? t('جاري تحديد الموقع...') : coords ? t('إعادة تحديد الموقع') : t('تحديد الموقع الحالي')}
             style={styles.locationButton}
             onPress={handleUseCurrentLocation}
             disabled={locating}
@@ -119,9 +120,9 @@ export default function AddAddressScreen({ navigation }: any) {
         </View>
 
         <Card style={styles.formCard} variant="elevated">
-          <Text style={styles.sectionTitle}>تفاصيل العنوان</Text>
+          <Text style={styles.sectionTitle}>{t('تفاصيل العنوان')}</Text>
           
-          <Text style={styles.inputLabel}>تسمية العنوان</Text>
+          <Text style={styles.inputLabel}>{t('تسمية العنوان')}</Text>
           <View style={styles.labelsRow}>
             {LABELS.map((lbl) => (
               <TouchableOpacity
@@ -130,13 +131,13 @@ export default function AddAddressScreen({ navigation }: any) {
                 onPress={() => setLabel(lbl)}
               >
                 <Text style={[styles.labelChipText, label === lbl && styles.labelChipTextActive]}>
-                  {lbl}
+                  {tv(lbl)}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Text style={styles.inputLabel}>المنطقة / المدينة</Text>
+          <Text style={styles.inputLabel}>{t('المنطقة / المدينة')}</Text>
           <View style={styles.areasRow}>
             {Object.values(SERVICE_AREAS).map((area) => (
               <TouchableOpacity
@@ -145,25 +146,25 @@ export default function AddAddressScreen({ navigation }: any) {
                 onPress={() => setSelectedArea(area)}
               >
                 <Text style={[styles.areaChipText, selectedArea === area && styles.areaChipTextActive]}>
-                  {area === SERVICE_AREAS.SANAA ? 'صنعاء' :
-                   area === SERVICE_AREAS.ADEN ? 'عدن' :
-                   area === SERVICE_AREAS.IBB ? 'إب' :
-                   area === SERVICE_AREAS.TAIZ ? 'تعز' : area}
+                  {tv(area === SERVICE_AREAS.SANAA ? t('صنعاء') :
+                   area === SERVICE_AREAS.ADEN ? t('عدن') :
+                   area === SERVICE_AREAS.IBB ? t('إب') :
+                   area === SERVICE_AREAS.TAIZ ? t('تعز') : area)}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <Input
-            label="الشارع / الحي"
-            placeholder="مثال: شارع حدة، خلف المول"
+            label={t('الشارع / الحي')}
+            placeholder={t('مثال: شارع حدة، خلف المول')}
             value={street}
             onChangeText={setStreet}
             containerStyle={{ marginBottom: 16 }}
           />
           <Input
-            label="أقرب معلم بارز"
-            placeholder="مسجد، مدرسة، مستشفى..."
+            label={t('أقرب معلم بارز')}
+            placeholder={t('مسجد، مدرسة، مستشفى...')}
             value={landmark}
             onChangeText={setLandmark}
             containerStyle={{ marginBottom: 16 }}
@@ -177,7 +178,7 @@ export default function AddAddressScreen({ navigation }: any) {
       <View style={styles.bottomBar}>
         <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
           <Button
-            title={saving ? 'جاري الحفظ...' : 'حفظ العنوان'}
+            title={saving ? t('جاري الحفظ...') : t('حفظ العنوان')}
             onPress={handleSave}
             disabled={!street || saving}
           />

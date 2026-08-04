@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProducts, getMerchantProfile, updateProduct } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -87,10 +88,10 @@ export default function MerchantProductsScreen({ navigation }: any) {
     if (!isDesktop || products.length === 0) return null;
     return (
       <View style={styles.tableHeaderRow}>
-        <Text style={[styles.th, { flex: 3 }]}>المنتج</Text>
-        <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>السعر</Text>
-        <Text style={[styles.th, { flex: 1.5, textAlign: 'center' }]}>مخزون الخيارات</Text>
-        <Text style={[styles.th, { flex: 1.5, textAlign: 'left' }]}>الحالة</Text>
+        <Text style={[styles.th, { flex: 3 }]}>{t('المنتج')}</Text>
+        <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>{t('السعر')}</Text>
+        <Text style={[styles.th, { flex: 1.5, textAlign: 'center' }]}>{t('مخزون الخيارات')}</Text>
+        <Text style={[styles.th, { flex: 1.5, textAlign: 'left' }]}>{t('الحالة')}</Text>
       </View>
     );
   };
@@ -104,7 +105,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitleMobile}>إدارة المنتجات</Text>
+          <Text style={styles.headerTitleMobile}>{t('إدارة المنتجات')}</Text>
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -114,18 +115,18 @@ export default function MerchantProductsScreen({ navigation }: any) {
         {/* Page Header */}
         <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
           <View>
-            <Text style={styles.pageTitle}>منتجاتي</Text>
-            <Text style={styles.pageSubtitle}>إدارة منتجات متجرك ومتابعة حالة مراجعتها قبل ظهورها للعملاء</Text>
+            <Text style={styles.pageTitle}>{t('منتجاتي')}</Text>
+            <Text style={styles.pageSubtitle}>{t('إدارة منتجات متجرك ومتابعة حالة مراجعتها قبل ظهورها للعملاء')}</Text>
           </View>
           <TouchableOpacity
             style={styles.addBtn}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('AddProduct')}
             accessibilityRole="button"
-            accessibilityLabel="إضافة منتج"
+            accessibilityLabel={t('إضافة منتج')}
           >
             <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>إضافة منتج</Text>
+            <Text style={styles.addBtnText}>{t('إضافة منتج')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -138,9 +139,9 @@ export default function MerchantProductsScreen({ navigation }: any) {
           ) : error && products.length === 0 ? (
             <View style={styles.emptyWrap}>
               <Ionicons name="cloud-offline-outline" size={48} color={UI.textMuted} />
-              <Text style={styles.emptyText}>{error}</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel="إعادة تحميل المنتجات">
-                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+              <Text style={styles.emptyText}>{tv(error)}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل المنتجات')}>
+                <Text style={styles.retryBtnText}>{t('إعادة المحاولة')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -154,7 +155,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
                   <Ionicons name="cube-outline" size={48} color={UI.textMuted} style={{ marginBottom: 16 }} />
-                  <Text style={styles.emptyText}>لا توجد منتجات بعد</Text>
+                  <Text style={styles.emptyText}>{t('لا توجد منتجات بعد')}</Text>
                 </View>
               }
               renderItem={({ item }) => {
@@ -171,33 +172,31 @@ export default function MerchantProductsScreen({ navigation }: any) {
                       )}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
+                      <Text style={styles.name} numberOfLines={2}>{tv(item.name)}</Text>
                       <View style={[styles.approvalBadge, { backgroundColor: approval.background }]}>
                         <Ionicons name={approval.icon} size={14} color={approval.color} />
-                        <Text style={[styles.approvalBadgeText, { color: approval.color }]}>{approval.label}</Text>
+                        <Text style={[styles.approvalBadgeText, { color: approval.color }]}>{tv(approval.label)}</Text>
                       </View>
                       {item.approval_status === 'rejected' && item.approval_note ? (
-                        <Text style={styles.rejectionNote} numberOfLines={3}>سبب الرفض: {item.approval_note}</Text>
+                        <Text style={styles.rejectionNote} numberOfLines={3}>{t('سبب الرفض: {0}', [tv(item.approval_note)])}</Text>
                       ) : null}
                       {!isDesktop && (
-                        <Text style={styles.priceMobile}>{item.sale_price ?? item.base_price} ر.ي</Text>
+                        <Text style={styles.priceMobile}>{t('{0} ر.ي', [item.sale_price ?? item.base_price])}</Text>
                       )}
                     </View>
                   </View>
 
                   {/* Price (Flex 1) Desktop Only */}
                   {isDesktop && (
-                    <Text style={[styles.td, styles.priceDesktop, { flex: 1, textAlign: 'center' }]}>
-                      {item.sale_price ?? item.base_price} ر.ي
-                    </Text>
+                    <Text style={[styles.td, styles.priceDesktop, { flex: 1, textAlign: 'center' }]}>{t('{0} ر.ي', [item.sale_price ?? item.base_price])}</Text>
                   )}
 
                   {/* Category / Stock (Flex 1.5) Desktop Only */}
                   {isDesktop && (
                     <Text style={[styles.td, styles.categoryDesktop, { flex: 1.5, textAlign: 'center' }]}>
-                      {Array.isArray(item.product_variants)
+                      {tv(Array.isArray(item.product_variants)
                         ? item.product_variants.reduce((sum: number, variant: { stock_quantity?: number }) => sum + (variant.stock_quantity ?? 0), 0)
-                        : '—'}
+                        : '—')}
                     </Text>
                   )}
 
@@ -206,14 +205,14 @@ export default function MerchantProductsScreen({ navigation }: any) {
                     <View style={styles.statusWrap}>
                        <View style={[styles.statusDot, { backgroundColor: item.is_active ? UI.primary : UI.textMuted }]} />
                        <Text style={[styles.statusText, { color: item.is_active ? UI.textDark : UI.textMuted }]}>
-                         {item.is_active ? 'معروض' : 'مخفي'}
+                         {tv(item.is_active ? t('معروض') : t('مخفي'))}
                        </Text>
                     </View>
                     <Switch
                       value={item.is_active}
                       onValueChange={() => toggleActive(item.id, item.is_active)}
                       disabled={updatingId === item.id || (!!updatingId && updatingId !== item.id)}
-                      accessibilityLabel={`${item.is_active ? 'إخفاء' : 'إظهار'} المنتج ${item.name}`}
+                      accessibilityLabel={t('{0} المنتج {1}', [item.is_active ? t('إخفاء') : t('إظهار'), tv(item.name)])}
                       trackColor={{ false: UI.border, true: `${UI.primary}80` }}
                       thumbColor={item.is_active ? UI.primary : UI.textMuted}
                       style={{ transform: [{ scaleX: I18nManager?.isRTL ? -1 : 1 }, { scaleX: 0.9 }, { scaleY: 0.9 }] }}

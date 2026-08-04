@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, getMerchantProfile, updateMerchantProfileByUser } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 // ─── Design System ──────────────────────────────────────────────────────────
 const UI = {
@@ -40,7 +41,7 @@ function SectionHeader({ title, icon }: { title: string; icon: any }) {
   return (
     <View style={s.sectionHeader}>
       <Ionicons name={icon} size={18} color={UI.primary} />
-      <Text style={s.sectionTitle}>{title}</Text>
+      <Text style={s.sectionTitle}>{tv(title)}</Text>
     </View>
   );
 }
@@ -56,7 +57,7 @@ function InputField({ label, value, onChangeText, multiline = false, placeholder
 }) {
   return (
     <View style={s.inputGroup}>
-      <Text style={s.inputLabel}>{label}</Text>
+      <Text style={s.inputLabel}>{tv(label)}</Text>
       <TextInput
         style={[
           s.inputBox,
@@ -66,7 +67,7 @@ function InputField({ label, value, onChangeText, multiline = false, placeholder
         value={value ?? ''}
         onChangeText={onChangeText}
         multiline={multiline}
-        placeholder={placeholder}
+        placeholder={tv(placeholder)}
         placeholderTextColor={UI.textMuted}
         editable={editable}
         keyboardType={keyboardType}
@@ -181,9 +182,9 @@ export default function StoreSettingsScreen({ navigation }: any) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: isDesktop ? UI.bg : UI.bgMobile }} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={44} color={UI.red} />
-        <Text style={{ color: UI.red, textAlign: 'center', lineHeight: 21 }}>{loadError}</Text>
+        <Text style={{ color: UI.red, textAlign: 'center', lineHeight: 21 }}>{tv(loadError)}</Text>
         <TouchableOpacity style={{ minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 11, paddingHorizontal: 18 }} onPress={() => setLoadAttempt((value) => value + 1)} accessibilityRole="button">
-          <Text style={{ color: UI.white, fontWeight: '800' }}>إعادة المحاولة</Text>
+          <Text style={{ color: UI.white, fontWeight: '800' }}>{t('إعادة المحاولة')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -199,7 +200,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={22} color={UI.textDark} />
           </TouchableOpacity>
-          <Text style={s.headerTitleMobile}>معلومات المتجر</Text>
+          <Text style={s.headerTitleMobile}>{t('معلومات المتجر')}</Text>
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -212,8 +213,8 @@ export default function StoreSettingsScreen({ navigation }: any) {
         {/* Desktop Title */}
         {isDesktop && (
           <View style={s.pageHeaderRow}>
-            <Text style={s.pageTitle}>لوحة بيانات المتجر</Text>
-            <Text style={s.pageSubtitle}>جميع البيانات الحقيقية لمتجرك مجمعة في مكان واحد</Text>
+            <Text style={s.pageTitle}>{t('لوحة بيانات المتجر')}</Text>
+            <Text style={s.pageSubtitle}>{t('جميع البيانات الحقيقية لمتجرك مجمعة في مكان واحد')}</Text>
           </View>
         )}
 
@@ -229,9 +230,9 @@ export default function StoreSettingsScreen({ navigation }: any) {
                   <Ionicons name={isOpen ? 'storefront' : 'lock-closed'} size={26} color={isOpen ? UI.green : UI.red} />
                 </View>
                 <View>
-                  <Text style={s.statusTitle}>حالة المتجر</Text>
+                  <Text style={s.statusTitle}>{t('حالة المتجر')}</Text>
                   <Text style={[s.statusSub, { color: isOpen ? UI.green : UI.red }]}>
-                    {isOpen ? 'مفتوح — يستقبل الطلبات' : 'مغلق مؤقتاً'}
+                    {tv(isOpen ? t('مفتوح — يستقبل الطلبات') : t('مغلق مؤقتاً'))}
                   </Text>
                 </View>
               </View>
@@ -245,28 +246,28 @@ export default function StoreSettingsScreen({ navigation }: any) {
 
             {/* البيانات الأساسية */}
             <Card>
-              <SectionHeader title="البيانات الأساسية" icon="business-outline" />
+              <SectionHeader title={t('البيانات الأساسية')} icon="business-outline" />
               <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="الاسم التجاري للمتجر" value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
-                <InputField label="تصنيف المتجر" value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: مطاعم وطعام" />
+                <InputField label={t('الاسم التجاري للمتجر')} value={storeName} onChangeText={setStoreName} placeholder={t('اسم المتجر')} />
+                <InputField label={t('تصنيف المتجر')} value={storeCategory} onChangeText={setStoreCategory} placeholder={t('مثال: مطاعم وطعام')} />
               </View>
-              <InputField label="وصف المتجر (يظهر للعملاء)" value={description} onChangeText={setDescription} multiline placeholder="نبذة تعريفية عن متجرك..." />
+              <InputField label={t('وصف المتجر (يظهر للعملاء)')} value={description} onChangeText={setDescription} multiline placeholder={t('نبذة تعريفية عن متجرك...')} />
             </Card>
 
             {/* الوثائق القانونية */}
             <Card>
-              <SectionHeader title="البيانات القانونية والرسمية" icon="document-text-outline" />
+              <SectionHeader title={t('البيانات القانونية والرسمية')} icon="document-text-outline" />
               <View style={s.infoBox}>
                 <Ionicons name="lock-closed-outline" size={16} color="#1D4ED8" />
-                <Text style={s.infoText}>لتعديل الوثائق الرسمية يرجى التواصل مع فريق الدعم المتقدم.</Text>
+                <Text style={s.infoText}>{t('لتعديل الوثائق الرسمية يرجى التواصل مع فريق الدعم المتقدم.')}</Text>
               </View>
               <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="اسم صاحب المتجر" value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" />
-                <InputField label="رقم الهوية الوطنية" value={nationalId} onChangeText={setNationalId} placeholder="رقم الهوية" keyboardType="numeric" />
+                <InputField label={t('اسم صاحب المتجر')} value={ownerName} onChangeText={setOwnerName} placeholder={t('الاسم الكامل')} />
+                <InputField label={t('رقم الهوية الوطنية')} value={nationalId} onChangeText={setNationalId} placeholder={t('رقم الهوية')} keyboardType="numeric" />
               </View>
               <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="رقم السجل التجاري" value={commercialRegister} onChangeText={setCommercialRegister} placeholder="رقم السجل" keyboardType="numeric" />
-                <InputField label="الرقم الضريبي (VAT)" value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" />
+                <InputField label={t('رقم السجل التجاري')} value={commercialRegister} onChangeText={setCommercialRegister} placeholder={t('رقم السجل')} keyboardType="numeric" />
+                <InputField label={t('الرقم الضريبي (VAT)')} value={taxNumber} onChangeText={setTaxNumber} placeholder={t('اختياري')} keyboardType="numeric" />
               </View>
             </Card>
 
@@ -277,26 +278,26 @@ export default function StoreSettingsScreen({ navigation }: any) {
 
             {/* الموقع والتواصل */}
             <Card>
-              <SectionHeader title="الموقع والتواصل" icon="location-outline" />
+              <SectionHeader title={t('الموقع والتواصل')} icon="location-outline" />
               <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="المدينة / المحافظة" value={city} onChangeText={setCity} placeholder="مثال: صنعاء" />
-                <InputField label="رقم هاتف المتجر" value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
+                <InputField label={t('المدينة / المحافظة')} value={city} onChangeText={setCity} placeholder={t('مثال: صنعاء')} />
+                <InputField label={t('رقم هاتف المتجر')} value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
               </View>
-              <InputField label="العنوان التفصيلي" value={address} onChangeText={setAddress} placeholder="الحي، الشارع، اقرب معلم" />
-              <InputField label="رقم واتساب (اختياري)" value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
+              <InputField label={t('العنوان التفصيلي')} value={address} onChangeText={setAddress} placeholder={t('الحي، الشارع، اقرب معلم')} />
+              <InputField label={t('رقم واتساب (اختياري)')} value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
             </Card>
 
             {/* البيانات البنكية */}
             <Card>
-              <SectionHeader title="البيانات البنكية لاستلام الأرباح" icon="wallet-outline" />
-              <InputField label="اسم البنك" value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
+              <SectionHeader title={t('البيانات البنكية لاستلام الأرباح')} icon="wallet-outline" />
+              <InputField label={t('اسم البنك')} value={bankName} onChangeText={setBankName} placeholder={t('مثال: بنك الكريمي')} />
               <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="اسم صاحب الحساب" value={bankAccountName} onChangeText={setBankAccountName} placeholder="الاسم في الحساب" />
-                <InputField label="رقم الحساب" value={bankAccount} onChangeText={setBankAccount} placeholder="رقم الحساب" keyboardType="numeric" />
+                <InputField label={t('اسم صاحب الحساب')} value={bankAccountName} onChangeText={setBankAccountName} placeholder={t('الاسم في الحساب')} />
+                <InputField label={t('رقم الحساب')} value={bankAccount} onChangeText={setBankAccount} placeholder={t('رقم الحساب')} keyboardType="numeric" />
               </View>
               <View style={s.bankNote}>
                 <Ionicons name="information-circle-outline" size={16} color={UI.blue} />
-                <Text style={s.bankNoteText}>تحويل الأرباح يتم دورياً لهذا الحساب بعد اكتمال الطلبات.</Text>
+                <Text style={s.bankNoteText}>{t('تحويل الأرباح يتم دورياً لهذا الحساب بعد اكتمال الطلبات.')}</Text>
               </View>
             </Card>
 
@@ -316,7 +317,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <>
-              <Text style={s.saveBtnText}>حفظ كافة التغييرات</Text>
+              <Text style={s.saveBtnText}>{t('حفظ كافة التغييرات')}</Text>
               <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
             </>
           )}

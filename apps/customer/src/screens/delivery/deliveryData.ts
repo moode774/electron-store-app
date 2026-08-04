@@ -1,4 +1,5 @@
 import { OrderSummary, supabase } from '@marketplace/shared-hooks';
+import { t, tv } from '@marketplace/shared-i18n';
 
 export interface DeliveryRuntimeProfile {
   id: string;
@@ -64,5 +65,5 @@ export async function recordDeliveryLocation(
     p_longitude: coordinates.longitude,
     p_speed: coordinates.speed ?? null,
   });
-  if (error) throw new Error(`تعذّر حفظ تحديث الموقع: ${error.message}`);
+  if (error) throw new Error(t('تعذّر حفظ تحديث الموقع: {0}', [tv(error.message)]));
 }

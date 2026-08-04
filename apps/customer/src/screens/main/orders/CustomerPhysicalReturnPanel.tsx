@@ -15,6 +15,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../../components/appAlert';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const ACTIVE_STATUSES = new Set(['requested', 'approved', 'pickup_scheduled', 'picked_up', 'received', 'inspected']);
@@ -233,7 +234,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   };
 
   if (loading) {
-    return <View style={styles.loading}><ActivityIndicator color="#172554" /><Text style={styles.loadingText}>جارٍ التحقق من إرجاع المنتجات…</Text></View>;
+    return <View style={styles.loading}><ActivityIndicator color="#172554" /><Text style={styles.loadingText}>{t('جارٍ التحقق من إرجاع المنتجات…')}</Text></View>;
   }
 
   const completedWithoutRefund = latestRequest?.status === 'completed'
@@ -252,113 +253,113 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   return (
     <View>
       <View style={styles.sectionIntro}>
-        <Text style={styles.sectionTitle}>إرجاع منتجات فعليًا</Text>
-        <Text style={styles.sectionText}>هذا المسار للمنتج التالف أو الخاطئ أو غير المطابق. يمر بالاستلام ثم فحص المتجر قبل أي استرداد مالي.</Text>
+        <Text style={styles.sectionTitle}>{t('إرجاع منتجات فعليًا')}</Text>
+        <Text style={styles.sectionText}>{t('هذا المسار للمنتج التالف أو الخاطئ أو غير المطابق. يمر بالاستلام ثم فحص المتجر قبل أي استرداد مالي.')}</Text>
       </View>
 
       {latestRequest && status ? (
         <View style={[styles.statusCard, { backgroundColor: status.background, borderColor: status.border }]} accessibilityRole="summary">
-          <Text style={[styles.statusTitle, { color: status.color }]}>{status.title}</Text>
-          <Text style={[styles.statusText, { color: status.color }]}>{status.detail}</Text>
-          <Text style={[styles.statusText, { color: status.color }]}>الطريقة: {latestRequest.pickup_method === 'courier_pickup' ? 'استلام بواسطة مندوب' : 'تسليم العميل للمتجر'}</Text>
-          {latestRequest.pickup_scheduled_at ? <Text style={[styles.statusText, { color: status.color }]}>الموعد: {new Date(latestRequest.pickup_scheduled_at).toLocaleString('ar-SA')}</Text> : null}
-          {latestRequest.review_notes ? <Text style={[styles.statusText, { color: status.color }]}>قرار الإدارة: {latestRequest.review_notes}</Text> : null}
-          {latestRequest.merchant_response ? <Text style={[styles.statusText, { color: status.color }]}>رد التاجر: {latestRequest.merchant_response}</Text> : null}
-          {latestRequest.inspection_notes ? <Text style={[styles.statusText, { color: status.color }]}>نتيجة الفحص: {latestRequest.inspection_notes}</Text> : null}
+          <Text style={[styles.statusTitle, { color: status.color }]}>{tv(status.title)}</Text>
+          <Text style={[styles.statusText, { color: status.color }]}>{tv(status.detail)}</Text>
+          <Text style={[styles.statusText, { color: status.color }]}>{t('الطريقة: {0}', [latestRequest.pickup_method === 'courier_pickup' ? 'استلام بواسطة مندوب' : 'تسليم العميل للمتجر'])}</Text>
+          {latestRequest.pickup_scheduled_at ? <Text style={[styles.statusText, { color: status.color }]}>{t('الموعد: {0}', [new Date(latestRequest.pickup_scheduled_at).toLocaleString(getLocale())])}</Text> : null}
+          {latestRequest.review_notes ? <Text style={[styles.statusText, { color: status.color }]}>{t('قرار الإدارة: {0}', [tv(latestRequest.review_notes)])}</Text> : null}
+          {latestRequest.merchant_response ? <Text style={[styles.statusText, { color: status.color }]}>{t('رد التاجر: {0}', [tv(latestRequest.merchant_response)])}</Text> : null}
+          {latestRequest.inspection_notes ? <Text style={[styles.statusText, { color: status.color }]}>{t('نتيجة الفحص: {0}', [tv(latestRequest.inspection_notes)])}</Text> : null}
           {latestRequest.status === 'completed' ? (
             <Text style={[styles.statusText, { color: status.color }]}>
-              {completedWithoutRefund ? 'لم يُنشأ استرداد مالي.' : `المبلغ المسترد: ${latestRequest.refund_amount} ر.ي`}
+              {tv(completedWithoutRefund ? t('لم يُنشأ استرداد مالي.') : t('المبلغ المسترد: {0} ر.ي', [tv(latestRequest.refund_amount)]))}
             </Text>
           ) : null}
           {latestRequest.status === 'requested' ? (
-            <TouchableOpacity onPress={cancel} style={styles.cancelRequestBtn} accessibilityRole="button" accessibilityLabel="إلغاء طلب إرجاع المنتجات">
-              <Text style={styles.cancelRequestText}>إلغاء الطلب قبل الاعتماد</Text>
+            <TouchableOpacity onPress={cancel} style={styles.cancelRequestBtn} accessibilityRole="button" accessibilityLabel={t('إلغاء طلب إرجاع المنتجات')}>
+              <Text style={styles.cancelRequestText}>{t('إلغاء الطلب قبل الاعتماد')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
       ) : null}
 
       {loadError ? (
-        <TouchableOpacity style={styles.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel="إعادة التحقق من إرجاع المنتجات">
-          <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة. لن يُفتح طلب جديد قبل نجاح التحقق.</Text>
+        <TouchableOpacity style={styles.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel={t('إعادة التحقق من إرجاع المنتجات')}>
+          <Text style={styles.errorText}>{t('{0} اضغط لإعادة المحاولة. لن يُفتح طلب جديد قبل نجاح التحقق.', [tv(loadError)])}</Text>
         </TouchableOpacity>
       ) : null}
 
       {!loadError && order.status === ORDER_STATUS.DELIVERED && !windowOpen && !activeRequest ? (
         <View style={styles.errorCard}>
-          <Text style={styles.errorText}>{windowKnown ? `انتهت مهلة إرجاع المنتجات (7 أيام) في ${new Date(returnDeadline).toLocaleString('ar-SA')}. افتح شكوى للحالات الاستثنائية.` : 'تعذّر التحقق من وقت التسليم؛ أُوقف فتح إرجاع جديد حتى تتضح البيانات.'}</Text>
+          <Text style={styles.errorText}>{tv(windowKnown ? t('انتهت مهلة إرجاع المنتجات (7 أيام) في {0}. افتح شكوى للحالات الاستثنائية.', [new Date(returnDeadline).toLocaleString(getLocale())]) : t('تعذّر التحقق من وقت التسليم؛ أُوقف فتح إرجاع جديد حتى تتضح البيانات.'))}</Text>
         </View>
       ) : null}
 
       {canCreate && !loadError && !showForm ? (
-        <TouchableOpacity style={styles.openBtn} onPress={openForm} accessibilityRole="button" accessibilityLabel="فتح طلب إرجاع منتجات">
+        <TouchableOpacity style={styles.openBtn} onPress={openForm} accessibilityRole="button" accessibilityLabel={t('فتح طلب إرجاع منتجات')}>
           <Ionicons name="cube-outline" size={19} color="#172554" />
-          <Text style={styles.openBtnText}>{latestRequest?.status === 'completed' ? 'إرجاع كمية متبقية' : 'طلب إرجاع منتجات'}</Text>
+          <Text style={styles.openBtnText}>{tv(latestRequest?.status === 'completed' ? t('إرجاع كمية متبقية') : t('طلب إرجاع منتجات'))}</Text>
         </TouchableOpacity>
       ) : null}
 
       {showForm && canCreate ? (
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>حدد المنتجات والكميات</Text>
+          <Text style={styles.formTitle}>{t('حدد المنتجات والكميات')}</Text>
           {availableItems.map((item) => {
             const quantity = quantities[item.id] ?? 0;
             return (
               <View key={item.id} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.product_name ?? item.products?.name ?? 'منتج'}</Text>
-                  <Text style={styles.itemSub}>المتاح للإرجاع: {item.available} · سعر الوحدة: {item.unit_price} ر.ي</Text>
+                  <Text style={styles.itemName}>{tv(item.product_name ?? item.products?.name ?? t('منتج'))}</Text>
+                  <Text style={styles.itemSub}>{t('المتاح للإرجاع: {0} · سعر الوحدة: {1} ر.ي', [tv(item.available), tv(item.unit_price)])}</Text>
                 </View>
                 <View style={styles.counter}>
-                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, 1)} accessibilityLabel={`زيادة كمية ${item.product_name ?? 'المنتج'}`}><Text style={styles.counterText}>+</Text></TouchableOpacity>
-                  <Text style={styles.quantity}>{quantity}</Text>
-                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, -1)} accessibilityLabel={`تقليل كمية ${item.product_name ?? 'المنتج'}`}><Text style={styles.counterText}>−</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, 1)} accessibilityLabel={t('زيادة كمية {0}', [item.product_name ?? t('المنتج')])}><Text style={styles.counterText}>+</Text></TouchableOpacity>
+                  <Text style={styles.quantity}>{tv(quantity)}</Text>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, -1)} accessibilityLabel={t('تقليل كمية {0}', [item.product_name ?? t('المنتج')])}><Text style={styles.counterText}>−</Text></TouchableOpacity>
                 </View>
               </View>
             );
           })}
 
-          <Text style={styles.formTitle}>سبب الإرجاع</Text>
+          <Text style={styles.formTitle}>{t('سبب الإرجاع')}</Text>
           {RETURN_REASONS.map((item) => (
             <TouchableOpacity key={item.value} style={[styles.choiceRow, reason === item.value && styles.choiceSelected]} onPress={() => setReason(item.value)} accessibilityRole="radio" accessibilityState={{ selected: reason === item.value }}>
-              <Text style={[styles.choiceText, reason === item.value && styles.choiceTextSelected]}>{item.label}</Text>
+              <Text style={[styles.choiceText, reason === item.value && styles.choiceTextSelected]}>{tv(item.label)}</Text>
               <Ionicons name={reason === item.value ? 'radio-button-on' : 'radio-button-off'} size={20} color={reason === item.value ? '#172554' : '#94A3B8'} />
             </TouchableOpacity>
           ))}
 
-          <Text style={[styles.formTitle, { marginTop: 14 }]}>طريقة تسليم المنتجات</Text>
+          <Text style={[styles.formTitle, { marginTop: 14 }]}>{t('طريقة تسليم المنتجات')}</Text>
           {([
-            ['courier_pickup', 'مندوب يستلمها من عنوان الطلب'],
-            ['customer_dropoff', 'سأسلمها بنفسي إلى المتجر'],
+            ['courier_pickup', t('مندوب يستلمها من عنوان الطلب')],
+            ['customer_dropoff', t('سأسلمها بنفسي إلى المتجر')],
           ] as const).map(([value, label]) => (
             <TouchableOpacity key={value} style={[styles.choiceRow, pickupMethod === value && styles.choiceSelected]} onPress={() => setPickupMethod(value)} accessibilityRole="radio" accessibilityState={{ selected: pickupMethod === value }}>
-              <Text style={[styles.choiceText, pickupMethod === value && styles.choiceTextSelected]}>{label}</Text>
+              <Text style={[styles.choiceText, pickupMethod === value && styles.choiceTextSelected]}>{tv(label)}</Text>
               <Ionicons name={pickupMethod === value ? 'radio-button-on' : 'radio-button-off'} size={20} color={pickupMethod === value ? '#172554' : '#94A3B8'} />
             </TouchableOpacity>
           ))}
 
-          <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="صف حالة المنتج والتغليف وما حدث (10 أحرف على الأقل)…" placeholderTextColor="#94A3B8" multiline maxLength={2000} textAlign="right" accessibilityLabel="تفاصيل إرجاع المنتجات" />
+          <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t('صف حالة المنتج والتغليف وما حدث (10 أحرف على الأقل)…')} placeholderTextColor="#94A3B8" multiline maxLength={2000} textAlign="right" accessibilityLabel={t('تفاصيل إرجاع المنتجات')} />
           <View style={styles.evidenceHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.formTitle}>صور حالة المنتج</Text>
-              <Text style={styles.evidenceHint}>مطلوبة للتالف أو الخاطئ أو غير المطابق · حتى 5 صور</Text>
+              <Text style={styles.formTitle}>{t('صور حالة المنتج')}</Text>
+              <Text style={styles.evidenceHint}>{t('مطلوبة للتالف أو الخاطئ أو غير المطابق · حتى 5 صور')}</Text>
             </View>
-            <TouchableOpacity style={styles.addEvidenceBtn} onPress={() => void pickEvidence()} disabled={submitting || evidence.length >= 5} accessibilityRole="button" accessibilityLabel="إضافة صورة إثبات">
+            <TouchableOpacity style={styles.addEvidenceBtn} onPress={() => void pickEvidence()} disabled={submitting || evidence.length >= 5} accessibilityRole="button" accessibilityLabel={t('إضافة صورة إثبات')}>
               <Ionicons name="camera-outline" size={18} color="#1D4ED8" />
-              <Text style={styles.addEvidenceText}>إضافة</Text>
+              <Text style={styles.addEvidenceText}>{t('إضافة')}</Text>
             </TouchableOpacity>
           </View>
           {evidence.map((file, index) => (
             <View key={file.id} style={styles.evidenceRow}>
               <Ionicons name={file.path ? 'cloud-done-outline' : 'image-outline'} size={18} color={file.path ? '#059669' : '#475569'} />
-              <Text style={styles.evidenceName}>صورة {index + 1}{file.path ? ' · تم رفعها بأمان' : ''}</Text>
-              {!file.path ? <TouchableOpacity style={styles.removeEvidenceBtn} onPress={() => setEvidence((current) => current.filter((item) => item.id !== file.id))} accessibilityRole="button" accessibilityLabel={`حذف صورة الإثبات ${index + 1}`}><Ionicons name="trash-outline" size={18} color="#DC2626" /></TouchableOpacity> : null}
+              <Text style={styles.evidenceName}>{t('صورة {0}{1}', [index + 1, file.path ? ' · تم رفعها بأمان' : ''])}</Text>
+              {!file.path ? <TouchableOpacity style={styles.removeEvidenceBtn} onPress={() => setEvidence((current) => current.filter((item) => item.id !== file.id))} accessibilityRole="button" accessibilityLabel={t('حذف صورة الإثبات {0}', [index + 1])}><Ionicons name="trash-outline" size={18} color="#DC2626" /></TouchableOpacity> : null}
             </View>
           ))}
-          <View style={styles.notice}><Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" /><Text style={styles.noticeText}>المبلغ لا يُنفذ الآن. بعد الاستلام والفحص تحسبه قاعدة البيانات من الكميات المقبولة والتسوية المثبتة، ولا تعيد رسوم التوصيل تلقائيًا.</Text></View>
+          <View style={styles.notice}><Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" /><Text style={styles.noticeText}>{t('المبلغ لا يُنفذ الآن. بعد الاستلام والفحص تحسبه قاعدة البيانات من الكميات المقبولة والتسوية المثبتة، ولا تعيد رسوم التوصيل تلقائيًا.')}</Text></View>
           <TouchableOpacity style={[styles.submitBtn, (submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0)) && { opacity: 0.5 }]} onPress={submit} disabled={submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0)} accessibilityRole="button" accessibilityState={{ disabled: submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0), busy: submitting }}>
-            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>إرسال طلب إرجاع المنتجات</Text>}
+            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>{t('إرسال طلب إرجاع المنتجات')}</Text>}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.dismissBtn} onPress={() => !submitting && setShowForm(false)} disabled={submitting}><Text style={styles.dismissText}>تراجع</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dismissBtn} onPress={() => !submitting && setShowForm(false)} disabled={submitting}><Text style={styles.dismissText}>{t('تراجع')}</Text></TouchableOpacity>
         </View>
       ) : null}
     </View>

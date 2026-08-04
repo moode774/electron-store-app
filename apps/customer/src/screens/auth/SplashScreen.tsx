@@ -9,6 +9,7 @@ import {
   Image,
   Easing,
 } from 'react-native';
+import { t } from '@marketplace/shared-i18n';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,9 +51,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX
         </Animated.View>
 
         {/* Text */}
-        <Animated.Text style={[styles.tagline, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>
-          تجربة تسوق أفضل
-        </Animated.Text>
+        <Animated.Text style={[styles.tagline, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>{t('تجربة تسوق أفضل')}</Animated.Text>
       </View>
     </View>
   );

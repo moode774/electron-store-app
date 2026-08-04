@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCartStore, isCartItemSelected, getFeaturedProducts, ProductSummary } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { t, tv } from '@marketplace/shared-i18n';
 
 // اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
 interface Recommendation {
@@ -80,14 +81,14 @@ export default function CartScreen({ navigation }: any) {
         <View style={styles.emptyIconCircle}>
           <Ionicons name="cart-outline" size={48} color={COLORS.primary} />
         </View>
-        <Text style={styles.emptyTitle}>السلة فارغة</Text>
-        <Text style={styles.emptySub}>تصفح المتاجر وأضف ما يعجبك إلى السلة</Text>
+        <Text style={styles.emptyTitle}>{t('السلة فارغة')}</Text>
+        <Text style={styles.emptySub}>{t('تصفح المتاجر وأضف ما يعجبك إلى السلة')}</Text>
         <TouchableOpacity
           style={styles.browseBtn}
           onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}
           activeOpacity={0.85}
         >
-          <Text style={styles.browseBtnText}>تصفح المتاجر</Text>
+          <Text style={styles.browseBtnText}>{t('تصفح المتاجر')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -105,15 +106,15 @@ export default function CartScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <View style={styles.headerCenterRow}>
-            <Text style={styles.headerTitleText}>سلة المشتريات</Text>
+            <Text style={styles.headerTitleText}>{t('سلة المشتريات')}</Text>
             <View style={styles.headerBadgePill}>
-              <Text style={styles.headerBadgeText}>{items.length}</Text>
+              <Text style={styles.headerBadgeText}>{tv(items.length)}</Text>
             </View>
           </View>
 
           <TouchableOpacity style={styles.editButton}>
             <Ionicons name="create-outline" size={16} color="#0F172A" />
-            <Text style={styles.editText}>تعديل</Text>
+            <Text style={styles.editText}>{t('تعديل')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -149,17 +150,17 @@ export default function CartScreen({ navigation }: any) {
                   {/* Middle: Info Column (RTL) */}
                   <View style={styles.productInfoCol}>
                     <Text style={styles.productNameText} numberOfLines={2}>
-                      {item.name}
+                      {tv(item.name)}
                     </Text>
-                    <Text style={styles.productVariantText}>لون: أبيض</Text>
+                    <Text style={styles.productVariantText}>{t('لون: أبيض')}</Text>
 
                     <View style={styles.stockBadgePill}>
-                      <Text style={styles.stockBadgeText}>متوفر</Text>
+                      <Text style={styles.stockBadgeText}>{t('متوفر')}</Text>
                     </View>
 
                     <View style={styles.deliveryBadgeRow}>
                       <Ionicons name="sparkles" size={11} color={COLORS.primary} />
-                      <Text style={styles.deliveryBadgeText}>توصيل خلال 24 ساعة</Text>
+                      <Text style={styles.deliveryBadgeText}>{t('توصيل خلال 24 ساعة')}</Text>
                     </View>
                   </View>
 
@@ -195,9 +196,7 @@ export default function CartScreen({ navigation }: any) {
                         {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                       </TouchableOpacity>
 
-                      <Text style={styles.itemPriceText}>
-                        {item.price.toLocaleString()} ر.ي
-                      </Text>
+                      <Text style={styles.itemPriceText}>{t('{0} ر.ي', [item.price.toLocaleString()])}</Text>
                     </View>
 
                     {/* Bottom: Quantity Stepper */}
@@ -209,7 +208,7 @@ export default function CartScreen({ navigation }: any) {
                         <Ionicons name="add" size={14} color="#0F172A" />
                       </TouchableOpacity>
 
-                      <Text style={styles.stepperQtyText}>{item.quantity}</Text>
+                      <Text style={styles.stepperQtyText}>{tv(item.quantity)}</Text>
 
                       <TouchableOpacity
                         style={styles.stepperBtn}
@@ -229,9 +228,9 @@ export default function CartScreen({ navigation }: any) {
         {recommendations.length > 0 && (
           <>
             <View style={styles.recommendationsHeaderRow}>
-              <Text style={styles.recommendationsTitleText}>قد يعجبك أيضاً</Text>
+              <Text style={styles.recommendationsTitleText}>{t('قد يعجبك أيضاً')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}>
-                <Text style={styles.viewAllText}>عرض الكل ›</Text>
+                <Text style={styles.viewAllText}>{t('عرض الكل ›')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -257,14 +256,14 @@ export default function CartScreen({ navigation }: any) {
                   </TouchableOpacity>
 
                   <Text style={styles.recTitleText} numberOfLines={1}>
-                    {rec.name}
+                    {tv(rec.name)}
                   </Text>
 
                   <View style={styles.recPriceRow}>
                     <View>
-                      <Text style={styles.recPriceText}>{rec.price.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.recPriceText}>{t('{0} ر.ي', [rec.price.toLocaleString()])}</Text>
                       {rec.oldPrice ? (
-                        <Text style={styles.recOldPriceText}>{rec.oldPrice.toLocaleString()} ر.ي</Text>
+                        <Text style={styles.recOldPriceText}>{t('{0} ر.ي', [rec.oldPrice.toLocaleString()])}</Text>
                       ) : null}
                     </View>
 
@@ -300,14 +299,14 @@ export default function CartScreen({ navigation }: any) {
           {/* Order Totals Summary */}
           <View style={styles.orderTotalsCol}>
             <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>المجموع الفرعي ({totalCount} منتجات)</Text>
-              <Text style={styles.totalsVal}>{totalPrice.toLocaleString()} ر.ي</Text>
+              <Text style={styles.totalsLabel}>{t('المجموع الفرعي ({0} منتجات)', [tv(totalCount)])}</Text>
+              <Text style={styles.totalsVal}>{t('{0} ر.ي', [totalPrice.toLocaleString()])}</Text>
             </View>
 
             <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>تكلفة التوصيل</Text>
+              <Text style={styles.totalsLabel}>{t('تكلفة التوصيل')}</Text>
               <View style={styles.shippingValRow}>
-                <Text style={styles.totalsLabel}>تُحسب حسب عنوانك عند إتمام الطلب</Text>
+                <Text style={styles.totalsLabel}>{t('تُحسب حسب عنوانك عند إتمام الطلب')}</Text>
               </View>
             </View>
 
@@ -315,10 +314,10 @@ export default function CartScreen({ navigation }: any) {
 
             <View style={styles.totalsRow}>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.grandTotalLabel}>الإجمالي</Text>
-                <Text style={styles.vatText}>قبل رسوم التوصيل</Text>
+                <Text style={styles.grandTotalLabel}>{t('الإجمالي')}</Text>
+                <Text style={styles.vatText}>{t('قبل رسوم التوصيل')}</Text>
               </View>
-              <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.ي</Text>
+              <Text style={styles.grandTotalVal}>{t('{0} ر.ي', [totalPrice.toLocaleString()])}</Text>
             </View>
           </View>
 
@@ -332,7 +331,7 @@ export default function CartScreen({ navigation }: any) {
             <View style={styles.checkoutBtnInner}>
               <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.checkoutBtnText}>
-                {activeCartItems.length === 0 ? 'حدد منتجاً للمتابعة' : 'إتمام الطلب'}
+                {tv(activeCartItems.length === 0 ? t('حدد منتجاً للمتابعة') : t('إتمام الطلب'))}
               </Text>
             </View>
           </TouchableOpacity>

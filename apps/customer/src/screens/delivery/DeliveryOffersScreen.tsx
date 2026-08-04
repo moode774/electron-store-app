@@ -30,6 +30,7 @@ import {
   getDeliveryRuntimeProfile,
   setDeliveryRuntimeOnline,
 } from './deliveryData';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const FALLBACK_REFRESH_MS = 20_000;
 
@@ -322,7 +323,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       <View style={[styles.radarArea, isShort && styles.radarAreaShort]}>
         <View style={[styles.radarBadge, isShort && styles.radarBadgeShort]}>
           <Ionicons name="navigate-circle" size={16} color={COLORS.primary} />
-          <Text style={styles.radarBadgeText}>نطاق العمل المباشر</Text>
+          <Text style={styles.radarBadgeText}>{t('نطاق العمل المباشر')}</Text>
         </View>
         <View style={[styles.centerPulseOuter, isShort && styles.centerPulseOuterShort, !isOnline && styles.centerPulseOffline]}>
           <View style={[styles.centerPulseInner, isShort && styles.centerPulseInnerShort, !isOnline && styles.centerPulseInnerOffline]}>
@@ -330,12 +331,12 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           </View>
         </View>
         <Text style={[styles.radarTitle, isShort && styles.radarTitleShort, !isOnline && styles.offlineText]}>
-          {isOnline ? 'البحث عن عروض التوصيل مفعّل' : 'استقبال العروض متوقف'}
+          {tv(isOnline ? t('البحث عن عروض التوصيل مفعّل') : t('استقبال العروض متوقف'))}
         </Text>
         <Text style={[styles.radarSubtitle, isShort && styles.radarSubtitleShort]} numberOfLines={isShort ? 1 : undefined}>
-          {location
-            ? 'تم تحديد موقعك، وسيتم إرسال التحديثات أثناء التوصيلة النشطة فقط.'
-            : locationMessage || 'جاري التحقق من الموقع...'}
+          {tv(location
+            ? t('تم تحديد موقعك، وسيتم إرسال التحديثات أثناء التوصيلة النشطة فقط.')
+            : locationMessage || t('جاري التحقق من الموقع...'))}
         </Text>
       </View>
 
@@ -347,13 +348,13 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             onPress={openDeliveryAccount}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="فتح حساب المندوب"
+            accessibilityLabel={t('فتح حساب المندوب')}
           >
             <Ionicons name="menu" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.centerStatus} accessibilityLiveRegion="polite">
-            <Text style={styles.statusTextTop}>{statusLabel}</Text>
+            <Text style={styles.statusTextTop}>{tv(statusLabel)}</Text>
             <View style={[styles.statusDotTop, !isOnline && styles.statusDotOffline]} />
           </View>
 
@@ -369,11 +370,11 @@ export default function DeliveryOffersScreen({ navigation }: any) {
                 <Ionicons name="wallet" size={18} color={COLORS.primary} />
               </View>
               <View style={styles.earningsTexts}>
-                <Text style={styles.earningsLabel}>أرباح اليوم</Text>
+                <Text style={styles.earningsLabel}>{t('أرباح اليوم')}</Text>
                 {earningsFailed ? (
                   <Text style={styles.earningsValue}>—</Text>
                 ) : (
-                  <Text style={styles.earningsValue}>{todayEarnings.toLocaleString()} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
+                  <Text style={styles.earningsValue}>{tv(todayEarnings.toLocaleString())} <Text style={styles.earningsCurrency}>{t('ر.ي')}</Text></Text>
                 )}
               </View>
             </View>
@@ -386,7 +387,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
               onPress={handleToggleOnline}
               disabled={onlineUpdating || initialLoading}
               accessibilityRole="switch"
-              accessibilityLabel="استقبال طلبات التوصيل"
+              accessibilityLabel={t('استقبال طلبات التوصيل')}
               accessibilityState={{ checked: isOnline, disabled: onlineUpdating || initialLoading, busy: onlineUpdating }}
             >
               {onlineUpdating ? (
@@ -394,7 +395,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
               ) : (
                 <View style={[styles.connectionDotLarge, !isOnline && styles.statusDotOffline]} />
               )}
-              <Text style={[styles.connectionText, isOnline && styles.connectionTextOnline]}>{isOnline ? 'متصل بالطلبات' : 'اضغط للاتصال'}</Text>
+              <Text style={[styles.connectionText, isOnline && styles.connectionTextOnline]}>{tv(isOnline ? t('متصل بالطلبات') : t('اضغط للاتصال'))}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -403,35 +404,35 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       <View style={[styles.bottomCardWrap, isShort && styles.bottomCardWrapShort]}>
         <View style={[styles.orderCard, { width: contentWidth }, isShort && styles.orderCardShort]}>
           {initialLoading ? (
-            <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="جاري تحميل عروض التوصيل" />
+            <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel={t('جاري تحميل عروض التوصيل')} />
           ) : loadError ? (
             <>
               <Ionicons name="cloud-offline-outline" size={38} color={COLORS.error} />
-              <Text style={styles.cardTitle}>تعذّر تحديث العروض</Text>
-              <Text style={styles.errorText}>{loadError}</Text>
+              <Text style={styles.cardTitle}>{t('تعذّر تحديث العروض')}</Text>
+              <Text style={styles.errorText}>{tv(loadError)}</Text>
             </>
           ) : !isApproved ? (
             <>
               <Ionicons name="shield-checkmark-outline" size={40} color={COLORS.warning} />
-              <Text style={styles.cardTitle}>الحساب بانتظار الاعتماد</Text>
-              <Text style={styles.cardSubtitle}>ستتمكن من استقبال الطلبات بعد اعتماد بيانات المندوب.</Text>
+              <Text style={styles.cardTitle}>{t('الحساب بانتظار الاعتماد')}</Text>
+              <Text style={styles.cardSubtitle}>{t('ستتمكن من استقبال الطلبات بعد اعتماد بيانات المندوب.')}</Text>
             </>
           ) : !isOnline ? (
             <>
               <Ionicons name="notifications-off-outline" size={40} color={COLORS.textMuted} />
-              <Text style={styles.cardTitle}>أنت غير متصل</Text>
-              <Text style={styles.cardSubtitle}>فعّل استقبال الطلبات من الزر أعلاه.</Text>
+              <Text style={styles.cardTitle}>{t('أنت غير متصل')}</Text>
+              <Text style={styles.cardSubtitle}>{t('فعّل استقبال الطلبات من الزر أعلاه.')}</Text>
             </>
           ) : (
             <>
               <Ionicons name="radio-outline" size={40} color={COLORS.primary} />
               <Text style={styles.cardTitle}>
-                {current ? 'وصل عرض توصيل جديد' : 'جاري البحث عن طلبات جاهزة...'}
+                {tv(current ? t('وصل عرض توصيل جديد') : t('جاري البحث عن طلبات جاهزة...'))}
               </Text>
               <Text style={styles.cardSubtitle}>
-                {realtimeDegraded
-                  ? 'التحديث اللحظي غير متاح مؤقتًا؛ يتم التحديث تلقائيًا كل عدة ثوانٍ.'
-                  : 'ستظهر العروض الجديدة تلقائيًا عند تجهيزها من المتجر.'}
+                {tv(realtimeDegraded
+                  ? t('التحديث اللحظي غير متاح مؤقتًا؛ يتم التحديث تلقائيًا كل عدة ثوانٍ.')
+                  : t('ستظهر العروض الجديدة تلقائيًا عند تجهيزها من المتجر.'))}
               </Text>
             </>
           )}
@@ -441,12 +442,12 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             style={styles.refreshBtn}
             disabled={refreshing}
             accessibilityRole="button"
-            accessibilityLabel="تحديث عروض التوصيل"
+            accessibilityLabel={t('تحديث عروض التوصيل')}
             accessibilityState={{ busy: refreshing, disabled: refreshing }}
           >
             {refreshing
               ? <ActivityIndicator size="small" color={COLORS.primary} />
-              : <Text style={styles.refreshText}>تحديث الآن</Text>}
+              : <Text style={styles.refreshText}>{t('تحديث الآن')}</Text>}
           </TouchableOpacity>
         </View>
       </View>

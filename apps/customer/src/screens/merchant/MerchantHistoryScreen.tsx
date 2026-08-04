@@ -5,6 +5,7 @@ import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/s
 import { useAuthStore, OrderSummary } from '@marketplace/shared-hooks';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import { getMerchantOrderStatusInfo, HISTORY_MERCHANT_ORDER_STATUSES } from './merchantOrderState';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -52,7 +53,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
     filtered.forEach(o => {
       let dateKey = 'تاريخ غير محدد';
       try {
-        dateKey = new Date(o.created_at).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        dateKey = new Date(o.created_at).toLocaleDateString(getLocale(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       } catch (e) {}
       
       if (!groups[dateKey]) groups[dateKey] = [];
@@ -88,7 +89,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         activeOpacity={0.8}
         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
         accessibilityRole="button"
-        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
+        accessibilityLabel={t('فتح تفاصيل الطلب {0}', [tv(item.order_number)])}
       >
         {/* Timeline connector */}
         <View style={styles.timelineCol}>
@@ -100,16 +101,16 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         <View style={[styles.ledgerCard, isCompact && styles.ledgerCardCompact, isDesktop && styles.ledgerCardDesktop]}>
           <View style={[styles.ledgerHeader, isCompact && styles.ledgerHeaderCompact]}>
             <View>
-              <Text style={styles.orderNumber}>{item.order_number}</Text>
-              <Text style={styles.timeText}>{timeStr}</Text>
+              <Text style={styles.orderNumber}>{tv(item.order_number)}</Text>
+              <Text style={styles.timeText}>{tv(timeStr)}</Text>
             </View>
             <View style={{ alignItems: 'flex-start' }}>
                <Text style={[styles.amountText, item.status === ORDER_STATUS.CANCELLED && styles.amountCancelled]}>
-                 {item.total_amount} <Text style={{ fontSize: 12 }}>ر.ي</Text>
+                 {tv(item.total_amount)} <Text style={{ fontSize: 12 }}>{t('ر.ي')}</Text>
                </Text>
                <View style={styles.statusWrap}>
                  <Ionicons name={info.icon as any} size={14} color={info.color} />
-                 <Text style={[styles.statusText, { color: info.color }]}>{info.label}</Text>
+                 <Text style={[styles.statusText, { color: info.color }]}>{tv(info.label)}</Text>
                </View>
             </View>
           </View>
@@ -117,11 +118,11 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           <View style={styles.ledgerDetails}>
             <View style={styles.ledgerDetailItem}>
               <Ionicons name="person-outline" size={14} color={UI.textMuted} />
-              <Text style={styles.ledgerDetailText}>{customerName}</Text>
+              <Text style={styles.ledgerDetailText}>{tv(customerName)}</Text>
             </View>
             <View style={styles.ledgerDetailItem}>
               <Ionicons name="location-outline" size={14} color={UI.textMuted} />
-              <Text style={styles.ledgerDetailText}>{payment}</Text>
+              <Text style={styles.ledgerDetailText}>{tv(payment)}</Text>
             </View>
           </View>
         </View>
@@ -135,7 +136,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
       
       {!isDesktop && (
         <View style={styles.headerMobile}>
-          <Text style={styles.headerTitleMobile}>سجل الطلبات</Text>
+          <Text style={styles.headerTitleMobile}>{t('سجل الطلبات')}</Text>
         </View>
       )}
 
@@ -145,8 +146,8 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           {isDesktop && (
             <View style={styles.pageHeaderRow}>
               <View>
-                <Text style={styles.pageTitle}>سجل الطلبات</Text>
-                <Text style={styles.pageSubtitle}>الطلبات المكتملة والملغاة والمرتجعة وحالات تعذر التسليم</Text>
+                <Text style={styles.pageTitle}>{t('سجل الطلبات')}</Text>
+                <Text style={styles.pageSubtitle}>{t('الطلبات المكتملة والملغاة والمرتجعة وحالات تعذر التسليم')}</Text>
               </View>
             </View>
           )}
@@ -155,13 +156,13 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           <View style={[styles.dashboardCard, isDesktop && styles.dashboardCardDesktop]}>
              <View style={[styles.statsRow, isCompact && styles.statsRowCompact]}>
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>قيمة الطلبات المسلّمة</Text>
-                  <Text style={styles.statValueGreen}>{totalDelivered} ر.ي</Text>
+                  <Text style={styles.statLabel}>{t('قيمة الطلبات المسلّمة')}</Text>
+                  <Text style={styles.statValueGreen}>{t('{0} ر.ي', [tv(totalDelivered)])}</Text>
                 </View>
                 {!isCompact && <View style={styles.statDivider} />}
                 <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>عدد العمليات</Text>
-                  <Text style={styles.statValueDark}>{totalOrders}</Text>
+                  <Text style={styles.statLabel}>{t('عدد العمليات')}</Text>
+                  <Text style={styles.statValueDark}>{tv(totalOrders)}</Text>
                 </View>
              </View>
 
@@ -169,11 +170,11 @@ export default function MerchantHistoryScreen({ navigation }: any) {
                <Ionicons name="search" size={20} color={UI.textMuted} style={styles.searchIcon} />
                <TextInput 
                  style={styles.searchInput}
-                 placeholder="ابحث برقم الطلب أو اسم العميل..."
+                 placeholder={t('ابحث برقم الطلب أو اسم العميل...')}
                  placeholderTextColor={UI.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  accessibilityLabel="البحث في سجل الطلبات"
+                  accessibilityLabel={t('البحث في سجل الطلبات')}
                />
              </View>
           </View>
@@ -183,7 +184,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           {realtimeError || (error && orders.length > 0) ? (
             <View style={styles.inlineWarning} accessibilityRole="alert">
               <Ionicons name="cloud-offline-outline" size={18} color="#92400E" />
-              <Text style={styles.inlineWarningText}>{realtimeError ?? error}</Text>
+              <Text style={styles.inlineWarningText}>{tv(realtimeError ?? error)}</Text>
             </View>
           ) : null}
           {loading ? (
@@ -193,10 +194,10 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           ) : error && orders.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
-              <Text style={styles.emptyTitle}>تعذر تحميل السجل</Text>
-              <Text style={styles.emptyText}>{error}</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل سجل الطلبات">
-                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+              <Text style={styles.emptyTitle}>{t('تعذر تحميل السجل')}</Text>
+              <Text style={styles.emptyText}>{tv(error)}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel={t('إعادة تحميل سجل الطلبات')}>
+                <Text style={styles.retryBtnText}>{t('إعادة المحاولة')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -209,7 +210,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
               renderItem={({ item }) => (
                 <View style={styles.dateGroup}>
                   <View style={styles.dateBadge}>
-                     <Text style={styles.dateBadgeText}>{item.date}</Text>
+                     <Text style={styles.dateBadgeText}>{tv(item.date)}</Text>
                   </View>
                   {item.data.map((order, idx) => (
                     <View key={order.id}>
@@ -221,8 +222,8 @@ export default function MerchantHistoryScreen({ navigation }: any) {
               ListEmptyComponent={
                 <View style={styles.empty}>
                   <Ionicons name="documents-outline" size={64} color={UI.border} />
-                  <Text style={styles.emptyTitle}>سجل الطلبات فارغ</Text>
-                  <Text style={styles.emptyText}>لم يتم العثور على أي حركات متطابقة.</Text>
+                  <Text style={styles.emptyTitle}>{t('سجل الطلبات فارغ')}</Text>
+                  <Text style={styles.emptyText}>{t('لم يتم العثور على أي حركات متطابقة.')}</Text>
                 </View>
               }
             />

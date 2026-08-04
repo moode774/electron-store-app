@@ -13,6 +13,7 @@ import {
   getDeliveryOnboardingDocumentLinks,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -180,33 +181,33 @@ export default function AdminDeliveryScreen({ navigation }: any) {
             <Ionicons name="bicycle" size={24} color={UI.primary} />
           </View>
           <View style={s.cardInfo}>
-            <Text style={s.driverName}>{name}</Text>
+            <Text style={s.driverName}>{tv(name)}</Text>
             <View style={s.infoRow}>
               <Ionicons name="call-outline" size={12} color={UI.textMuted} />
-              <Text style={s.phoneText}>{phone}</Text>
+              <Text style={s.phoneText}>{tv(phone)}</Text>
             </View>
             <View style={s.vehicleRow}>
               <Ionicons name="car-sport-outline" size={13} color={UI.textMuted} />
-              <Text style={s.vehicleText}>{vehicle}</Text>
-              {item.vehicle_plate && <Text style={s.plateText}>{item.vehicle_plate}</Text>}
+              <Text style={s.vehicleText}>{tv(vehicle)}</Text>
+              {item.vehicle_plate && <Text style={s.plateText}>{tv(item.vehicle_plate)}</Text>}
             </View>
           </View>
           <View style={[s.statusBadge, { backgroundColor: item.is_approved ? '#ECFDF5' : '#FFFBEB' }]}>
             <Text style={[s.statusText, { color: item.is_approved ? UI.success : UI.warning }]}>
-              {item.is_approved ? 'معتمد' : 'انتظار'}
+              {tv(item.is_approved ? t('معتمد') : t('انتظار'))}
             </Text>
           </View>
         </View>
 
         <View style={s.statsRow}>
           <View style={s.statItem}>
-            <Text style={s.statValue}>{item.total_deliveries}</Text>
-            <Text style={s.statLabel}>عدد التوصيلات</Text>
+            <Text style={s.statValue}>{tv(item.total_deliveries)}</Text>
+            <Text style={s.statLabel}>{t('عدد التوصيلات')}</Text>
           </View>
           <View style={s.statDivider} />
           <View style={s.statItem}>
-            <Text style={[s.statValue, { color: UI.success }]}>{item.wallet_balance.toFixed(2)}</Text>
-            <Text style={s.statLabel}>الرصيد المتاح (ر.ي)</Text>
+            <Text style={[s.statValue, { color: UI.success }]}>{tv(item.wallet_balance.toFixed(2))}</Text>
+            <Text style={s.statLabel}>{t('الرصيد المتاح (ر.ي)')}</Text>
           </View>
         </View>
 
@@ -216,18 +217,18 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           <View style={s.actionsRow}>
             <TouchableOpacity style={s.approveBtn} onPress={() => handleApprove(item, true)} activeOpacity={0.8}>
               <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-              <Text style={s.approveBtnText}>موافقة</Text>
+              <Text style={s.approveBtnText}>{t('موافقة')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.rejectBtn} onPress={() => handleApprove(item, false)} activeOpacity={0.8}>
               <Ionicons name="close-circle-outline" size={18} color={UI.danger} />
-              <Text style={s.rejectBtnText}>رفض</Text>
+              <Text style={s.rejectBtnText}>{t('رفض')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={s.actionsRow}>
             <View style={s.approvedRow}>
               <Ionicons name="shield-checkmark" size={18} color={UI.success} />
-              <Text style={s.approvedText}>تمت الموافقة وهو نشط في المنصة</Text>
+              <Text style={s.approvedText}>{t('تمت الموافقة وهو نشط في المنصة')}</Text>
             </View>
           </View>
         )}
@@ -244,16 +245,16 @@ export default function AdminDeliveryScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>السائقين</Text>
+            <Text style={s.headerTitle}>{t('السائقين')}</Text>
           </View>
-          <Text style={s.headerCount}>{drivers.length} سائق</Text>
+          <Text style={s.headerCount}>{t('{0} سائق', [tv(drivers.length)])}</Text>
         </View>
 
         <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
-            placeholder="البحث بالاسم أو الهاتف..."
+            placeholder={t('البحث بالاسم أو الهاتف...')}
             placeholderTextColor={UI.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -278,7 +279,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
                 onPress={() => setFilter(f.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.filterText, isActive && s.filterTextActive]}>{f.label}</Text>
+                <Text style={[s.filterText, isActive && s.filterTextActive]}>{tv(f.label)}</Text>
               </TouchableOpacity>
             );
           }}
@@ -290,8 +291,8 @@ export default function AdminDeliveryScreen({ navigation }: any) {
       ) : loadError ? (
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
-          <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={s.errorText}>{tv(loadError)}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -306,7 +307,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.center}>
                <Ionicons name="bicycle-outline" size={48} color={UI.border} />
-               <Text style={s.emptyText}>لا يوجد سائقون لعرضهم</Text>
+               <Text style={s.emptyText}>{t('لا يوجد سائقون لعرضهم')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -317,21 +318,21 @@ export default function AdminDeliveryScreen({ navigation }: any) {
         <View style={s.modalOverlay}>
           <View style={[s.modalBox, { width: Math.min(Math.max(width - 24, 280), 460) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>{reviewModal.approve ? 'مراجعة واعتماد المندوب' : 'رفض طلب اعتماد المندوب'}</Text>
-              <TouchableOpacity onPress={closeReview} disabled={!!processing} accessibilityRole="button" accessibilityLabel="إغلاق مراجعة المندوب"><Ionicons name="close" size={22} color={UI.textMuted} /></TouchableOpacity>
+              <Text style={s.modalTitle}>{tv(reviewModal.approve ? t('مراجعة واعتماد المندوب') : t('رفض طلب اعتماد المندوب'))}</Text>
+              <TouchableOpacity onPress={closeReview} disabled={!!processing} accessibilityRole="button" accessibilityLabel={t('إغلاق مراجعة المندوب')}><Ionicons name="close" size={22} color={UI.textMuted} /></TouchableOpacity>
             </View>
             {reviewModal.driver && (() => {
               const driver = reviewModal.driver as AdminDriver & Record<string, any>;
               return <View style={s.verificationBox}>
-                <Text style={s.verificationTitle}>{(driver.users as any)?.full_name ?? 'مندوب غير معروف'}</Text>
-                <Text style={s.verificationRow}>الهاتف: {(driver.users as any)?.phone ?? 'غير متوفر'}</Text>
-                <Text style={s.verificationRow}>رقم الهوية: {driver.national_id || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>نوع المركبة: {VEHICLE_LABELS[driver.vehicle_type ?? ''] ?? driver.vehicle_type ?? 'غير محدد'}</Text>
-                <Text style={s.verificationRow}>رقم اللوحة: {driver.vehicle_plate || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>مدينة العمل: {driver.work_city || 'غير محددة'}</Text>
-                <Text style={s.verificationRow}>نسخة الطلب: {driver.application_revision}</Text>
+                <Text style={s.verificationTitle}>{tv((driver.users as any)?.full_name ?? t('مندوب غير معروف'))}</Text>
+                <Text style={s.verificationRow}>{t('الهاتف: {0}', [(driver.users as any)?.phone ?? 'غير متوفر'])}</Text>
+                <Text style={s.verificationRow}>{t('رقم الهوية: {0}', [driver.national_id || 'غير مرفق'])}</Text>
+                <Text style={s.verificationRow}>{t('نوع المركبة: {0}', [VEHICLE_LABELS[driver.vehicle_type ?? ''] ?? driver.vehicle_type ?? 'غير محدد'])}</Text>
+                <Text style={s.verificationRow}>{t('رقم اللوحة: {0}', [driver.vehicle_plate || 'غير مرفق'])}</Text>
+                <Text style={s.verificationRow}>{t('مدينة العمل: {0}', [driver.work_city || 'غير محددة'])}</Text>
+                <Text style={s.verificationRow}>{t('نسخة الطلب: {0}', [tv(driver.application_revision)])}</Text>
                 {documentsLoading && <ActivityIndicator size="small" color={UI.primary} />}
-                {!!documentsError && <Text style={s.documentsError}>{documentsError}</Text>}
+                {!!documentsError && <Text style={s.documentsError}>{tv(documentsError)}</Text>}
                 {documentLinks.length > 0 && (
                   <View style={s.documentsRow}>
                     {documentLinks.map((document) => (
@@ -343,14 +344,14 @@ export default function AdminDeliveryScreen({ navigation }: any) {
                       >
                         <Image source={{ uri: document.signedUrl }} style={s.documentImage} />
                         <Text style={s.documentLabel}>
-                          {document.path.includes('national-id-') ? 'صورة الهوية' : 'رخصة القيادة'}
+                          {tv(document.path.includes('national-id-') ? t('صورة الهوية') : t('رخصة القيادة'))}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 )}
                 {(!driver.national_id_image_path || !driver.license_image_path) && (
-                  <View style={s.evidenceWarning}><Ionicons name="warning-outline" size={17} color={UI.warning} /><Text style={s.evidenceWarningText}>يلزم وجود صورتي الهوية والرخصة معًا. عند غياب أي منهما، وثّق طريقة التحقق الخارجي في ملاحظة لا تقل عن 20 حرفًا.</Text></View>
+                  <View style={s.evidenceWarning}><Ionicons name="warning-outline" size={17} color={UI.warning} /><Text style={s.evidenceWarningText}>{t('يلزم وجود صورتي الهوية والرخصة معًا. عند غياب أي منهما، وثّق طريقة التحقق الخارجي في ملاحظة لا تقل عن 20 حرفًا.')}</Text></View>
                 )}
               </View>;
             })()}
@@ -358,17 +359,17 @@ export default function AdminDeliveryScreen({ navigation }: any) {
               style={s.reviewInput}
               value={reviewModal.reason}
               onChangeText={(reason) => setReviewModal((current) => ({ ...current, reason }))}
-              placeholder={reviewModal.approve ? 'ملاحظة تحقق خارجي (20 حرفًا عند غياب أي مستند)...' : 'سبب الرفض (مطلوب)...'}
+              placeholder={reviewModal.approve ? t('ملاحظة تحقق خارجي (20 حرفًا عند غياب أي مستند)...') : t('سبب الرفض (مطلوب)...')}
               placeholderTextColor={UI.textMuted}
               multiline
               textAlign="right"
-              accessibilityLabel="ملاحظات مراجعة المندوب"
+              accessibilityLabel={t('ملاحظات مراجعة المندوب')}
             />
-            {reviewModal.approve && <Text style={s.reviewHint}>المستندان الكاملان يسمحان بالاعتماد دون ملاحظة؛ وإلا فالملاحظة الخارجية إلزامية ({reviewModal.reason.trim().length}/20).</Text>}
+            {reviewModal.approve && <Text style={s.reviewHint}>{t('المستندان الكاملان يسمحان بالاعتماد دون ملاحظة؛ وإلا فالملاحظة الخارجية إلزامية ({0}/20).', [tv(reviewModal.reason.trim().length)])}</Text>}
             <View style={s.modalActions}>
-              <TouchableOpacity style={s.modalCancel} onPress={closeReview} disabled={!!processing}><Text style={s.modalCancelText}>تراجع</Text></TouchableOpacity>
+              <TouchableOpacity style={s.modalCancel} onPress={closeReview} disabled={!!processing}><Text style={s.modalCancelText}>{t('تراجع')}</Text></TouchableOpacity>
               <TouchableOpacity style={[s.modalConfirm, !reviewModal.approve && { backgroundColor: UI.danger }]} onPress={submitReview} disabled={!!processing}>
-                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalConfirmText}>{reviewModal.approve ? 'اعتماد بعد المراجعة' : 'تأكيد الرفض'}</Text>}
+                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalConfirmText}>{tv(reviewModal.approve ? t('اعتماد بعد المراجعة') : t('تأكيد الرفض'))}</Text>}
               </TouchableOpacity>
             </View>
           </View>

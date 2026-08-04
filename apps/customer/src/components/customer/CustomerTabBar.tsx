@@ -4,6 +4,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { tv } from '@marketplace/shared-i18n';
 
 const ITEMS: Record<string, { label: string; active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
   Cart: { label: 'السلة', active: 'bag-handle', idle: 'bag-handle-outline' },
@@ -38,7 +39,7 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
               onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
               activeOpacity={0.76}
               accessibilityRole="button"
-              accessibilityLabel={item.label}
+              accessibilityLabel={tv(item.label)}
               accessibilityState={focused ? { selected: true } : {}}
             >
               <View style={[styles.iconWrap, focused && styles.iconWrapFocused]}>
@@ -49,11 +50,11 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
                 />
                 {badge > 0 ? (
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                    <Text style={styles.badgeText}>{tv(badge > 99 ? '99+' : badge)}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={[styles.label, focused && styles.labelFocused]}>{item.label}</Text>
+              <Text style={[styles.label, focused && styles.labelFocused]}>{tv(item.label)}</Text>
             </TouchableOpacity>
           );
         })}

@@ -33,6 +33,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv, getLocale } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary, bg: COLORS.background, card: COLORS.surface, text: COLORS.textPrimary,
@@ -88,7 +89,7 @@ function returnItemName(item: AdminPhysicalReturnBundle['items'][number], index:
   return item.order_items?.product_name
     || item.products?.name_ar
     || item.products?.name
-    || `الصنف ${index + 1}`;
+    || t('الصنف {0}', [index + 1]);
 }
 
 function returnItemVariant(item: AdminPhysicalReturnBundle['items'][number]): string | null {
@@ -99,17 +100,17 @@ function returnItemVariant(item: AdminPhysicalReturnBundle['items'][number]): st
       .map(([key, value]) => `${key}: ${String(value)}`);
     if (values.length) return values.join(' • ');
   }
-  return item.variant_id ? `متغير #${item.variant_id.slice(0, 8)}` : null;
+  return item.variant_id ? t('متغير #{0}', [item.variant_id.slice(0, 8)]) : null;
 }
 
 function formatDate(value?: string | null): string {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('ar-SA');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(getLocale());
 }
 
 function formatMoney(value?: number | null): string {
-  return `${Number(value ?? 0).toFixed(2)} ر.ي`;
+  return t('{0} ر.ي', [Number(value ?? 0).toFixed(2)]);
 }
 
 function errorMessage(error: unknown): string {
@@ -328,66 +329,62 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
       <View style={s.card}>
         <View style={s.cardHeader}>
           <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
-            <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
+            <Text style={[s.statusText, { color: status.color }]}>{tv(status.label)}</Text>
           </View>
           <View style={s.cardTitleGroup}>
-            <Text style={s.orderNumber}>طلب #{bundle.order.order_number}</Text>
-            <Text style={s.returnId}>إرجاع {request.id.slice(0, 8)}</Text>
+            <Text style={s.orderNumber}>{t('طلب #{0}', [tv(bundle.order.order_number)])}</Text>
+            <Text style={s.returnId}>{t('إرجاع {0}', [request.id.slice(0, 8)])}</Text>
           </View>
         </View>
 
         <View style={s.partyRow}>
-          <Info icon="person-outline" label="العميل" value={bundle.customer.full_name || bundle.customer.phone || 'غير محدد'} />
-          <Info icon="storefront-outline" label="التاجر" value={bundle.merchant?.store_name || 'غير محدد'} />
+          <Info icon="person-outline" label={t('العميل')} value={bundle.customer.full_name || bundle.customer.phone || t('غير محدد')} />
+          <Info icon="storefront-outline" label={t('التاجر')} value={bundle.merchant?.store_name || t('غير محدد')} />
         </View>
         <View style={s.metaGrid}>
-          <Meta label="السبب" value={REASON_LABELS[request.reason] ?? request.reason} />
-          <Meta label="طريقة التسليم" value={request.pickup_method === 'courier_pickup' ? 'استلام مندوب' : 'تسليم للمتجر'} />
-          <Meta label="طريقة الاسترداد" value={request.refund_method === 'wallet' ? 'المحفظة' : 'وسيلة الدفع الأصلية'} />
-          <Meta label="تاريخ الطلب" value={formatDate(request.created_at)} />
+          <Meta label={t('السبب')} value={REASON_LABELS[request.reason] ?? request.reason} />
+          <Meta label={t('طريقة التسليم')} value={request.pickup_method === 'courier_pickup' ? t('استلام مندوب') : t('تسليم للمتجر')} />
+          <Meta label={t('طريقة الاسترداد')} value={request.refund_method === 'wallet' ? t('المحفظة') : t('وسيلة الدفع الأصلية')} />
+          <Meta label={t('تاريخ الطلب')} value={formatDate(request.created_at)} />
         </View>
 
-        {request.description ? <Text style={s.description}>{request.description}</Text> : null}
+        {request.description ? <Text style={s.description}>{tv(request.description)}</Text> : null}
         <View style={s.itemSummary}>
           <Ionicons name="cube-outline" size={18} color={UI.primary} />
-          <Text style={s.itemSummaryText}>
-            {bundle.items.length} صنف · {bundle.items.reduce((sum, item) => sum + item.requested_quantity, 0)} وحدة مطلوبة
-          </Text>
-          <Text style={s.evidenceCount}>{request.evidence_images?.length ?? 0} دليل</Text>
+          <Text style={s.itemSummaryText}>{t('{0} صنف · {1} وحدة مطلوبة', [tv(bundle.items.length), bundle.items.reduce((sum, item) => sum + item.requested_quantity, 0)])}</Text>
+          <Text style={s.evidenceCount}>{t('{0} دليل', [request.evidence_images?.length ?? 0])}</Text>
         </View>
 
         {request.merchant_recommendation ? (
           <View style={s.merchantResponse}>
-            <Text style={s.merchantResponseTitle}>
-              توصية التاجر: {request.merchant_recommendation === 'approve' ? 'قبول' : 'رفض'}
-            </Text>
-            <Text style={s.merchantResponseText}>{request.merchant_response || 'بدون تفاصيل'}</Text>
+            <Text style={s.merchantResponseTitle}>{t('توصية التاجر: {0}', [request.merchant_recommendation === 'approve' ? 'قبول' : 'رفض'])}</Text>
+            <Text style={s.merchantResponseText}>{tv(request.merchant_response || t('بدون تفاصيل'))}</Text>
           </View>
         ) : null}
 
         <View style={s.actions}>
           <TouchableOpacity style={s.detailsButton} onPress={() => openAction(bundle, 'details')}>
             <Ionicons name="eye-outline" size={18} color={UI.primary} />
-            <Text style={s.detailsButtonText}>التفاصيل والأدلة</Text>
+            <Text style={s.detailsButtonText}>{t('التفاصيل والأدلة')}</Text>
           </TouchableOpacity>
           {request.status === 'requested' ? (
             <>
               <TouchableOpacity style={s.rejectButton} onPress={() => openAction(bundle, 'reject')}>
-                <Text style={s.rejectButtonText}>رفض</Text>
+                <Text style={s.rejectButtonText}>{t('رفض')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.primaryButton} onPress={() => openAction(bundle, 'approve')}>
-                <Text style={s.primaryButtonText}>مراجعة وقبول</Text>
+                <Text style={s.primaryButtonText}>{t('مراجعة وقبول')}</Text>
               </TouchableOpacity>
             </>
           ) : null}
           {request.status === 'approved' ? (
             <TouchableOpacity style={s.primaryButton} onPress={() => openAction(bundle, 'schedule')}>
-              <Text style={s.primaryButtonText}>جدولة التسليم</Text>
+              <Text style={s.primaryButtonText}>{t('جدولة التسليم')}</Text>
             </TouchableOpacity>
           ) : null}
           {request.status === 'inspected' ? (
             <TouchableOpacity style={[s.primaryButton, { backgroundColor: UI.success }]} onPress={() => openAction(bundle, 'complete')}>
-              <Text style={s.primaryButtonText}>إكمال الاسترداد</Text>
+              <Text style={s.primaryButtonText}>{t('إكمال الاسترداد')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -398,14 +395,14 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel="العودة">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel={t('العودة')}>
           <Ionicons name="arrow-forward" size={22} color={UI.text} />
         </TouchableOpacity>
         <View style={s.headerCopy}>
-          <Text style={s.title}>الإرجاعات المادية</Text>
-          <Text style={s.subtitle}>مراجعة الكميات ومسار الاستلام والفحص والاسترداد</Text>
+          <Text style={s.title}>{t('الإرجاعات المادية')}</Text>
+          <Text style={s.subtitle}>{t('مراجعة الكميات ومسار الاستلام والفحص والاسترداد')}</Text>
         </View>
-        <TouchableOpacity onPress={() => void load(true)} style={s.headerButton} accessibilityLabel="تحديث">
+        <TouchableOpacity onPress={() => void load(true)} style={s.headerButton} accessibilityLabel={t('تحديث')}>
           <Ionicons name="refresh" size={21} color={UI.primary} />
         </TouchableOpacity>
       </View>
@@ -418,7 +415,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             style={[s.filterButton, filter === item.value && s.filterButtonActive]}
             accessibilityState={{ selected: filter === item.value }}
           >
-            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
+            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{tv(item.label)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -428,8 +425,8 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
       ) : loadError ? (
         <View style={s.center}>
           <Ionicons name="alert-circle-outline" size={44} color={UI.danger} />
-          <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryButton} onPress={() => void load()}><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <Text style={s.errorText}>{tv(loadError)}</Text>
+          <TouchableOpacity style={s.retryButton} onPress={() => void load()}><Text style={s.retryText}>{t('إعادة المحاولة')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -444,8 +441,8 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
           ListEmptyComponent={(
             <View style={s.empty}>
               <Ionicons name="checkmark-done-circle-outline" size={50} color={UI.success} />
-              <Text style={s.emptyTitle}>لا توجد إرجاعات في هذه المرحلة</Text>
-              <Text style={s.emptyText}>ستظهر الطلبات هنا فور انتقالها إلى الحالة المحددة.</Text>
+              <Text style={s.emptyTitle}>{t('لا توجد إرجاعات في هذه المرحلة')}</Text>
+              <Text style={s.emptyText}>{t('ستظهر الطلبات هنا فور انتقالها إلى الحالة المحددة.')}</Text>
             </View>
           )}
         />
@@ -455,29 +452,29 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
         <View style={[s.modalBackdrop, !compact && s.modalBackdropDesktop]}>
           <View style={[s.modalCard, !compact && s.modalCardDesktop, { width: Math.min(Math.max(width - 24, 280), 820) }]}>
             <View style={s.modalHeader}>
-              <TouchableOpacity onPress={closeAction} style={s.modalClose} disabled={!!processingId} accessibilityLabel="إغلاق">
+              <TouchableOpacity onPress={closeAction} style={s.modalClose} disabled={!!processingId} accessibilityLabel={t('إغلاق')}>
                 <Ionicons name="close" size={23} color={UI.text} />
               </TouchableOpacity>
               <View style={s.modalHeaderCopy}>
-                <Text style={s.modalTitle}>{action ? ACTION_TITLES[action.kind] : ''}</Text>
-                <Text style={s.modalSubtitle}>{action ? `#${action.bundle.order.order_number}` : ''}</Text>
+                <Text style={s.modalTitle}>{tv(action ? ACTION_TITLES[action.kind] : '')}</Text>
+                <Text style={s.modalSubtitle}>{tv(action ? `#${action.bundle.order.order_number}` : '')}</Text>
               </View>
             </View>
 
             {action ? (
               <ScrollView contentContainerStyle={s.modalContent} keyboardShouldPersistTaps="handled">
                 <View style={s.summaryBox}>
-                  <Meta label="الحالة" value={STATUS_META[action.bundle.return.status].label} />
-                  <Meta label="العميل" value={action.bundle.customer.full_name || action.bundle.customer.phone || '—'} />
-                  <Meta label="المتجر" value={action.bundle.merchant?.store_name || '—'} />
-                  <Meta label="قيمة الطلب" value={formatMoney(action.bundle.order.total_amount)} />
+                  <Meta label={t('الحالة')} value={STATUS_META[action.bundle.return.status].label} />
+                  <Meta label={t('العميل')} value={action.bundle.customer.full_name || action.bundle.customer.phone || '—'} />
+                  <Meta label={t('المتجر')} value={action.bundle.merchant?.store_name || '—'} />
+                  <Meta label={t('قيمة الطلب')} value={formatMoney(action.bundle.order.total_amount)} />
                 </View>
 
-                <SectionTitle title="الأدلة" />
+                <SectionTitle title={t('الأدلة')} />
                 {evidenceLoading ? <ActivityIndicator color={UI.primary} /> : evidenceError ? (
-                  <Text style={s.inlineError}>{evidenceError}</Text>
+                  <Text style={s.inlineError}>{tv(evidenceError)}</Text>
                 ) : evidenceLinks.length === 0 ? (
-                  <Text style={s.mutedText}>لا توجد مرفقات لهذا السبب.</Text>
+                  <Text style={s.mutedText}>{t('لا توجد مرفقات لهذا السبب.')}</Text>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.evidenceRow}>
                     {evidenceLinks.map((link, index) => {
@@ -489,16 +486,16 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                           ) : (
                             <Image source={{ uri: link.signedUrl }} style={s.evidenceImage} />
                           )}
-                          <Text style={s.evidenceLabel} numberOfLines={1}>دليل {index + 1}</Text>
+                          <Text style={s.evidenceLabel} numberOfLines={1}>{t('دليل {0}', [index + 1])}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
                 )}
 
-                <SectionTitle title="إثباتات عهدة المندوب" />
+                <SectionTitle title={t('إثباتات عهدة المندوب')} />
                 {evidenceLoading ? <ActivityIndicator color={UI.primary} /> : evidenceError ? null : proofLinks.length === 0 ? (
-                  <Text style={s.mutedText}>لا توجد إثباتات عهدة في هذه المرحلة.</Text>
+                  <Text style={s.mutedText}>{t('لا توجد إثباتات عهدة في هذه المرحلة.')}</Text>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.evidenceRow}>
                     {proofLinks.map((link) => {
@@ -507,7 +504,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                         <TouchableOpacity key={link.path} style={s.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)}>
                           <Image source={{ uri: link.signedUrl }} style={s.evidenceImage} />
                           <Text style={s.evidenceLabel} numberOfLines={1}>
-                            {proof?.proof_type === 'pickup' ? 'إثبات الاستلام' : 'إثبات التسليم'}
+                            {tv(proof?.proof_type === 'pickup' ? t('إثبات الاستلام') : t('إثبات التسليم'))}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -515,18 +512,14 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                   </ScrollView>
                 )}
 
-                <SectionTitle title="الكميات" />
+                <SectionTitle title={t('الكميات')} />
                 {action.bundle.items.map((item, index) => (
                   <View key={item.id} style={s.returnItem}>
                     <View style={s.itemCopy}>
-                      <Text style={s.itemTitle}>{returnItemName(item, index)}</Text>
-                      {returnItemVariant(item) ? <Text style={s.itemDetail}>{returnItemVariant(item)}</Text> : null}
-                      <Text style={s.itemDetail}>
-                        مشتراة {item.purchased_quantity} · مطلوبة {item.requested_quantity}
-                        {item.approved_quantity !== null ? ` · مقبولة إداريًا ${item.approved_quantity}` : ''}
-                        {item.accepted_quantity !== null ? ` · مقبولة بعد الفحص ${item.accepted_quantity}` : ''}
-                      </Text>
-                      {item.disposition ? <Text style={s.itemDetail}>التصرف: {item.disposition}</Text> : null}
+                      <Text style={s.itemTitle}>{tv(returnItemName(item, index))}</Text>
+                      {returnItemVariant(item) ? <Text style={s.itemDetail}>{tv(returnItemVariant(item))}</Text> : null}
+                      <Text style={s.itemDetail}>{t('مشتراة {0} · مطلوبة {1}{2}{3}', [tv(item.purchased_quantity), tv(item.requested_quantity), item.approved_quantity !== null ? ` · مقبولة إداريًا ${item.approved_quantity}` : '', item.accepted_quantity !== null ? ` · مقبولة بعد الفحص ${item.accepted_quantity}` : ''])}</Text>
+                      {item.disposition ? <Text style={s.itemDetail}>{t('التصرف: {0}', [tv(item.disposition)])}</Text> : null}
                     </View>
                     {action.kind === 'approve' ? (
                       <TextInput
@@ -534,7 +527,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                         onChangeText={(value) => setQuantities((current) => ({ ...current, [item.id]: value.replace(/[^0-9]/g, '') }))}
                         keyboardType="number-pad"
                         style={s.quantityInput}
-                        accessibilityLabel={`الكمية المقبولة للصنف ${index + 1}`}
+                        accessibilityLabel={t('الكمية المقبولة للصنف {0}', [index + 1])}
                       />
                     ) : null}
                   </View>
@@ -542,11 +535,11 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
 
                 {action.kind === 'schedule' ? (
                   <>
-                    <SectionTitle title="الموعد" />
+                    <SectionTitle title={t('الموعد')} />
                     <View style={s.quickScheduleRow}>
                       {[1, 3, 24].map((hours) => (
                         <TouchableOpacity key={hours} style={s.quickScheduleButton} onPress={() => setScheduleOffset(hours)}>
-                          <Text style={s.quickScheduleText}>{hours === 24 ? 'غدًا' : `بعد ${hours} س`}</Text>
+                          <Text style={s.quickScheduleText}>{tv(hours === 24 ? t('غدًا') : t('بعد {0} س', [tv(hours)]))}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -557,15 +550,15 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                       autoCapitalize="none"
                       placeholder="2026-07-14T12:00:00+03:00"
                     />
-                    <Text style={s.inputHint}>المعاينة: {formatDate(scheduledAt)}</Text>
+                    <Text style={s.inputHint}>{t('المعاينة: {0}', [formatDate(scheduledAt)])}</Text>
 
                     {action.bundle.return.pickup_method === 'courier_pickup' ? (
                       <>
-                        <SectionTitle title="المندوب المتصل" />
+                        <SectionTitle title={t('المندوب المتصل')} />
                         {onlineDrivers.length === 0 ? (
                           <View style={s.warningBox}>
                             <Ionicons name="warning-outline" size={20} color={UI.warning} />
-                            <Text style={s.warningText}>لا يوجد مندوب معتمد ومتصل الآن. لا يمكن تجاوز هذا الشرط.</Text>
+                            <Text style={s.warningText}>{t('لا يوجد مندوب معتمد ومتصل الآن. لا يمكن تجاوز هذا الشرط.')}</Text>
                           </View>
                         ) : onlineDrivers.map((driver) => (
                           <TouchableOpacity
@@ -575,32 +568,28 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                           >
                             <Ionicons name={selectedDriverId === driver.id ? 'radio-button-on' : 'radio-button-off'} size={21} color={UI.primary} />
                             <View style={s.driverCopy}>
-                              <Text style={s.driverName}>{driver.users?.full_name || driver.users?.phone || driver.id.slice(0, 8)}</Text>
-                              <Text style={s.driverMeta}>{driver.vehicle_type || 'مركبة'} · {driver.vehicle_plate || 'بدون لوحة'}</Text>
+                              <Text style={s.driverName}>{tv(driver.users?.full_name || driver.users?.phone || driver.id.slice(0, 8))}</Text>
+                              <Text style={s.driverMeta}>{tv(driver.vehicle_type || t('مركبة'))} · {tv(driver.vehicle_plate || t('بدون لوحة'))}</Text>
                             </View>
                           </TouchableOpacity>
                         ))}
                       </>
                     ) : (
-                      <View style={s.infoBox}><Text style={s.infoText}>العميل سيسلّم المرتجع للمتجر؛ لن يتم إسناد مندوب.</Text></View>
+                      <View style={s.infoBox}><Text style={s.infoText}>{t('العميل سيسلّم المرتجع للمتجر؛ لن يتم إسناد مندوب.')}</Text></View>
                     )}
                   </>
                 ) : null}
 
                 {action.kind === 'complete' ? (
                   <>
-                    <SectionTitle title="الاسترداد" />
+                    <SectionTitle title={t('الاسترداد')} />
                     {action.bundle.items.reduce((total, item) => total + Number(item.accepted_quantity ?? 0), 0) === 0 ? (
                       <View style={s.infoBox}>
-                        <Text style={s.infoText}>
-                          رفض الفحص جميع الكميات. سيُغلق المرتجع بلا استرداد مالي، بلا إعادة مخزون، وبلا تغيير لحالة الطلب أو إنشاء مرجع دفع.
-                        </Text>
+                        <Text style={s.infoText}>{t('رفض الفحص جميع الكميات. سيُغلق المرتجع بلا استرداد مالي، بلا إعادة مخزون، وبلا تغيير لحالة الطلب أو إنشاء مرجع دفع.')}</Text>
                       </View>
                     ) : (
                       <View style={s.infoBox}>
-                        <Text style={s.infoText}>
-                          سيحسب الخادم قيمة البضاعة المقبولة بعد خصم حصتها من خصم الطلب وإضافة حصتها من الضريبة، دون رسوم التوصيل، ولن يتجاوز رصيد التسوية.
-                        </Text>
+                        <Text style={s.infoText}>{t('سيحسب الخادم قيمة البضاعة المقبولة بعد خصم حصتها من خصم الطلب وإضافة حصتها من الضريبة، دون رسوم التوصيل، ولن يتجاوز رصيد التسوية.')}</Text>
                       </View>
                     )}
                     {action.bundle.items.reduce((total, item) => total + Number(item.accepted_quantity ?? 0), 0) > 0
@@ -609,23 +598,23 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                         value={externalReference}
                         onChangeText={setExternalReference}
                         style={s.input}
-                        placeholder="مرجع الاسترداد من بوابة الدفع (مطلوب)"
+                        placeholder={t('مرجع الاسترداد من بوابة الدفع (مطلوب)')}
                         textAlign="right"
                       />
                     ) : action.bundle.items.reduce((total, item) => total + Number(item.accepted_quantity ?? 0), 0) > 0 ? (
-                      <Text style={s.mutedText}>سيُضاف المبلغ إلى محفظة العميل عند نجاح التسوية.</Text>
+                      <Text style={s.mutedText}>{t('سيُضاف المبلغ إلى محفظة العميل عند نجاح التسوية.')}</Text>
                     ) : null}
                   </>
                 ) : null}
 
                 {action.kind !== 'details' ? (
                   <>
-                    <SectionTitle title={action.kind === 'reject' ? 'سبب الرفض' : 'ملاحظات الإدارة'} />
+                    <SectionTitle title={action.kind === 'reject' ? t('سبب الرفض') : t('ملاحظات الإدارة')} />
                     <TextInput
                       value={notes}
                       onChangeText={setNotes}
                       style={[s.input, s.notesInput]}
-                      placeholder={action.kind === 'reject' ? 'سبب واضح ومحدد (مطلوب)' : 'ملاحظة اختيارية تظهر في سجل العملية'}
+                      placeholder={action.kind === 'reject' ? t('سبب واضح ومحدد (مطلوب)') : t('ملاحظة اختيارية تظهر في سجل العملية')}
                       multiline
                       textAlignVertical="top"
                       textAlign="right"
@@ -635,19 +624,19 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
 
                 {action.kind === 'details' ? (
                   <>
-                    <SectionTitle title="التتبع" />
-                    {action.bundle.tracking.length === 0 ? <Text style={s.mutedText}>لا توجد أحداث.</Text> : action.bundle.tracking.map((event) => (
+                    <SectionTitle title={t('التتبع')} />
+                    {action.bundle.tracking.length === 0 ? <Text style={s.mutedText}>{t('لا توجد أحداث.')}</Text> : action.bundle.tracking.map((event) => (
                       <View key={event.id} style={s.timelineRow}>
                         <View style={s.timelineDot} />
                         <View style={s.timelineCopy}>
-                          <Text style={s.timelineTitle}>{STATUS_META[event.status]?.label ?? event.status}</Text>
-                          <Text style={s.timelineMeta}>{formatDate(event.created_at)} · {event.actor_role || 'النظام'}</Text>
-                          {event.notes ? <Text style={s.timelineNotes}>{event.notes}</Text> : null}
+                          <Text style={s.timelineTitle}>{tv(STATUS_META[event.status]?.label ?? event.status)}</Text>
+                          <Text style={s.timelineMeta}>{tv(formatDate(event.created_at))} · {tv(event.actor_role || t('النظام'))}</Text>
+                          {event.notes ? <Text style={s.timelineNotes}>{tv(event.notes)}</Text> : null}
                         </View>
                       </View>
                     ))}
-                    <Text style={s.mutedText}>إثباتات عهدة المندوب: {action.bundle.proofs.length}</Text>
-                    {action.bundle.refund ? <Text style={s.mutedText}>تم ربط سجل الاسترداد المالي بهذا الإرجاع.</Text> : null}
+                    <Text style={s.mutedText}>{t('إثباتات عهدة المندوب: {0}', [tv(action.bundle.proofs.length)])}</Text>
+                    {action.bundle.refund ? <Text style={s.mutedText}>{t('تم ربط سجل الاسترداد المالي بهذا الإرجاع.')}</Text> : null}
                   </>
                 ) : null}
               </ScrollView>
@@ -656,19 +645,19 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             {action?.kind !== 'details' ? (
               <View style={s.modalFooter}>
                 <TouchableOpacity style={s.cancelButton} onPress={closeAction} disabled={!!processingId}>
-                  <Text style={s.cancelButtonText}>تراجع</Text>
+                  <Text style={s.cancelButtonText}>{t('تراجع')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[s.submitButton, action?.kind === 'reject' && { backgroundColor: UI.danger }]}
                   onPress={() => void submitAction()}
                   disabled={!!processingId}
                 >
-                  {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.submitButtonText}>تأكيد الإجراء</Text>}
+                  {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.submitButtonText}>{t('تأكيد الإجراء')}</Text>}
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={s.modalFooter}>
-                <TouchableOpacity style={s.submitButton} onPress={closeAction}><Text style={s.submitButtonText}>إغلاق</Text></TouchableOpacity>
+                <TouchableOpacity style={s.submitButton} onPress={closeAction}><Text style={s.submitButtonText}>{t('إغلاق')}</Text></TouchableOpacity>
               </View>
             )}
           </View>
@@ -686,17 +675,17 @@ function Info({ icon, label, value }: {
   return (
     <View style={s.infoItem}>
       <Ionicons name={icon} size={18} color={UI.primary} />
-      <View style={s.infoItemCopy}><Text style={s.infoLabel}>{label}</Text><Text style={s.infoValue} numberOfLines={1}>{value}</Text></View>
+      <View style={s.infoItemCopy}><Text style={s.infoLabel}>{tv(label)}</Text><Text style={s.infoValue} numberOfLines={1}>{tv(value)}</Text></View>
     </View>
   );
 }
 
 function Meta({ label, value }: { label: string; value: string }) {
-  return <View style={s.metaItem}><Text style={s.metaLabel}>{label}</Text><Text style={s.metaValue}>{value}</Text></View>;
+  return <View style={s.metaItem}><Text style={s.metaLabel}>{tv(label)}</Text><Text style={s.metaValue}>{tv(value)}</Text></View>;
 }
 
 function SectionTitle({ title }: { title: string }) {
-  return <Text style={s.sectionTitle}>{title}</Text>;
+  return <Text style={s.sectionTitle}>{tv(title)}</Text>;
 }
 
 const s = StyleSheet.create({

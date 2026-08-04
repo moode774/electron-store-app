@@ -28,6 +28,7 @@ import {
   isCartItemSelected,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { t, tv } from '@marketplace/shared-i18n';
 
 // السيرفر (place_order_group) يقبل الدفع نقداً فقط حالياً ويرفض غيره بـ
 // PAYMENT_METHOD_UNAVAILABLE، لذا تُعرض الطرق الأخرى معطّلة كـ«قريباً» بدل
@@ -289,7 +290,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         address_id: selectedAddress.id,
         payment_method: 'cash', // Fallback to cash in system
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : null,
-        notes: paramAltPhone ? `هاتف إضافي: ${paramAltPhone}` : null,
+        notes: paramAltPhone ? t('هاتف إضافي: {0}', [tv(paramAltPhone)]) : null,
         stores,
       });
 
@@ -321,7 +322,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
       await createOrderGroup({
         address_id: selectedAddress.id,
         payment_method: 'cash',
-        notes: paramAltPhone ? `رقم تواصل إضافي: ${paramAltPhone}` : undefined,
+        notes: paramAltPhone ? t('رقم تواصل إضافي: {0}', [tv(paramAltPhone)]) : undefined,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
         idempotency_key: checkoutAttempt.current.key,
         stores,
@@ -359,8 +360,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <Ionicons name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>الدفع</Text>
-            <Text style={styles.headerSub}>أنت على بعد خطوة واحدة من إتمام طلبك</Text>
+            <Text style={styles.headerTitle}>{t('الدفع')}</Text>
+            <Text style={styles.headerSub}>{t('أنت على بعد خطوة واحدة من إتمام طلبك')}</Text>
           </View>
           <View style={{ width: 42 }} />
         </View>
@@ -372,7 +373,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
               <Ionicons name="checkmark" size={14} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelDone]}>سلة المشتريات</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelDone]}>{t('سلة المشتريات')}</Text>
           </View>
           <View style={[styles.stepLine, styles.stepLineDone]} />
 
@@ -381,7 +382,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
               <Ionicons name="checkmark" size={14} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelDone]}>العنوان</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelDone]}>{t('العنوان')}</Text>
           </View>
           <View style={[styles.stepLine, styles.stepLineDone]} />
 
@@ -390,7 +391,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleActive]}>
               <Ionicons name="card" size={15} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelActive]}>الدفع</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelActive]}>{t('الدفع')}</Text>
           </View>
           <View style={styles.stepLine} />
 
@@ -399,7 +400,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={styles.stepCircle}>
               <Ionicons name="checkmark-done-outline" size={15} color="#94A3B8" />
             </View>
-            <Text style={styles.stepLabel}>تأكيد الطلب</Text>
+            <Text style={styles.stepLabel}>{t('تأكيد الطلب')}</Text>
           </View>
         </View>
       </View>
@@ -419,18 +420,16 @@ export default function CheckoutScreen({ navigation, route }: any) {
               <Ionicons name="location" size={18} color="#172554" />
             </View>
             <View style={styles.addressTextCol}>
-              <Text style={styles.addressBannerTitle}>
-                عنوان التوصيل المساعد: {selectedAddress?.label || 'المنزل'}
-              </Text>
+              <Text style={styles.addressBannerTitle}>{t('عنوان التوصيل المساعد: {0}', [selectedAddress?.label || 'المنزل'])}</Text>
               <Text style={styles.addressBannerSub} numberOfLines={1}>
-                {loadingAddress
-                  ? 'جاري تحميل العنوان...'
-                  : selectedAddress?.full_address || 'انقر لاختيار وتعديل عنوان التوصيل'}
+                {tv(loadingAddress
+                  ? t('جاري تحميل العنوان...')
+                  : selectedAddress?.full_address || t('انقر لاختيار وتعديل عنوان التوصيل'))}
               </Text>
             </View>
           </View>
           <View style={styles.changeAddressBadge}>
-            <Text style={styles.changeAddressText}>تغيير</Text>
+            <Text style={styles.changeAddressText}>{t('تغيير')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -447,8 +446,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
               color="#64748B"
             />
             <View style={styles.summaryTitleWrap}>
-              <Text style={styles.cardTitle}>ملخص الطلب</Text>
-              <Text style={styles.itemsCountBadge}>{totalCount} منتجات</Text>
+              <Text style={styles.cardTitle}>{t('ملخص الطلب')}</Text>
+              <Text style={styles.itemsCountBadge}>{t('{0} منتجات', [tv(totalCount)])}</Text>
             </View>
           </TouchableOpacity>
 
@@ -480,53 +479,51 @@ export default function CheckoutScreen({ navigation, route }: any) {
                 {/* Left Side: Summary Costs */}
                 <View style={styles.costsCol}>
                   <View style={styles.costItemRow}>
-                    <Text style={styles.costValueText}>{cartTotal.toLocaleString()} ر.ي</Text>
-                    <Text style={styles.costLabelText}>المجموع الفرعي</Text>
+                    <Text style={styles.costValueText}>{t('{0} ر.ي', [cartTotal.toLocaleString()])}</Text>
+                    <Text style={styles.costLabelText}>{t('المجموع الفرعي')}</Text>
                   </View>
 
                   <View style={styles.costItemRow}>
                     {feeLoading ? (
                       <Text style={styles.costValueText}>...</Text>
                     ) : deliveryUnavailable ? (
-                      <Text style={[styles.costValueText, { color: '#DC2626' }]}>غير متاح</Text>
+                      <Text style={[styles.costValueText, { color: '#DC2626' }]}>{t('غير متاح')}</Text>
                     ) : feeError ? (
-                      <Text style={styles.costValueText}>تعذّر الحساب</Text>
+                      <Text style={styles.costValueText}>{t('تعذّر الحساب')}</Text>
                     ) : deliveryFee > 0 ? (
-                      <Text style={styles.costValueText}>{deliveryFee.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.costValueText}>{t('{0} ر.ي', [deliveryFee.toLocaleString()])}</Text>
                     ) : feeMatched ? (
-                      <Text style={styles.freeGreenText}>مجاني</Text>
+                      <Text style={styles.freeGreenText}>{t('مجاني')}</Text>
                     ) : (
-                      <Text style={styles.costValueText}>تُحدَّد عند التأكيد</Text>
+                      <Text style={styles.costValueText}>{t('تُحدَّد عند التأكيد')}</Text>
                     )}
-                    <Text style={styles.costLabelText}>
-                      تكلفة التوصيل{storeCount > 1 ? ` (${storeCount} متاجر)` : ''}
-                    </Text>
+                    <Text style={styles.costLabelText}>{t('تكلفة التوصيل{0}', [storeCount > 1 ? ` (${storeCount} متاجر)` : ''])}</Text>
                   </View>
 
                   {couponApplied && (
                     <View style={styles.costItemRow}>
-                      <Text style={styles.discountGreenText}>{discount.toLocaleString()}- ر.ي</Text>
-                      <Text style={styles.costLabelText}>كوبون خصم</Text>
+                      <Text style={styles.discountGreenText}>{t('{0}- ر.ي', [discount.toLocaleString()])}</Text>
+                      <Text style={styles.costLabelText}>{t('كوبون خصم')}</Text>
                     </View>
                   )}
 
                   <View style={styles.costItemRow}>
                     <Text style={[styles.costValueText, taxError && { color: '#DC2626' }]}>
-                      {taxLoading ? '...' : taxError ? 'تعذّر الحساب' : `${taxAmount.toLocaleString()} ر.ي`}
+                      {tv(taxLoading ? '...' : taxError ? t('تعذّر الحساب') : t('{0} ر.ي', [taxAmount.toLocaleString()]))}
                     </Text>
-                    <Text style={styles.costLabelText}>الضريبة ({taxRate.toLocaleString()}%)</Text>
+                    <Text style={styles.costLabelText}>{t('الضريبة ({0}%)', [taxRate.toLocaleString()])}</Text>
                   </View>
 
                   <View style={styles.totalCostRow}>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.totalCostVal}>{t('{0} ر.ي', [finalTotal.toLocaleString()])}</Text>
                       <Text style={styles.vatSubText}>
-                        {feeError || taxError || (!feeLoading && !feeMatched)
-                          ? 'المبلغ تقديري — يُحتسب النهائي عند تأكيد الطلب'
-                          : 'المبلغ النهائي يُحتسب عند تأكيد الطلب'}
+                        {tv(feeError || taxError || (!feeLoading && !feeMatched)
+                          ? t('المبلغ تقديري — يُحتسب النهائي عند تأكيد الطلب')
+                          : t('المبلغ النهائي يُحتسب عند تأكيد الطلب'))}
                       </Text>
                     </View>
-                    <Text style={styles.totalCostLabel}>الإجمالي</Text>
+                    <Text style={styles.totalCostLabel}>{t('الإجمالي')}</Text>
                   </View>
                 </View>
               </View>
@@ -534,7 +531,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               {/* Savings Highlight Pill */}
               {couponApplied && discount > 0 && (
                 <View style={styles.savingsPillCard}>
-                  <Text style={styles.savingsPillText}>🎉 توفير {discount.toLocaleString()} ر.ي على هذا الطلب</Text>
+                  <Text style={styles.savingsPillText}>{t('🎉 توفير {0} ر.ي على هذا الطلب', [discount.toLocaleString()])}</Text>
                 </View>
               )}
             </View>
@@ -546,9 +543,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
           <View style={styles.cardHeaderRow}>
             <View style={styles.secureBadgeRow}>
               <Ionicons name="lock-closed-outline" size={13} color="#64748B" />
-              <Text style={styles.secureBadgeText}>جميع المعاملات آمنة ومشفّرة</Text>
+              <Text style={styles.secureBadgeText}>{t('جميع المعاملات آمنة ومشفّرة')}</Text>
             </View>
-            <Text style={styles.cardTitle}>اختر طريقة الدفع</Text>
+            <Text style={styles.cardTitle}>{t('اختر طريقة الدفع')}</Text>
           </View>
 
           <View style={styles.paymentMethodsList}>
@@ -566,14 +563,14 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   {/* Left Side: Brand Logo/Badge */}
                   <View style={styles.pmBrandWrap}>
                     <View style={[styles.pmBrandBox, { backgroundColor: method.brandBg }]}>
-                      <Text style={styles.pmBrandText}>{method.brand}</Text>
+                      <Text style={styles.pmBrandText}>{tv(method.brand)}</Text>
                     </View>
                   </View>
 
                   {/* Middle: Method Info (RTL) */}
                   <View style={styles.pmInfoCol}>
-                    <Text style={styles.pmNameText}>{method.name}</Text>
-                    <Text style={styles.pmSubText}>{method.subtitle}</Text>
+                    <Text style={styles.pmNameText}>{tv(method.name)}</Text>
+                    <Text style={styles.pmSubText}>{tv(method.subtitle)}</Text>
                   </View>
 
                   {/* Right Side: Radio Check */}
@@ -583,7 +580,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     </View>
                   ) : (
                     <View style={styles.pmSoonBadge}>
-                      <Text style={styles.pmSoonText}>قريباً</Text>
+                      <Text style={styles.pmSoonText}>{t('قريباً')}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -597,7 +594,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             onPress={() => setShowAllPaymentMethods(!showAllPaymentMethods)}
           >
             <Text style={styles.expandPaymentText}>
-              {showAllPaymentMethods ? 'عرض أقل ∧' : 'عرض جميع طرق الدفع ∨'}
+              {tv(showAllPaymentMethods ? t('عرض أقل ∧') : t('عرض جميع طرق الدفع ∨'))}
             </Text>
           </TouchableOpacity>
         </View>
@@ -606,7 +603,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="pricetag-outline" size={17} color="#172554" />
-            <Text style={styles.cardTitle}>كوبون خصم</Text>
+            <Text style={styles.cardTitle}>{t('كوبون خصم')}</Text>
           </View>
 
           {couponApplied ? (
@@ -619,14 +616,14 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   setCouponMsg('');
                 }}
               >
-                <Text style={styles.removeCouponText}>إلغاء</Text>
+                <Text style={styles.removeCouponText}>{t('إلغاء')}</Text>
               </TouchableOpacity>
 
               <View style={styles.appliedCouponBadge}>
                 <Ionicons name="checkmark-circle" size={18} color="#059669" />
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.appliedCouponCode}>{couponCode}</Text>
-                  <Text style={styles.appliedCouponSub}>تم تطبيق الكوبون بنجاح</Text>
+                  <Text style={styles.appliedCouponCode}>{tv(couponCode)}</Text>
+                  <Text style={styles.appliedCouponSub}>{t('تم تطبيق الكوبون بنجاح')}</Text>
                 </View>
               </View>
             </View>
@@ -641,13 +638,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   {checkingCoupon ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.couponApplyBtnText}>تطبيق</Text>
+                    <Text style={styles.couponApplyBtnText}>{t('تطبيق')}</Text>
                   )}
                 </TouchableOpacity>
 
                 <TextInput
                   style={styles.couponTextInput}
-                  placeholder="أدخل كود الخصم (مثال: WELCOME15)"
+                  placeholder={t('أدخل كود الخصم (مثال: WELCOME15)')}
                   placeholderTextColor="#94A3B8"
                   value={couponCode}
                   onChangeText={(codeText: string) => {
@@ -660,7 +657,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               </View>
               {!!couponMsg && (
                 <Text style={[styles.couponMsgText, couponApplied ? { color: '#059669' } : { color: '#EF4444' }]}>
-                  {couponMsg}
+                  {tv(couponMsg)}
                 </Text>
               )}
             </View>
@@ -680,9 +677,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={styles.taxInvoiceRightCol}>
               <View style={styles.taxInvoiceTitleRow}>
                 <Ionicons name="receipt-outline" size={17} color="#172554" style={{ marginLeft: 6 }} />
-                <Text style={styles.taxInvoiceTitle}>فاتورة ضريبية</Text>
+                <Text style={styles.taxInvoiceTitle}>{t('فاتورة ضريبية')}</Text>
               </View>
-              <Text style={styles.taxInvoiceSub}>أريد الحصول على فاتورة ضريبية رسمية</Text>
+              <Text style={styles.taxInvoiceSub}>{t('أريد الحصول على فاتورة ضريبية رسمية')}</Text>
             </View>
           </View>
         </View>
@@ -691,10 +688,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         {deliveryUnavailable && (
           <View style={styles.errorCard}>
             <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
-            <Text style={styles.errorText}>
-              التوصيل غير متاح إلى {selectedAddress?.city || 'هذه المدينة'} من أحد المتاجر في سلتك.
-              غيّر عنوان التوصيل أو احذف منتجات ذلك المتجر.
-            </Text>
+            <Text style={styles.errorText}>{t('التوصيل غير متاح إلى {0} من أحد المتاجر في سلتك. غيّر عنوان التوصيل أو احذف منتجات ذلك المتجر.', [selectedAddress?.city || 'هذه المدينة'])}</Text>
           </View>
         )}
 
@@ -702,7 +696,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         {!!submitError && (
           <View style={styles.errorCard}>
             <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
-            <Text style={styles.errorText}>{submitError}</Text>
+            <Text style={styles.errorText}>{tv(submitError)}</Text>
           </View>
         )}
       </ScrollView>
@@ -712,9 +706,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.bottomBarRow}>
           {/* Left Column: Total Cost */}
           <View style={styles.bottomTotalCol}>
-            <Text style={styles.bottomTotalLabel}>الإجمالي الكلي</Text>
-            <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} ر.ي</Text>
-            <Text style={styles.bottomVatSub}>شامل رسوم التوصيل — يُحتسب النهائي عند التأكيد</Text>
+            <Text style={styles.bottomTotalLabel}>{t('الإجمالي الكلي')}</Text>
+            <Text style={styles.bottomTotalValue}>{t('{0} ر.ي', [finalTotal.toLocaleString()])}</Text>
+            <Text style={styles.bottomVatSub}>{t('شامل رسوم التوصيل — يُحتسب النهائي عند التأكيد')}</Text>
           </View>
 
           {/* Right Column: Complete Payment CTA Button */}
@@ -729,31 +723,29 @@ export default function CheckoutScreen({ navigation, route }: any) {
             ) : (
               <View style={styles.checkoutBtnInner}>
                 <Ionicons name="lock-closed" size={16} color="#FFFFFF" />
-                <Text style={styles.checkoutBtnText}>إتمام الدفع</Text>
+                <Text style={styles.checkoutBtnText}>{t('إتمام الدفع')}</Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.termsSubText}>
-          بالضغط على إتمام الدفع أنت توافق على الشروط والأحكام
-        </Text>
+        <Text style={styles.termsSubText}>{t('بالضغط على إتمام الدفع أنت توافق على الشروط والأحكام')}</Text>
 
         {/* Trust Benefits Footer Bar */}
         <View style={styles.trustFooterBar}>
           <View style={styles.trustItem}>
             <Ionicons name="shield-checkmark-outline" size={13} color="#64748B" />
-            <Text style={styles.trustText}>دفع آمن 100%</Text>
+            <Text style={styles.trustText}>{t('دفع آمن 100%')}</Text>
           </View>
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
             <Ionicons name="bus-outline" size={13} color="#64748B" />
-            <Text style={styles.trustText}>توصيل سريع وآمن</Text>
+            <Text style={styles.trustText}>{t('توصيل سريع وآمن')}</Text>
           </View>
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
             <Ionicons name="ribbon-outline" size={13} color="#64748B" />
-            <Text style={styles.trustText}>تجربة موثوقة</Text>
+            <Text style={styles.trustText}>{t('تجربة موثوقة')}</Text>
           </View>
         </View>
       </View>
@@ -763,8 +755,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.overlay}>
           <View style={styles.overlayCard}>
             <Ionicons name="checkmark-circle" size={68} color="#059669" style={{ marginBottom: 14 }} />
-            <Text style={styles.overlayTitle}>تم إرسال طلبك بنجاح! 🎉</Text>
-            <Text style={styles.overlaySub}>سيتم توصيل طلبك في أقرب وقت. متابعة الحالة مريحة من صفحة طلباتي.</Text>
+            <Text style={styles.overlayTitle}>{t('تم إرسال طلبك بنجاح! 🎉')}</Text>
+            <Text style={styles.overlaySub}>{t('سيتم توصيل طلبك في أقرب وقت. متابعة الحالة مريحة من صفحة طلباتي.')}</Text>
             <TouchableOpacity
               style={styles.successBtn}
               onPress={() => {
@@ -773,7 +765,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               }}
               activeOpacity={0.85}
             >
-              <Text style={styles.successBtnText}>عرض طلباتي</Text>
+              <Text style={styles.successBtnText}>{t('عرض طلباتي')}</Text>
             </TouchableOpacity>
           </View>
         </View>

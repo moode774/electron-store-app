@@ -15,6 +15,7 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const ALL_CATEGORY = { id: '', name: 'الكل' };
 const SORTS = [
@@ -82,13 +83,13 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               onPress={() => navigation.goBack()}
               activeOpacity={0.72}
               accessibilityRole="button"
-              accessibilityLabel="العودة"
+              accessibilityLabel={t('العودة')}
             >
               <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <View style={styles.titleCopy}>
-              <Text style={styles.title}>اكتشف ما يناسبك</Text>
-              <Text style={styles.subtitle}>ابحث بين المنتجات والمتاجر المتاحة</Text>
+              <Text style={styles.title}>{t('اكتشف ما يناسبك')}</Text>
+              <Text style={styles.subtitle}>{t('ابحث بين المنتجات والمتاجر المتاحة')}</Text>
             </View>
             <View style={styles.titleSpacer} />
           </View>
@@ -99,7 +100,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
             onClear={() => setQuery('')}
             showFilter
             onFilterPress={() => setShowSort((current) => !current)}
-            placeholder="ابحث عن أي شيء..."
+            placeholder={t('ابحث عن أي شيء...')}
             returnKeyType="search"
             autoFocus
           />
@@ -118,10 +119,10 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
                   onPress={() => setCategory(item.id)}
                   activeOpacity={0.72}
                   accessibilityRole="button"
-                  accessibilityLabel={`تصفية حسب ${item.name}`}
+                  accessibilityLabel={t('تصفية حسب {0}', [tv(item.name)])}
                   accessibilityState={{ selected }}
                 >
-                  <Text style={[styles.filterText, selected && styles.filterTextSelected]}>{item.name}</Text>
+                  <Text style={[styles.filterText, selected && styles.filterTextSelected]}>{tv(item.name)}</Text>
                 </TouchableOpacity>
               );
             }}
@@ -129,7 +130,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
 
           {showSort ? (
             <View style={styles.sortMenu}>
-              <Text style={styles.sortTitle}>ترتيب النتائج</Text>
+              <Text style={styles.sortTitle}>{t('ترتيب النتائج')}</Text>
               {SORTS.map((item) => {
                 const selected = sort === item.key;
                 return (
@@ -141,7 +142,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
                   >
-                    <Text style={[styles.sortItemText, selected && styles.sortItemTextSelected]}>{item.label}</Text>
+                    <Text style={[styles.sortItemText, selected && styles.sortItemTextSelected]}>{tv(item.label)}</Text>
                     {selected ? <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} /> : <View style={styles.sortCircle} />}
                   </TouchableOpacity>
                 );
@@ -152,7 +153,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
           {categoriesError ? (
             <View style={styles.warningBanner} accessibilityRole="alert">
               <Ionicons name="information-circle-outline" size={18} color={COLORS.warning} />
-              <Text style={styles.warningText}>{categoriesError}</Text>
+              <Text style={styles.warningText}>{tv(categoriesError)}</Text>
             </View>
           ) : null}
 
@@ -161,10 +162,10 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               style={styles.errorBanner}
               onPress={() => setRetryVersion((version) => version + 1)}
               accessibilityRole="button"
-              accessibilityLabel="إعادة البحث"
+              accessibilityLabel={t('إعادة البحث')}
             >
               <Ionicons name="cloud-offline-outline" size={18} color={COLORS.error} />
-              <Text style={styles.errorText}>{searchError} اضغط لإعادة المحاولة.</Text>
+              <Text style={styles.errorText}>{t('{0} اضغط لإعادة المحاولة.', [tv(searchError)])}</Text>
             </TouchableOpacity>
           ) : null}
         </CustomerResponsiveShell>
@@ -173,15 +174,15 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
       {isSearching ? (
         <View style={styles.centerState}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.stateHint}>جارٍ البحث...</Text>
+          <Text style={styles.stateHint}>{t('جارٍ البحث...')}</Text>
         </View>
       ) : results.length === 0 ? (
         <View style={styles.centerState}>
           <View style={styles.emptyIcon}>
             <Ionicons name="search-outline" size={36} color={COLORS.primary} />
           </View>
-          <Text style={styles.emptyTitle}>لا توجد نتائج مطابقة</Text>
-          <Text style={styles.emptyText}>جرّب كلمات مختلفة أو اختر تصنيفاً آخر.</Text>
+          <Text style={styles.emptyTitle}>{t('لا توجد نتائج مطابقة')}</Text>
+          <Text style={styles.emptyText}>{t('جرّب كلمات مختلفة أو اختر تصنيفاً آخر.')}</Text>
         </View>
       ) : (
         <FlatList
@@ -202,8 +203,8 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
           columnWrapperStyle={columns > 1 ? [styles.resultsRow, { gap }] : undefined}
           ListHeaderComponent={(
             <View style={styles.resultsHeader}>
-              <Text style={styles.resultsCount}>{results.length} نتيجة</Text>
-              <Text style={styles.resultsLabel}>نتائج البحث</Text>
+              <Text style={styles.resultsCount}>{t('{0} نتيجة', [tv(results.length)])}</Text>
+              <Text style={styles.resultsLabel}>{t('نتائج البحث')}</Text>
             </View>
           )}
           renderItem={({ item }) => (

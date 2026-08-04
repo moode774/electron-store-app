@@ -26,6 +26,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { t, tv } from '@marketplace/shared-i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -158,7 +159,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   function confirmDelete(coupon: MerchantCoupon) {
     Alert.alert(
       'حذف الكوبون',
-      `هل أنت متأكد من حذف كوبون "${coupon.code}"؟`,
+      t('هل أنت متأكد من حذف كوبون "{0}"؟', [tv(coupon.code)]),
       [
         { text: 'تراجع', style: 'cancel' },
         {
@@ -193,9 +194,9 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           {/* Code + Status */}
           <View style={styles.codeRow}>
             <View style={[styles.statusPill, { backgroundColor: `${status.color}18` }]}>
-              <Text style={[styles.statusPillText, { color: status.color }]}>{status.label}</Text>
+              <Text style={[styles.statusPillText, { color: status.color }]}>{tv(status.label)}</Text>
             </View>
-            <Text style={styles.codeText}>{item.code}</Text>
+            <Text style={styles.codeText}>{tv(item.code)}</Text>
           </View>
 
           {/* Actions */}
@@ -205,13 +206,13 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               onPress={() => toggleActive(item)}
               disabled={!!updatingId}
               accessibilityRole="button"
-              accessibilityLabel={`${item.is_active ? 'إيقاف' : 'تفعيل'} الكوبون ${item.code}`}
+              accessibilityLabel={t('{0} الكوبون {1}', [item.is_active ? t('إيقاف') : t('تفعيل'), tv(item.code)])}
               accessibilityState={{ disabled: !!updatingId, busy: updatingId === item.id }}
               activeOpacity={0.7}
             >
               <Ionicons name={item.is_active ? 'pause-circle-outline' : 'play-circle-outline'} size={20} color={item.is_active ? UI.green : UI.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)} activeOpacity={0.7} disabled={!!updatingId} accessibilityRole="button" accessibilityLabel={`حذف الكوبون ${item.code}`} accessibilityState={{ disabled: !!updatingId }}>
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)} activeOpacity={0.7} disabled={!!updatingId} accessibilityRole="button" accessibilityLabel={t('حذف الكوبون {0}', [tv(item.code)])} accessibilityState={{ disabled: !!updatingId }}>
               <Ionicons name="trash-outline" size={20} color={UI.red} />
             </TouchableOpacity>
           </View>
@@ -222,7 +223,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <View style={styles.detailChip}>
             <Ionicons name="pricetag-outline" size={13} color={UI.textGrey} />
             <Text style={styles.detailChipText}>
-              {item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.ي`}
+              {tv(item.type === 'percentage' ? `${item.value}%` : t('{0} ر.ي', [tv(item.value)]))}
             </Text>
           </View>
 
@@ -230,22 +231,20 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           {item.min_order_amount ? (
             <View style={styles.detailChip}>
               <Ionicons name="cart-outline" size={13} color={UI.textGrey} />
-              <Text style={styles.detailChipText}>حد أدنى {item.min_order_amount}</Text>
+              <Text style={styles.detailChipText}>{t('حد أدنى {0}', [tv(item.min_order_amount)])}</Text>
             </View>
           ) : null}
 
           {/* End Date */}
           <View style={styles.detailChip}>
             <Ionicons name="calendar-outline" size={13} color={UI.textGrey} />
-            <Text style={styles.detailChipText}>{formatDate(item.end_date)}</Text>
+            <Text style={styles.detailChipText}>{tv(formatDate(item.end_date))}</Text>
           </View>
 
           {/* Usage */}
           <View style={styles.detailChip}>
             <Ionicons name="people-outline" size={13} color={UI.textGrey} />
-            <Text style={styles.detailChipText}>
-              {item.used_count}{item.max_uses ? `/${item.max_uses}` : ''} استخدام
-            </Text>
+            <Text style={styles.detailChipText}>{t('{0}{1} استخدام', [tv(item.used_count), item.max_uses ? `/${item.max_uses}` : ''])}</Text>
           </View>
         </View>
       </View>
@@ -260,7 +259,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={UI.textDark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>كوبونات المتجر</Text>
+          <Text style={styles.headerTitle}>{t('كوبونات المتجر')}</Text>
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -269,12 +268,12 @@ export default function MerchantCouponsScreen({ navigation }: any) {
         {/* Page Header Row */}
         <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
           <View>
-            <Text style={styles.pageTitle}>الكوبونات</Text>
-            <Text style={styles.pageSubtitle}>أنشئ وأدر كوبونات الخصم لمتجرك</Text>
+            <Text style={styles.pageTitle}>{t('الكوبونات')}</Text>
+            <Text style={styles.pageSubtitle}>{t('أنشئ وأدر كوبونات الخصم لمتجرك')}</Text>
           </View>
           <TouchableOpacity style={styles.addBtn} onPress={openModal} activeOpacity={0.85}>
             <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>كوبون جديد</Text>
+            <Text style={styles.addBtnText}>{t('كوبون جديد')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -282,20 +281,20 @@ export default function MerchantCouponsScreen({ navigation }: any) {
         {coupons.length > 0 && (
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
-              <Text style={styles.statNum}>{coupons.length}</Text>
-              <Text style={styles.statLabel}>إجمالي</Text>
+              <Text style={styles.statNum}>{tv(coupons.length)}</Text>
+              <Text style={styles.statLabel}>{t('إجمالي')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { color: UI.green }]}>
-                {coupons.filter((c) => c.is_active && !isExpired(c.end_date)).length}
+                {tv(coupons.filter((c) => c.is_active && !isExpired(c.end_date)).length)}
               </Text>
-              <Text style={styles.statLabel}>فعّالة</Text>
+              <Text style={styles.statLabel}>{t('فعّالة')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNum}>{coupons.reduce((s, c) => s + c.used_count, 0)}</Text>
-              <Text style={styles.statLabel}>استخدام</Text>
+              <Text style={styles.statNum}>{tv(coupons.reduce((s, c) => s + c.used_count, 0))}</Text>
+              <Text style={styles.statLabel}>{t('استخدام')}</Text>
             </View>
           </View>
         )}
@@ -308,9 +307,9 @@ export default function MerchantCouponsScreen({ navigation }: any) {
         ) : loadError ? (
           <View style={styles.errorState} accessibilityRole="alert">
             <Ionicons name="cloud-offline-outline" size={48} color={UI.red} />
-            <Text style={styles.errorText}>{loadError}</Text>
+            <Text style={styles.errorText}>{tv(loadError)}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <Text style={styles.retryText}>{t('إعادة المحاولة')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -325,10 +324,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
                 <Ionicons name="pricetag-outline" size={52} color={UI.textMuted} />
-                <Text style={styles.emptyTitle}>لا توجد كوبونات بعد</Text>
-                <Text style={styles.emptySubtitle}>أنشئ أول كوبون خصم لجذب المزيد من العملاء</Text>
+                <Text style={styles.emptyTitle}>{t('لا توجد كوبونات بعد')}</Text>
+                <Text style={styles.emptySubtitle}>{t('أنشئ أول كوبون خصم لجذب المزيد من العملاء')}</Text>
                 <TouchableOpacity style={styles.emptyBtn} onPress={openModal} activeOpacity={0.85}>
-                  <Text style={styles.emptyBtnText}>إنشاء كوبون</Text>
+                  <Text style={styles.emptyBtnText}>{t('إنشاء كوبون')}</Text>
                 </TouchableOpacity>
               </View>
             }
@@ -343,11 +342,11 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <View style={[styles.modalSheet, isTablet && styles.modalSheetWide, isCompact && styles.modalSheetCompact]}>
             {/* Handle */}
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>كوبون جديد</Text>
+            <Text style={styles.sheetTitle}>{t('كوبون جديد')}</Text>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {/* Code */}
-              <Text style={styles.fieldLabel}>كود الكوبون *</Text>
+              <Text style={styles.fieldLabel}>{t('كود الكوبون *')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="SUMMER20"
@@ -358,31 +357,31 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               />
 
               {/* Type */}
-              <Text style={styles.fieldLabel}>نوع الخصم *</Text>
+              <Text style={styles.fieldLabel}>{t('نوع الخصم *')}</Text>
               <View style={styles.typeRow}>
                 <TouchableOpacity
                   style={[styles.typeBtn, type === 'percentage' && styles.typeBtnActive]}
                   onPress={() => setType('percentage')}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.typeBtnText, type === 'percentage' && styles.typeBtnTextActive]}>نسبة مئوية %</Text>
+                  <Text style={[styles.typeBtnText, type === 'percentage' && styles.typeBtnTextActive]}>{t('نسبة مئوية %')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.typeBtn, type === 'fixed' && styles.typeBtnActive]}
                   onPress={() => setType('fixed')}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.typeBtnText, type === 'fixed' && styles.typeBtnTextActive]}>مبلغ ثابت ر.ي</Text>
+                  <Text style={[styles.typeBtnText, type === 'fixed' && styles.typeBtnTextActive]}>{t('مبلغ ثابت ر.ي')}</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Value */}
               <Text style={styles.fieldLabel}>
-                {type === 'percentage' ? 'نسبة الخصم (%) *' : 'مبلغ الخصم (ر.ي) *'}
+                {tv(type === 'percentage' ? t('نسبة الخصم (%) *') : t('مبلغ الخصم (ر.ي) *'))}
               </Text>
               <TextInput
                 style={styles.input}
-                placeholder={type === 'percentage' ? 'مثال: 15' : 'مثال: 50'}
+                placeholder={type === 'percentage' ? t('مثال: 15') : t('مثال: 50')}
                 placeholderTextColor={UI.textMuted}
                 value={value}
                 onChangeText={setValue}
@@ -390,10 +389,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               />
 
               {/* Min Order */}
-              <Text style={styles.fieldLabel}>الحد الأدنى للطلب (اختياري)</Text>
+              <Text style={styles.fieldLabel}>{t('الحد الأدنى للطلب (اختياري)')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="مثال: 100"
+                placeholder={t('مثال: 100')}
                 placeholderTextColor={UI.textMuted}
                 value={minOrder}
                 onChangeText={setMinOrder}
@@ -403,10 +402,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               {/* Max Discount (percentage only) */}
               {type === 'percentage' && (
                 <>
-                  <Text style={styles.fieldLabel}>أقصى قيمة خصم (اختياري)</Text>
+                  <Text style={styles.fieldLabel}>{t('أقصى قيمة خصم (اختياري)')}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="مثال: 200"
+                    placeholder={t('مثال: 200')}
                     placeholderTextColor={UI.textMuted}
                     value={maxDiscount}
                     onChangeText={setMaxDiscount}
@@ -416,10 +415,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               )}
 
               {/* Max Uses */}
-              <Text style={styles.fieldLabel}>الحد الأقصى للاستخدام (اختياري)</Text>
+              <Text style={styles.fieldLabel}>{t('الحد الأقصى للاستخدام (اختياري)')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="اتركه فارغاً = غير محدود"
+                placeholder={t('اتركه فارغاً = غير محدود')}
                 placeholderTextColor={UI.textMuted}
                 value={maxUses}
                 onChangeText={setMaxUses}
@@ -427,7 +426,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               />
 
               {/* End Date */}
-              <Text style={styles.fieldLabel}>تاريخ الانتهاء (اختياري YYYY-MM-DD)</Text>
+              <Text style={styles.fieldLabel}>{t('تاريخ الانتهاء (اختياري YYYY-MM-DD)')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="2024-12-31"
@@ -446,7 +445,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               {saving ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.submitBtnText}>إنشاء الكوبون</Text>
+                <Text style={styles.submitBtnText}>{t('إنشاء الكوبون')}</Text>
               )}
             </TouchableOpacity>
           </View>
