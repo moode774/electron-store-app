@@ -220,7 +220,7 @@ export default function RegisterScreen(): React.JSX.Element {
                     <View style={styles.featureIconBox}>
                       <Ionicons name="shield-checkmark-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>آمن وموثوق</Text>
+                    <Text style={styles.featureText}>حساب موثّق بالهاتف</Text>
                   </View>
                 </View>
 
@@ -265,9 +265,9 @@ export default function RegisterScreen(): React.JSX.Element {
                   </Text>
                   <Text style={styles.roleHeaderSub}>
                     {selectedRole === USER_ROLES.DELIVERY
-                      ? 'سجل بياناتك كـ(مندوب) للبدء في استقبال الطلبات وزيادة دخلك اليومي'
+                      ? 'سجل بياناتك كمندوب للبدء في استقبال طلبات التوصيل بعد اعتماد حسابك'
                       : selectedRole === USER_ROLES.MERCHANT
-                        ? 'سجل بيانات متجرك للبدء في عرض منتجاتك والوصول لملايين العملاء'
+                        ? 'سجل بيانات متجرك للبدء في عرض منتجاتك بعد مراجعة واعتماد الحساب'
                         : 'أدخل بياناتك للبدء في التسوّق وتتبّع طلباتك بسهولة'}
                   </Text>
                 </View>
