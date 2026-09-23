@@ -74,7 +74,6 @@ export default function StoresListScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>(categoryId);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [heroIndex, setHeroIndex] = useState<number>(0);
   const heroScrollRef = React.useRef<ScrollView>(null);
 
@@ -134,13 +133,6 @@ export default function StoresListScreen({ navigation, route }: any) {
     loadStores(true);
   };
 
-  const toggleFavorite = (id: string) => {
-    const next = new Set(favorites);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setFavorites(next);
-  };
-
   // بيانات حقيقية فقط: التقييم وعدد المراجعات كما في القاعدة، ولا متاجر وهمية عند الفراغ
   const displayStoresList = stores.map((s, idx) => ({
     id: s.id,
@@ -159,7 +151,6 @@ export default function StoresListScreen({ navigation, route }: any) {
   const filteredStores = displayStoresList;
 
   const renderStoreRow = (item: any) => {
-    const isFav = favorites.has(item.id);
     return (
       <TouchableOpacity
         key={item.id}
@@ -229,17 +220,6 @@ export default function StoresListScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {/* Far-Left: Heart Button */}
-        <TouchableOpacity
-          style={styles.storeRowHeartBtn}
-          onPress={(e) => {
-            e.stopPropagation();
-            toggleFavorite(item.id);
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={18} color={isFav ? '#172554' : '#64748B'} />
-        </TouchableOpacity>
       </TouchableOpacity>
     );
   };
