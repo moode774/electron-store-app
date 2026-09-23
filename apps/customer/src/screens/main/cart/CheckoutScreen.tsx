@@ -554,8 +554,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={styles.secureBadgeRow}>
-              <Ionicons name="lock-closed-outline" size={13} color="#64748B" />
-              <Text style={styles.secureBadgeText}>جميع المعاملات آمنة ومشفّرة</Text>
+              <Ionicons name="information-circle-outline" size={13} color="#64748B" />
+              <Text style={styles.secureBadgeText}>المتاح حالياً: الدفع عند الاستلام</Text>
             </View>
             <Text style={styles.cardTitle}>اختر طريقة الدفع</Text>
           </View>
