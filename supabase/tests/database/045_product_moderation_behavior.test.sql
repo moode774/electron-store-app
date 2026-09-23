@@ -3,7 +3,12 @@ begin;
 select plan(14);
 
 select has_column('public', 'products', 'approval_status', 'products expose an approval state');
-select col_default_is('public', 'products', 'approval_status', '''pending''::text', 'new products start pending');
+select ok(
+  (select pg_get_expr(d.adbin, d.adrelid) from pg_attrdef d
+   join pg_attribute a on a.attrelid = d.adrelid and a.attnum = d.adnum
+   where d.adrelid = 'public.products'::regclass and a.attname = 'approval_status') like '''pending''%',
+  'new products start pending'
+);
 select has_function('public', 'admin_list_products', array['text'], 'admin product queue RPC exists');
 select has_function('public', 'admin_review_product', array['uuid','text','text'], 'admin product review RPC exists');
 select has_function('public', 'get_my_product_moderation', array[]::text[], 'merchant moderation RPC exists');

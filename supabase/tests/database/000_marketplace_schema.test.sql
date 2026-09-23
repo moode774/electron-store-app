@@ -59,7 +59,7 @@ select ok(
   'only one active refund request exists per order'
 );
 select ok(
-  (select count(*) from pg_indexes
+  (select count(distinct tablename) from pg_indexes
    where schemaname='public' and tablename in ('customer_profiles','merchant_profiles','delivery_profiles')
      and indexdef ilike 'create unique index%user_id%') = 3,
   'each user has at most one profile per role table'
@@ -102,32 +102,32 @@ select ok(to_regprocedure('public.deactivate_current_session_device_tokens()') i
 
 -- Named arguments are part of the PostgREST RPC contract, not documentation only.
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.set_default_address(uuid)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.set_default_address(uuid)') $$,
   $$ values (array['p_address_id']::text[]) $$,
   'set_default_address exposes the caller argument name'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.process_refund_request(uuid,text,text,text)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.process_refund_request(uuid,text,text,text)') $$,
   $$ values (array['p_request_id','p_status','p_notes','p_external_reference']::text[]) $$,
   'process_refund_request exposes all four caller argument names'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.process_withdrawal_request(uuid,text,text,text)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.process_withdrawal_request(uuid,text,text,text)') $$,
   $$ values (array['p_request_id','p_status','p_notes','p_external_reference']::text[]) $$,
   'process_withdrawal_request exposes all four caller argument names'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.set_merchant_operational_status(uuid,boolean,text)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.set_merchant_operational_status(uuid,boolean,text)') $$,
   $$ values (array['p_profile_id','p_active','p_reason']::text[]) $$,
   'set_merchant_operational_status exposes the caller argument names'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.admin_set_delivery_online(uuid,boolean)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.admin_set_delivery_online(uuid,boolean)') $$,
   $$ values (array['p_profile_id','p_online']::text[]) $$,
   'admin_set_delivery_online exposes the caller argument names'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.create_broadcast_campaign(text,text,text,text,uuid)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.create_broadcast_campaign(text,text,text,text,uuid)') $$,
   $$ values (array['p_title','p_body','p_role','p_channel','p_idempotency_key']::text[]) $$,
   'create_broadcast_campaign exposes the caller argument names'
 );
@@ -195,7 +195,7 @@ select ok(exists(select 1 from pg_trigger where tgrelid=to_regclass('public.cust
 -- Realtime tables required by the role feeds.
 select results_eq(
   $$
-    select tablename::text from pg_publication_tables
+    select tablename::text COLLATE "default" from pg_publication_tables
     where pubname='supabase_realtime' and schemaname='public'
       and tablename in (
         'orders','order_tracking','notifications','chat_conversations','chat_messages',

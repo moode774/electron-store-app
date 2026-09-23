@@ -19,13 +19,13 @@ select has_index(
   'courier location retry keys are unique per courier'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc
+  $$ select proargnames::text[] COLLATE "default" from pg_proc
      where oid = to_regprocedure('public.set_my_delivery_presence(boolean,numeric,numeric)') $$,
   $$ values (array['p_online','p_latitude','p_longitude']::text[]) $$,
   'presence RPC named arguments match the client contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc
+  $$ select proargnames::text[] COLLATE "default" from pg_proc
      where oid = to_regprocedure('public.record_my_delivery_location(uuid,uuid,numeric,numeric,numeric)') $$,
   $$ values (array['p_order_id','p_sample_id','p_latitude','p_longitude','p_speed']::text[]) $$,
   'location RPC named arguments match the client contract'

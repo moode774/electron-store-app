@@ -113,7 +113,7 @@ select ok(
   'admin COD reconciliation listing RPC exists'
 );
 select results_eq(
-  $$ select proargnames::text[]
+  $$ select proargnames::text[] COLLATE "default"
      from pg_proc
      where oid = to_regprocedure('public.submit_cod_remittance(uuid,numeric,text,text,uuid)') $$,
   $$ values (array[
@@ -122,14 +122,14 @@ select results_eq(
   'COD submission named arguments match the PostgREST contract'
 );
 select results_eq(
-  $$ select proargnames::text[]
+  $$ select proargnames::text[] COLLATE "default"
      from pg_proc
      where oid = to_regprocedure('public.admin_review_cod_remittance(uuid,text,text)') $$,
   $$ values (array['p_submission_id','p_decision','p_note']::text[]) $$,
   'COD review named arguments match the PostgREST contract'
 );
 select results_eq(
-  $$ select proargnames::text[]
+  $$ select proargnames::text[] COLLATE "default"
      from pg_proc
      where oid = to_regprocedure('public.admin_set_cod_collection_dispute(uuid,boolean,text)') $$,
   $$ values (array['p_collection_id','p_disputed','p_reason']::text[]) $$,
@@ -306,13 +306,18 @@ insert into public.users(
   ('d6000000-0000-4000-8000-000000000001', 'other-courier@test.invalid', 'Other Courier', 'delivery', true, true, false, null),
   ('d7000000-0000-4000-8000-000000000001', 'blocked-courier@test.invalid', 'Blocked Courier', 'delivery', true, true, false, now() + interval '1 hour');
 alter table public.users enable trigger all;
+-- Every public.users row belongs to an auth.users row (users_id_fkey).
+insert into auth.users (id, email)
+select u.id, u.email from public.users u
+where u.id::text like any (array['a5%','c5%','e5%','d5%','d6%','d7%'])
+on conflict (id) do nothing;
 
 insert into public.merchant_profiles(
   id, user_id, store_name, store_slug, address, city,
   is_approved, is_active, is_open, wallet_balance,
   bank_name, bank_account, bank_account_name
 ) values (
-  'e5100000-0000-4000-8000-000000000001',
+  'e5000000-0000-4000-8000-000000000001',
   'e5000000-0000-4000-8000-000000000001',
   'COD Test Merchant', 'cod-test-merchant', 'COD pickup address', 'Sanaa',
   true, true, true, 70, 'Test Bank', 'COD-ACCOUNT-001', 'COD Merchant'
@@ -322,9 +327,9 @@ insert into public.delivery_profiles(
   id, user_id, national_id, vehicle_type, vehicle_plate,
   is_online, is_approved, wallet_balance
 ) values
-  ('d5100000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001', 'COD-COURIER-1', 'motorcycle', 'COD-1', true, true, 20),
-  ('d6100000-0000-4000-8000-000000000001', 'd6000000-0000-4000-8000-000000000001', 'COD-COURIER-2', 'motorcycle', 'COD-2', true, true, 0),
-  ('d7100000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', 'COD-COURIER-3', 'motorcycle', 'COD-3', true, true, 0);
+  ('d5000000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001', 'COD-COURIER-1', 'motorcycle', 'COD-1', true, true, 20),
+  ('d6000000-0000-4000-8000-000000000001', 'd6000000-0000-4000-8000-000000000001', 'COD-COURIER-2', 'motorcycle', 'COD-2', true, true, 0),
+  ('d7000000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', 'COD-COURIER-3', 'motorcycle', 'COD-3', true, true, 0);
 
 insert into public.addresses(
   id, user_id, label, full_address, city, area, is_default
@@ -342,16 +347,16 @@ insert into public.orders(
   delivered_at, settled_at
 ) values
   ('05000000-0000-4000-8000-000000000001', 'TEST-COD-001',
-   'c5000000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000001',
-   'd5100000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001',
+   'c5000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-000000000001',
+   'd5000000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001',
    'delivered', 90, 10, 0, 10, 0, 100, 'cash', 'paid', now(), now()),
   ('05000000-0000-4000-8000-000000000002', 'TEST-COD-002',
-   'c5000000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000001',
-   'd5100000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001',
+   'c5000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-000000000001',
+   'd5000000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001',
    'delivered', 50, 0, 0, 50, 0, 50, 'cash', 'paid', now(), now()),
   ('05000000-0000-4000-8000-000000000003', 'TEST-COD-ZERO',
-   'c5000000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000001',
-   'd6100000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001',
+   'c5000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-000000000001',
+   'd6000000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001',
    'delivered', 0, 0, 0, 0, 0, 0, 'cash', 'paid', now(), now());
 alter table public.orders enable trigger user;
 
@@ -361,15 +366,15 @@ insert into public.order_settlements(
   platform_amount, settlement_key, status, reversed_amount, settled_by
 ) values
   ('15000000-0000-4000-8000-000000000001', '05000000-0000-4000-8000-000000000001',
-   'e5100000-0000-4000-8000-000000000001', 'd5100000-0000-4000-8000-000000000001',
+   'e5000000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001',
    'cash', 100, 70, 20, 10, 0, 10, '25000000-0000-4000-8000-000000000001',
    'settled', 0, 'd5000000-0000-4000-8000-000000000001'),
   ('15000000-0000-4000-8000-000000000002', '05000000-0000-4000-8000-000000000002',
-   'e5100000-0000-4000-8000-000000000001', 'd5100000-0000-4000-8000-000000000001',
+   'e5000000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001',
    'cash', 50, 0, 0, 50, 0, 50, '25000000-0000-4000-8000-000000000002',
    'settled', 0, 'd5000000-0000-4000-8000-000000000001'),
   ('15000000-0000-4000-8000-000000000003', '05000000-0000-4000-8000-000000000003',
-   'e5100000-0000-4000-8000-000000000001', 'd6100000-0000-4000-8000-000000000001',
+   'e5000000-0000-4000-8000-000000000001', 'd6000000-0000-4000-8000-000000000001',
    'cash', 0, 0, 0, 0, 0, 0, '25000000-0000-4000-8000-000000000003',
    'settled', 0, 'd6000000-0000-4000-8000-000000000001');
 
@@ -454,13 +459,13 @@ insert into public.delivery_cod_collections(
   amount_remitted, status, collected_at
 ) values
   ('c5100000-0000-4000-8000-000000000001', '05000000-0000-4000-8000-000000000001',
-   'd5100000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001',
+   'd5000000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001',
    100, 0, 'collected', now()),
   ('c5200000-0000-4000-8000-000000000001', '05000000-0000-4000-8000-000000000002',
-   'd5100000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001',
+   'd5000000-0000-4000-8000-000000000001', 'd5000000-0000-4000-8000-000000000001',
    50, 0, 'collected', now()),
   ('c5300000-0000-4000-8000-000000000001', '05000000-0000-4000-8000-000000000003',
-   'd6100000-0000-4000-8000-000000000001', 'd6000000-0000-4000-8000-000000000001',
+   'd6000000-0000-4000-8000-000000000001', 'd6000000-0000-4000-8000-000000000001',
    0, 0, 'collected', now());
 
 insert into storage.objects(bucket_id, name, owner, owner_id, metadata)
@@ -541,7 +546,7 @@ select is(
   'a COD-held withdrawal fails before creating or reserving a request'
 );
 select is(
-  (select wallet_balance from public.merchant_profiles where id = 'e5100000-0000-4000-8000-000000000001'),
+  (select wallet_balance from public.merchant_profiles where id = 'e5000000-0000-4000-8000-000000000001'),
   70::numeric,
   'a COD-held withdrawal leaves the wallet unchanged'
 );
@@ -756,10 +761,10 @@ set reversed_amount = 20,
 where id = '15000000-0000-4000-8000-000000000001';
 update public.merchant_profiles
 set wallet_balance = 56
-where id = 'e5100000-0000-4000-8000-000000000001';
+where id = 'e5000000-0000-4000-8000-000000000001';
 update public.delivery_profiles
 set wallet_balance = 16
-where id = 'd5100000-0000-4000-8000-000000000001';
+where id = 'd5000000-0000-4000-8000-000000000001';
 
 select is(
   public.marketplace_cod_held_balance('e5000000-0000-4000-8000-000000000001'),
@@ -875,7 +880,7 @@ select is(
   'withdrawal becomes available immediately after COD is fully remitted'
 );
 select is(
-  (select wallet_balance from public.merchant_profiles where id = 'e5100000-0000-4000-8000-000000000001'),
+  (select wallet_balance from public.merchant_profiles where id = 'e5000000-0000-4000-8000-000000000001'),
   6::numeric,
   'available post-refund wallet balance is reserved exactly once after remittance'
 );

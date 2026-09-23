@@ -19,7 +19,9 @@ select function_privs_are(
 );
 select ok(
   pg_get_functiondef('public.admin_get_operational_stats()'::regprocedure)
-    ilike '%public.order_settlements%reversed_amount%',
+    ilike '%gross_amount - s.reversed_amount%'
+  and pg_get_functiondef('public.admin_get_operational_stats()'::regprocedure)
+    ilike '%from public.order_settlements s%',
   'revenue KPI is based on net settlement value after reversals'
 );
 select ok(

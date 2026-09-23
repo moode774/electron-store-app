@@ -69,13 +69,13 @@ insert into public.addresses (
 on conflict (id) do nothing;
 
 insert into public.products (
-  id, merchant_id, name, base_price, is_active, is_approved,
+  id, merchant_id, name, base_price, is_active, is_approved, approval_status,
   stock_quantity, total_sold
 ) values
   ('44000000-0000-4000-8000-000000000001', '94000000-0000-4000-8000-000000000001',
-   'Returnable product', 100, true, true, 8, 2),
+   'Returnable product', 100, true, true, 'approved', 8, 2),
   ('44000000-0000-4000-8000-000000000002', '94000000-0000-4000-8000-000000000001',
-   'Legacy return product', 50, true, true, 9, 1)
+   'Legacy return product', 50, true, true, 'approved', 9, 1)
 on conflict (id) do update
 set stock_quantity = excluded.stock_quantity, total_sold = excluded.total_sold;
 
@@ -804,7 +804,7 @@ select throws_ok(
   $$select public.create_return_request(
     '04000000-0000-4000-8000-000000000001',
     '[{"order_item_id":"04100000-0000-4000-8000-000000000001","quantity":2}]'::jsonb,
-    'not_as_described', 'Trying to return quantities already consumed by the completed return.',
+    'changed_mind', 'Trying to return quantities already consumed by the completed return.',
     '[]'::jsonb, 'customer_dropoff', 'wallet',
     '46400000-0000-4000-8000-000000000002'
   )$$,

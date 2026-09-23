@@ -51,13 +51,13 @@ insert into public.merchant_profiles (
 on conflict (id) do nothing;
 
 insert into public.delivery_profiles (
-  id, user_id, national_id, vehicle_type, vehicle_plate,
+  id, user_id, national_id, vehicle_type, vehicle_plate, work_city,
   is_online, is_approved, wallet_balance
 ) values
   ('d0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
-   'D-TEST-1', 'motorcycle', 'TEST-1', false, true, 100),
+   'D-TEST-1', 'motorcycle', 'TEST-1', 'Sanaa', false, true, 100),
   ('b0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002',
-   'D-TEST-2', 'motorcycle', 'TEST-2', false, false, 0)
+   'D-TEST-2', 'motorcycle', 'TEST-2', 'Sanaa', false, false, 0)
 on conflict (id) do nothing;
 
 insert into public.addresses (
@@ -124,8 +124,8 @@ select set_config('request.jwt.claim.sub', 'c0000000-0000-4000-8000-000000000001
 insert into finance_support_test_ids(name, id)
 select 'refund', public.create_refund_request(
   '01000000-0000-4000-8000-000000000001',
-  'damaged',
-  'The item arrived damaged and cannot be used.',
+  'not_received',
+  'The order was marked delivered but never reached me.',
   'wallet',
   '["https://example.invalid/evidence.jpg"]'::jsonb
 );
@@ -150,8 +150,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c0000000-0000-4000-8000-000000000001', true);
 select is(
   public.create_refund_request(
-    '01000000-0000-4000-8000-000000000001', 'damaged',
-    'The item arrived damaged and cannot be used.', 'wallet',
+    '01000000-0000-4000-8000-000000000001', 'not_received',
+    'The order was marked delivered but never reached me.', 'wallet',
     '["https://example.invalid/evidence.jpg"]'::jsonb
   ),
   (select id from finance_support_test_ids where name = 'refund'),
@@ -449,8 +449,8 @@ select lives_ok($$select public.set_merchant_operational_status('b0000000-0000-4
 select lives_ok($$select public.review_delivery_application(
   'b0000000-0000-4000-8000-000000000002',
   true,
-  'Identity verified',
-  (select application_revision from public.delivery_profiles where id = 'b0000000-0000-4000-8000-000000000002')
+  'Identity verified in person at the office',
+  (select (d ->> 'application_revision')::bigint from public.admin_list_drivers('all') as d where d ->> 'id' = 'b0000000-0000-4000-8000-000000000002')
 )$$, 'admin approves delivery application at the reviewed revision');
 select lives_ok($$select public.admin_set_delivery_online('b0000000-0000-4000-8000-000000000002', true)$$, 'admin enables approved delivery availability');
 reset role;

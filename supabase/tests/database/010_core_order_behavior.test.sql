@@ -11,17 +11,17 @@ select ok(to_regprocedure('public.place_order_group(uuid,text,jsonb,text,text,uu
 select ok(to_regprocedure('public.complete_delivery_with_proof(uuid,text,numeric,numeric,uuid,text)') is not null, 'proof completion RPC exists');
 select ok(to_regprocedure('public.marketplace_settle_order_once(uuid,uuid,uuid)') is not null, 'once-only settlement function exists');
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid=to_regprocedure('public.place_order(uuid,uuid,text,jsonb,text,text,uuid)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid=to_regprocedure('public.place_order(uuid,uuid,text,jsonb,text,text,uuid)') $$,
   $$ values (array['p_merchant_id','p_address_id','p_payment_method','p_items','p_coupon_code','p_notes','p_idempotency_key']::text[]) $$,
   'place_order named arguments match the client contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid=to_regprocedure('public.place_order_group(uuid,text,jsonb,text,text,uuid)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid=to_regprocedure('public.place_order_group(uuid,text,jsonb,text,text,uuid)') $$,
   $$ values (array['p_address_id','p_payment_method','p_stores','p_coupon_code','p_notes','p_idempotency_key']::text[]) $$,
   'place_order_group named arguments match the client contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid=to_regprocedure('public.complete_delivery_with_proof(uuid,text,numeric,numeric,uuid,text)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid=to_regprocedure('public.complete_delivery_with_proof(uuid,text,numeric,numeric,uuid,text)') $$,
   $$ values (array['p_order_id','p_photo_url','p_latitude','p_longitude','p_idempotency_key','p_signature_url']::text[]) $$,
   'delivery proof named arguments match the client contract'
 );
