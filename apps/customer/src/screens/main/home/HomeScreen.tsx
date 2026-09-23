@@ -144,7 +144,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         const { data: dbProducts, error: dbError } = await supabase
           .from('products')
           .select(
-            'id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles(store_name)'
+            'id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), product_variants(id, is_active), merchant_profiles(store_name)'
           )
           .eq('is_active', true)
           .order('created_at', { ascending: false })
