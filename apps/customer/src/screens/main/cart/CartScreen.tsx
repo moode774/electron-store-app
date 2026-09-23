@@ -111,10 +111,7 @@ export default function CartScreen({ navigation }: any) {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.editButton}>
-            <Ionicons name="create-outline" size={16} color="#0F172A" />
-            <Text style={styles.editText}>تعديل</Text>
-          </TouchableOpacity>
+          <View style={{ width: 68 }} />
         </View>
       </View>
 
@@ -135,15 +132,13 @@ export default function CartScreen({ navigation }: any) {
                 <View style={styles.cartItemContentRow}>
                   {/* Right Side: Product Thumbnail */}
                   <View style={styles.productImageWrap}>
-                    <Image
-                      source={{
-                        uri:
-                          item.image ||
-                          'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=300&q=80',
-                      }}
-                      style={styles.productImg}
-                      resizeMode="cover"
-                    />
+                    {item.image ? (
+                      <Image source={{ uri: item.image }} style={styles.productImg} resizeMode="cover" />
+                    ) : (
+                      <View style={[styles.productImg, styles.productImgFallback]}>
+                        <Ionicons name="cube-outline" size={28} color={COLORS.textMuted} />
+                      </View>
+                    )}
                   </View>
 
                   {/* Middle: Info Column (RTL) */}
@@ -151,16 +146,13 @@ export default function CartScreen({ navigation }: any) {
                     <Text style={styles.productNameText} numberOfLines={2}>
                       {item.name}
                     </Text>
-                    <Text style={styles.productVariantText}>لون: أبيض</Text>
+                    <Text style={styles.productVariantText} numberOfLines={1}>{item.storeName}</Text>
 
-                    <View style={styles.stockBadgePill}>
-                      <Text style={styles.stockBadgeText}>متوفر</Text>
-                    </View>
-
-                    <View style={styles.deliveryBadgeRow}>
-                      <Ionicons name="sparkles" size={11} color={COLORS.primary} />
-                      <Text style={styles.deliveryBadgeText}>توصيل خلال 24 ساعة</Text>
-                    </View>
+                    {typeof item.maxQuantity === 'number' ? (
+                      <View style={styles.stockBadgePill}>
+                        <Text style={styles.stockBadgeText}>المتاح: {item.maxQuantity}</Text>
+                      </View>
+                    ) : null}
                   </View>
 
                   {/* Left Side: Checkbox, Actions, Price, Stepper */}
@@ -541,6 +533,12 @@ const styles = StyleSheet.create({
   productImg: {
     width: '100%',
     height: '100%',
+  },
+
+  productImgFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceMuted,
   },
   productInfoCol: {
     flex: 1,
