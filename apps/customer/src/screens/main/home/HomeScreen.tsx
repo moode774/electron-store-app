@@ -432,7 +432,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           </ScrollView>
 
           <CustomerSectionHeader
-            title="متاجر مختارة"
+            title="متاجر"
             actionLabel="عرض الكل"
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
@@ -445,7 +445,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             {displayStores.length === 0 && (
               <View style={styles.storesEmptyState}>
                 <Ionicons name="storefront-outline" size={22} color="#94A3B8" />
-                <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة في منطقتك حالياً</Text>
+                <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة حالياً</Text>
               </View>
             )}
             {displayStores.map((store: any) => (
