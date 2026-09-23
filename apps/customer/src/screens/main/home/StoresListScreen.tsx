@@ -35,23 +35,26 @@ function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
 const STORE_CAROUSEL_CARDS = [
   {
     id: 's1',
-    title: 'تسوق من أفضل المتاجر',
+    title: 'تسوق من المتاجر المتاحة',
     sub: 'تصفح المنتجات والمتاجر المتاحة وقارن قبل الطلب',
-    btnText: 'تسوق الآن',
+    btnText: 'استكشف المنتجات',
+    route: 'Search',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
   {
     id: 's2',
     title: 'متاجر متاحة للتسوق 🏬',
     sub: 'استكشف المتاجر النشطة والمنتجات المعروضة حالياً',
-    btnText: 'استكشف المتاجر',
+    btnText: 'استكشف المنتجات',
+    route: 'Search',
     img: require('../../../../assets/images/home/premium-hero-desktop.png'),
   },
   {
     id: 's3',
     title: 'رسوم توصيل واضحة 🚚',
     sub: 'رسوم التوصيل تُحسب حسب منطقة الخدمة وتظهر قبل تأكيد الطلب',
-    btnText: 'تصفح المتاجر',
+    btnText: 'ابدأ التسوق',
+    route: 'Search',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
   {
@@ -59,6 +62,7 @@ const STORE_CAROUSEL_CARDS = [
     title: 'عروض وحسومات المتاجر ⚡',
     sub: 'شاهد العروض المتاحة من المتاجر عند توفرها',
     btnText: 'شاهد العروض',
+    route: 'Offers',
     img: require('../../../../assets/images/bannerstoor/add.png'),
   },
 ];
@@ -245,7 +249,7 @@ export default function StoresListScreen({ navigation, route }: any) {
         >
           <TouchableOpacity
             style={[styles.chipPill, !activeCategory && styles.chipPillActive]}
-            onPress={() => setActiveCategory('')}
+            onPress={() => navigation.navigate(card.route as any)}
             activeOpacity={0.82}
           >
             <View style={[styles.chipIconWrap, !activeCategory && styles.chipIconWrapActive]}>
@@ -331,10 +335,10 @@ export default function StoresListScreen({ navigation, route }: any) {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleGroup}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleText}>المتاجر المميزة</Text>
+              <Text style={styles.sectionTitleText}>المتاجر</Text>
               <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
             </View>
-            <Text style={styles.sectionSubTitleText}>متاجر نشطة وتجربة تسوق واضحة</Text>
+            <Text style={styles.sectionSubTitleText}>المتاجر النشطة المتاحة حالياً</Text>
           </View>
 
           <TouchableOpacity onPress={() => setActiveCategory('')} activeOpacity={0.75}>
@@ -354,7 +358,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                 <Ionicons name="storefront-outline" size={44} color="#CBD5E1" />
                 <Text style={styles.emptyStoresTitle}>لا توجد متاجر متاحة حالياً</Text>
                 <Text style={styles.emptyStoresSub}>
-                  نعمل على إضافة متاجر جديدة في منطقتك. عاود المحاولة قريباً.
+                  لا توجد نتائج مطابقة الآن. جرّب تغيير البحث أو التصنيف.
                 </Text>
               </View>
             ) : (
