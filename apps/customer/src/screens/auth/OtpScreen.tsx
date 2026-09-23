@@ -95,7 +95,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
     const { error } = await verifyOtp(phone, token);
     setIsLoading(false);
     if (error) {
-      showAlert('رمز خاطئ', 'الرمز الذي أدخلته غير صحيح أو انتهت صلاحيته');
+      showAlert('تعذّر التحقق', error);
       setOtp(Array(OTP_LENGTH).fill(''));
       inputs.current[0]?.focus();
     }
