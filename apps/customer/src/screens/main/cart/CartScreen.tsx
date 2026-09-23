@@ -10,7 +10,16 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCartStore, isCartItemSelected, getFeaturedProducts, ProductSummary } from '@marketplace/shared-hooks';
+import {
+  addToWishlist,
+  getFeaturedProducts,
+  getWishlist,
+  isCartItemSelected,
+  ProductSummary,
+  removeFromWishlist,
+  useAuthStore,
+  useCartStore,
+} from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
@@ -42,6 +51,7 @@ const toRecommendation = (p: ProductSummary): Recommendation => ({
 export default function CartScreen({ navigation }: any) {
   const layout = useCustomerLayout(1180);
   const { updateQuantity, removeFromCart, addToCart, items, toggleSelected } = useCartStore();
+  const user = useAuthStore((state) => state.user);
 
   const [wishlistedItems, setWishlistedItems] = useState<Set<string>>(new Set());
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -62,11 +72,35 @@ export default function CartScreen({ navigation }: any) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const toggleWishlist = (id: string) => {
+  useEffect(() => {
+    let active = true;
+    if (!user?.id) {
+      setWishlistedItems(new Set());
+      return () => { active = false; };
+    }
+    getWishlist(user.id)
+      .then((rows) => {
+        if (active) setWishlistedItems(new Set(rows.map((row) => row.product_id)));
+      })
+      .catch(() => {
+        if (active) setWishlistedItems(new Set());
+      });
+    return () => { active = false; };
+  }, [user?.id]);
+
+  const toggleWishlist = async (productId: string): Promise<void> => {
+    if (!user?.id) return;
+    const wasSaved = wishlistedItems.has(productId);
     const next = new Set(wishlistedItems);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (wasSaved) next.delete(productId);
+    else next.add(productId);
     setWishlistedItems(next);
+    try {
+      if (wasSaved) await removeFromWishlist(user.id, productId);
+      else await addToWishlist(user.id, productId);
+    } catch {
+      setWishlistedItems(new Set(wishlistedItems));
+    }
   };
 
   const activeCartItems = items.filter(isCartItemSelected);
@@ -125,7 +159,7 @@ export default function CartScreen({ navigation }: any) {
         <View style={styles.cartItemsListContainer}>
           {items.map((item) => {
             const isSelected = isCartItemSelected(item);
-            const isWishlisted = wishlistedItems.has(item.id);
+            const isWishlisted = wishlistedItems.has(item.productId);
 
             return (
               <View key={item.id} style={styles.cartItemCard}>
@@ -161,7 +195,7 @@ export default function CartScreen({ navigation }: any) {
                     <View style={styles.topActionsRow}>
                       <TouchableOpacity
                         style={styles.actionIconButton}
-                        onPress={() => toggleWishlist(item.id)}
+                        onPress={() => void toggleWishlist(item.productId)}
                       >
                         <Ionicons
                           name={isWishlisted ? 'heart' : 'heart-outline'}
