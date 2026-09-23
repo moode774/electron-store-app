@@ -292,7 +292,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
       const requestFingerprint = JSON.stringify({
         address_id: selectedAddress.id,
-        payment_method: selectedPayment
+        payment_method: selectedPayment,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : null,
         notes: [
           paramAltPhone ? `هاتف إضافي: ${paramAltPhone}` : null,
