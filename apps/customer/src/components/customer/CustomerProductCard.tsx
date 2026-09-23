@@ -47,6 +47,7 @@ export function CustomerProductCard({
   const images = useMemo(() => imageCandidates(product), [product]);
   const [imageIndex, setImageIndex] = useState(0);
   const imageUrl = images[imageIndex];
+  const displayName = product.name_ar || product.name;
   const price = product.sale_price ?? product.base_price;
   const discount = product.sale_price && product.base_price > 0
     ? Math.max(0, Math.round(((product.base_price - product.sale_price) / product.base_price) * 100))
@@ -59,7 +60,7 @@ export function CustomerProductCard({
       activeOpacity={0.9}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}، السعر ${price} ريال يمني`}
+      accessibilityLabel={`${displayName}، السعر ${price} ريال يمني`}
     >
       <View style={[styles.media, isList && styles.mediaList]}>
         {imageUrl ? (
@@ -103,7 +104,7 @@ export function CustomerProductCard({
         {product.merchant_profiles?.store_name ? (
           <Text style={styles.storeName} numberOfLines={1}>{product.merchant_profiles.store_name}</Text>
         ) : null}
-        <Text style={[styles.name, isList && styles.nameList]} numberOfLines={2}>{product.name}</Text>
+        <Text style={[styles.name, isList && styles.nameList]} numberOfLines={2}>{displayName}</Text>
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={13} color="#F4B740" />
           <Text style={styles.ratingText}>{Number(product.rating ?? 0).toFixed(1)}</Text>
@@ -125,7 +126,7 @@ export function CustomerProductCard({
           disabled={quickActionDisabled}
           activeOpacity={0.82}
           accessibilityRole="button"
-          accessibilityLabel={quickActionNeedsOptions ? `اختيار خيارات ${product.name}` : `إضافة ${product.name} إلى السلة`}
+          accessibilityLabel={quickActionNeedsOptions ? `اختيار خيارات ${displayName}` : `إضافة ${displayName} إلى السلة`}
           accessibilityState={{ disabled: quickActionDisabled }}
         >
           <Ionicons
@@ -148,10 +149,10 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.surface,
     shadowColor: COLORS.primaryDark,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.06,
-    shadowRadius: 20,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.035,
+    shadowRadius: 12,
+    elevation: 1,
   },
   cardList: {
     minHeight: 132,
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
   },
   media: {
     width: '100%',
-    aspectRatio: 1.03,
+    aspectRatio: 1.06,
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: COLORS.surfaceMuted,
@@ -201,8 +202,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     left: 10,
-    width: 44,
-    height: 44,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -211,10 +212,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.92)',
   },
   info: {
-    minHeight: 168,
+    minHeight: 144,
     alignItems: 'flex-end',
-    padding: 14,
-    paddingBottom: 64,
+    padding: 12,
+    paddingBottom: 56,
   },
   infoList: {
     flex: 1,
@@ -226,9 +227,9 @@ const styles = StyleSheet.create({
   },
   storeName: {
     maxWidth: '100%',
-    color: COLORS.primary,
+    color: COLORS.textMuted,
     fontFamily: FONTS.semiBold,
-    fontSize: 10.5,
+    fontSize: 10,
     marginBottom: 3,
     textAlign: 'right',
   },
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   price: {
     color: COLORS.textPrimary,
     fontFamily: FONTS.bold,
-    fontSize: 17,
+    fontSize: 16,
     textAlign: 'right',
   },
   currency: {
@@ -291,11 +292,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     bottom: 12,
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 12,
     backgroundColor: COLORS.primary,
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 5 },
