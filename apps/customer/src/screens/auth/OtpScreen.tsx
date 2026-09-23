@@ -48,11 +48,11 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
     setAlertVisible(true);
   };
 
-  useEffect((): (() => void) => {
+  useEffect((): (() => void) | undefined => {
+    if (canResend) return undefined;
     const timer = setInterval((): void => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          clearInterval(timer);
           setCanResend(true);
           return 0;
         }
@@ -60,7 +60,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
       });
     }, 1000);
     return (): void => clearInterval(timer);
-  }, []);
+  }, [canResend]);
 
   const handleChange = (text: string, index: number): void => {
     const digit = text.replace(/[^0-9]/g, '').slice(-1);
