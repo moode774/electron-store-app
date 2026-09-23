@@ -76,7 +76,7 @@ export default function RegisterScreen(): React.JSX.Element {
     const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
 
-    // ينشئ الحساب ويدخل مباشرة؛ تتبدّل الشاشة تلقائياً عند نجاح المصادقة
+    // يرسل رمز تحقق؛ لا يُنشأ وصول فعلي للحساب قبل إثبات ملكية الرقم.
     const { error } = await signUp({
       phone: formatted,
       fullName: fullName.trim(),
@@ -87,7 +87,10 @@ export default function RegisterScreen(): React.JSX.Element {
 
     if (error) {
       Alert.alert('خطأ', error);
+      return;
     }
+
+    navigation.navigate('Otp', { phone: formatted });
   };
 
   const { width } = useWindowDimensions();
@@ -291,7 +294,7 @@ export default function RegisterScreen(): React.JSX.Element {
                   <Text style={styles.fieldLabel}>رقم الجوال</Text>
                   <View style={styles.inputWrapper}>
                     <View style={styles.countryCodeBox}>
-                      <Text style={styles.flagEmoji}>🇸🇦</Text>
+                      <Text style={styles.flagEmoji}>🇾🇪</Text>
                       <Text style={styles.countryCodeText}>+967</Text>
                     </View>
                     <View style={styles.verticalDivider} />
@@ -318,7 +321,7 @@ export default function RegisterScreen(): React.JSX.Element {
                   {isLoading ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
-                    <Text style={styles.submitBtnText}>إرسال وتسجيل</Text>
+                    <Text style={styles.submitBtnText}>إرسال رمز التحقق</Text>
                   )}
                 </TouchableOpacity>
               </View>
