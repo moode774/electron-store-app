@@ -10,7 +10,6 @@ import {
   Platform,
   StatusBar,
   Switch,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SERVICE_AREAS, COLORS, FONTS } from '@marketplace/shared-utils';
@@ -23,8 +22,6 @@ import {
 import { Alert } from '../../../components/appAlert';
 
 import * as Location from 'expo-location';
-
-const REAL_MAP_IMAGE = require('../../../../assets/images/real_map_banner.png');
 
 const AREA_LABELS: Record<string, string> = {
   [SERVICE_AREAS.SANAA]: 'صنعاء',
@@ -57,6 +54,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
   const [saveForFuture, setSaveForFuture] = useState(true);
 
   const [locating, setLocating] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -116,6 +114,8 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       };
+      setCurrentCoords(coords);
+      setUseNewAddress(true);
 
       try {
         const reverseResults = await Location.reverseGeocodeAsync(coords);
@@ -126,14 +126,19 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             .filter(Boolean)
             .join(' - ');
 
-          if (detectedCity.includes('عدن') || detectedCity.includes('Aden')) {
-            setSelectedCity(SERVICE_AREAS.ADEN);
-          } else if (detectedCity.includes('إب') || detectedCity.includes('Ibb')) {
-            setSelectedCity(SERVICE_AREAS.IBB);
-          } else if (detectedCity.includes('تعز') || detectedCity.includes('Taiz')) {
-            setSelectedCity(SERVICE_AREAS.TAIZ);
-          } else {
-            setSelectedCity(SERVICE_AREAS.SANAA);
+          let matchedCity: string | null = null;
+          if (detectedCity.includes('صنعاء') || detectedCity.toLowerCase().includes('sanaa') || detectedCity.toLowerCase().includes("san'a")) {
+            matchedCity = SERVICE_AREAS.SANAA;
+          } else if (detectedCity.includes('عدن') || detectedCity.toLowerCase().includes('aden')) {
+            matchedCity = SERVICE_AREAS.ADEN;
+          } else if (detectedCity.includes('إب') || detectedCity.toLowerCase().includes('ibb')) {
+            matchedCity = SERVICE_AREAS.IBB;
+          } else if (detectedCity.includes('تعز') || detectedCity.toLowerCase().includes('taiz')) {
+            matchedCity = SERVICE_AREAS.TAIZ;
+          }
+
+          if (matchedCity) {
+            setSelectedCity(matchedCity);
           }
 
           if (detectedStreet) {
@@ -145,10 +150,17 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             setLandmark(place.name || `مبنى ${place.streetNumber}`);
           }
 
-          Alert.alert(
-            'تم تحديد موقعك الحقيقي 📍',
-            `تم جلب إحداثياتك بنجاح: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})\nتمت تعبئة تفاصيل الشارع والمنطقة تلقائياً.`
-          );
+          if (matchedCity) {
+            Alert.alert(
+              'تم تحديد موقعك 📍',
+              `تم تحديد الموقع داخل ${AREA_LABELS[matchedCity] ?? matchedCity} وتعبئة تفاصيل العنوان.`
+            );
+          } else {
+            Alert.alert(
+              'الموقع خارج نطاق التوصيل',
+              `تم تحديد موقعك، لكن المدينة (${detectedCity || 'غير معروفة'}) ليست ضمن مناطق التوصيل المتاحة حالياً. اختر مدينة مدعومة وأدخل عنواناً داخلها.`
+            );
+          }
         } else {
           setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
           Alert.alert(
@@ -196,6 +208,8 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           label: addressType,
           full_address: fullAddr,
           city: selectedCity,
+          latitude: currentCoords?.latitude,
+          longitude: currentCoords?.longitude,
           is_default: saveForFuture && savedAddresses.length === 0,
         });
         targetAddressId = newAddr.id;
@@ -275,17 +289,18 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Realistic Interactive Map Banner Preview Card */}
         <View style={styles.mapBannerCard}>
-          {/* Real City Map Tile Background */}
-          <Image
-            source={REAL_MAP_IMAGE}
-            style={styles.realMapImageBg}
-            resizeMode="cover"
-          />
-          <View style={styles.mapOverlayShade} />
-
-          {/* Floating Button inside map: "استخدام موقعي الحالي" */}
+          <View style={styles.locationPreviewIcon}>
+            <Ionicons name={currentCoords ? 'location' : 'map-outline'} size={30} color={COLORS.primary} />
+          </View>
+          <Text style={styles.locationPreviewTitle}>
+            {currentCoords ? 'تم تحديد إحداثيات موقعك' : 'حدد موقع التوصيل بدقة'}
+          </Text>
+          <Text style={styles.locationPreviewText}>
+            {currentCoords
+              ? `${currentCoords.latitude.toFixed(5)}, ${currentCoords.longitude.toFixed(5)}`
+              : 'استخدم GPS لتعبئة الموقع، ثم راجع المدينة والشارع قبل المتابعة.'}
+          </Text>
           <TouchableOpacity
             style={styles.floatingLocateBtn}
             onPress={handleUseCurrentLocation}
@@ -293,22 +308,16 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             activeOpacity={0.85}
           >
             {locating ? (
-              <ActivityIndicator size="small" color="#172554" />
+              <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
               <>
-                <Ionicons name="locate-outline" size={16} color="#172554" />
-                <Text style={styles.floatingLocateText}>استخدام موقعي الحالي</Text>
+                <Ionicons name="locate-outline" size={16} color={COLORS.primary} />
+                <Text style={styles.floatingLocateText}>
+                  {currentCoords ? 'تحديث موقعي' : 'استخدام موقعي الحالي'}
+                </Text>
               </>
             )}
           </TouchableOpacity>
-
-          {/* Center Pulsing Location Pin Marker */}
-          <View style={styles.mapCenterPinWrap}>
-            <View style={styles.pinPulseShadow} />
-            <View style={styles.pinMarkerIcon}>
-              <Ionicons name="location" size={26} color="#FFFFFF" />
-            </View>
-          </View>
         </View>
 
         {/* Section 1: Address Input Form */}
@@ -635,6 +644,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 130,
+  },
+  locationPreviewIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 10,
+  },
+  locationPreviewTitle: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  locationPreviewText: {
+    maxWidth: 460,
+    marginTop: 5,
+    color: COLORS.textMuted,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   mapBannerCard: {
     height: 140,
