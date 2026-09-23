@@ -78,8 +78,8 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
   useFocusEffect(useCallback(() => { void loadStats(); }, [loadStats]));
 
   const authUser = user as any;
-  const userName = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.full_name || 'العميل المميز';
-  const userSub = authUser?.email || authUser?.phone || 'حساب مفعل وموثق';
+  const userName = authUser?.full_name || 'مستخدم';
+  const userSub = authUser?.email || authUser?.phone || 'حساب المستخدم';
 
   const STATS = [
     { id: '1', title: 'الطلبات', value: String(counts.orders), icon: 'bag-handle-outline' },
@@ -117,14 +117,13 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
               <View style={styles.profileInfoRow}>
                 {/* Avatar */}
                 <View style={styles.avatarRingWrap}>
-                  <Image
-                    source={{
-                      uri: authUser?.user_metadata?.avatar_url
-                        || authUser?.avatar_url
-                        || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-                    }}
-                    style={styles.avatarImg}
-                  />
+                  {authUser?.avatar_url ? (
+                    <Image source={{ uri: authUser.avatar_url }} style={styles.avatarImg} />
+                  ) : (
+                    <View style={[styles.avatarImg, styles.avatarFallback]}>
+                      <Ionicons name="person-outline" size={34} color={COLORS.primary} />
+                    </View>
+                  )}
                   <TouchableOpacity
                     style={styles.avatarEditBadge}
                     onPress={() => navigation.navigate('EditProfile')}
@@ -140,8 +139,8 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   </View>
                   <Text style={styles.userSubText} numberOfLines={1}>{userSub}</Text>
                   <View style={styles.premiumBadgePill}>
-                    <Ionicons name="sparkles" size={12} color={COLORS.primary} />
-                    <Text style={styles.premiumBadgeText}>عضو مميز ✨</Text>
+                    <Ionicons name="star-outline" size={12} color={COLORS.primary} />
+                    <Text style={styles.premiumBadgeText}>{points.toLocaleString('ar-SA')} نقطة</Text>
                   </View>
                 </View>
               </View>
@@ -325,14 +324,6 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
           </View>
         </View>
 
-        {/* Original Promo Banner Image Restored */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper}>
-          <Image
-            source={require('../../../../assets/images/account_promo.png')}
-            style={styles.promoBannerFullImage}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -409,6 +400,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 30,
+  },
+
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
   },
   avatarEditBadge: {
     position: 'absolute',
