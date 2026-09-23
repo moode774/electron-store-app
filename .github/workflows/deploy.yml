@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -77,17 +73,14 @@ jobs:
           touch apps/customer/dist/.nojekyll
 
       - name: Setup Pages
-        if: github.event_name == 'push'
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
-        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './apps/customer/dist'
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
