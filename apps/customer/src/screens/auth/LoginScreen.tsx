@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
-import { USER_ROLES, COLORS } from '@marketplace/shared-utils';
+import { COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
 
@@ -34,7 +34,6 @@ export default function LoginScreen(): React.JSX.Element {
   const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
 
   const signInWithPhone = useAuthStore((s) => s.signInWithPhone);
-  const signUp = useAuthStore((s) => s.signUp);
 
   const showAlert = (title: string, message: string) => {
     setAlertConfig({ title, message });
@@ -48,39 +47,17 @@ export default function LoginScreen(): React.JSX.Element {
       return;
     }
 
-    // Admin bypass — يسجّل دخولاً حقيقياً بحساب الأدمن حتى تعمل صلاحيات RLS
-    if (cleaned.replace(/\D/g, '') === '535353535') {
-      setIsLoading(true);
-      const { error: adminError } = await useAuthStore.getState().signInAsAdmin();
-      setIsLoading(false);
-      if (adminError) showAlert('خطأ', adminError);
-      return;
-    }
-
     const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
+    const { error } = await signInWithPhone(formatted);
+    setIsLoading(false);
 
-    // تسجيل الدخول يميّز الدور تلقائياً: أي حساب موجود (عميل/تاجر/مندوب/أدمن)
-    // يدخل مباشرة على واجهته الصحيحة عبر التوجيه في App.tsx — بلا إعادة تسجيل.
-    const { error, code } = await signInWithPhone(formatted);
-
-    if (!error) { setIsLoading(false); return; }   // نجح → App يوجّهه حسب دوره
-
-    if (code === 'not_found') {
-      // رقم غير مسجّل فقط → يُنشأ حساب عميل تلقائياً (التاجر/المندوب يسجّل من "حساب جديد")
-      const { error: signUpError } = await signUp({
-        phone: formatted,
-        fullName: 'عميل جديد',
-        role: USER_ROLES.CUSTOMER,
-      });
-      setIsLoading(false);
-      if (signUpError) showAlert('خطأ', signUpError);
+    if (error) {
+      showAlert('تعذّر إرسال الرمز', error);
       return;
     }
 
-    // خطأ فعلي (حساب محظور/موقوف/شبكة) → أظهره ولا تنشئ حساباً
-    setIsLoading(false);
-    showAlert('تعذّر الدخول', error);
+    navigation.navigate('Otp', { phone: formatted });
   };
 
   return (
@@ -172,7 +149,7 @@ export default function LoginScreen(): React.JSX.Element {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
+                  <Text style={styles.loginButtonText}>إرسال رمز التحقق</Text>
                   <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.loginArrow} />
                 </>
               )}
