@@ -51,7 +51,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
   const [streetAddress, setStreetAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [saveForFuture, setSaveForFuture] = useState(true);
+  const [makeDefault, setMakeDefault] = useState(true);
 
   const [locating, setLocating] = useState(false);
   const [currentCoords, setCurrentCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -114,7 +114,6 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       };
-      setCurrentCoords(coords);
       setUseNewAddress(true);
 
       try {
@@ -139,6 +138,9 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
 
           if (matchedCity) {
             setSelectedCity(matchedCity);
+            setCurrentCoords(coords);
+          } else {
+            setCurrentCoords(null);
           }
 
           if (detectedStreet) {
@@ -162,17 +164,17 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             );
           }
         } else {
-          setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+          setCurrentCoords(null);
           Alert.alert(
-            'تم تحديد إحداثياتك 📍',
-            `تم جلب الموقع بنجاح: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+            'تعذّر تحديد مدينة مدعومة',
+            'تم الحصول على الإحداثيات، لكن لم نستطع مطابقتها مع منطقة توصيل مدعومة. اختر المدينة والعنوان يدويًا.'
           );
         }
       } catch {
-        setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+        setCurrentCoords(null);
         Alert.alert(
-          'تم تحديد إحداثيات موقعك 📍',
-          `الموقع: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+          'تعذّر التحقق من المدينة',
+          'تم الحصول على GPS لكن تعذّر التحقق من أن الموقع داخل منطقة توصيل مدعومة. اختر المدينة والعنوان يدويًا.'
         );
       }
     } catch (err: any) {
@@ -210,7 +212,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           city: selectedCity,
           latitude: currentCoords?.latitude,
           longitude: currentCoords?.longitude,
-          is_default: saveForFuture && savedAddresses.length === 0,
+          is_default: makeDefault,
         });
         targetAddressId = newAddr.id;
       } catch (err: any) {
@@ -430,11 +432,11 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             </View>
           </View>
 
-          {/* 6. حفظ هذا العنوان لاستخدامه مستقبلاً في حسابك */}
+          {/* 6. اجعل هذا العنوان هو العنوان الافتراضي */}
           <View style={styles.switchRow}>
             <Switch
-              value={saveForFuture}
-              onValueChange={setSaveForFuture}
+              value={makeDefault}
+              onValueChange={setMakeDefault}
               trackColor={{ false: '#CBD5E1', true: '#172554' }}
               thumbColor="#FFFFFF"
             />
