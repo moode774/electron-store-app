@@ -277,7 +277,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               <TouchableOpacity
                 style={styles.locationPickerRow}
                 activeOpacity={0.8}
-                onPress={() => navigation.getParent()?.navigate('Account', { screen: 'AddressBook' })}
+                onPress={() => navigation.getParent()?.navigate('More', { screen: 'AddressBook' })}
                 accessibilityRole="button"
                 accessibilityLabel="تغيير عنوان التوصيل"
               >
@@ -292,7 +292,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             <TouchableOpacity
               style={styles.notifCircleBtn}
               activeOpacity={0.8}
-              onPress={() => navigation.getParent()?.navigate('Account', { screen: 'Notifications' })}
+              onPress={() => navigation.getParent()?.navigate('More', { screen: 'Notifications' })}
               accessibilityRole="button"
               accessibilityLabel="الإشعارات"
             >

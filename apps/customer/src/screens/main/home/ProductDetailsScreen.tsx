@@ -20,7 +20,6 @@ interface Props {
 }
 
 // بيانات افتراضية عند التحميل
-const FALLBACK_COLORS = ['#111827', '#F3F4F6', '#1E3A8A'];
 
 export default function ProductDetailsScreen({ navigation, route }: Props) {
   const layout = useCustomerLayout(1180);
@@ -28,7 +27,6 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [selectedColor, setSelectedColor] = useState(FALLBACK_COLORS[0]);
   const [quantity, setQuantity] = useState(1);
   const [wished, setWished] = useState(false);
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -118,7 +116,6 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     sold: product?.total_sold ?? 0,
     // عند اختيار خيار (variant) يُعتمد مخزونه هو، وإلا مخزون المنتج
     stock: selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0),
-    colors: FALLBACK_COLORS,
     hasStock: (selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0)) > 0,
     image: product?.product_images?.find((i) => i.is_primary)?.url
       ?? product?.product_images?.[0]?.url

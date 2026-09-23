@@ -466,7 +466,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                     {/* Left Side: إدارة العنوان */}
                     <TouchableOpacity
                       style={styles.dotsBtn}
-                      onPress={() => navigation.getParent()?.navigate('Account', { screen: 'AddressBook' })}
+                      onPress={() => navigation.getParent()?.navigate('More', { screen: 'AddressBook' })}
                       accessibilityRole="button"
                       accessibilityLabel="إدارة العناوين"
                     >
