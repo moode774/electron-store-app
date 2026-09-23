@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
   StatusBar,
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
@@ -18,10 +17,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
-import { COLORS, TIMEOUTS } from '@marketplace/shared-utils';
+import { COLORS } from '@marketplace/shared-utils';
 import CustomAlert from '../../components/CustomAlert';
 
 const OTP_LENGTH = 6;
+const OTP_RESEND_SECONDS = 60;
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
 
@@ -33,7 +33,7 @@ interface OtpScreenProps {
 export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.Element {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [countdown, setCountdown] = useState<number>(TIMEOUTS.OTP_EXPIRY_SECONDS);
+  const [countdown, setCountdown] = useState<number>(OTP_RESEND_SECONDS);
   const [canResend, setCanResend] = useState<boolean>(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
   const [alertVisible, setAlertVisible] = useState(false);
@@ -102,11 +102,17 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
   };
 
   const handleResend = async (): Promise<void> => {
-    if (!canResend) return;
-    setCountdown(TIMEOUTS.OTP_EXPIRY_SECONDS);
+    if (!canResend || isLoading) return;
+    setIsLoading(true);
+    const { error } = await signInWithPhone(phone);
+    setIsLoading(false);
+    if (error) {
+      showAlert('تعذّر إعادة الإرسال', error);
+      return;
+    }
+    setCountdown(OTP_RESEND_SECONDS);
     setCanResend(false);
     setOtp(Array(OTP_LENGTH).fill(''));
-    await signInWithPhone(phone);
     inputs.current[0]?.focus();
   };
 
