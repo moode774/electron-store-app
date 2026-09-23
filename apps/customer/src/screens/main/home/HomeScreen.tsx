@@ -69,8 +69,8 @@ const HERO_BANNERS = [
   {
     type: 'content',
     id: 'c1',
-    title: 'مجموعة جديدة',
-    sub: 'خصم 50% على طلبيتك الأولى',
+    title: 'اكتشف الجديد',
+    sub: 'منتجات ومتاجر مختارة في مكان واحد',
     btnText: 'تسوق الآن',
     img: require('../../../../assets/images/home/smool_bannar.png'),
     route: 'Offers',
