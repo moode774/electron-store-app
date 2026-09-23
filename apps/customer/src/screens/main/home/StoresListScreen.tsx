@@ -36,28 +36,28 @@ const STORE_CAROUSEL_CARDS = [
   {
     id: 's1',
     title: 'تسوق من أفضل المتاجر',
-    sub: 'آلاف المنتجات، عروض حصرية وتوصيل سريع وأمان كامل',
+    sub: 'تصفح المنتجات والمتاجر المتاحة وقارن قبل الطلب',
     btnText: 'تسوق الآن',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
   {
     id: 's2',
-    title: 'متاجر موثوقة 100% 🏬',
-    sub: 'أفضل الماركات العالمية والمحلية في مكان واحد مع ضمان الجودة',
+    title: 'متاجر متاحة للتسوق 🏬',
+    sub: 'استكشف المتاجر النشطة والمنتجات المعروضة حالياً',
     btnText: 'استكشف المتاجر',
     img: require('../../../../assets/images/home/premium-hero-desktop.png'),
   },
   {
     id: 's3',
-    title: 'توصيل سريع لكل المدن 🚚',
-    sub: 'رسوم التوصيل تُحسب حسب مدينتك وتظهر لك قبل تأكيد الطلب',
+    title: 'رسوم توصيل واضحة 🚚',
+    sub: 'رسوم التوصيل تُحسب حسب منطقة الخدمة وتظهر قبل تأكيد الطلب',
     btnText: 'تصفح المتاجر',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
   {
     id: 's4',
     title: 'عروض وحسومات المتاجر ⚡',
-    sub: 'تخفيضات تصل إلى 60% على المنتجات المتميزة والأكثر طلباً',
+    sub: 'شاهد العروض المتاحة من المتاجر عند توفرها',
     btnText: 'شاهد العروض',
     img: require('../../../../assets/images/bannerstoor/add.png'),
   },
@@ -354,7 +354,7 @@ export default function StoresListScreen({ navigation, route }: any) {
               <Text style={styles.sectionTitleText}>المتاجر المميزة</Text>
               <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
             </View>
-            <Text style={styles.sectionSubTitleText}>متاجر موثوقة وتجربة تسوق رائعة</Text>
+            <Text style={styles.sectionSubTitleText}>متاجر نشطة وتجربة تسوق واضحة</Text>
           </View>
 
           <TouchableOpacity onPress={() => setActiveCategory('')} activeOpacity={0.75}>
