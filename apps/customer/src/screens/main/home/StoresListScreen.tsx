@@ -249,7 +249,7 @@ export default function StoresListScreen({ navigation, route }: any) {
         >
           <TouchableOpacity
             style={[styles.chipPill, !activeCategory && styles.chipPillActive]}
-            onPress={() => navigation.navigate(card.route as any)}
+            onPress={() => setActiveCategory('')}
             activeOpacity={0.82}
           >
             <View style={[styles.chipIconWrap, !activeCategory && styles.chipIconWrapActive]}>
@@ -309,7 +309,7 @@ export default function StoresListScreen({ navigation, route }: any) {
 
                 <TouchableOpacity
                   style={styles.heroCtaBtn}
-                  onPress={() => setActiveCategory('')}
+                  onPress={() => navigation.navigate(card.route as any)}
                   activeOpacity={0.88}
                 >
                   <Text style={styles.heroCtaText}>{card.btnText}</Text>
