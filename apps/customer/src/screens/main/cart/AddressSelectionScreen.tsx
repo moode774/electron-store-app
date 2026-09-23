@@ -139,25 +139,20 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           if (matchedCity) {
             setSelectedCity(matchedCity);
             setCurrentCoords(coords);
-          } else {
-            setCurrentCoords(null);
-          }
-
-          if (detectedStreet) {
-            setStreetAddress(detectedStreet);
-          } else {
-            setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
-          }
-          if (place.streetNumber || place.name) {
-            setLandmark(place.name || `مبنى ${place.streetNumber}`);
-          }
-
-          if (matchedCity) {
+            if (detectedStreet) {
+              setStreetAddress(detectedStreet);
+            } else {
+              setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+            }
+            if (place.streetNumber || place.name) {
+              setLandmark(place.name || `مبنى ${place.streetNumber}`);
+            }
             Alert.alert(
               'تم تحديد موقعك 📍',
               `تم تحديد الموقع داخل ${AREA_LABELS[matchedCity] ?? matchedCity} وتعبئة تفاصيل العنوان.`
             );
           } else {
+            setCurrentCoords(null);
             Alert.alert(
               'الموقع خارج نطاق التوصيل',
               `تم تحديد موقعك، لكن المدينة (${detectedCity || 'غير معروفة'}) ليست ضمن مناطق التوصيل المتاحة حالياً. اختر مدينة مدعومة وأدخل عنواناً داخلها.`
