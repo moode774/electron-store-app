@@ -182,8 +182,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     //    بإدراج سجل يملك نفس auth.uid()). ثم نقرأه مجدداً.
     if (!data) {
       const meta = authUser.user_metadata as { full_name?: string; role?: string; phone?: string };
-      const fallbackRole = (meta.role as UserRole) ?? USER_ROLES.CUSTOMER;
-      
+      const requestedRole = typeof meta.role === 'string' ? meta.role : USER_ROLES.CUSTOMER;
+      const fallbackRole: UserRole =
+        requestedRole === USER_ROLES.MERCHANT || requestedRole === USER_ROLES.DELIVERY
+          ? requestedRole
+          : USER_ROLES.CUSTOMER;
+
       const { error: insertError } = await supabase.from(TABLES.USERS).insert({
         id: authUser.id,
         phone: meta.phone ?? authUser.phone ?? null,
