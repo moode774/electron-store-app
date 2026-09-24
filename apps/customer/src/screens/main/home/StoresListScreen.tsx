@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  TextInput,
   Platform,
   ActivityIndicator,
   RefreshControl,
@@ -14,65 +13,71 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
-import { getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
+import { Category, getCategories, getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
 
-const CATEGORY_CHIPS = [
-  { id: 'all', name: 'الكل', icon: 'grid' },
-  { id: 'fashion', name: 'أزياء وموضة', icon: 'shirt-outline' },
-  { id: 'electronics', name: 'إلكترونيات', icon: 'hardware-chip-outline' },
-  { id: 'beauty', name: 'الجمال والعناية', icon: 'sparkles-outline' },
-  { id: 'home', name: 'المنزل والمطبخ', icon: 'home-outline' },
-  { id: 'sports', name: 'رياضة', icon: 'barbell-outline' },
-];
+function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
+  const label = name.toLowerCase();
+  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes('جمال') || label.includes('beauty') || label.includes('عطر')) return 'sparkles-outline';
+  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
+  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
+  return 'grid-outline';
+}
 
 const STORE_CAROUSEL_CARDS = [
   {
     id: 's1',
-    title: 'تسوق من أفضل المتاجر',
-    sub: 'آلاف المنتجات، عروض حصرية وتوصيل سريع وأمان كامل',
-    btnText: 'تسوق الآن',
+    title: 'تسوق من المتاجر المتاحة',
+    sub: 'تصفح المنتجات والمتاجر المتاحة وقارن قبل الطلب',
+    btnText: 'استكشف المنتجات',
+    route: 'Search',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
   {
     id: 's2',
-    title: 'متاجر موثوقة 100% 🏬',
-    sub: 'أفضل الماركات العالمية والمحلية في مكان واحد مع ضمان الجودة',
-    btnText: 'استكشف المتاجر',
+    title: 'متاجر متاحة للتسوق 🏬',
+    sub: 'استكشف المتاجر النشطة والمنتجات المعروضة حالياً',
+    btnText: 'استكشف المنتجات',
+    route: 'Search',
     img: require('../../../../assets/images/home/premium-hero-desktop.png'),
   },
   {
     id: 's3',
-    title: 'توصيل سريع لكل المدن 🚚',
-    sub: 'رسوم التوصيل تُحسب حسب مدينتك وتظهر لك قبل تأكيد الطلب',
-    btnText: 'تصفح المتاجر',
+    title: 'رسوم توصيل واضحة 🚚',
+    sub: 'رسوم التوصيل تُحسب حسب منطقة الخدمة وتظهر قبل تأكيد الطلب',
+    btnText: 'ابدأ التسوق',
+    route: 'Search',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
   {
     id: 's4',
     title: 'عروض وحسومات المتاجر ⚡',
-    sub: 'تخفيضات تصل إلى 60% على المنتجات المتميزة والأكثر طلباً',
+    sub: 'شاهد العروض المتاحة من المتاجر عند توفرها',
     btnText: 'شاهد العروض',
+    route: 'Offers',
     img: require('../../../../assets/images/bannerstoor/add.png'),
   },
 ];
 
 export default function StoresListScreen({ navigation, route }: any) {
   const layout = useCustomerLayout();
-  const categoryId = route?.params?.categoryId;
-  const isDatabaseCategory = Boolean(categoryId && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(categoryId));
-  const fallbackCategory = isDatabaseCategory ? undefined : route?.params?.filter;
+  const insets = useSafeAreaInsets();
+  const categoryId = typeof route?.params?.categoryId === 'string' ? route.params.categoryId : '';
 
   const [search, setSearch] = useState('');
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string>(fallbackCategory || 'all');
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>(categoryId);
   const [heroIndex, setHeroIndex] = useState<number>(0);
   const heroScrollRef = React.useRef<ScrollView>(null);
 
@@ -92,12 +97,13 @@ export default function StoresListScreen({ navigation, route }: any) {
     if (!isRefresh) setLoading(true);
     try {
       const data = await getStores(search || undefined);
-      if (isDatabaseCategory && categoryId) {
-        const { data: products } = await supabase
+      if (activeCategory) {
+        const { data: products, error } = await supabase
           .from('products')
           .select('merchant_id')
-          .eq('category_id', categoryId)
+          .eq('category_id', activeCategory)
           .eq('is_active', true);
+        if (error) throw error;
         const merchantIds = new Set((products ?? []).map((product: any) => product.merchant_id));
         setStores(data.filter((store) => merchantIds.has(store.id)));
       } else {
@@ -109,7 +115,11 @@ export default function StoresListScreen({ navigation, route }: any) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [categoryId, isDatabaseCategory, search]);
+  }, [activeCategory, search]);
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => loadStores(), 300);
@@ -127,13 +137,6 @@ export default function StoresListScreen({ navigation, route }: any) {
     loadStores(true);
   };
 
-  const toggleFavorite = (id: string) => {
-    const next = new Set(favorites);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setFavorites(next);
-  };
-
   // بيانات حقيقية فقط: التقييم وعدد المراجعات كما في القاعدة، ولا متاجر وهمية عند الفراغ
   const displayStoresList = stores.map((s, idx) => ({
     id: s.id,
@@ -149,15 +152,9 @@ export default function StoresListScreen({ navigation, route }: any) {
     is_verified: s.is_approved === true,
   }));
 
-  const filteredStores =
-    activeCategory && activeCategory !== 'all'
-      ? displayStoresList.filter(
-          (s) => s.store_category.includes(activeCategory) || activeCategory === 'all'
-        )
-      : displayStoresList;
+  const filteredStores = displayStoresList;
 
   const renderStoreRow = (item: any) => {
-    const isFav = favorites.has(item.id);
     return (
       <TouchableOpacity
         key={item.id}
@@ -227,80 +224,57 @@ export default function StoresListScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {/* Far-Left: Heart Button */}
-        <TouchableOpacity
-          style={styles.storeRowHeartBtn}
-          onPress={(e) => {
-            e.stopPropagation();
-            toggleFavorite(item.id);
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={18} color={isFav ? '#172554' : '#64748B'} />
-        </TouchableOpacity>
       </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
 
       {/* Clean Minimalist Header Matching HomeScreen */}
-      <View style={styles.header}>
-        {/* Search Row: Search Input + Dark Filter Button */}
-        <View style={styles.searchRowContainer}>
-          <View style={styles.searchBoxRow}>
-            <Ionicons name="search-outline" size={19} color="#94A3B8" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="ابحث عن متجر أو منتج..."
-              placeholderTextColor="#94A3B8"
-              value={search}
-              onChangeText={setSearch}
-              textAlign={Platform.OS === 'web' ? 'right' : 'left'}
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch('')}>
-                <Ionicons name="close-circle" size={18} color="#94A3B8" />
-              </TouchableOpacity>
-            )}
-          </View>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
+        <CustomerSearchField
+          value={search}
+          onChangeText={setSearch}
+          onClear={() => setSearch('')}
+          placeholder="ابحث عن متجر"
+          returnKeyType="search"
+        />
 
-          <TouchableOpacity
-            style={styles.darkFilterBtn}
-            onPress={() => setSearch('')}
-            activeOpacity={0.86}
-          >
-            <Ionicons name="options-outline" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Horizontal Category Chips */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryChipsScroll}
         >
-          {CATEGORY_CHIPS.map((chip) => {
-            const isActive = activeCategory === chip.id;
+          <TouchableOpacity
+            style={[styles.chipPill, !activeCategory && styles.chipPillActive]}
+            onPress={() => setActiveCategory('')}
+            activeOpacity={0.82}
+          >
+            <View style={[styles.chipIconWrap, !activeCategory && styles.chipIconWrapActive]}>
+              <Ionicons name="grid-outline" size={14} color={!activeCategory ? COLORS.primary : COLORS.textMuted} />
+            </View>
+            <Text style={[styles.chipText, !activeCategory && styles.chipTextActive]}>الكل</Text>
+          </TouchableOpacity>
+          {categories.map((category) => {
+            const label = category.name_ar ?? category.name;
+            const isActive = activeCategory === category.id;
             return (
               <TouchableOpacity
-                key={chip.id}
+                key={category.id}
                 style={[styles.chipPill, isActive && styles.chipPillActive]}
-                onPress={() => setActiveCategory(chip.id)}
+                onPress={() => setActiveCategory(category.id)}
                 activeOpacity={0.82}
               >
                 <View style={[styles.chipIconWrap, isActive && styles.chipIconWrapActive]}>
                   <Ionicons
-                    name={chip.icon as any}
+                    name={categoryIcon(label)}
                     size={14}
-                    color={isActive ? '#172554' : '#64748B'}
+                    color={isActive ? COLORS.primary : COLORS.textMuted}
                   />
                 </View>
-                <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                  {chip.name}
-                </Text>
+                <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -335,7 +309,7 @@ export default function StoresListScreen({ navigation, route }: any) {
 
                 <TouchableOpacity
                   style={styles.heroCtaBtn}
-                  onPress={() => setActiveCategory('all')}
+                  onPress={() => navigation.navigate(card.route as any)}
                   activeOpacity={0.88}
                 >
                   <Text style={styles.heroCtaText}>{card.btnText}</Text>
@@ -361,13 +335,13 @@ export default function StoresListScreen({ navigation, route }: any) {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleGroup}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleText}>المتاجر المميزة</Text>
+              <Text style={styles.sectionTitleText}>المتاجر</Text>
               <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
             </View>
-            <Text style={styles.sectionSubTitleText}>متاجر موثوقة وتجربة تسوق رائعة</Text>
+            <Text style={styles.sectionSubTitleText}>المتاجر النشطة المتاحة حالياً</Text>
           </View>
 
-          <TouchableOpacity onPress={() => setActiveCategory('all')} activeOpacity={0.75}>
+          <TouchableOpacity onPress={() => setActiveCategory('')} activeOpacity={0.75}>
             <Text style={styles.viewAllText}>عرض الكل ›</Text>
           </TouchableOpacity>
         </View>
@@ -384,7 +358,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                 <Ionicons name="storefront-outline" size={44} color="#CBD5E1" />
                 <Text style={styles.emptyStoresTitle}>لا توجد متاجر متاحة حالياً</Text>
                 <Text style={styles.emptyStoresSub}>
-                  نعمل على إضافة متاجر جديدة في منطقتك. عاود المحاولة قريباً.
+                  لا توجد نتائج مطابقة الآن. جرّب تغيير البحث أو التصنيف.
                 </Text>
               </View>
             ) : (
@@ -400,11 +374,12 @@ export default function StoresListScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'ios' ? 48 : 18,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
@@ -493,8 +468,8 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   heroCardContainer: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 24,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 24,

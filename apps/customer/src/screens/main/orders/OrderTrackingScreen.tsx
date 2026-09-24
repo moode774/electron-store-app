@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   RefreshControl,
-  Image,
+  Linking,
   Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,8 +31,6 @@ import {
   OrderDetail,
   supabase,
 } from '@marketplace/shared-hooks';
-
-const REAL_MAP_IMAGE = require('../../../../assets/images/real_map_banner.png');
 
 const TRACKING_STEPS = [
   { status: ORDER_STATUS.PENDING, label: 'تم استقبال الطلب', desc: 'تم إرسال طلبك إلى المتجر بنجاح', icon: 'time-outline' },
@@ -342,6 +340,19 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const currentStatus = order?.status ?? ORDER_STATUS.PENDING;
   const currentStatusIndex = STATUS_STEP_INDEX[currentStatus] ?? 0;
   const terminalLabel = TERMINAL_LABELS[currentStatus];
+  const latestLocation = [...(order?.order_tracking ?? [])]
+    .filter((entry) => Number.isFinite(entry.latitude) && Number.isFinite(entry.longitude))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] ?? null;
+
+  const openTrackedLocation = async (): Promise<void> => {
+    if (latestLocation?.latitude == null || latestLocation?.longitude == null) return;
+    const query = `${latestLocation.latitude},${latestLocation.longitude}`;
+    try {
+      await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`);
+    } catch {
+      Alert.alert('تعذّر فتح الخريطة', 'يمكنك نسخ الإحداثيات وفتحها في تطبيق الخرائط.');
+    }
+  };
 
   const refundReferenceValue = order?.delivered_at ?? order?.updated_at ?? order?.created_at;
   const refundReferenceTime = refundReferenceValue ? new Date(refundReferenceValue).getTime() : Number.NaN;
@@ -424,59 +435,49 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           />
         }
       >
-        {/* Live Interactive Map Banner Preview */}
         <View style={styles.mapBannerCard}>
-          <Image source={REAL_MAP_IMAGE} style={styles.mapImageBg} resizeMode="cover" />
-          <View style={styles.mapShadeOverlay} />
-
-          {/* Floating Driver / Status Pill Overlay */}
-          <View style={styles.liveStatusPill}>
-            <View style={styles.liveStatusPulse} />
+          <View style={styles.trackingLocationIcon}>
             <Ionicons
-              name={currentStatus === ORDER_STATUS.ON_THE_WAY ? 'car' : 'cube'}
-              size={16}
-              color="#172554"
+              name={latestLocation ? 'navigate' : 'map-outline'}
+              size={30}
+              color={COLORS.primary}
             />
-            <Text style={styles.liveStatusText}>
-              {terminalLabel
-                ? terminalLabel
-                : currentStatus === ORDER_STATUS.ON_THE_WAY
-                ? 'المندوب في الطريق إليك 🚚'
-                : TRACKING_STEPS[currentStatusIndex]?.label || 'جاري التتبع...'}
-            </Text>
           </View>
-
-          {/* Destination Map Pin */}
-          <View style={styles.centerPinMarker}>
-            <View style={styles.pinPulseShadow} />
-            <View style={styles.pinIconCircle}>
-              <Ionicons name="location" size={24} color="#FFFFFF" />
-            </View>
-          </View>
+          <Text style={styles.trackingLocationTitle}>
+            {terminalLabel
+              ? terminalLabel
+              : currentStatus === ORDER_STATUS.ON_THE_WAY
+                ? 'المندوب في الطريق إليك'
+                : TRACKING_STEPS[currentStatusIndex]?.label ?? 'جاري تحديث حالة الطلب'}
+          </Text>
+          <Text style={styles.trackingLocationText}>
+            {latestLocation
+              ? `آخر موقع مسجّل: ${latestLocation.latitude?.toFixed(5)}, ${latestLocation.longitude?.toFixed(5)}`
+              : 'لم تصل إحداثيات مباشرة من المندوب حتى الآن. حالة الطلب نفسها تتحدث تلقائياً.'}
+          </Text>
+          {latestLocation ? (
+            <TouchableOpacity style={styles.openMapButton} onPress={openTrackedLocation} activeOpacity={0.82}>
+              <Ionicons name="open-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.openMapButtonText}>فتح الموقع على الخريطة</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
-        {/* Delivery Representative (المندوب) Card */}
-        {order?.delivery_id && (
+        {order?.delivery_id ? (
           <View style={styles.card}>
             <View style={styles.driverCardRow}>
-              <TouchableOpacity
-                style={styles.driverCallBtn}
-                onPress={() => Alert.alert('اتصال بـ المندوب', 'جاري الاتصال بالمندوب...')}
-              >
-                <Ionicons name="call" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-
               <View style={styles.driverInfoCol}>
-                <Text style={styles.driverNameText}>أحمد سعيد (مندوب التوصيل)</Text>
-                <Text style={styles.driverVehicleText}>درّاجة نارية • 4821-أ-ي</Text>
+                <Text style={styles.driverNameText}>تم إسناد مندوب للطلب</Text>
+                <Text style={styles.driverVehicleText}>
+                  نعرض فقط البيانات المؤكدة من النظام؛ بيانات التواصل غير متاحة في هذا الطلب حالياً.
+                </Text>
               </View>
-
               <View style={styles.driverAvatarCircle}>
-                <Ionicons name="person" size={24} color="#172554" />
+                <Ionicons name="bicycle-outline" size={24} color={COLORS.primary} />
               </View>
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Stepper Timeline Progress Card */}
         <View style={styles.card}>
@@ -547,14 +548,14 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           <View style={styles.infoBannerBox}>
             <View style={styles.infoRow}>
               <Text style={styles.infoValueText}>
-                {order?.addresses?.full_address || 'شارع الملك فهد - حي الروضة، الرياض'}
+                {order?.addresses?.full_address || 'لم يتم توفير عنوان التوصيل'}
               </Text>
 
               <Text style={styles.infoLabelText}> :عنوان التسليم 📍</Text>
             </View>
             <View style={[styles.infoRow, { marginTop: 8 }]}>
               <Text style={styles.infoValueText}>
-                {order?.merchant_profiles?.store_name || 'المتجر الرئيسي'}
+                {order?.merchant_profiles?.store_name || 'المتجر'}
               </Text>
 
               <Text style={styles.infoLabelText}>:اسم المتجر 🏪</Text>
@@ -577,7 +578,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                     {Number(item.total_price || 0).toLocaleString('ar-SA')} ر.ي
                   </Text>
                   <View style={styles.itemDetailsCol}>
-                    <Text style={styles.itemNameText}>{item.product_name || 'منتج متميز'}</Text>
+                    <Text style={styles.itemNameText}>{item.product_name || item.products?.name || 'منتج'}</Text>
                     <Text style={styles.itemQtyText}>الكمية: {item.quantity}</Text>
                   </View>
                 </View>
@@ -593,7 +594,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             <Text style={styles.totalPriceAmountText}>
               {Number(order?.total_amount || 0).toLocaleString('ar-SA')} ر.ي
             </Text>
-            <Text style={styles.totalPriceLabelText}>إجمالي المبلغ المدفوع:</Text>
+            <Text style={styles.totalPriceLabelText}>إجمالي الطلب:</Text>
           </View>
         </View>
 
@@ -892,15 +893,55 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     gap: 14,
   },
-  mapBannerCard: {
-    height: 160,
-    borderRadius: 20,
-    overflow: 'hidden',
-    position: 'relative',
+  trackingLocationIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 10,
+  },
+  trackingLocationTitle: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  trackingLocationText: {
+    maxWidth: 520,
+    marginTop: 5,
+    color: COLORS.textMuted,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  openMapButton: {
+    minHeight: 42,
+    marginTop: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  openMapButtonText: {
+    color: '#FFFFFF',
+    fontFamily: FONTS.bold,
+    fontSize: 12,
+  },
+  mapBannerCard: {
+    minHeight: 190,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   mapImageBg: {
     ...StyleSheet.absoluteFillObject,

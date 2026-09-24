@@ -105,10 +105,9 @@ export default function LoginScreen(): React.JSX.Element {
           {/* Form */}
           <View style={styles.formContainer}>
             <View style={styles.inputRow}>
-              <TouchableOpacity style={styles.countryCodeBox} activeOpacity={0.7}>
+              <View style={styles.countryCodeBox}>
                 <Text style={styles.countryCodeText}>+967</Text>
-                <Ionicons name="chevron-down" size={16} color="#111827" style={{ marginLeft: 6 }} />
-              </TouchableOpacity>
+              </View>
 
               <View style={styles.verticalDivider} />
 
@@ -155,30 +154,6 @@ export default function LoginScreen(): React.JSX.Element {
               )}
             </TouchableOpacity>
 
-            {/* Social Logins Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.line} />
-              <Text style={styles.dividerText}>أو</Text>
-              <View style={styles.line} />
-            </View>
-
-            <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7}>
-                <Ionicons name="logo-apple" size={20} color="#111827" />
-                <Text style={styles.socialText}>تسجيل الدخول باستخدام Apple</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7} onPress={async () => {
-                const { error } = await useAuthStore.getState().signInWithGoogle();
-                if (error) showAlert('خطأ', error);
-              }}>
-                <Image
-                  source={require('../../../assets/images/google.png')}
-                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                />
-                <Text style={styles.socialText}>تسجيل الدخول باستخدام Google</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
         </View>

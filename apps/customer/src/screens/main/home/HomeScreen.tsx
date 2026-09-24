@@ -35,6 +35,9 @@ import {
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { HomeStackParamList } from '../../../navigation/types';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
+import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
+import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
@@ -42,23 +45,16 @@ type Props = { navigation: Navigation };
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
 
-const CATEGORY_ITEMS = [
-  { id: 'all', name: 'الكل', icon: 'grid-outline' },
-  { id: 'clothing', name: 'الأزياء', icon: 'shirt-outline' },
-  { id: 'electronics', name: 'إلكترونيات', icon: 'hardware-chip-outline' },
-  { id: 'shoes', name: 'أحذية', icon: 'footsteps-outline' },
-  { id: 'watches', name: 'ساعات', icon: 'watch-outline' },
-  { id: 'perfumes', name: 'عطور', icon: 'flask-outline' },
-  { id: 'offers', name: 'العروض', icon: 'pricetag-outline' },
-];
-
-const FLASH_FILTERS = [
-  { id: 'all', name: 'الكل' },
-  { id: 'newest', name: 'الأحدث' },
-  { id: 'popular', name: 'الأكثر شعبية' },
-  { id: 'clothes', name: 'الملابس' },
-  { id: 'electronics', name: 'إلكترونيات' },
-];
+function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
+  const label = `${category.name_ar ?? ''} ${category.name ?? ''}`.toLowerCase();
+  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes('حذ') || label.includes('shoe')) return 'footsteps-outline';
+  if (label.includes('عطر') || label.includes('perfume')) return 'sparkles-outline';
+  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
+  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
+  return 'grid-outline';
+}
 
 // @ts-ignore - Dynamic folder reader for assets/images/banners (Scans directory automatically)
 const bannerContext = require.context('../../../../assets/images/banners', false, /\.(png|jpe?g|svg|webp)$/);
@@ -73,8 +69,8 @@ const HERO_BANNERS = [
   {
     type: 'content',
     id: 'c1',
-    title: 'مجموعة جديدة',
-    sub: 'خصم 50% على طلبيتك الأولى',
+    title: 'اكتشف الجديد',
+    sub: 'منتجات ومتاجر مختارة في مكان واحد',
     btnText: 'تسوق الآن',
     img: require('../../../../assets/images/home/smool_bannar.png'),
     route: 'Offers',
@@ -96,8 +92,6 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const [activeOrder, setActiveOrder] = useState<OrderSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedFlashFilter, setSelectedFlashFilter] = useState<string>('newest');
   const [wished, setWished] = useState<Set<string>>(new Set());
   const [heroIndex, setHeroIndex] = useState<number>(0);
   const heroScrollRef = React.useRef<ScrollView>(null);
@@ -150,7 +144,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         const { data: dbProducts, error: dbError } = await supabase
           .from('products')
           .select(
-            'id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles(store_name)'
+            'id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), product_variants(id, is_active), merchant_profiles(store_name)'
           )
           .eq('is_active', true)
           .order('created_at', { ascending: false })
@@ -277,7 +271,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               <TouchableOpacity
                 style={styles.locationPickerRow}
                 activeOpacity={0.8}
-                onPress={() => navigation.getParent()?.navigate('More', { screen: 'AddressBook' })}
+                onPress={() => openTab('More', 'AddressBook')}
                 accessibilityRole="button"
                 accessibilityLabel="تغيير عنوان التوصيل"
               >
@@ -292,7 +286,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             <TouchableOpacity
               style={styles.notifCircleBtn}
               activeOpacity={0.8}
-              onPress={() => navigation.getParent()?.navigate('More', { screen: 'Notifications' })}
+              onPress={() => openTab('More', 'Notifications')}
               accessibilityRole="button"
               accessibilityLabel="الإشعارات"
             >
@@ -301,27 +295,12 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             </TouchableOpacity>
           </View>
 
-          {/* Search Row: Off-White Search Input + Dark Filter Icon Button */}
-          <View style={styles.searchRowContainer}>
-            <TouchableOpacity
-              style={styles.searchInputBox}
-              onPress={() => navigation.navigate('Search')}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="search-outline" size={20} color="#94A3B8" />
-              <Text style={styles.searchPlaceholderText} numberOfLines={1}>
-                ابحث عن منتجات، ماركات، ومتاجر...
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.darkFilterBtn}
-              onPress={() => navigation.navigate('Search')}
-              activeOpacity={0.86}
-            >
-              <Ionicons name="options-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          <CustomerSearchField
+            onPress={() => navigation.navigate('Search')}
+            placeholder="ابحث عن منتجات أو متاجر"
+            showFilter
+            onFilterPress={() => navigation.navigate('Search')}
+          />
         </CustomerResponsiveShell>
       </View>
 
@@ -410,50 +389,53 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             <View style={heroIndex % 3 === 2 ? styles.dotActiveDark : styles.dotInactive} />
           </View>
 
-          {/* Categories Circle Bar (التصنيفات) */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitleBold}>التصنيفات</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('StoresList', {})} activeOpacity={0.75}>
-              <Text style={styles.seeAllLink}>عرض الكل</Text>
-            </TouchableOpacity>
-          </View>
+          <CustomerSectionHeader
+            title="التصنيفات"
+            actionLabel="عرض الكل"
+            onActionPress={() => navigation.navigate('StoresList', {})}
+          />
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesCircleScroll}
           >
-            {CATEGORY_ITEMS.map((item) => (
+            {categories.length === 0 ? (
               <TouchableOpacity
-                key={item.id}
                 style={styles.categoryCircleItem}
-                onPress={() => {
-                  setSelectedCategory(item.id);
-                  if (item.id === 'offers') {
-                    navigation.navigate('Offers');
-                  } else if (item.id !== 'all') {
-                    navigation.navigate('StoresList', { categoryId: item.id, filter: item.name });
-                  }
-                }}
+                onPress={() => navigation.navigate('StoresList', {})}
                 activeOpacity={0.82}
               >
                 <View style={styles.categoryCircleWrap}>
-                  <Ionicons name={item.icon as any} size={25} color="#172554" />
+                  <Ionicons name="grid-outline" size={24} color={COLORS.primary} />
+                </View>
+                <Text style={styles.categoryCircleName}>الكل</Text>
+              </TouchableOpacity>
+            ) : categories.slice(0, 8).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.categoryCircleItem}
+                onPress={() => navigation.navigate('StoresList', {
+                  categoryId: item.id,
+                  filter: item.name_ar ?? item.name,
+                })}
+                activeOpacity={0.82}
+              >
+                <View style={styles.categoryCircleWrap}>
+                  <Ionicons name={categoryIcon(item)} size={24} color={COLORS.primary} />
                 </View>
                 <Text style={styles.categoryCircleName} numberOfLines={1}>
-                  {item.name}
+                  {item.name_ar ?? item.name}
                 </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          {/* Stores Section (متاجر مختارة) */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitleBold}>متاجر مختارة</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('StoresList', {})} activeOpacity={0.75}>
-              <Text style={styles.seeAllLink}>عرض الكل</Text>
-            </TouchableOpacity>
-          </View>
+          <CustomerSectionHeader
+            title="متاجر"
+            actionLabel="عرض الكل"
+            onActionPress={() => navigation.navigate('StoresList', {})}
+          />
 
           <ScrollView
             horizontal
@@ -463,7 +445,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             {displayStores.length === 0 && (
               <View style={styles.storesEmptyState}>
                 <Ionicons name="storefront-outline" size={22} color="#94A3B8" />
-                <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة في منطقتك حالياً</Text>
+                <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة حالياً</Text>
               </View>
             )}
             {displayStores.map((store: any) => (
@@ -504,127 +486,50 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             ))}
           </ScrollView>
 
-          {/* Flash Sale Section (عروض خاطفة) */}
-          <View style={styles.flashHeaderRow}>
-            <View style={styles.flashTitleCol}>
-              <Text style={styles.sectionTitleBold}>عروض خاطفة</Text>
-            </View>
+          <CustomerSectionHeader
+            eyebrow="مختارة من المتاجر المتاحة"
+            title="منتجات تستحق المشاهدة"
+            actionLabel="استكشف"
+            onActionPress={() => navigation.navigate('Search')}
+          />
 
-            <View style={styles.timerBadge}>
-              <Ionicons name="time-outline" size={13} color="#172554" style={{ marginLeft: 4 }} />
-              <Text style={styles.timerText}>ينتهي خلال : 02 : 12 : 56</Text>
-            </View>
-          </View>
-
-          {/* Flash Filter Pills */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.flashFilterScroll}
-          >
-            {FLASH_FILTERS.map((f) => {
-              const isSelected = selectedFlashFilter === f.id;
-              return (
-                <TouchableOpacity
-                  key={f.id}
-                  style={[styles.flashPill, isSelected && styles.flashPillSelected]}
-                  onPress={() => setSelectedFlashFilter(f.id)}
-                  activeOpacity={0.82}
-                >
-                  <Text style={[styles.flashPillText, isSelected && styles.flashPillTextSelected]}>
-                    {f.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* Products Grid */}
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color="#172554" size="large" />
+              <ActivityIndicator color={COLORS.primary} size="large" />
+            </View>
+          ) : products.length === 0 ? (
+            <View style={styles.productsEmptyState}>
+              <View style={styles.productsEmptyIcon}>
+                <Ionicons name="bag-handle-outline" size={28} color={COLORS.primary} />
+              </View>
+              <Text style={styles.productsEmptyTitle}>لا توجد منتجات متاحة الآن</Text>
+              <Text style={styles.productsEmptyText}>جرّب تحديث الصفحة أو استكشف المتاجر المتاحة.</Text>
+              <TouchableOpacity style={styles.productsEmptyButton} onPress={() => navigation.navigate('StoresList', {})}>
+                <Text style={styles.productsEmptyButtonText}>استكشف المتاجر</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={[styles.productsGrid, { gap: productGridGap }]}>
-              {products.map((item: any) => {
-                const isFavorite = wished.has(item.id);
-                const currentPrice = item.sale_price ?? item.base_price;
-                const oldPrice = item.sale_price ? item.base_price : null;
-                const discount =
-                  item.sale_price && item.base_price > 0
-                    ? Math.max(0, Math.round(((item.base_price - item.sale_price) / item.base_price) * 100))
-                    : 0;
-                const imgUri = item.og_image_url || item.product_images?.[0]?.url;
-
+              {products.map((item) => {
+                const hasOptions = Boolean(item.product_variants?.some((variant) => variant.is_active !== false));
                 return (
-                  <TouchableOpacity
+                  <CustomerProductCard
                     key={item.id}
-                    style={[styles.productCard, { width: productCardWidth }]}
-                    activeOpacity={0.92}
+                    product={item}
+                    style={{ width: productCardWidth }}
+                    favorite={wished.has(item.id)}
                     onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}
-                  >
-                    <View style={styles.productMedia}>
-                      {imgUri ? (
-                        <Image source={{ uri: imgUri }} style={styles.productImage} resizeMode="cover" />
-                      ) : (
-                        <View style={styles.productImageFallback}>
-                          <Ionicons name="bag-handle-outline" size={38} color="#94A3B8" />
-                        </View>
-                      )}
-                      {discount > 0 ? (
-                        <View style={styles.discountBadge}>
-                          <Text style={styles.discountText}>-{discount}%</Text>
-                        </View>
-                      ) : null}
-                      <TouchableOpacity
-                        style={styles.favoriteButton}
-                        onPress={() => void toggleWish(item.id)}
-                        activeOpacity={0.84}
-                        accessibilityRole="button"
-                        accessibilityLabel={isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
-                      >
-                        <Ionicons
-                          name={isFavorite ? 'heart' : 'heart-outline'}
-                          size={17}
-                          color={isFavorite ? '#172554' : '#64748B'}
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.productBody}>
-                      {item.merchant_profiles?.store_name ? (
-                        <Text style={styles.productStore} numberOfLines={1}>
-                          {item.merchant_profiles.store_name}
-                        </Text>
-                      ) : null}
-                      <Text style={styles.productName} numberOfLines={2}>
-                        {item.name_ar || item.name}
-                      </Text>
-                      <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={13} color="#F4B740" />
-                        <Text style={styles.ratingText}>{Number(item.rating ?? 0).toFixed(1)}</Text>
-                        {item.total_sold > 0 ? <Text style={styles.soldText}>• {item.total_sold} مبيع</Text> : null}
-                      </View>
-
-                      <View style={styles.priceActionRow}>
-                        <View style={styles.priceCol}>
-                          <Text style={styles.priceText}>
-                            {currentPrice} <Text style={styles.currencyText}>ر.ي</Text>
-                          </Text>
-                          {oldPrice ? <Text style={styles.oldPriceText}>{oldPrice} ر.ي</Text> : null}
-                        </View>
-                        <TouchableOpacity
-                          style={styles.addButton}
-                          onPress={() => quickAddToCart(item)}
-                          activeOpacity={0.86}
-                          accessibilityRole="button"
-                          accessibilityLabel="إضافة إلى السلة"
-                        >
-                          <Ionicons name="bag-add-outline" size={17} color="#FFFFFF" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                    onToggleFavorite={() => void toggleWish(item.id)}
+                    onQuickAction={() => {
+                      if (hasOptions) {
+                        navigation.navigate('ProductDetails', { productId: item.id });
+                        return;
+                      }
+                      quickAddToCart(item);
+                    }}
+                    quickActionNeedsOptions={hasOptions}
+                    quickActionDisabled={(item.stock_quantity ?? 1) <= 0}
+                  />
                 );
               })}
             </View>
@@ -638,18 +543,19 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
   },
   headerContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
     paddingBottom: 14,
   },
   headerTopRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   locationContainer: {
     alignItems: 'flex-end',
@@ -673,8 +579,8 @@ const styles = StyleSheet.create({
   notifCircleBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -781,7 +687,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   heroFullImageCard: {
-    borderRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
     minHeight: 150,
     maxHeight: 150,
@@ -795,7 +701,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   heroCollectionCard: {
-    borderRadius: 24,
+    borderRadius: 20,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -1170,6 +1076,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#172554',
+  },
+  productsEmptyState: {
+    minHeight: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 18,
+    backgroundColor: COLORS.surface,
+  },
+  productsEmptyIcon: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 12,
+  },
+  productsEmptyTitle: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+  },
+  productsEmptyText: {
+    maxWidth: 360,
+    marginTop: 6,
+    color: COLORS.textMuted,
+    fontFamily: FONTS.regular,
+    fontSize: 12.5,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  productsEmptyButton: {
+    minHeight: 42,
+    marginTop: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+  },
+  productsEmptyButtonText: {
+    color: COLORS.surface,
+    fontFamily: FONTS.bold,
+    fontSize: 12.5,
   },
   loadingContainer: {
     minHeight: 200,

@@ -44,8 +44,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: 34,
-    marginBottom: 14,
+    marginTop: 28,
+    marginBottom: 12,
     gap: 12,
   },
   titleWrap: {
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.textPrimary,
     fontFamily: FONTS.bold,
-    fontSize: 21,
+    fontSize: 19,
     textAlign: 'right',
   },
   action: {
@@ -70,9 +70,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    backgroundColor: COLORS.primarySoft,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
   },
   actionText: {
     color: COLORS.primary,

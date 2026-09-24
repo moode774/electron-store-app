@@ -375,7 +375,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View>
           <View style={s.infoBox}>
             <Ionicons name="lock-closed-outline" size={18} color={UI.blueText} />
-            <Text style={s.infoText}>جميع البيانات مشفرة وآمنة تماماً ولا تُشارك مع أي طرف ثالث.</Text>
+            <Text style={s.infoText}>تُستخدم هذه البيانات لمراجعة واعتماد طلب المتجر وتشغيل الخدمات المرتبطة بالحساب.</Text>
           </View>
           <Field label="اسم مالك المتجر" icon="person-outline">
             <TextInput style={s.input} placeholder="الاسم الكامل" placeholderTextColor={UI.textMuted} value={ownerName} onChangeText={setOwnerName} textAlign="right" />
