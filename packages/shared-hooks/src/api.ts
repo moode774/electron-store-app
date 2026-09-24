@@ -213,7 +213,7 @@ export async function getCategories(): Promise<Category[]> {
 export async function getFeaturedProducts(limit = 10): Promise<ProductSummary[]> {
   const { data, error } = await supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), product_variants(id, is_active), merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
     .eq('is_active', true)
     .eq('merchant_profiles.is_active', true)
     .eq('merchant_profiles.is_approved', true)
@@ -262,12 +262,15 @@ export async function getProductsByStore(merchantId: string): Promise<ProductSum
 export async function searchProducts(query?: string, categoryId?: string, limit = 30): Promise<ProductSummary[]> {
   let q = supabase
     .from(TABLES.PRODUCTS)
-    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
+    .select('id, merchant_id, name, name_ar, base_price, sale_price, rating, total_sold, is_active, is_featured, category_id, og_image_url, stock_quantity, product_images(url:image_url, is_primary, sort_order), product_variants(id, is_active), merchant_profiles!inner(store_name, is_active, is_approved, is_open)')
     .eq('is_active', true)
     .eq('merchant_profiles.is_active', true)
     .eq('merchant_profiles.is_approved', true)
     .eq('merchant_profiles.is_open', true);
-  if (query && query.trim()) q = q.ilike('name', `%${query.trim()}%`);
+  if (query && query.trim()) {
+    const term = query.trim().replace(/[(),]/g, ' ');
+    q = q.or(`name.ilike.%${term}%,name_ar.ilike.%${term}%`);
+  }
   if (categoryId) q = q.eq('category_id', categoryId);
   const { data, error } = await q.order('total_sold', { ascending: false }).limit(limit);
   if (error) throw error;

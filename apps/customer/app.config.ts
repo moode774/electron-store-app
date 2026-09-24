@@ -35,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#1B2B4B'
+    backgroundColor: '#172554'
   },
   ios: {
     supportsTablet: false,
@@ -73,7 +73,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-location',
     'expo-image-picker',
-    ['expo-notifications', { color: '#2563EB' }],
+    ['expo-notifications', { color: '#172554' }],
   ],
   extra: {
     supportsRTL: true,

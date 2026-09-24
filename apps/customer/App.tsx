@@ -134,6 +134,7 @@ function RootNavigator(): React.JSX.Element {
   const { isAuthenticated, role, user } = useAuthStore();
   const [profileChecked, setProfileChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [approvalPending, setApprovalPending] = useState(false);
   const [profileCheckError, setProfileCheckError] = useState('');
   const [profileCheckAttempt, setProfileCheckAttempt] = useState(0);
 
@@ -142,20 +143,28 @@ function RootNavigator(): React.JSX.Element {
     if (!isAuthenticated || !user?.id) {
       setProfileChecked(true);
       setNeedsOnboarding(false);
+      setApprovalPending(false);
       setProfileCheckError('');
       return () => { cancelled = true; };
     }
     setProfileChecked(false);
     setNeedsOnboarding(false);
+    setApprovalPending(false);
     setProfileCheckError('');
     const check = async () => {
       try {
         if (role === USER_ROLES.MERCHANT) {
           const profile = await getMerchantProfile(user.id);
-          if (!cancelled) setNeedsOnboarding(!profile);
+          if (!cancelled) {
+            setNeedsOnboarding(!profile);
+            setApprovalPending(Boolean(profile && profile.is_approved !== true));
+          }
         } else if (role === USER_ROLES.DELIVERY) {
           const profile = await getDeliveryProfile(user.id);
-          if (!cancelled) setNeedsOnboarding(!profile);
+          if (!cancelled) {
+            setNeedsOnboarding(!profile);
+            setApprovalPending(Boolean(profile && profile.is_approved !== true));
+          }
         }
       } catch (error: any) {
         if (!cancelled) setProfileCheckError(error?.message ?? 'تعذّر التحقق من الملف التشغيلي للحساب.');
@@ -196,11 +205,56 @@ function RootNavigator(): React.JSX.Element {
 
   if (needsOnboarding) {
     if (role === USER_ROLES.MERCHANT) {
-      return <MerchantOnboardingScreen onComplete={() => setNeedsOnboarding(false)} />;
+      return <MerchantOnboardingScreen onComplete={() => {
+        setNeedsOnboarding(false);
+        setProfileCheckAttempt((value) => value + 1);
+      }} />;
     }
     if (role === USER_ROLES.DELIVERY) {
-      return <DeliveryOnboardingScreen onComplete={() => setNeedsOnboarding(false)} />;
+      return <DeliveryOnboardingScreen onComplete={() => {
+        setNeedsOnboarding(false);
+        setProfileCheckAttempt((value) => value + 1);
+      }} />;
     }
+  }
+
+  if (approvalPending && (role === USER_ROLES.MERCHANT || role === USER_ROLES.DELIVERY)) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F6F7F9', padding: 28 }}>
+        <View style={{ width: '100%', maxWidth: 460, borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E3E7EC', padding: 26, alignItems: 'center' }}>
+          <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#F1F5FB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <Ionicons name="time-outline" size={32} color="#172554" />
+          </View>
+          <Text style={{ color: '#111827', fontSize: 21, fontWeight: '800', textAlign: 'center' }}>طلبك قيد المراجعة</Text>
+          <Text style={{ color: '#52606D', fontSize: 14, lineHeight: 23, textAlign: 'center', marginTop: 8 }}>
+            {role === USER_ROLES.MERCHANT
+              ? 'تم استلام بيانات المتجر. ستتوفر أدوات البيع والطلبات بعد اعتماد الحساب من الإدارة.'
+              : 'تم استلام بيانات المندوب. ستتوفر طلبات التوصيل بعد اعتماد الحساب من الإدارة.'}
+          </Text>
+          <TouchableOpacity
+            style={{ width: '100%', minHeight: 48, marginTop: 20, borderRadius: 14, backgroundColor: '#172554', alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => setProfileCheckAttempt((value) => value + 1)}
+            accessibilityRole="button"
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>تحديث حالة الطلب</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ minHeight: 44, marginTop: 8, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => setNeedsOnboarding(true)}
+            accessibilityRole="button"
+          >
+            <Text style={{ color: '#172554', fontSize: 13, fontWeight: '700' }}>تعديل بيانات الطلب</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ minHeight: 44, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => void useAuthStore.getState().signOut()}
+            accessibilityRole="button"
+          >
+            <Text style={{ color: '#7A8793', fontSize: 13, fontWeight: '600' }}>تسجيل الخروج</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   }
 
   if (role === USER_ROLES.ADMIN) return <AdminTabNavigator />;

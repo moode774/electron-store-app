@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
-import { USER_ROLES, COLORS } from '@marketplace/shared-utils';
+import { COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
 
@@ -34,7 +34,6 @@ export default function LoginScreen(): React.JSX.Element {
   const [alertConfig, setAlertConfig] = useState({ title: '', message: '' });
 
   const signInWithPhone = useAuthStore((s) => s.signInWithPhone);
-  const signUp = useAuthStore((s) => s.signUp);
 
   const showAlert = (title: string, message: string) => {
     setAlertConfig({ title, message });
@@ -48,39 +47,17 @@ export default function LoginScreen(): React.JSX.Element {
       return;
     }
 
-    // Admin bypass — يسجّل دخولاً حقيقياً بحساب الأدمن حتى تعمل صلاحيات RLS
-    if (cleaned.replace(/\D/g, '') === '535353535') {
-      setIsLoading(true);
-      const { error: adminError } = await useAuthStore.getState().signInAsAdmin();
-      setIsLoading(false);
-      if (adminError) showAlert('خطأ', adminError);
-      return;
-    }
-
     const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
     setIsLoading(true);
+    const { error } = await signInWithPhone(formatted);
+    setIsLoading(false);
 
-    // تسجيل الدخول يميّز الدور تلقائياً: أي حساب موجود (عميل/تاجر/مندوب/أدمن)
-    // يدخل مباشرة على واجهته الصحيحة عبر التوجيه في App.tsx — بلا إعادة تسجيل.
-    const { error, code } = await signInWithPhone(formatted);
-
-    if (!error) { setIsLoading(false); return; }   // نجح → App يوجّهه حسب دوره
-
-    if (code === 'not_found') {
-      // رقم غير مسجّل فقط → يُنشأ حساب عميل تلقائياً (التاجر/المندوب يسجّل من "حساب جديد")
-      const { error: signUpError } = await signUp({
-        phone: formatted,
-        fullName: 'عميل جديد',
-        role: USER_ROLES.CUSTOMER,
-      });
-      setIsLoading(false);
-      if (signUpError) showAlert('خطأ', signUpError);
+    if (error) {
+      showAlert('تعذّر إرسال الرمز', error);
       return;
     }
 
-    // خطأ فعلي (حساب محظور/موقوف/شبكة) → أظهره ولا تنشئ حساباً
-    setIsLoading(false);
-    showAlert('تعذّر الدخول', error);
+    navigation.navigate('Otp', { phone: formatted });
   };
 
   return (
@@ -128,10 +105,9 @@ export default function LoginScreen(): React.JSX.Element {
           {/* Form */}
           <View style={styles.formContainer}>
             <View style={styles.inputRow}>
-              <TouchableOpacity style={styles.countryCodeBox} activeOpacity={0.7}>
+              <View style={styles.countryCodeBox}>
                 <Text style={styles.countryCodeText}>+967</Text>
-                <Ionicons name="chevron-down" size={16} color="#111827" style={{ marginLeft: 6 }} />
-              </TouchableOpacity>
+              </View>
 
               <View style={styles.verticalDivider} />
 
@@ -172,36 +148,12 @@ export default function LoginScreen(): React.JSX.Element {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
+                  <Text style={styles.loginButtonText}>إرسال رمز التحقق</Text>
                   <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.loginArrow} />
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Social Logins Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.line} />
-              <Text style={styles.dividerText}>أو</Text>
-              <View style={styles.line} />
-            </View>
-
-            <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7}>
-                <Ionicons name="logo-apple" size={20} color="#111827" />
-                <Text style={styles.socialText}>تسجيل الدخول باستخدام Apple</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.7} onPress={async () => {
-                const { error } = await useAuthStore.getState().signInWithGoogle();
-                if (error) showAlert('خطأ', error);
-              }}>
-                <Image
-                  source={require('../../../assets/images/google.png')}
-                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                />
-                <Text style={styles.socialText}>تسجيل الدخول باستخدام Google</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
         </View>

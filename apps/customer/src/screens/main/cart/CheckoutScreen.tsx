@@ -271,6 +271,11 @@ export default function CheckoutScreen({ navigation, route }: any) {
       return;
     }
 
+    if (selectedPayment !== 'cash') {
+      Alert.alert('طريقة الدفع غير متاحة', 'اختر الدفع عند الاستلام لإكمال الطلب حالياً.');
+      return;
+    }
+
     submitLock.current = true;
     setPlacing(true);
 
@@ -287,9 +292,12 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
       const requestFingerprint = JSON.stringify({
         address_id: selectedAddress.id,
-        payment_method: 'cash', // Fallback to cash in system
+        payment_method: selectedPayment,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : null,
-        notes: paramAltPhone ? `هاتف إضافي: ${paramAltPhone}` : null,
+        notes: [
+          paramAltPhone ? `هاتف إضافي: ${paramAltPhone}` : null,
+          needTaxInvoice ? 'طلب فاتورة ضريبية' : null,
+        ].filter(Boolean).join(' | ') || null,
         stores,
       });
 
@@ -320,8 +328,11 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
       await createOrderGroup({
         address_id: selectedAddress.id,
-        payment_method: 'cash',
-        notes: paramAltPhone ? `رقم تواصل إضافي: ${paramAltPhone}` : undefined,
+        payment_method: selectedPayment,
+        notes: [
+          paramAltPhone ? `رقم تواصل إضافي: ${paramAltPhone}` : null,
+          needTaxInvoice ? 'طلب فاتورة ضريبية' : null,
+        ].filter(Boolean).join(' | ') || undefined,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
         idempotency_key: checkoutAttempt.current.key,
         stores,
@@ -459,15 +470,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
                 <View style={styles.thumbnailsRow}>
                   {selectedItems.slice(0, 3).map((item, idx) => (
                     <View key={item.id} style={styles.thumbWrapper}>
-                      <Image
-                        source={{
-                          uri:
-                            item.image ||
-                            'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=200&q=80',
-                        }}
-                        style={styles.thumbImg}
-                        resizeMode="cover"
-                      />
+                      {item.image ? (
+                        <Image source={{ uri: item.image }} style={styles.thumbImg} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.thumbImg, styles.thumbFallback]}>
+                          <Ionicons name="cube-outline" size={20} color={COLORS.textMuted} />
+                        </View>
+                      )}
                     </View>
                   ))}
                   {selectedItems.length > 3 && (
@@ -545,8 +554,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={styles.secureBadgeRow}>
-              <Ionicons name="lock-closed-outline" size={13} color="#64748B" />
-              <Text style={styles.secureBadgeText}>جميع المعاملات آمنة ومشفّرة</Text>
+              <Ionicons name="information-circle-outline" size={13} color="#64748B" />
+              <Text style={styles.secureBadgeText}>المتاح حالياً: الدفع عند الاستلام</Text>
             </View>
             <Text style={styles.cardTitle}>اختر طريقة الدفع</Text>
           </View>
@@ -999,6 +1008,12 @@ const styles = StyleSheet.create({
   thumbImg: {
     width: '100%',
     height: '100%',
+  },
+
+  thumbFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceMuted,
   },
   thumbMoreBadge: {
     width: 48,

@@ -64,8 +64,8 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
 
 const styles = StyleSheet.create({
   shell: {
-    paddingTop: 8,
-    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.surface,
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   bar: {
-    minHeight: 64,
+    minHeight: 62,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -94,20 +94,20 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.1,
-    shadowRadius: 26,
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
     elevation: 5,
   },
   item: {
     flex: 1,
-    minHeight: 58,
+    minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
   },
   iconWrap: {
-    minWidth: 44,
-    height: 32,
+    minWidth: 42,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: RADIUS.full,
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   label: {
     color: COLORS.textMuted,
     fontFamily: FONTS.medium,
-    fontSize: 10,
+    fontSize: 10.5,
     textAlign: 'center',
   },
   labelFocused: {

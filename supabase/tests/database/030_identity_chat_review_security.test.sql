@@ -273,6 +273,13 @@ select ok(
   'profile wallet balances cannot be edited directly'
 );
 select ok(
+  not coalesce(has_column_privilege('authenticated', 'public.users', 'role', 'update'), false)
+  and not coalesce(has_column_privilege('authenticated', 'public.users', 'is_active', 'update'), false)
+  and not coalesce(has_column_privilege('authenticated', 'public.users', 'is_verified', 'update'), false)
+  and not coalesce(has_column_privilege('authenticated', 'public.users', 'admin_role_id', 'update'), false),
+  'users cannot self-promote or edit server-owned account state'
+);
+select ok(
   not coalesce(has_table_privilege('authenticated', 'public.merchant_profiles', 'insert'), false)
   and not coalesce(has_column_privilege('authenticated', 'public.merchant_profiles', 'store_name', 'update'), false)
   and not coalesce(has_table_privilege('authenticated', 'public.delivery_profiles', 'insert'), false)
