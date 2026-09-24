@@ -32,7 +32,7 @@ select ok(
   'evidence-backed reconciliation RPC exists'
 );
 select results_eq(
-  $$ select proargnames::text[]
+  $$ select proargnames::text[] COLLATE "default"
      from pg_proc
      where oid = to_regprocedure(
        'public.admin_reconcile_legacy_delivered_order(uuid,text,timestamptz,numeric,numeric,numeric,numeric,numeric,text,boolean,text,text,uuid)'

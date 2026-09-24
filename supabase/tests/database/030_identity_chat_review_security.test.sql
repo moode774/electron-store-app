@@ -82,32 +82,32 @@ select is(
 );
 
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.create_address(text,text,text,numeric,numeric,boolean)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.create_address(text,text,text,numeric,numeric,boolean)') $$,
   $$ values (array['p_label','p_full_address','p_city','p_latitude','p_longitude','p_is_default']::text[]) $$,
   'create_address exposes the PostgREST argument contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.create_order_review(uuid,text,uuid,integer,text)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.create_order_review(uuid,text,uuid,integer,text)') $$,
   $$ values (array['p_order_id','p_target_type','p_target_id','p_rating','p_comment']::text[]) $$,
   'create_order_review exposes the PostgREST argument contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.create_my_merchant_profile(jsonb)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.create_my_merchant_profile(jsonb)') $$,
   $$ values (array['p_profile']::text[]) $$,
   'merchant onboarding exposes the PostgREST JSON contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.update_my_merchant_profile(jsonb)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.update_my_merchant_profile(jsonb)') $$,
   $$ values (array['p_updates']::text[]) $$,
   'merchant profile update exposes the PostgREST JSON contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.create_my_delivery_profile(jsonb)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.create_my_delivery_profile(jsonb)') $$,
   $$ values (array['p_profile']::text[]) $$,
   'delivery onboarding exposes the PostgREST JSON contract'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc where oid = to_regprocedure('public.update_my_delivery_profile(jsonb)') $$,
+  $$ select proargnames::text[] COLLATE "default" from pg_proc where oid = to_regprocedure('public.update_my_delivery_profile(jsonb)') $$,
   $$ values (array['p_updates']::text[]) $$,
   'delivery profile update exposes the PostgREST JSON contract'
 );
@@ -288,11 +288,14 @@ select ok(
   and not coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'vehicle_plate', 'update'), false),
   'merchant and courier onboarding/settings are RPC-only writes'
 );
+-- 20260713164555 moved courier presence to set_my_delivery_presence(); the
+-- table itself is no longer directly writable, even for presence columns.
 select ok(
-  coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'is_online', 'update'), false)
-  and coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'current_latitude', 'update'), false)
-  and coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'current_longitude', 'update'), false),
-  'courier runtime retains only presence and coordinate table writes'
+  not coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'is_online', 'update'), false)
+  and not coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'current_latitude', 'update'), false)
+  and not coalesce(has_column_privilege('authenticated', 'public.delivery_profiles', 'current_longitude', 'update'), false)
+  and has_function_privilege('authenticated', 'public.set_my_delivery_presence(boolean,numeric,numeric)', 'execute'),
+  'courier presence and coordinates are written only through the presence RPC'
 );
 select ok(
   coalesce((
@@ -307,7 +310,7 @@ select ok(
 select ok(
   coalesce((
     select qual ilike '%is_current_user_operational%merchant%'
-       and qual ilike '%owner_id%auth.uid%'
+       and qual ilike '%filename%auth.uid%'
     from pg_policies
     where schemaname='storage' and tablename='objects'
       and policyname='Merchant reads own store media' and cmd='SELECT'
@@ -462,6 +465,11 @@ insert into public.users (
   ('f1300000-0000-4000-8000-000000000001', 'rpc-merchant@test.invalid', 'RPC Merchant', 'merchant', true, false, false, null),
   ('f2300000-0000-4000-8000-000000000001', 'rpc-delivery@test.invalid', 'RPC Delivery', 'delivery', true, false, false, null);
 alter table public.users enable trigger all;
+-- Every public.users row belongs to an auth.users row (users_id_fkey).
+insert into auth.users (id, email)
+select u.id, u.email from public.users u
+where not exists (select 1 from auth.users au where au.id = u.id)
+on conflict (id) do nothing;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f1300000-0000-4000-8000-000000000001', true);
@@ -576,12 +584,12 @@ insert into public.addresses (
 );
 
 insert into public.products (
-  id, merchant_id, name, base_price, is_active, is_approved,
+  id, merchant_id, name, base_price, is_active, is_approved, approval_status,
   stock_quantity, total_sold
 ) values (
   'bb300000-0000-4000-8000-000000000010',
   'bb300000-0000-4000-8000-000000000001',
-  'Policy Product', 25, true, true, 10, 0
+  'Policy Product', 25, true, true, 'approved', 10, 0
 );
 
 insert into public.coupons (
@@ -626,19 +634,21 @@ select throws_ok(
   '42501', 'new row violates row-level security policy for table "coupons"',
   'merchant cannot create a platform-global coupon by submitting a null merchant id'
 );
+with changed as (
+  update public.coupons set code='MERCHANT-EDITED-GLOBAL'
+  where id='aa300000-0000-4000-8000-000000000023' returning 1
+)
 select is(
-  (with changed as (
-    update public.coupons set code='MERCHANT-EDITED-GLOBAL'
-    where id='aa300000-0000-4000-8000-000000000023' returning 1
-  ) select count(*) from changed),
+  (select count(*) from changed),
   0::bigint,
   'merchant cannot modify a platform-global coupon'
 );
+with removed as (
+  delete from public.coupons
+  where id='aa300000-0000-4000-8000-000000000023' returning 1
+)
 select is(
-  (with removed as (
-    delete from public.coupons
-    where id='aa300000-0000-4000-8000-000000000023' returning 1
-  ) select count(*) from removed),
+  (select count(*) from removed),
   0::bigint,
   'merchant cannot delete a platform-global coupon'
 );
@@ -821,19 +831,21 @@ select throws_ok(
   '42501', 'merchant account is not operational',
   'blocked merchant cannot update the profile through its identity-derived RPC'
 );
+with changed as (
+  update public.products set name='Blocked product change'
+  where id='bb300000-0000-4000-8000-000000000010' returning 1
+)
 select is(
-  (with changed as (
-    update public.products set name='Blocked product change'
-    where id='bb300000-0000-4000-8000-000000000010' returning 1
-  ) select count(*) from changed),
+  (select count(*) from changed),
   0::bigint,
   'blocked merchant cannot update a product directly'
 );
+with changed as (
+  update public.coupons set code='POLICYBLOCKED'
+  where id='bb300000-0000-4000-8000-000000000020' returning 1
+)
 select is(
-  (with changed as (
-    update public.coupons set code='POLICYBLOCKED'
-    where id='bb300000-0000-4000-8000-000000000020' returning 1
-  ) select count(*) from changed),
+  (select count(*) from changed),
   0::bigint,
   'blocked merchant cannot update a coupon directly'
 );
@@ -842,18 +854,16 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'cc300000-0000-4000-8000-000000000001', true);
 select ok(not public.is_current_user_operational('delivery'), 'temporary courier block fails the operational guard');
-select is(
-  (with changed as (
-    update public.delivery_profiles set is_online=false
-    where id='cc300000-0000-4000-8000-000000000001' returning 1
-  ) select count(*) from changed),
-  0::bigint,
+select throws_ok(
+  $$update public.delivery_profiles set is_online=false
+    where id='cc300000-0000-4000-8000-000000000001'$$,
+  '42501', 'permission denied for table delivery_profiles',
   'blocked courier cannot change online state directly'
 );
 select throws_ok(
   $$insert into public.delivery_location_history (delivery_id, order_id, latitude, longitude, speed)
     values ('cc300000-0000-4000-8000-000000000001', 'dd300000-0000-4000-8000-000000000020', 15.35, 44.20, 10)$$,
-  '42501', 'new row violates row-level security policy for table "delivery_location_history"',
+  '42501', 'permission denied for table delivery_location_history',
   'blocked courier cannot append location history'
 );
 reset role;
@@ -884,11 +894,12 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'bb300000-0000-4000-8000-000000000001', true);
 select ok(public.is_current_user_operational('merchant'), 'expired merchant block restores the operational guard');
+with changed as (
+  update public.products set name='Product after expiry'
+  where id='bb300000-0000-4000-8000-000000000010' returning 1
+)
 select is(
-  (with changed as (
-    update public.products set name='Product after expiry'
-    where id='bb300000-0000-4000-8000-000000000010' returning 1
-  ) select count(*) from changed),
+  (select count(*) from changed),
   1::bigint,
   'merchant product mutation works again after block expiry'
 );
@@ -898,8 +909,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'cc300000-0000-4000-8000-000000000001', true);
 select ok(public.is_current_user_operational('delivery'), 'expired courier block restores the operational guard');
 select lives_ok(
-  $$insert into public.delivery_location_history (delivery_id, order_id, latitude, longitude, speed)
-    values ('cc300000-0000-4000-8000-000000000001', 'dd300000-0000-4000-8000-000000000020', 15.35, 44.20, 10)$$,
+  $$select public.record_my_delivery_location(
+      'dd300000-0000-4000-8000-000000000020', 'cc300000-0000-4000-8000-0000000000a1', 15.35, 44.20, 10)$$,
   'online approved courier can append location after block expiry'
 );
 reset role;
@@ -925,11 +936,12 @@ select ok(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'bb300000-0000-4000-8000-000000000001', true);
 select ok(not public.is_current_user_operational('merchant'), 'inactive merchant fails the operational guard');
+with changed as (
+  update public.products set name='Inactive product change'
+  where id='bb300000-0000-4000-8000-000000000010' returning 1
+)
 select is(
-  (with changed as (
-    update public.products set name='Inactive product change'
-    where id='bb300000-0000-4000-8000-000000000010' returning 1
-  ) select count(*) from changed),
+  (select count(*) from changed),
   0::bigint,
   'inactive merchant cannot mutate products'
 );

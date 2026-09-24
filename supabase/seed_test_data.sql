@@ -4,18 +4,19 @@
 -- 7 حسابات: تاجران، عميلان، مندوبان، أدمن + متجران كاملان
 -- و4 تصنيفات و12 منتجاً (أسعار بالريال اليمني) وساعات عمل المتجرين.
 --
--- الدخول في التطبيق برقم الجوال فقط (مقدمة +967، بدون OTP):
+-- الدخول في التطبيق برقم الجوال + رمز OTP عبر Supabase Phone Auth (مقدمة +967):
 --   تاجر 1: 771111111  (متجر النخبة للإلكترونيات — صنعاء)
 --   تاجر 2: 772222222  (بوتيك لمسة — عدن)
 --   عميل 1: 773333333
 --   عميل 2: 774444444
 --   مندوب 1: 775555555
 --   مندوب 2: 776666666
---   أدمن  : 535353535  (رقم التجاوز في LoginScreen → يسجّل دخولاً حقيقياً بحساب 509999999)
+--   أدمن  : 509999999
 --
--- صيغة المصادقة (packages/shared-hooks/src/useAuthStore.ts):
---   email    = u<الرقم بدون +>@levi-phone.app   (مثال: u967771111111@levi-phone.app)
---   password = Levi-<الرقم بدون +>-auth
+-- للتطوير دون رسائل SMS فعلية: أضف هذه الأرقام في
+-- Supabase Dashboard → Authentication → Providers → Phone → Test phone numbers
+-- مع رمز ثابت لكل رقم. لا تستخدم هذا الملف على قاعدة الإنتاج.
+-- كلمات المرور عشوائية ولا تُستخدم للدخول.
 --
 -- تحذير: القسم (0) يمسح كل المستخدمين والبيانات الحالية!
 -- =============================================================
@@ -45,23 +46,23 @@ BEGIN
   ) AS t(uid, digits, fname, urole, store)
   LOOP
     INSERT INTO auth.users (
-      instance_id, id, aud, role, email, encrypted_password,
+      instance_id, id, aud, role, email, phone, phone_confirmed_at, encrypted_password,
       email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
       confirmation_token, recovery_token, email_change_token_new, email_change,
       email_change_token_current, phone_change, phone_change_token, reauthentication_token
     ) VALUES (
       '00000000-0000-0000-0000-000000000000', rec.uid, 'authenticated', 'authenticated',
-      'u' || rec.digits || '@levi-phone.app',
-      extensions.crypt('Levi-' || rec.digits || '-auth', extensions.gen_salt('bf')), now(),
-      '{"provider":"email","providers":["email"]}'::jsonb,
+      'u' || rec.digits || '@levi-phone.app', rec.digits, now(),
+      extensions.crypt(encode(extensions.gen_random_bytes(32), 'hex'), extensions.gen_salt('bf')), now(),
+      '{"provider":"phone","providers":["phone"]}'::jsonb,
       jsonb_strip_nulls(jsonb_build_object('sub', rec.uid::text, 'role', rec.urole,
         'full_name', rec.fname, 'phone', '+' || rec.digits, 'store_name', rec.store, 'email_verified', true)),
       now(), now(), '', '', '', '', '', '', '', ''
     );
     INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
     VALUES (gen_random_uuid(), rec.uid,
-      jsonb_build_object('sub', rec.uid::text, 'email', 'u' || rec.digits || '@levi-phone.app', 'email_verified', true),
-      'email', rec.uid::text, now(), now(), now());
+      jsonb_build_object('sub', rec.uid::text, 'phone', rec.digits, 'phone_verified', true),
+      'phone', rec.uid::text, now(), now(), now());
   END LOOP;
 END $$;
 

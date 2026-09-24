@@ -63,6 +63,22 @@ const TERMINAL_LABELS: Record<string, string> = {
 
 const REFUND_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
+// Money-only refunds. Item problems (damaged / wrong / not as described) go
+// through the physical return flow; the server rejects them here.
+const REFUND_REASONS = [
+  { value: 'not_received', label: 'لم يصلني الطلب' },
+  { value: 'other', label: 'مشكلة مالية أخرى لا تتطلب إعادة منتج' },
+];
+
+const REFUND_STATUS_META: Record<string, { title: string; detail: string; color: string; background: string; border: string }> = {
+  pending: { title: 'طلب الاسترداد المالي قيد المراجعة', detail: 'استلمت الإدارة الطلب وتراجعه حالياً.', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
+  approved: { title: 'تمت الموافقة على الاسترداد المالي', detail: 'سيتم استكمال خطوات تنفيذ المبلغ وإثباته.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
+  processing: { title: 'جاري تنفيذ الاسترداد المالي', detail: 'تتم الآن معالجة المبلغ عبر المسار المالي.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
+  completed: { title: 'اكتمل الاسترداد المالي', detail: 'تم إغلاق الطلب بعد تسجيل التنفيذ المالي.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
+  rejected: { title: 'تم رفض الاسترداد المالي', detail: 'يمكنك التواصل مع الدعم لمعرفة السبب أو الاعتراض.', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
+  cancelled: { title: 'تم إلغاء الاسترداد المالي', detail: 'هذا الطلب لم يعد قيد المعالجة.', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
+};
+
 export default function OrderTrackingScreen({ navigation, route }: any) {
   const { orderId } = route.params;
   const user = useAuthStore((s) => s.user);
@@ -219,7 +235,8 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     };
   }, [orderId, reload, reloadRefund]);
 
-  const canCancel = order && ['pending', 'preparing'].includes(order.status);
+  // Mirrors marketplace_cancel_order_as: customers may cancel until the store marks it ready.
+  const canCancel = order && ['pending', 'confirmed', 'preparing'].includes(order.status);
 
   const doCancel = async (reason: string) => {
     setShowCancel(false);
@@ -336,6 +353,27 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       Alert.alert('تعذّر فتح الخريطة', 'يمكنك نسخ الإحداثيات وفتحها في تطبيق الخرائط.');
     }
   };
+
+  const refundReferenceValue = order?.delivered_at ?? order?.updated_at ?? order?.created_at;
+  const refundReferenceTime = refundReferenceValue ? new Date(refundReferenceValue).getTime() : Number.NaN;
+  const refundDeadlineTime = refundReferenceTime + REFUND_WINDOW_MS;
+  const refundWindowKnown = Number.isFinite(refundReferenceTime);
+  const refundWindowOpen = order?.status === ORDER_STATUS.DELIVERED
+    && refundWindowKnown
+    && Date.now() <= refundDeadlineTime;
+  const canStartRefund = refundWindowOpen
+    && (!refundRequest || refundRequest.status === 'rejected');
+  const refundDeadlineLabel = refundWindowKnown
+    ? new Date(refundDeadlineTime).toLocaleString('ar-SA')
+    : null;
+  const refundStatus = refundRequest ? (REFUND_STATUS_META[refundRequest.status] ?? {
+    title: `حالة الاسترداد المالي: ${refundRequest.status}`,
+    detail: 'يمكنك متابعة التفاصيل مع مركز الدعم.',
+    color: '#475569', background: '#F8FAFC', border: '#CBD5E1',
+  }) : null;
+  const refundReason = refundRequest
+    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.label ?? refundRequest.reason)
+    : '';
 
   if (loading) {
     return (
@@ -598,18 +636,159 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         </View>
 
         {/* Cancel Order Action Button */}
-        {canCancel && (
-          <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCancel(true)}>
+        {canCancel && !showCancel && (
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={() => setShowCancel(true)}
+            accessibilityRole="button"
+            accessibilityLabel="إلغاء هذا الطلب"
+          >
             <Ionicons name="close-circle-outline" size={18} color="#DC2626" />
             <Text style={styles.cancelBtnText}>إلغاء هذا الطلب</Text>
           </TouchableOpacity>
         )}
+        {canCancel && showCancel && (
+          <View style={styles.card}>
+            <Text style={styles.actionCardTitle}>سبب الإلغاء</Text>
+            {cancellationReasonsError ? (
+              <View style={styles.inlineError} accessibilityRole="alert">
+                <Text style={styles.inlineErrorText}>{cancellationReasonsError}</Text>
+                <TouchableOpacity onPress={() => void loadCancellationReasons()} accessibilityRole="button">
+                  <Text style={styles.inlineErrorAction}>إعادة المحاولة</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              reasons.map((r) => (
+                <TouchableOpacity
+                  key={r.id}
+                  style={styles.optionRow}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={`إلغاء الطلب بسبب ${r.reason_text_ar ?? ''}`}
+                  onPress={() =>
+                    Alert.alert('تأكيد إلغاء الطلب', `هل تريد إلغاء الطلب بسبب: ${r.reason_text_ar ?? ''}؟`, [
+                      { text: 'تراجع', style: 'cancel' },
+                      { text: 'إلغاء الطلب', style: 'destructive', onPress: () => doCancel(r.reason_text_ar ?? '') },
+                    ])
+                  }
+                >
+                  <Text style={styles.optionText}>{r.reason_text_ar}</Text>
+                  <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                </TouchableOpacity>
+              ))
+            )}
+            <TouchableOpacity onPress={() => setShowCancel(false)} style={styles.secondaryAction}>
+              <Text style={styles.secondaryActionText}>تراجع</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Money-only refund. Returning items has its own flow below. */}
+        {refundRequest && refundStatus && (
+          <View style={[styles.statusNote, { backgroundColor: refundStatus.background, borderColor: refundStatus.border }]} accessibilityRole="summary">
+            <Text style={[styles.statusNoteTitle, { color: refundStatus.color }]}>{refundStatus.title}</Text>
+            <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>{refundStatus.detail}</Text>
+            <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>السبب: {refundReason}</Text>
+            {refundRequest.decision_reason ? (
+              <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>سبب القرار: {refundRequest.decision_reason}</Text>
+            ) : null}
+          </View>
+        )}
+        {refundLoadError ? (
+          <TouchableOpacity style={styles.inlineError} onPress={() => void reloadRefund()} accessibilityRole="button">
+            <Text style={styles.inlineErrorText}>{refundLoadError} اضغط لإعادة المحاولة. لن نفتح طلباً جديداً قبل التحقق.</Text>
+          </TouchableOpacity>
+        ) : null}
+        {order?.status === ORDER_STATUS.DELIVERED && !refundRequest && !refundLoadError && !refundWindowOpen && (
+          <View style={styles.inlineError} accessibilityRole="summary">
+            <Text style={styles.inlineErrorText}>
+              {refundWindowKnown
+                ? `انتهت مهلة طلب الاسترداد المالي، ومدتها 3 أيام من التسليم (انتهت في ${refundDeadlineLabel}). يمكنك فتح شكوى للإدارة إذا كانت لديك حالة استثنائية.`
+                : 'تعذّر التحقق من وقت التسليم، لذلك أُوقف فتح طلب استرداد مالي جديد مؤقتاً. حدّث الطلب أو تواصل مع الدعم.'}
+            </Text>
+          </View>
+        )}
+        {canStartRefund && !refundLoadError && !showRefund && (
+          <TouchableOpacity
+            style={styles.outlineAction}
+            onPress={() => { setRefundReasonCode(''); setRefundDescription(''); setShowRefund(true); }}
+            accessibilityRole="button"
+            accessibilityLabel="طلب استرداد مالي دون إرجاع منتجات"
+          >
+            <Ionicons name="cash-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.outlineActionText}>
+              {refundRequest?.status === 'rejected' ? 'إعادة طلب الاسترداد المالي' : 'طلب استرداد مالي فقط'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {showRefund && canStartRefund && (
+          <View style={styles.card}>
+            <Text style={styles.actionCardTitle}>سبب الاسترداد المالي</Text>
+            {REFUND_REASONS.map((r) => {
+              const selected = refundReasonCode === r.value;
+              return (
+                <TouchableOpacity
+                  key={r.value}
+                  style={[styles.optionRow, selected && styles.optionRowSelected]}
+                  onPress={() => setRefundReasonCode(r.value)}
+                  activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{r.label}</Text>
+                  <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? COLORS.primary : '#94A3B8'} />
+                </TouchableOpacity>
+              );
+            })}
+            <TextInput
+              style={styles.supportInput}
+              value={refundDescription}
+              onChangeText={setRefundDescription}
+              placeholder="اشرح سبب الاسترداد المالي (10 أحرف على الأقل)..."
+              placeholderTextColor="#94A3B8"
+              multiline
+              maxLength={2000}
+              textAlign="right"
+              accessibilityLabel="تفاصيل طلب الاسترداد"
+            />
+            <Text style={styles.helperText}>
+              يحسب الخادم المبلغ المستحق تلقائياً. للمنتجات التالفة أو الخاطئة استخدم «إرجاع منتجات» بالأسفل.
+            </Text>
+            <TouchableOpacity
+              style={[styles.submitSupportBtn, (!refundReasonCode || refundDescription.trim().length < 10 || refundSubmitting) && { opacity: 0.55 }]}
+              onPress={requestRefund}
+              disabled={!refundReasonCode || refundDescription.trim().length < 10 || refundSubmitting}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !refundReasonCode || refundDescription.trim().length < 10 || refundSubmitting, busy: refundSubmitting }}
+            >
+              {refundSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitSupportBtnText}>إرسال طلب الاسترداد</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => !refundSubmitting && setShowRefund(false)} style={styles.secondaryAction} disabled={refundSubmitting}>
+              <Text style={styles.secondaryActionText}>تراجع</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {order && user?.id ? <CustomerPhysicalReturnPanel order={order} userId={user.id} /> : null}
 
         {/* Review Order Card when Delivered */}
         {order?.status === ORDER_STATUS.DELIVERED && (
           <View style={styles.card}>
             <Text style={styles.reviewTitle}>قيّم تجربتك مع هذا الطلب ⭐</Text>
-            {reviewed ? (
+            {reviewStatusLoading ? (
+              <ActivityIndicator color={COLORS.primary} size="small" style={{ marginTop: 12 }} />
+            ) : reviewStatusError ? (
+              <TouchableOpacity
+                style={[styles.inlineError, { marginTop: 12 }]}
+                onPress={() => {
+                  setReviewStatusLoading(true);
+                  void loadReviewStatus(order?.merchant_id);
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.inlineErrorText}>{reviewStatusError} اضغط لإعادة المحاولة.</Text>
+              </TouchableOpacity>
+            ) : reviewed ? (
               <Text style={styles.reviewedText}>✅ شكرًا لك! تم إرسال تقييمك بنجاح.</Text>
             ) : (
               <View style={styles.reviewStarsWrap}>
@@ -1066,6 +1245,109 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: 13,
     color: '#FFFFFF',
+  },
+  actionCardTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 14.5,
+    color: '#0F172A',
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  optionRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 13,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  optionRowSelected: {
+    backgroundColor: '#F1F5FB',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
+  optionText: {
+    flex: 1,
+    fontFamily: FONTS.medium,
+    fontSize: 13.5,
+    color: '#0F172A',
+    textAlign: 'right',
+  },
+  optionTextSelected: {
+    fontFamily: FONTS.bold,
+    color: COLORS.primary,
+  },
+  secondaryAction: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  secondaryActionText: {
+    fontFamily: FONTS.bold,
+    fontSize: 13,
+    color: '#64748B',
+  },
+  outlineAction: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  outlineActionText: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.primary,
+  },
+  helperText: {
+    fontFamily: FONTS.regular,
+    fontSize: 11.5,
+    lineHeight: 18,
+    color: '#64748B',
+    textAlign: 'right',
+    marginTop: 8,
+  },
+  statusNote: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 4,
+  },
+  statusNoteTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    textAlign: 'right',
+  },
+  statusNoteText: {
+    fontFamily: FONTS.regular,
+    fontSize: 12.5,
+    lineHeight: 19,
+    textAlign: 'right',
+  },
+  inlineError: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+    padding: 12,
+    gap: 6,
+  },
+  inlineErrorText: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 19,
+    color: '#991B1B',
+    textAlign: 'right',
+  },
+  inlineErrorAction: {
+    fontFamily: FONTS.bold,
+    fontSize: 12.5,
+    color: '#B91C1C',
+    textAlign: 'right',
   },
   cancelBtn: {
     backgroundColor: '#FEF2F2',

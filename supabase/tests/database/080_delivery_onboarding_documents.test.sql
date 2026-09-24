@@ -24,7 +24,7 @@ select ok(
   'delivery onboarding document attachment RPC exists'
 );
 select results_eq(
-  $$ select proargnames::text[] from pg_proc
+  $$ select proargnames::text[] COLLATE "default" from pg_proc
      where oid = to_regprocedure('public.save_my_delivery_onboarding_documents(text,text,text)') $$,
   $$ values (array[
        'p_work_city','p_national_id_image_path','p_license_image_path'
@@ -116,6 +116,13 @@ select ok(
 
 -- Approval behavior. Historical approved profiles remain grandfathered until
 -- an admin actively rejects them; every new transition to approved is guarded.
+insert into auth.users (id, email) values
+  ('a8000000-0000-4000-8000-000000000001', 'delivery-review-admin@test.invalid'),
+  ('d8000000-0000-4000-8000-000000000001', 'delivery-incomplete@test.invalid'),
+  ('d8000000-0000-4000-8000-000000000002', 'delivery-documents@test.invalid'),
+  ('d8000000-0000-4000-8000-000000000003', 'delivery-external@test.invalid'),
+  ('d8000000-0000-4000-8000-000000000004', 'delivery-legacy@test.invalid')
+on conflict (id) do nothing;
 insert into public.users (
   id, email, phone, full_name, role, is_active, is_verified, is_blocked
 ) values
@@ -123,7 +130,11 @@ insert into public.users (
   ('d8000000-0000-4000-8000-000000000001', 'delivery-incomplete@test.invalid', '780000002', 'Incomplete Courier', 'delivery', true, true, false),
   ('d8000000-0000-4000-8000-000000000002', 'delivery-documents@test.invalid', '780000003', 'Document Courier', 'delivery', true, true, false),
   ('d8000000-0000-4000-8000-000000000003', 'delivery-external@test.invalid', '780000004', 'External Courier', 'delivery', true, true, false),
-  ('d8000000-0000-4000-8000-000000000004', 'delivery-legacy@test.invalid', '780000005', 'Legacy Courier', 'delivery', true, true, false);
+  ('d8000000-0000-4000-8000-000000000004', 'delivery-legacy@test.invalid', '780000005', 'Legacy Courier', 'delivery', true, true, false)
+on conflict (id) do update set
+  email = excluded.email, phone = excluded.phone, full_name = excluded.full_name,
+  role = excluded.role, is_active = excluded.is_active,
+  is_verified = excluded.is_verified, is_blocked = excluded.is_blocked;
 
 insert into public.delivery_profiles (
   id, user_id, national_id, vehicle_type, vehicle_plate, work_city,
@@ -268,14 +279,15 @@ select throws_ok(
   '22023', 'approved delivery identity changes require admin re-verification',
   'approved courier cannot change reviewed vehicle identity without re-verification'
 );
+with changed as (
+  update storage.objects
+  set metadata = '{"mimetype":"image/jpeg","size":"4096"}'::jsonb
+  where bucket_id = 'delivery-onboarding-documents'
+    and name = 'd8000000-0000-4000-8000-000000000002/onboarding/national-id-81000000-0000-4000-8000-000000000001.jpg'
+  returning 1
+)
 select is(
-  (with changed as (
-     update storage.objects
-     set metadata = '{"mimetype":"image/jpeg","size":"4096"}'::jsonb
-     where bucket_id = 'delivery-onboarding-documents'
-       and name = 'd8000000-0000-4000-8000-000000000002/onboarding/national-id-81000000-0000-4000-8000-000000000001.jpg'
-     returning 1
-   ) select count(*) from changed),
+  (select count(*) from changed),
   0::bigint,
   'approved courier cannot replace the private identity evidence after review'
 );
