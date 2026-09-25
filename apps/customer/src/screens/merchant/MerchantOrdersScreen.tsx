@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, updateOrderStatus, OrderSummary } from '@marketplace/shared-hooks';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import {
@@ -10,58 +10,44 @@ import {
   DELIVERY_HANDOFF_STATUSES,
   getMerchantOrderStatusInfo,
   getOrderTransitionErrorMessage,
+  merchantOrderProgress,
 } from './merchantOrderState';
+import { Banner, Chips, EmptyState, ScreenHeader, StatusPill, card, formatMoney, paymentLabel, timeAgo, ui, useIsDesktop } from './merchantUi';
 
-const UI = {
-  primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.background,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
-  green: COLORS.success,
-  red: COLORS.error,
-  blue: COLORS.info,
-  orange: COLORS.warning,
+type Filter = 'all' | 'pending' | 'preparing' | 'ready' | 'delivery';
+
+// A pending order older than this is flagged so the store answers first.
+const LATE_PENDING_MINUTES = 10;
+const STEPS = ['استلام', 'تجهيز', 'جاهز', 'مع المندوب'];
+
+const nextAction = (status: string) => {
+  switch (status) {
+    case ORDER_STATUS.PENDING: return { label: 'قبول وبدء التجهيز', next: ORDER_STATUS.PREPARING, icon: 'checkmark' as const };
+    case ORDER_STATUS.CONFIRMED: return { label: 'بدء التجهيز', next: ORDER_STATUS.PREPARING, icon: 'restaurant-outline' as const };
+    case ORDER_STATUS.PREPARING: return { label: 'جاهز للتسليم للمندوب', next: ORDER_STATUS.READY, icon: 'bag-check-outline' as const };
+    default: return null;
+  }
 };
-
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 2,
-};
-
-const FILTERS = [
-  { key: 'all', label: 'الكل' },
-  { key: ORDER_STATUS.PENDING, label: 'بانتظار القبول' },
-  { key: ORDER_STATUS.PREPARING, label: 'قيد التجهيز' },
-  { key: ORDER_STATUS.READY, label: 'جاهزة' },
-  { key: 'delivery', label: 'مع المندوب' },
-];
 
 export default function MerchantOrdersScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
-  const [filter, setFilter] = useState('all');
+  const isDesktop = useIsDesktop();
+  const [filter, setFilter] = useState<Filter>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const { width } = useWindowDimensions();
-  const isCompact = width < BREAKPOINTS.compact;
-  const isTablet = width >= BREAKPOINTS.tablet;
-  const isDesktop = width >= BREAKPOINTS.desktop;
   const { orders: allOrders, loading, refreshing, error, realtimeError, refresh, reloadSilently } = useMerchantOrderFeed(user?.id, 'active');
 
-  const orders = useMemo(
-    () => allOrders.filter((order) => ACTIVE_MERCHANT_ORDER_STATUSES.has(order.status)),
-    [allOrders],
-  );
+  const orders = useMemo(() => allOrders.filter((o) => ACTIVE_MERCHANT_ORDER_STATUSES.has(o.status)), [allOrders]);
 
-  const filtered = useMemo(() => {
-    if (filter === 'all') return orders;
-    if (filter === 'delivery') return orders.filter((order) => DELIVERY_HANDOFF_STATUSES.has(order.status));
-    return orders.filter((order) => order.status === filter);
-  }, [filter, orders]);
+  const groups: Record<Filter, (o: OrderSummary) => boolean> = {
+    all: () => true,
+    pending: (o) => o.status === ORDER_STATUS.PENDING,
+    preparing: (o) => o.status === ORDER_STATUS.PREPARING || o.status === ORDER_STATUS.CONFIRMED,
+    ready: (o) => o.status === ORDER_STATUS.READY,
+    delivery: (o) => DELIVERY_HANDOFF_STATUSES.has(o.status),
+  };
+
+  const filtered = useMemo(() => orders.filter(groups[filter]), [orders, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = (key: Filter) => orders.filter(groups[key]).length;
 
   const updateStatus = async (id: string, newStatus: string) => {
     if (updatingId) return;
@@ -77,254 +63,180 @@ export default function MerchantOrdersScreen({ navigation }: any) {
     }
   };
 
-  const nextAction = (order: OrderSummary) => {
-    switch (order.status) {
-      case ORDER_STATUS.PENDING: return { label: 'قبول وبدء التجهيز', next: ORDER_STATUS.PREPARING };
-      case ORDER_STATUS.PREPARING: return { label: 'جاهز للتوصيل', next: ORDER_STATUS.READY };
-      default: return null;
-    }
-  };
-
   const renderOrder = ({ item }: { item: OrderSummary }) => {
     const info = getMerchantOrderStatusInfo(item.status);
-    const action = nextAction(item as any);
-    const customerName = item.customer_profiles?.full_name || 'عميل';
-    const isUpdating = updatingId === item.id;
-    
-    let timeStr = '';
-    try {
-      const d = new Date(item.created_at);
-      timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    } catch (e) {
-      timeStr = item.created_at;
-    }
+    const action = nextAction(item.status);
+    const progress = merchantOrderProgress(item.status);
+    const busy = updatingId === item.id;
+    const items = item.order_items?.reduce((sum, i) => sum + (i.quantity ?? 0), 0) ?? 0;
+    const late = item.status === ORDER_STATUS.PENDING
+      && Date.now() - new Date(item.created_at).getTime() > LATE_PENDING_MINUTES * 60000;
 
     return (
       <TouchableOpacity
-        style={[styles.card, isCompact && styles.cardCompact, isDesktop && styles.cardDesktop]}
-        activeOpacity={0.8}
+        style={[styles.card, isDesktop && styles.cardDesktop, late && styles.cardLate]}
+        activeOpacity={0.85}
         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
         accessibilityRole="button"
         accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
       >
-        <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
-          <View style={styles.customerInfo}>
-             <View style={styles.avatar}>
-               <Text style={styles.avatarText}>{customerName.substring(0, 1)}</Text>
-             </View>
-             <View>
-               <Text style={styles.customerName}>{customerName}</Text>
-               <Text style={styles.orderId}>{item.order_number}</Text>
-             </View>
+        <View style={styles.top}>
+          <View style={styles.topCopy}>
+            <Text style={styles.number}>#{item.order_number}</Text>
+            <Text style={[styles.time, late && styles.timeLate]}>{late ? `متأخر · ${timeAgo(item.created_at)}` : timeAgo(item.created_at)}</Text>
           </View>
-          <View style={styles.headerRight}>
-            <View style={[styles.badge, { backgroundColor: info.background }]}>
-              <View style={[styles.badgeDot, { backgroundColor: info.color }]} />
-              <Text style={[styles.badgeText, { color: info.color }]}>{info.label}</Text>
+          <StatusPill label={info.label} color={info.color} background={info.background} icon={info.icon} />
+        </View>
+
+        <View style={styles.meta}>
+          <View style={styles.metaItem}>
+            <Ionicons name="person-outline" size={14} color={COLORS.inkTertiary} />
+            <Text style={styles.metaText} numberOfLines={1}>{item.customer_profiles?.full_name || 'عميل'}</Text>
+          </View>
+          {items ? (
+            <View style={styles.metaItem}>
+              <Ionicons name="cube-outline" size={14} color={COLORS.inkTertiary} />
+              <Text style={styles.metaText}>{items} منتج</Text>
             </View>
-            <Text style={styles.timeText}>{timeStr}</Text>
-          </View>
+          ) : null}
+          {item.addresses?.city ? (
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={14} color={COLORS.inkTertiary} />
+              <Text style={styles.metaText} numberOfLines={1}>{item.addresses.city}</Text>
+            </View>
+          ) : null}
         </View>
 
-        {/* Location & Payment Quick Info */}
-        <View style={[styles.quickInfoRow, isCompact && styles.quickInfoRowCompact]}>
-           <View style={styles.quickInfoItem}>
-             <Ionicons name={info.icon as any} size={16} color={UI.textGrey} />
-             <Text style={styles.quickInfoText}>{info.label}</Text>
-           </View>
-           <View style={styles.quickInfoItem}>
-             <Ionicons name="card-outline" size={16} color={UI.textGrey} />
-             <Text style={styles.quickInfoText}>{item.payment_method === 'cash' ? 'الدفع عند الاستلام' : 'دفع إلكتروني'}</Text>
-           </View>
+        <View style={styles.steps}>
+          {STEPS.map((label, i) => {
+            const done = progress >= i + 1;
+            return (
+              <View key={label} style={styles.step}>
+                <View style={[styles.stepBar, done && styles.stepBarDone]} />
+                <Text style={[styles.stepText, done && styles.stepTextDone]}>{label}</Text>
+              </View>
+            );
+          })}
         </View>
 
-        <View style={[styles.cardFooter, isCompact && styles.cardFooterCompact]}>
-          <Text style={styles.total}>{item.total_amount ?? 0} <Text style={styles.currency}>ر.ي</Text></Text>
-          <View style={[styles.actionsRow, isCompact && styles.actionsRowCompact]}>
-            {action && (
-              <TouchableOpacity
-                style={[styles.acceptBtn, isUpdating && styles.buttonDisabled]}
-                activeOpacity={0.8}
-                onPress={() => updateStatus(item.id, action.next)}
-                disabled={isUpdating || !!updatingId}
-                accessibilityRole="button"
-                accessibilityLabel={`${action.label} للطلب ${item.order_number}`}
-                accessibilityState={{ disabled: isUpdating || !!updatingId, busy: isUpdating }}
-              >
-                {isUpdating ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
-                  <>
-                    <Text style={styles.acceptBtnText}>{action.label}</Text>
-                    <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-            {!action && (
-              <Text style={styles.statusHint}>
-                {item.status === ORDER_STATUS.READY ? 'بانتظار استلام المندوب' : info.label}
-              </Text>
-            )}
+        <View style={styles.footer}>
+          <View style={styles.totalWrap}>
+            <Text style={styles.total}>{formatMoney(item.total_amount)} <Text style={styles.currency}>ر.ي</Text></Text>
+            <Text style={styles.payment}>{paymentLabel(item.payment_method)}</Text>
           </View>
+          {action ? (
+            <TouchableOpacity
+              style={[styles.action, (busy || !!updatingId) && styles.actionBusy]}
+              onPress={() => void updateStatus(item.id, action.next)}
+              disabled={!!updatingId}
+              accessibilityRole="button"
+              accessibilityLabel={`${action.label} للطلب ${item.order_number}`}
+              accessibilityState={{ disabled: !!updatingId, busy }}
+            >
+              {busy ? <ActivityIndicator size="small" color={COLORS.surface} /> : <Ionicons name={action.icon} size={16} color={COLORS.surface} />}
+              <Text style={styles.actionText}>{action.label}</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.hint}>{item.status === ORDER_STATUS.READY ? 'بانتظار وصول المندوب' : 'يتابعه المندوب'}</Text>
+          )}
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
-      
-      {!isDesktop && (
-        <View style={styles.headerMobile}>
-          <Text style={styles.headerTitleMobile}>الطلبات النشطة</Text>
-        </View>
+    <View style={ui.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScreenHeader
+        title="الطلبات"
+        subtitle={loading ? 'جاري التحميل...' : `${orders.length} طلب نشط${count('pending') ? ` · ${count('pending')} بانتظار قبولك` : ''}`}
+      />
+
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
+      ) : (
+        <FlatList
+          key={isDesktop ? 'grid' : 'list'}
+          data={filtered}
+          numColumns={isDesktop ? 2 : 1}
+          columnWrapperStyle={isDesktop ? styles.columns : undefined}
+          keyExtractor={(item) => item.id}
+          renderItem={renderOrder}
+          contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop]}
+          refreshing={refreshing}
+          onRefresh={() => void refresh()}
+          ListHeaderComponent={
+            <View style={styles.toolbar}>
+              {realtimeError || error ? (
+                <Banner
+                  text={(realtimeError ?? error) as string}
+                  tone={error && !orders.length ? 'error' : 'warning'}
+                  actionLabel="تحديث"
+                  onAction={() => void refresh()}
+                />
+              ) : null}
+              <Chips
+                items={[
+                  { key: 'all', label: 'الكل', count: orders.length },
+                  { key: 'pending', label: 'بانتظار القبول', count: count('pending') },
+                  { key: 'preparing', label: 'قيد التجهيز', count: count('preparing') },
+                  { key: 'ready', label: 'جاهزة', count: count('ready') },
+                  { key: 'delivery', label: 'مع المندوب', count: count('delivery') },
+                ]}
+                value={filter}
+                onChange={setFilter}
+              />
+            </View>
+          }
+          ListEmptyComponent={
+            error && !orders.length ? null : (
+              <EmptyState
+                icon="checkmark-done-outline"
+                title={filter === 'all' ? 'لا توجد طلبات نشطة' : 'لا توجد طلبات هنا'}
+                text={filter === 'all' ? 'ستظهر الطلبات الجديدة هنا فور وصولها، مع تنبيه.' : 'اختر تصفية أخرى لعرض بقية الطلبات.'}
+              />
+            )
+          }
+        />
       )}
-
-      <View style={[styles.pageContent, isTablet && styles.pageContentTablet, isDesktop && styles.pageContentDesktop]}>
-        
-        {isDesktop && (
-          <View style={styles.pageHeaderRow}>
-            <View>
-              <Text style={styles.pageTitle}>الطلبات النشطة</Text>
-              <Text style={styles.pageSubtitle}>قم بإدارة الطلبات الجديدة والمجهزة حالياً</Text>
-            </View>
-          </View>
-        )}
-
-        <View style={[styles.contentBox, isDesktop && styles.contentBoxDesktop]}>
-          <View style={styles.filtersWrap}>
-            <FlatList
-              horizontal
-              inverted
-              showsHorizontalScrollIndicator={false}
-              data={FILTERS}
-              keyExtractor={(f) => f.key}
-              contentContainerStyle={styles.filtersContent}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.filterChip, filter === item.key && styles.filterChipActive]}
-                  onPress={() => setFilter(item.key)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`فلتر ${item.label}`}
-                  accessibilityState={{ selected: filter === item.key }}
-                >
-                  <Text style={[styles.filterText, filter === item.key && styles.filterTextActive]}>{item.label}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-
-          {realtimeError || (error && orders.length > 0) ? (
-            <View style={styles.inlineWarning} accessibilityRole="alert">
-              <Ionicons name="cloud-offline-outline" size={18} color="#92400E" />
-              <Text style={styles.inlineWarningText}>{realtimeError ?? error}</Text>
-            </View>
-          ) : null}
-
-          {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={UI.primary} />
-            </View>
-          ) : error && orders.length === 0 ? (
-            <View style={styles.empty}>
-              <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
-              <Text style={styles.emptyTitle}>تعذر تحميل الطلبات</Text>
-              <Text style={styles.emptyText}>{error}</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل الطلبات">
-                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={filtered}
-              keyExtractor={(item) => item.id}
-              renderItem={renderOrder}
-              contentContainerStyle={styles.listContent}
-              refreshing={refreshing}
-              onRefresh={() => void refresh()}
-              ListEmptyComponent={
-                <View style={styles.empty}>
-                  <Ionicons name="checkmark-done-circle-outline" size={64} color={UI.border} />
-                  <Text style={styles.emptyTitle}>لا توجد طلبات نشطة</Text>
-                  <Text style={styles.emptyText}>{filter === 'all' ? 'لا توجد طلبات قيد التنفيذ حالياً.' : 'لا توجد طلبات ضمن هذا التصنيف.'}</Text>
-                </View>
-              }
-            />
-          )}
-        </View>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: UI.bgMobile },
-  
-  headerMobile: { paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerTitleMobile: { fontSize: 20, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right' },
-  
-  pageContent: { flex: 1 },
-  pageContentTablet: { width: '100%', maxWidth: 1240, alignSelf: 'center', paddingHorizontal: 24 },
-  pageContentDesktop: { paddingTop: 40, paddingBottom: 40, alignItems: 'center' },
-  
-  pageHeaderRow: { width: '100%', maxWidth: 1200, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
-  pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-  
-  contentBox: { flex: 1, width: '100%', maxWidth: 1200 },
-  contentBoxDesktop: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, ...softShadow, borderWidth: 1, borderColor: COLORS.surface, overflow: 'hidden' },
-  
-  filtersWrap: { borderBottomWidth: 1, borderBottomColor: UI.border, backgroundColor: '#FFFFFF' },
-  filtersContent: { paddingHorizontal: 20, paddingVertical: 16, gap: 10 },
-  filterChip: { minHeight: 44, paddingHorizontal: 18, justifyContent: 'center', borderRadius: RADIUS.full, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
-  filterChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
-  filterText: { fontSize: 13, fontWeight: '700', color: UI.textGrey },
-  filterTextActive: { color: '#FFFFFF' },
-
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 400 },
-  
-  listContent: { padding: 20, gap: 16, paddingBottom: 120 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: UI.border },
-  cardCompact: { padding: 14 },
-  cardDesktop: { padding: 24, borderRadius: 16 },
-  
-  cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
-  cardHeaderCompact: { flexDirection: 'column', gap: 12, alignItems: 'stretch' },
-  customerInfo: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 18, fontWeight: '800', color: UI.textGrey },
-  customerName: { fontSize: 16, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
-  orderId: { fontSize: 13, color: UI.textMuted, marginTop: 2, textAlign: 'right', fontWeight: '600' },
-  
-  headerRight: { alignItems: 'flex-start', gap: 8 },
-  badge: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  badgeDot: { width: 6, height: 6, borderRadius: 3 },
-  badgeText: { fontSize: 12, fontWeight: '800' },
-  timeText: { fontSize: 12, color: UI.textMuted, fontWeight: '600', alignSelf: 'flex-start' },
-
-  quickInfoRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16, marginBottom: 16, paddingHorizontal: 4 },
-  quickInfoRowCompact: { flexWrap: 'wrap', gap: 10 },
-  quickInfoItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
-  quickInfoText: { fontSize: 12.5, color: UI.textGrey, fontWeight: '600' },
-
-  cardFooter: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTopWidth: 1, borderTopColor: UI.border },
-  cardFooterCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14 },
-  total: { fontSize: 20, fontWeight: '800', color: UI.primary },
-  currency: { fontSize: 13, fontWeight: '600', color: UI.textGrey },
-  
-  actionsRow: { flexDirection: 'row-reverse', gap: 10 },
-  actionsRowCompact: { width: '100%' },
-  acceptBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16, borderRadius: RADIUS.sm, backgroundColor: UI.primary },
-  acceptBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
-  buttonDisabled: { opacity: 0.6 },
-  statusHint: { fontSize: 12, fontWeight: '700', color: UI.textGrey, textAlign: 'right' },
-
-  empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
-  emptyText: { fontSize: 14, color: UI.textMuted, textAlign: 'center' },
-  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22 },
-  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  inlineWarning: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#FFFBEB', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingHorizontal: 18, paddingVertical: 10 },
-  inlineWarningText: { flex: 1, color: '#92400E', fontSize: 12.5, fontWeight: '700', textAlign: 'right' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  toolbar: { gap: 12 },
+  columns: { flexDirection: 'row-reverse', gap: 14 },
+  card: { ...card, padding: 14, gap: 12 },
+  cardDesktop: { flex: 1 },
+  cardLate: { borderColor: '#FCA5A5' },
+  top: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+  topCopy: { flex: 1, alignItems: 'flex-end' },
+  number: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  time: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.inkTertiary, textAlign: 'right', marginTop: 2 },
+  timeLate: { color: '#B91C1C', fontFamily: FONTS.semiBold },
+  meta: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 14 },
+  metaItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5, maxWidth: '60%' },
+  metaText: { fontSize: 12, fontFamily: FONTS.medium, color: COLORS.inkSecondary },
+  steps: { flexDirection: 'row-reverse', gap: 6 },
+  step: { flex: 1, gap: 5 },
+  stepBar: { height: 4, borderRadius: 2, backgroundColor: COLORS.hairline },
+  stepBarDone: { backgroundColor: COLORS.primary },
+  stepText: { fontSize: 10, fontFamily: FONTS.medium, color: COLORS.inkTertiary, textAlign: 'center' },
+  stepTextDone: { color: COLORS.primary, fontFamily: FONTS.semiBold },
+  footer: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+    paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.hairline, flexWrap: 'wrap',
+  },
+  totalWrap: { alignItems: 'flex-end' },
+  total: { fontSize: 18, fontFamily: FONTS.bold, color: COLORS.ink },
+  currency: { fontSize: 12, fontFamily: FONTS.medium, color: COLORS.inkSecondary },
+  payment: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.inkTertiary, marginTop: 1 },
+  action: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16,
+    borderRadius: RADIUS.md, backgroundColor: COLORS.primary,
+  },
+  actionBusy: { opacity: 0.6 },
+  actionText: { fontSize: 13, fontFamily: FONTS.bold, color: COLORS.surface },
+  hint: { fontSize: 12, fontFamily: FONTS.semiBold, color: COLORS.inkSecondary },
 });

@@ -11,6 +11,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { Banner, IconButton, ScreenHeader, formatMoney, ui } from './merchantUi';
 
 const PERIODS = [
   { label: 'اليوم', days: 1 },
@@ -21,22 +22,13 @@ const DAY_LABELS = ['سبت', 'أحد', 'اثنين', 'ثلاثاء', 'أربع�
 
 const UI = {
   primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.surface,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
-  green: COLORS.success,
-  red: COLORS.error,
-};
-
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 1,
+  bg: COLORS.canvas,
+  textDark: COLORS.ink,
+  textGrey: COLORS.inkSecondary,
+  textMuted: COLORS.inkTertiary,
+  border: COLORS.hairline,
+  green: '#15803D',
+  red: '#B91C1C',
 };
 
 function calcTrend(current: number, previous: number): { text: string; up: boolean } {
@@ -182,7 +174,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
   const donutDelivered = total > 0 ? (periodStats.deliveredCount / total) * 251 : 0;
   const donutInProgress = total > 0 ? (periodStats.inProgressCount / total) * 251 : 0;
-  const chartWidth = Math.min(Math.max(width - (isCompact ? 56 : 112), 280), 900);
+  const chartWidth = Math.min(Math.max(width - (isDesktop ? 200 : 66), 260), 900);
 
   const handleExportCSV = async () => {
     if (exporting) return;
@@ -247,70 +239,53 @@ export default function MerchantReportsScreen({ navigation }: any) {
   );
 
   return (
-    <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
-
-      {!isDesktop && (
-        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={UI.textDark} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>التقارير المتقدمة</Text>
-          <View style={{ width: 44 }} />
-        </View>
-      )}
+    <View style={ui.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScreenHeader
+        title="التقارير"
+        subtitle="قيمة الطلبات المسجلة، وليست رصيداً مسوّى"
+        onBack={() => navigation.goBack()}
+        right={<IconButton icon={exporting ? 'hourglass-outline' : 'download-outline'} label="تصدير التقرير CSV" onPress={() => void handleExportCSV()} />}
+      />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isTablet && styles.scrollContentWide]} showsVerticalScrollIndicator={false}>
 
-        <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
-          <View>
-            <Text style={styles.pageTitle}>لوحة أداء الطلبات</Text>
-            <Text style={styles.pageSubtitle}>القيم المعروضة هي قيمة الطلبات المسجلة وليست رصيدًا ماليًا مسوّى</Text>
-          </View>
-          <View style={[styles.periodRow, isCompact && styles.periodRowCompact]}>
-            {PERIODS.map((p, idx) => (
-              <TouchableOpacity
-                key={p.label}
-                style={[styles.periodChip, periodIndex === idx && styles.periodChipActive]}
-                onPress={() => handlePeriodChange(idx)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={`عرض تقرير ${p.label}`}
-                accessibilityState={{ selected: periodIndex === idx }}
-              >
-                <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{p.label}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.downloadBtn} onPress={handleExportCSV} activeOpacity={0.8} disabled={exporting || loading} accessibilityRole="button" accessibilityLabel="تصدير التقرير بصيغة CSV" accessibilityState={{ disabled: exporting || loading, busy: exporting }}>
-              <Ionicons name={exporting ? 'hourglass-outline' : 'download-outline'} size={16} color={UI.textDark} />
-              <Text style={styles.downloadText}>تصدير CSV</Text>
+        <View style={styles.periodRow}>
+          {PERIODS.map((p, idx) => (
+            <TouchableOpacity
+              key={p.label}
+              style={[styles.periodChip, periodIndex === idx && styles.periodChipActive]}
+              onPress={() => handlePeriodChange(idx)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`عرض تقرير ${p.label}`}
+              accessibilityState={{ selected: periodIndex === idx }}
+            >
+              <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{p.label}</Text>
             </TouchableOpacity>
-          </View>
+          ))}
         </View>
 
         {loading && <ActivityIndicator size="large" color={UI.primary} style={{ marginVertical: 24 }} />}
         {!!error && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={() => void load(period.days)} accessibilityRole="button" accessibilityLabel="إعادة تحميل التقرير">
-              <Text style={styles.errorRetry}>إعادة المحاولة</Text>
-            </TouchableOpacity>
+          <View style={styles.bannerWrap}>
+            <Banner text={error} tone="error" actionLabel="إعادة المحاولة" onAction={() => void load(period.days)} />
           </View>
         )}
 
         {/* KPIs */}
-        <View style={[styles.row, { flexDirection: isTablet ? 'row-reverse' : 'column', flexWrap: isTablet ? 'wrap' : 'nowrap' }]}>
-          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
+        <View style={[styles.row, styles.kpiGrid]}>
+          <View style={styles.kpiColumn}>
             <KPICard
               title="إجمالي قيمة الطلبات"
-              value={`${periodStats.currentRevenue.toLocaleString()} ر.ي`}
+              value={`${formatMoney(periodStats.currentRevenue)} ر.ي`}
               icon="wallet-outline"
               trend={revenueTrend.text}
               trendUp={revenueTrend.up}
               showChart
             />
           </View>
-          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
+          <View style={styles.kpiColumn}>
             <KPICard
               title="إجمالي الطلبات"
               value={periodStats.currentOrders.toString()}
@@ -320,17 +295,17 @@ export default function MerchantReportsScreen({ navigation }: any) {
               showChart
             />
           </View>
-          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
+          <View style={styles.kpiColumn}>
             <KPICard
               title="متوسط قيمة الطلب"
-              value={`${avgValue.toFixed(2)} ر.ي`}
+              value={`${formatMoney(avgValue)} ر.ي`}
               icon="bar-chart-outline"
               trend={avgTrend.text}
               trendUp={avgTrend.up}
               showChart={false}
             />
           </View>
-          <View style={isTablet ? styles.kpiColumn : styles.kpiColumnMobile}>
+          <View style={styles.kpiColumn}>
             <KPICard
               title="معدل الإتمام"
               value={`${deliveredPct}%`}
@@ -350,10 +325,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
               <Text style={styles.cardSubtitle}>مبيعات المتجر خلال هذه الفترة بالريال</Text>
             </View>
           </View>
-          <View style={{ height: 260, marginTop: 32, alignItems: 'center' }}>
+          <View style={{ height: 220, marginTop: 20, alignItems: 'center' }}>
             <SmoothLineChart
               w={chartWidth}
-              h={260}
+              h={220}
               points={chartData}
               color={UI.primary}
             />
@@ -377,47 +352,32 @@ export default function MerchantReportsScreen({ navigation }: any) {
               </View>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
-            <View style={[styles.tableViewport, isCompact && styles.tableViewportCompact]}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.th, { flex: 3 }]}>المنتج</Text>
-              <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>الكمية</Text>
-              <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>الإيرادات</Text>
-              <Text style={[styles.th, { flex: 1.5, textAlign: 'left' }]}>المساهمة</Text>
-            </View>
-
             {topProducts.length === 0 ? (
-              <Text style={styles.emptyText}>لا توجد بيانات كافية</Text>
+              <Text style={styles.emptyText}>لا توجد مبيعات في هذه الفترة</Text>
             ) : topProducts.map((p, i) => {
               const rev = Number(p.revenue ?? 0);
               const maxRev = Number(topProducts[0]?.revenue ?? 0);
               const progress = maxRev > 0 ? (rev / maxRev) * 100 : 0;
               return (
-                <View key={p.id} style={styles.tableRow}>
-                  <View style={{ flex: 3, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 }}>
-                    <View style={styles.productImgBox}>
-                      {p.og_image_url
-                        ? <Image source={{ uri: p.og_image_url }} style={styles.productImg} />
-                        : <Ionicons name="cube-outline" size={18} color={UI.textMuted} />}
-                    </View>
-                    <View>
-                      <Text style={styles.productName}>{p.name}</Text>
-                      <Text style={styles.productCat}>{p.category || 'عام'}</Text>
-                    </View>
+                <View key={p.id} style={[styles.topRow, i < topProducts.length - 1 && styles.topRowDivider]}>
+                  <View style={[styles.rank, i === 0 && styles.rankFirst]}>
+                    <Text style={[styles.rankText, i === 0 && styles.rankTextFirst]}>{i + 1}</Text>
                   </View>
-                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{p.total_sold}</Text>
-                  <Text style={[styles.td, styles.tdBold, { flex: 1, textAlign: 'center' }]}>{rev.toLocaleString()} ر.ي</Text>
-                  <View style={{ flex: 1.5, flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
+                  <View style={styles.productImgBox}>
+                    {p.og_image_url
+                      ? <Image source={{ uri: p.og_image_url }} style={styles.productImg} />
+                      : <Ionicons name="cube-outline" size={18} color={UI.textMuted} />}
+                  </View>
+                  <View style={styles.topCopy}>
+                    <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
+                    <Text style={styles.productCat}>{p.total_sold} مبيع · {formatMoney(rev)} ر.ي</Text>
                     <View style={styles.progressTrack}>
                       <View style={[styles.progressFill, { width: `${progress}%` as any }]} />
                     </View>
-                    <Text style={styles.progressText}>{progress.toFixed(0)}%</Text>
                   </View>
                 </View>
               );
             })}
-            </View>
-            </ScrollView>
           </View>
 
           {/* Order Status Donut */}
@@ -426,7 +386,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
               <Text style={styles.cardTitle}>حالة الطلبات — {period.label}</Text>
             </View>
 
-            <View style={{ alignItems: 'center', marginVertical: 32 }}>
+            <View style={{ alignItems: 'center', marginVertical: 20 }}>
               <View style={styles.donutBox}>
                 <Svg width={180} height={180} viewBox="0 0 100 100">
                   <Circle cx="50" cy="50" r="40" stroke={UI.bg} strokeWidth="12" fill="none" />
@@ -483,15 +443,16 @@ export default function MerchantReportsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: UI.bgMobile },
-  headerMobile: {
-    flexDirection: 'row-reverse', alignItems: 'center', padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40, borderBottomWidth: 1, borderBottomColor: UI.border,
-  },
-  headerMobileCompact: { paddingHorizontal: 14 },
-  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark, flex: 1, textAlign: 'center' },
-  scrollContent: { padding: 24, paddingBottom: 100 },
+  bannerWrap: { marginBottom: 16 },
+  kpiGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12 },
+  topRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  topRowDivider: { borderBottomWidth: 1, borderBottomColor: UI.border },
+  topCopy: { flex: 1, alignItems: 'flex-end', gap: 4 },
+  rank: { width: 26, height: 26, borderRadius: 13, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  rankFirst: { backgroundColor: COLORS.primary },
+  rankText: { fontSize: 12, fontFamily: FONTS.bold, color: UI.textGrey },
+  rankTextFirst: { color: COLORS.surface },
+  scrollContent: { padding: 16, paddingBottom: 60 },
   scrollContentCompact: { paddingHorizontal: 14 },
   scrollContentWide: { width: '100%', maxWidth: 1240, alignSelf: 'center' },
   errorBanner: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 18 },
@@ -507,15 +468,14 @@ const styles = StyleSheet.create({
   pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
 
   periodRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 4,
-    backgroundColor: '#FFFFFF', padding: 4, borderRadius: 12,
-    ...softShadow, borderWidth: 1, borderColor: UI.border,
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginBottom: 16,
+    backgroundColor: COLORS.surface, padding: 4, borderRadius: RADIUS.md, borderWidth: 1, borderColor: UI.border,
   },
   periodRowCompact: { flexWrap: 'wrap', justifyContent: 'center' },
-  periodChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 8 },
+  periodChip: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: 10 },
   periodChipActive: { backgroundColor: UI.primary },
-  periodText: { fontSize: 13, fontWeight: '600', color: UI.textGrey },
-  periodTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  periodText: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textGrey },
+  periodTextActive: { color: '#FFFFFF', fontFamily: FONTS.bold },
 
   downloadBtn: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
@@ -525,30 +485,29 @@ const styles = StyleSheet.create({
   downloadText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
 
   row: { gap: 20, marginBottom: 20 },
-  kpiColumn: { width: '48%', flexGrow: 1 },
-  kpiColumnMobile: { width: '100%' },
+  kpiColumn: { width: '47%', flexGrow: 1 },
 
   card: {
-    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 24,
-    ...softShadow, borderWidth: 1, borderColor: '#F3F4F6', marginBottom: 20,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16,
+    borderWidth: 1, borderColor: UI.border, marginBottom: 14,
   },
   cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: UI.textDark, marginBottom: 4, textAlign: 'right' },
-  cardSubtitle: { fontSize: 13, color: UI.textMuted, textAlign: 'right' },
+  cardTitle: { fontSize: 15, fontFamily: FONTS.bold, color: UI.textDark, marginBottom: 4, textAlign: 'right' },
+  cardSubtitle: { fontSize: 12, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'right' },
 
   chartXAxis: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginTop: 16, paddingHorizontal: 10 },
   chartLabel: { fontSize: 11, color: UI.textMuted, fontWeight: '600' },
 
   kpiCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20,
-    ...softShadow, borderWidth: 1, borderColor: '#F3F4F6', marginBottom: 16,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14,
+    borderWidth: 1, borderColor: UI.border,
   },
   kpiHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 12 },
-  kpiTitle: { fontSize: 13, color: UI.textGrey, fontWeight: '600', textAlign: 'right', flex: 1 },
-  kpiIconBox: { width: 32, height: 32, borderRadius: 8, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  kpiValue: { fontSize: 26, fontWeight: '800', color: UI.textDark, textAlign: 'right', letterSpacing: -0.5, marginBottom: 10 },
+  kpiTitle: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, textAlign: 'right', flex: 1 },
+  kpiIconBox: { width: 32, height: 32, borderRadius: 10, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  kpiValue: { fontSize: 20, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right', marginBottom: 8 },
   kpiFooter: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
-  kpiTrendText: { fontSize: 12, fontWeight: '700' },
+  kpiTrendText: { fontSize: 12, fontFamily: FONTS.semiBold },
 
   tableHeader: {
     flexDirection: 'row-reverse', paddingVertical: 14,
@@ -567,10 +526,10 @@ const styles = StyleSheet.create({
 
   productImgBox: { width: 38, height: 38, borderRadius: 8, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   productImg: { width: '100%', height: '100%' },
-  productName: { fontSize: 13, fontWeight: '700', color: UI.textDark, marginBottom: 2, textAlign: 'right' },
+  productName: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark, textAlign: 'right' },
   productCat: { fontSize: 11, color: UI.textMuted, textAlign: 'right' },
 
-  progressTrack: { flex: 1, height: 4, backgroundColor: UI.bg, borderRadius: 2, overflow: 'hidden' },
+  progressTrack: { alignSelf: 'stretch', height: 4, backgroundColor: UI.bg, borderRadius: 2, overflow: 'hidden', flexDirection: 'row-reverse' },
   progressFill: { height: '100%', backgroundColor: UI.primary, borderRadius: 2 },
   progressText: { fontSize: 11, fontWeight: '700', color: UI.textGrey, width: 32, textAlign: 'left' },
 
@@ -578,7 +537,7 @@ const styles = StyleSheet.create({
 
   donutBox: { position: 'relative', width: 180, height: 180, alignItems: 'center', justifyContent: 'center' },
   donutInner: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  donutValue: { fontSize: 30, fontWeight: '800', color: UI.textDark, letterSpacing: -1 },
+  donutValue: { fontSize: 30, fontFamily: FONTS.bold, color: UI.textDark },
   donutLabel: { fontSize: 12, color: UI.textMuted, fontWeight: '600' },
 
   legendRow: {
@@ -587,5 +546,5 @@ const styles = StyleSheet.create({
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: 13, fontWeight: '600', color: UI.textGrey, textAlign: 'right' },
-  legendValue: { fontSize: 13, fontWeight: '700', color: UI.textDark },
+  legendValue: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark },
 });
