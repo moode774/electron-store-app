@@ -520,7 +520,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   if (!order) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
         <View style={[styles.header, { paddingHorizontal: pageGutter }]}>
           <View style={{ width: 40 }} />
           <Text style={styles.headerTitle}>توصيلة نشطة</Text>
@@ -530,7 +530,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           <Ionicons name={loadError ? 'cloud-offline-outline' : 'bicycle-outline'} size={48} color={loadError ? '#DC2626' : '#D1D5DB'} />
           <Text style={styles.emptyTitle}>{loadError ? 'تعذّر تحميل التوصيلة' : 'لا توجد توصيلة نشطة'}</Text>
           <Text style={[styles.emptySubtitle, loadError && { color: '#DC2626' }]}>
-            {loadError || 'اقبل طلبًا من الرئيسية لبدء التوصيل.'}
+            {loadError || 'اقبل طلبًا من «الطلبات المتاحة» لبدء التوصيل.'}
           </Text>
           <TouchableOpacity
             style={styles.retryBtn}
@@ -547,7 +547,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
   return (
     <View style={[styles.container, isDesktop && styles.containerDesktop]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: pageGutter }]}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -569,7 +569,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             <Text style={[styles.mapText, { color: location ? '#059669' : '#6B7280' }]}>{locationStatus}</Text>
             {location && (
               <Text style={styles.locationTime}>
-                آخر تحديث: {new Date(location.timestamp).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                آخر تحديث: {new Date(location.timestamp).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}
               </Text>
             )}
           </View>
@@ -801,7 +801,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 <Ionicons
                   name={proofError ? 'alert-circle-outline' : 'shield-checkmark-outline'}
                   size={19}
-                  color={proofError ? '#B91C1C' : '#1D4ED8'}
+                  color={proofError ? '#B91C1C' : COLORS.primary}
                 />
                 <Text style={[styles.proofNoticeText, proofError ? styles.proofErrorText : null]}>
                   {proofError || proofValidationMessage || 'الصورة والموقع جاهزان. سيؤكد الخادم التسليم والتسوية مرة واحدة فقط.'}
@@ -843,49 +843,49 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: COLORS.canvas },
   containerDesktop: { backgroundColor: '#F3F6FA' },
-  centeredState: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' },
+  centeredState: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.canvas },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     width: '100%', maxWidth: 900, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyTitle: { fontSize: 15, fontWeight: '800', color: '#111827', marginTop: 12 },
-  emptySubtitle: { fontSize: 13, color: '#9CA3AF', marginTop: 5, textAlign: 'center', lineHeight: 20 },
-  retryBtn: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, backgroundColor: '#EFF6FF' },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: COLORS.ink, marginTop: 12 },
+  emptySubtitle: { fontSize: 13, color: COLORS.inkTertiary, marginTop: 5, textAlign: 'center', lineHeight: 20 },
+  retryBtn: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.primarySoft },
   retryText: { color: COLORS.primary, fontSize: 13, fontWeight: '800' },
   scrollContent: { padding: 20, paddingBottom: 120, width: '100%', maxWidth: 900, alignSelf: 'center' },
   scrollContentDesktop: { width: '100%', maxWidth: 900, alignSelf: 'center', paddingTop: 28, paddingHorizontal: 32 },
   mapContainer: { minHeight: 150, borderRadius: 16, overflow: 'hidden', marginBottom: 16, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#D1FAE5' },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5, padding: 20 },
   mapText: { fontSize: 13.5, fontWeight: '700', textAlign: 'center' },
-  locationTime: { fontSize: 11.5, color: '#6B7280', marginTop: 3 },
+  locationTime: { fontSize: 11.5, color: COLORS.inkSecondary, marginTop: 3 },
   stepsCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 1.5, borderColor: '#F3F4F6', marginBottom: 16 },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  stepRow: { flexDirection: 'row-reverse', alignItems: 'flex-end' },
   stepIndicator: { alignItems: 'center', marginLeft: 14 },
   stepCircle: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   stepCircleDone: { backgroundColor: '#059669' },
   stepCircleCurrent: { backgroundColor: COLORS.primary },
-  stepNum: { fontSize: 12, fontWeight: '800', color: '#9CA3AF' },
+  stepNum: { fontSize: 12, fontWeight: '800', color: COLORS.inkTertiary },
   stepLine: { width: 2, height: 24, backgroundColor: '#E5E7EB', marginVertical: 2 },
-  stepLabel: { fontSize: 14, color: '#9CA3AF', fontWeight: '600', paddingTop: 3 },
+  stepLabel: { fontSize: 14, color: COLORS.inkTertiary, fontWeight: '600', paddingTop: 3 },
   stepLabelCurrent: { color: COLORS.primary, fontWeight: '800' },
   detailsCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 1.5, borderColor: '#F3F4F6' },
-  detailsTitle: { fontSize: 15, fontWeight: '800', color: '#111827', marginBottom: 16 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  detailsTitle: { fontSize: 15, fontWeight: '800', color: COLORS.ink, marginBottom: 16 },
+  detailRow: { flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 16, gap: 12 },
   detailInfo: { flex: 1 },
-  detailLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
-  detailValue: { fontSize: 13.5, color: '#111827', fontWeight: '600', marginTop: 2, lineHeight: 20 },
+  detailLabel: { fontSize: 11, color: COLORS.inkTertiary, fontWeight: '600' },
+  detailValue: { fontSize: 13.5, color: COLORS.ink, fontWeight: '600', marginTop: 2, lineHeight: 20 },
   callBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#059669', alignItems: 'center', justifyContent: 'center' },
   codBox: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: '#FEF3C7', borderRadius: 12, padding: 14, marginTop: 4,
   },
-  codBoxCompact: { flexDirection: 'column', alignItems: 'flex-start', gap: 5 },
+  codBoxCompact: { flexDirection: 'column', alignItems: 'flex-end', gap: 5 },
   codLabel: { fontSize: 12.5, fontWeight: '700', color: '#B45309' },
   codValue: { fontSize: 16, fontWeight: '800', color: '#B45309' },
   bottomBar: {
@@ -897,49 +897,49 @@ const styles = StyleSheet.create({
   actionBtn: { backgroundColor: COLORS.primary, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   actionBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   pickupCodeRow: { marginBottom: 10 },
-  pickupCodeInput: { height: 48, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: '#F9FAFB', fontSize: 16, fontWeight: '800', letterSpacing: 4, color: '#111827' },
+  pickupCodeInput: { height: 48, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: COLORS.canvas, fontSize: 16, fontWeight: '800', letterSpacing: 4, color: COLORS.ink },
   mapsBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.info, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   disabledAction: { opacity: 0.55 },
   proofModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(17,24,39,0.55)' },
   proofModalOverlayDesktop: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   proofModalSheet: {
-    maxHeight: '92%', backgroundColor: '#F9FAFB', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    maxHeight: '92%', backgroundColor: COLORS.canvas, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingTop: 20, overflow: 'hidden',
   },
   proofModalSheetDesktop: { width: '100%', maxWidth: 720, borderRadius: 24 },
   proofModalHeader: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 20,
+    flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 12, paddingHorizontal: 20,
     paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
   },
-  proofModalTitle: { color: '#111827', fontSize: 19, fontWeight: '900', textAlign: 'right' },
-  proofModalSubtitle: { color: '#6B7280', fontSize: 12.5, fontWeight: '600', lineHeight: 19, textAlign: 'right', marginTop: 4 },
+  proofModalTitle: { color: COLORS.ink, fontSize: 19, fontWeight: '900', textAlign: 'right' },
+  proofModalSubtitle: { color: COLORS.inkSecondary, fontSize: 12.5, fontWeight: '600', lineHeight: 19, textAlign: 'right', marginTop: 4 },
   proofCloseBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
   proofModalContent: { padding: 20, gap: 14, paddingBottom: Platform.OS === 'ios' ? 38 : 24 },
   unavailableCodeCard: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: '#F3F4F6',
+    flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 12, backgroundColor: '#F3F4F6',
     borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E5E7EB', opacity: 0.85,
   },
   proofMethodIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  proofMethodTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  proofMethodTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   proofMethodTitle: { color: '#374151', fontSize: 14, fontWeight: '800', textAlign: 'right' },
-  unavailableBadge: { color: '#6B7280', backgroundColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3, fontSize: 10.5, fontWeight: '800' },
-  proofMethodDescription: { color: '#6B7280', fontSize: 11.5, fontWeight: '600', lineHeight: 18, textAlign: 'right', marginTop: 6 },
+  unavailableBadge: { color: COLORS.inkSecondary, backgroundColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3, fontSize: 10.5, fontWeight: '800' },
+  proofMethodDescription: { color: COLORS.inkSecondary, fontSize: 11.5, fontWeight: '600', lineHeight: 18, textAlign: 'right', marginTop: 6 },
   activeProofCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E5E7EB', gap: 12 },
-  proofSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  proofSectionTitle: { color: '#111827', fontSize: 14, fontWeight: '800', textAlign: 'right' },
-  proofSectionSubtitle: { color: '#6B7280', fontSize: 11.5, fontWeight: '600', textAlign: 'right', marginTop: 3 },
+  proofSectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 11 },
+  proofSectionTitle: { color: COLORS.ink, fontSize: 14, fontWeight: '800', textAlign: 'right' },
+  proofSectionSubtitle: { color: COLORS.inkSecondary, fontSize: 11.5, fontWeight: '600', textAlign: 'right', marginTop: 3 },
   proofPhotoPreview: { width: '100%', height: 180, borderRadius: 12, backgroundColor: '#F3F4F6' },
   proofPhotoPlaceholder: { height: 130, borderRadius: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: '#D1D5DB' },
-  proofPhotoPlaceholderText: { color: '#9CA3AF', fontSize: 12, fontWeight: '700' },
-  secondaryProofBtn: { minHeight: 44, borderRadius: 11, backgroundColor: '#F3F4F6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14 },
-  secondaryProofBtnText: { color: '#111827', fontSize: 12.5, fontWeight: '800', textAlign: 'center' },
+  proofPhotoPlaceholderText: { color: COLORS.inkTertiary, fontSize: 12, fontWeight: '700' },
+  secondaryProofBtn: { minHeight: 44, borderRadius: 11, backgroundColor: '#F3F4F6', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14 },
+  secondaryProofBtnText: { color: COLORS.ink, fontSize: 12.5, fontWeight: '800', textAlign: 'center' },
   proofCoordinates: { color: '#047857', backgroundColor: '#ECFDF5', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 9, fontSize: 12, fontWeight: '800', textAlign: 'center' },
-  proofNotice: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, backgroundColor: '#EFF6FF', borderRadius: 12, padding: 13, borderWidth: 1, borderColor: '#BFDBFE' },
+  proofNotice: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 9, backgroundColor: COLORS.primarySoft, borderRadius: 12, padding: 13, borderWidth: 1, borderColor: '#BFDBFE' },
   proofErrorNotice: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
-  proofNoticeText: { flex: 1, color: '#1D4ED8', fontSize: 12, fontWeight: '700', lineHeight: 19, textAlign: 'right' },
+  proofNoticeText: { flex: 1, color: COLORS.primary, fontSize: 12, fontWeight: '700', lineHeight: 19, textAlign: 'right' },
   proofErrorText: { color: '#B91C1C' },
-  confirmProofBtn: { minHeight: 52, borderRadius: 13, backgroundColor: '#047857', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14 },
+  confirmProofBtn: { minHeight: 52, borderRadius: 13, backgroundColor: '#047857', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14 },
   confirmProofBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', textAlign: 'center' },
   cancelProofBtn: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-  cancelProofBtnText: { color: '#6B7280', fontSize: 12.5, fontWeight: '800', textAlign: 'center' },
+  cancelProofBtnText: { color: COLORS.inkSecondary, fontSize: 12.5, fontWeight: '800', textAlign: 'center' },
 });

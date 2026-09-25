@@ -47,8 +47,8 @@ const COLLECTION_STATUS_INFO: Record<CodCollectionStatus, {
   },
   partially_remitted: {
     label: 'مُسلّم جزئيًا',
-    color: '#1D4ED8',
-    backgroundColor: '#DBEAFE',
+    color: COLORS.primary,
+    backgroundColor: COLORS.primarySoft,
     icon: 'time-outline',
   },
   remitted: {
@@ -89,7 +89,7 @@ function money(value: number): string {
 function dateLabel(value: string | null | undefined): string {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('ar-SA');
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('ar-EG-u-nu-latn');
 }
 
 function localizedNumber(value: string): number {
@@ -433,7 +433,7 @@ export default function CodRemittancePanel() {
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryCell}>
-              <Text style={[styles.summaryValue, { color: '#1D4ED8' }]}>{money(totalPending)}</Text>
+              <Text style={[styles.summaryValue, { color: COLORS.primary }]}>{money(totalPending)}</Text>
               <Text style={styles.summaryLabel}>قيد المراجعة</Text>
             </View>
           </View>
@@ -486,7 +486,7 @@ export default function CodRemittancePanel() {
                 <View style={styles.collectionStats}>
                   <Text style={styles.collectionStat}>المتبقي: {money(collection.amount_outstanding)} ر.ي</Text>
                   {collection.amount_pending_review > 0 ? (
-                    <Text style={[styles.collectionStat, { color: '#1D4ED8' }]}>
+                    <Text style={[styles.collectionStat, { color: COLORS.primary }]}>
                       تحت المراجعة: {money(collection.amount_pending_review)} ر.ي
                     </Text>
                   ) : null}
@@ -674,70 +674,70 @@ export default function CodRemittancePanel() {
 
 const styles = StyleSheet.create({
   panel: { gap: 10, marginTop: 14, marginBottom: 8 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  sectionTitleWrap: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  sectionTitleWrap: { flex: 1, minWidth: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
   sectionIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { color: '#111827', fontSize: 15, fontWeight: '800', textAlign: 'right', flexShrink: 1 },
-  sectionSubtitle: { color: '#6B7280', fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
-  refreshButton: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  loadingBox: { minHeight: 72, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, borderWidth: 1, borderColor: '#E5E7EB' },
-  loadingText: { color: '#6B7280', fontSize: 12, fontWeight: '600' },
-  errorBox: { borderRadius: 14, padding: 12, backgroundColor: '#FEF2F2', flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: { color: COLORS.ink, fontSize: 15, fontWeight: '800', textAlign: 'right', flexShrink: 1 },
+  sectionSubtitle: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  refreshButton: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  loadingBox: { minHeight: 72, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', flexDirection: 'row-reverse', gap: 8, borderWidth: 1, borderColor: '#E5E7EB' },
+  loadingText: { color: COLORS.inkSecondary, fontSize: 12, fontWeight: '600' },
+  errorBox: { borderRadius: 14, padding: 12, backgroundColor: '#FEF2F2', flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
   errorText: { flex: 1, color: '#B91C1C', fontSize: 11.5, fontWeight: '600', lineHeight: 18, textAlign: 'right' },
   retryText: { color: COLORS.primary, fontSize: 11.5, fontWeight: '800' },
   emptyBox: { alignItems: 'center', borderRadius: 16, padding: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
-  emptyTitle: { color: '#111827', fontSize: 13, fontWeight: '800', marginTop: 7 },
-  emptyText: { color: '#9CA3AF', fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center' },
-  summaryRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 14, borderWidth: 1, borderColor: '#E5E7EB' },
+  emptyTitle: { color: COLORS.ink, fontSize: 13, fontWeight: '800', marginTop: 7 },
+  emptyText: { color: COLORS.inkTertiary, fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center' },
+  summaryRow: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 14, borderWidth: 1, borderColor: '#E5E7EB' },
   summaryCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
-  summaryValue: { color: '#111827', fontSize: 14, fontWeight: '900' },
-  summaryLabel: { color: '#6B7280', fontSize: 9.5, fontWeight: '700', marginTop: 3 },
+  summaryValue: { color: COLORS.ink, fontSize: 14, fontWeight: '900' },
+  summaryLabel: { color: COLORS.inkSecondary, fontSize: 9.5, fontWeight: '700', marginTop: 3 },
   summaryDivider: { width: 1, height: 30, backgroundColor: '#E5E7EB' },
-  holdNotice: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, padding: 11, borderRadius: 12, backgroundColor: '#FFFBEB' },
+  holdNotice: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, padding: 11, borderRadius: 12, backgroundColor: '#FFFBEB' },
   holdNoticeText: { flex: 1, color: '#92400E', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
   collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#E5E7EB', gap: 10 },
-  collectionTopRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  collectionTopRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   collectionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  orderNumber: { color: '#111827', fontSize: 13, fontWeight: '800', textAlign: 'right' },
-  collectionDate: { color: '#9CA3AF', fontSize: 10, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  orderNumber: { color: COLORS.ink, fontSize: 13, fontWeight: '800', textAlign: 'right' },
+  collectionDate: { color: COLORS.inkTertiary, fontSize: 10, fontWeight: '600', marginTop: 2, textAlign: 'right' },
   statusBadge: { fontSize: 9.5, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', flexShrink: 1 },
-  amountLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
-  amountLabel: { color: '#6B7280', fontSize: 10.5, fontWeight: '700' },
-  amountValue: { color: '#111827', fontSize: 12, fontWeight: '900' },
+  amountLine: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
+  amountLabel: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '700' },
+  amountValue: { color: COLORS.ink, fontSize: 12, fontWeight: '900' },
   progressTrack: { height: 7, borderRadius: 999, backgroundColor: '#E5E7EB', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 999, backgroundColor: '#059669' },
-  collectionStats: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6 },
-  collectionStat: { color: '#6B7280', fontSize: 10.5, fontWeight: '700' },
-  disputeBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, padding: 10, borderRadius: 10, backgroundColor: '#FEF2F2' },
+  collectionStats: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6 },
+  collectionStat: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '700' },
+  disputeBox: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, padding: 10, borderRadius: 10, backgroundColor: '#FEF2F2' },
   disputeText: { flex: 1, color: '#B91C1C', fontSize: 10.5, fontWeight: '600', lineHeight: 16, textAlign: 'right' },
-  submissionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 9, borderTopWidth: 1, borderTopColor: '#F3F4F6', flexWrap: 'wrap' },
+  submissionRow: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 8, paddingTop: 9, borderTopWidth: 1, borderTopColor: '#F3F4F6', flexWrap: 'wrap' },
   submissionAmount: { color: '#374151', fontSize: 10.5, fontWeight: '800', textAlign: 'right' },
-  submissionDate: { color: '#9CA3AF', fontSize: 9.5, marginTop: 2, textAlign: 'right' },
-  reviewNote: { color: '#6B7280', fontSize: 9.5, lineHeight: 14, marginTop: 3, textAlign: 'right' },
+  submissionDate: { color: COLORS.inkTertiary, fontSize: 9.5, marginTop: 2, textAlign: 'right' },
+  reviewNote: { color: COLORS.inkSecondary, fontSize: 9.5, lineHeight: 14, marginTop: 3, textAlign: 'right' },
   submissionBadge: { fontSize: 9, fontWeight: '800', paddingHorizontal: 7, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
-  submitButton: { minHeight: 44, borderRadius: 12, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
+  submitButton: { minHeight: 44, borderRadius: 12, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
   submitButtonDisabled: { backgroundColor: '#E5E7EB' },
   submitButtonText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '800', textAlign: 'center' },
-  submitButtonTextDisabled: { color: '#6B7280' },
+  submitButtonTextDisabled: { color: COLORS.inkSecondary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(17,24,39,0.58)' },
   modalScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  modalTitle: { color: '#111827', fontSize: 18, fontWeight: '900', textAlign: 'right' },
-  modalSubtitle: { color: '#6B7280', fontSize: 11.5, fontWeight: '600', marginTop: 3, textAlign: 'right' },
+  modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, marginBottom: 14 },
+  modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', textAlign: 'right' },
+  modalSubtitle: { color: COLORS.inkSecondary, fontSize: 11.5, fontWeight: '600', marginTop: 3, textAlign: 'right' },
   closeButton: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  availableBox: { borderRadius: 14, backgroundColor: '#ECFDF5', padding: 13, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  availableBox: { borderRadius: 14, backgroundColor: '#ECFDF5', padding: 13, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   availableLabel: { color: '#047857', fontSize: 11.5, fontWeight: '700' },
   availableValue: { color: '#047857', fontSize: 16, fontWeight: '900' },
   inputLabel: { color: '#374151', fontSize: 11.5, fontWeight: '800', textAlign: 'right', marginBottom: 6 },
-  input: { minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', color: '#111827', fontSize: 14, fontWeight: '700', paddingHorizontal: 14, marginBottom: 13 },
-  proofPicker: { minHeight: 66, borderRadius: 13, borderWidth: 1.5, borderColor: '#BFDBFE', backgroundColor: '#EFF6FF', flexDirection: 'row', alignItems: 'center', gap: 10, padding: 11, marginBottom: 13, minWidth: 0 },
+  input: { minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: COLORS.canvas, color: COLORS.ink, fontSize: 14, fontWeight: '700', paddingHorizontal: 14, marginBottom: 13 },
+  proofPicker: { minHeight: 66, borderRadius: 13, borderWidth: 1.5, borderColor: '#BFDBFE', backgroundColor: COLORS.primarySoft, flexDirection: 'row-reverse', alignItems: 'center', gap: 10, padding: 11, marginBottom: 13, minWidth: 0 },
   proofIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   proofTitle: { color: '#1F2937', fontSize: 11.5, fontWeight: '800', textAlign: 'right', flexShrink: 1 },
-  proofSubtitle: { color: '#6B7280', fontSize: 10, fontWeight: '600', marginTop: 2, textAlign: 'right' },
-  formErrorBox: { borderRadius: 12, backgroundColor: '#FEF2F2', padding: 11, flexDirection: 'row', alignItems: 'flex-start', gap: 7, marginBottom: 12 },
+  proofSubtitle: { color: COLORS.inkSecondary, fontSize: 10, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  formErrorBox: { borderRadius: 12, backgroundColor: '#FEF2F2', padding: 11, flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, marginBottom: 12 },
   formErrorText: { flex: 1, color: '#B91C1C', fontSize: 11, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
-  confirmButton: { minHeight: 50, borderRadius: 13, backgroundColor: '#111827', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  confirmButton: { minHeight: 50, borderRadius: 13, backgroundColor: '#111827', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   confirmButtonText: { color: '#FFFFFF', fontSize: 13.5, fontWeight: '900' },
-  confirmHint: { color: '#6B7280', fontSize: 10, fontWeight: '600', textAlign: 'center', lineHeight: 16, marginTop: 9 },
+  confirmHint: { color: COLORS.inkSecondary, fontSize: 10, fontWeight: '600', textAlign: 'center', lineHeight: 16, marginTop: 9 },
 });

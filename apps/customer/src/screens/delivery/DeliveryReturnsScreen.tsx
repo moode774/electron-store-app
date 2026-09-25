@@ -69,7 +69,7 @@ function dateTime(value: string | null | undefined): string {
   if (!value) return 'غير محدد';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'غير محدد';
-  return date.toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' });
+  return date.toLocaleString('ar-EG-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function locationLabel(job: DeliveryReturnJob, destination: 'customer' | 'merchant'): string {
@@ -107,7 +107,8 @@ function hasReachedTarget(current: string | null, target: DeliveryReturnTargetSt
   return ['received', 'inspected', 'completed'].includes(current);
 }
 
-export default function DeliveryReturnsScreen({ navigation }: any) {
+export default function DeliveryReturnsScreen({ navigation, route }: any) {
+  const isTabRoot = route?.name === 'DeliveryReturnsTab';
   const layout = useResponsiveLayout(1120);
   const user = useAuthStore((state) => state.user);
   const [jobs, setJobs] = useState<DeliveryReturnJob[]>([]);
@@ -403,12 +404,12 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
       <View style={styles.jobCard}>
         <View style={styles.jobHeader}>
           <View style={[styles.jobIcon, {
-            backgroundColor: received ? '#D1FAE5' : inTransit ? '#DBEAFE' : '#FEF3C7',
+            backgroundColor: received ? '#D1FAE5' : inTransit ? COLORS.primarySoft : '#FEF3C7',
           }]}>
             <Ionicons
               name={received ? 'checkmark-done' : inTransit ? 'bicycle-outline' : 'cube-outline'}
               size={22}
-              color={received ? '#047857' : inTransit ? '#1D4ED8' : '#92400E'}
+              color={received ? '#047857' : inTransit ? COLORS.primary : '#92400E'}
             />
           </View>
           <View style={{ flex: 1 }}>
@@ -416,8 +417,8 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
             <Text style={styles.reason}>{REASON_LABELS[job.reason]} · {quantity} قطعة</Text>
           </View>
           <Text style={[styles.jobStatus, {
-            color: received ? '#047857' : inTransit ? '#1D4ED8' : '#92400E',
-            backgroundColor: received ? '#D1FAE5' : inTransit ? '#DBEAFE' : '#FEF3C7',
+            color: received ? '#047857' : inTransit ? COLORS.primary : '#92400E',
+            backgroundColor: received ? '#D1FAE5' : inTransit ? COLORS.primarySoft : '#FEF3C7',
           }]}>
             {received ? 'وصل للتاجر' : inTransit ? 'قيد النقل' : 'بانتظار الاستلام'}
           </Text>
@@ -477,8 +478,8 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
 
         <View style={styles.destinationCard}>
           <View style={styles.destinationTitleRow}>
-            <View style={[styles.destinationIcon, { backgroundColor: '#DBEAFE' }]}>
-              <Ionicons name="storefront-outline" size={18} color="#1D4ED8" />
+            <View style={[styles.destinationIcon, { backgroundColor: COLORS.primarySoft }]}>
+              <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.destinationTitle}>{job.merchant?.store_name ?? 'التاجر'}</Text>
@@ -527,16 +528,18 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="العودة"
-        >
-          <Ionicons name="arrow-forward" size={23} color="#111827" />
-        </TouchableOpacity>
+        {isTabRoot ? null : (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="العودة"
+          >
+            <Ionicons name="arrow-forward" size={23} color={COLORS.ink} />
+          </TouchableOpacity>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>مهام الإرجاع</Text>
           <Text style={styles.headerSubtitle}>مسار مستقل لاستلام المرتجعات وتسليمها للتاجر</Text>
@@ -640,7 +643,7 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
               </View>
 
               <View style={styles.instructionBox}>
-                <Ionicons name="information-circle-outline" size={19} color="#1D4ED8" />
+                <Ionicons name="information-circle-outline" size={19} color={COLORS.primary} />
                 <Text style={styles.instructionText}>
                   {targetStatus === 'picked_up'
                     ? 'التقط صورة واضحة للمرتجع عند استلامه من العميل. بعد التأكيد ستتحول المهمة تلقائيًا إلى «قيد النقل».'
@@ -746,80 +749,80 @@ export default function DeliveryReturnsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12, width: '100%', maxWidth: 1120, alignSelf: 'center' },
+  container: { flex: 1, backgroundColor: COLORS.canvas },
+  header: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12, width: '100%', maxWidth: 1120, alignSelf: 'center' },
   backButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#111827', fontSize: 19, fontWeight: '900', textAlign: 'right' },
-  headerSubtitle: { color: '#6B7280', fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
-  refreshButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  filters: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 10, width: '100%', maxWidth: 1120, alignSelf: 'center' },
+  headerTitle: { color: COLORS.ink, fontSize: 19, fontWeight: '900', textAlign: 'right' },
+  headerSubtitle: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  refreshButton: { width: 40, height: 40, borderRadius: 13, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  filters: { flexDirection: 'row-reverse', gap: 8, paddingHorizontal: 20, paddingBottom: 10, width: '100%', maxWidth: 1120, alignSelf: 'center' },
   filterButton: { flex: 1, minHeight: 40, borderRadius: 12, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  filterButtonActive: { backgroundColor: '#111827' },
-  filterText: { color: '#6B7280', fontSize: 12, fontWeight: '800' },
+  filterButtonActive: { backgroundColor: COLORS.primary },
+  filterText: { color: COLORS.inkSecondary, fontSize: 12, fontWeight: '800' },
   filterTextActive: { color: '#FFFFFF' },
   listContent: { padding: 20, gap: 12, paddingBottom: 110, width: '100%', maxWidth: 1120, alignSelf: 'center' },
   jobColumns: { gap: 14 },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  centerText: { color: '#6B7280', fontSize: 12.5, fontWeight: '600' },
-  errorCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 12, marginBottom: 2 },
+  centerText: { color: COLORS.inkSecondary, fontSize: 12.5, fontWeight: '600' },
+  errorCard: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, padding: 12, marginBottom: 2 },
   errorText: { flex: 1, color: '#B91C1C', fontSize: 11.5, fontWeight: '600', lineHeight: 18, textAlign: 'right' },
   retryText: { color: COLORS.primary, fontSize: 11.5, fontWeight: '800' },
   emptyCard: { marginTop: 50, alignItems: 'center', padding: 24 },
   emptyTitle: { color: '#374151', fontSize: 14, fontWeight: '800', marginTop: 10 },
-  emptyText: { color: '#9CA3AF', fontSize: 11, fontWeight: '600', textAlign: 'center', marginTop: 4 },
+  emptyText: { color: COLORS.inkTertiary, fontSize: 11, fontWeight: '600', textAlign: 'center', marginTop: 4 },
   jobCard: { flex: 1, minWidth: 0, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, borderWidth: 1, borderColor: '#E5E7EB', gap: 11 },
-  jobHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  jobHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   jobIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  orderNumber: { color: '#111827', fontSize: 14, fontWeight: '900', textAlign: 'right' },
-  reason: { color: '#6B7280', fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  orderNumber: { color: COLORS.ink, fontSize: 14, fontWeight: '900', textAlign: 'right' },
+  reason: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
   jobStatus: { fontSize: 9.5, fontWeight: '800', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5, overflow: 'hidden', flexShrink: 1 },
-  timeline: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 4, paddingVertical: 4 },
+  timeline: { flexDirection: 'row-reverse', alignItems: 'flex-end', paddingHorizontal: 4, paddingVertical: 4 },
   timelineStep: { width: 66, alignItems: 'center' },
   timelineDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#E5E7EB', borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
-  timelineDotCurrent: { backgroundColor: '#DBEAFE', borderColor: '#2563EB' },
+  timelineDotCurrent: { backgroundColor: COLORS.primarySoft, borderColor: COLORS.primary },
   timelineDotDone: { backgroundColor: '#059669', borderColor: '#059669' },
-  timelineLabel: { color: '#9CA3AF', fontSize: 8.5, fontWeight: '700', marginTop: 4, textAlign: 'center' },
+  timelineLabel: { color: COLORS.inkTertiary, fontSize: 8.5, fontWeight: '700', marginTop: 4, textAlign: 'center' },
   timelineLabelDone: { color: '#374151' },
   timelineLine: { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginTop: 10, marginHorizontal: -14 },
   timelineLineDone: { backgroundColor: '#059669' },
-  scheduleBox: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 11, backgroundColor: '#F9FAFB', padding: 10 },
-  scheduleText: { flex: 1, color: '#4B5563', fontSize: 10.5, fontWeight: '700', textAlign: 'right' },
+  scheduleBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7, borderRadius: 11, backgroundColor: COLORS.canvas, padding: 10 },
+  scheduleText: { flex: 1, color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '700', textAlign: 'right' },
   destinationCard: { borderRadius: 13, borderWidth: 1, borderColor: '#E5E7EB', padding: 11 },
-  destinationTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  destinationTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 9 },
   destinationIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   destinationTitle: { color: '#1F2937', fontSize: 11.5, fontWeight: '800', textAlign: 'right' },
-  destinationAddress: { color: '#6B7280', fontSize: 10, fontWeight: '600', lineHeight: 15, marginTop: 2, textAlign: 'right' },
-  destinationPhone: { color: '#2563EB', fontSize: 9.5, fontWeight: '700', marginTop: 3, textAlign: 'right' },
-  mapButton: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  primaryAction: { minHeight: 48, borderRadius: 13, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  destinationAddress: { color: COLORS.inkSecondary, fontSize: 10, fontWeight: '600', lineHeight: 15, marginTop: 2, textAlign: 'right' },
+  destinationPhone: { color: COLORS.primary, fontSize: 9.5, fontWeight: '700', marginTop: 3, textAlign: 'right' },
+  mapButton: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  primaryAction: { minHeight: 48, borderRadius: 13, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryActionText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '900' },
-  completedBox: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 12, backgroundColor: '#ECFDF5', padding: 11 },
+  completedBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7, borderRadius: 12, backgroundColor: '#ECFDF5', padding: 11 },
   completedText: { flex: 1, color: '#047857', fontSize: 10.5, fontWeight: '700', lineHeight: 16, textAlign: 'right' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(17,24,39,0.6)' },
   modalScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 440, alignSelf: 'center', borderRadius: 22, padding: 20, backgroundColor: '#FFFFFF' },
   modalCardCompact: { padding: 15, borderRadius: 18 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 13 },
-  modalTitle: { color: '#111827', fontSize: 18, fontWeight: '900', textAlign: 'right' },
-  modalSubtitle: { color: '#6B7280', fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, marginBottom: 13 },
+  modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', textAlign: 'right' },
+  modalSubtitle: { color: COLORS.inkSecondary, fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'right' },
   closeButton: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  instructionBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, backgroundColor: '#EFF6FF', padding: 11, marginBottom: 12 },
-  instructionText: { flex: 1, color: '#1D4ED8', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
-  captureBox: { height: 210, borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderColor: '#BFDBFE', backgroundColor: '#EFF6FF', marginBottom: 12 },
+  instructionBox: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 8, borderRadius: 12, backgroundColor: COLORS.primarySoft, padding: 11, marginBottom: 12 },
+  instructionText: { flex: 1, color: COLORS.primary, fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
+  captureBox: { height: 210, borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderColor: '#BFDBFE', backgroundColor: COLORS.primarySoft, marginBottom: 12 },
   captureBoxCompact: { height: 180 },
   capturePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   captureTitle: { color: '#1F2937', fontSize: 13, fontWeight: '800', marginTop: 8 },
-  captureSubtitle: { color: '#6B7280', fontSize: 10, fontWeight: '600', marginTop: 3 },
+  captureSubtitle: { color: COLORS.inkSecondary, fontSize: 10, fontWeight: '600', marginTop: 3 },
   proofPreview: { width: '100%', height: '100%' },
-  retakeBadge: { position: 'absolute', bottom: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, backgroundColor: 'rgba(17,24,39,0.82)', paddingHorizontal: 9, paddingVertical: 6 },
+  retakeBadge: { position: 'absolute', bottom: 10, right: 10, flexDirection: 'row-reverse', alignItems: 'center', gap: 5, borderRadius: 999, backgroundColor: 'rgba(17,24,39,0.82)', paddingHorizontal: 9, paddingVertical: 6 },
   retakeText: { color: '#FFFFFF', fontSize: 9.5, fontWeight: '800' },
-  locationBox: { flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 13, borderWidth: 1, borderColor: '#E5E7EB', padding: 11, marginBottom: 12 },
+  locationBox: { flexDirection: 'row-reverse', alignItems: 'center', gap: 9, borderRadius: 13, borderWidth: 1, borderColor: '#E5E7EB', padding: 11, marginBottom: 12 },
   locationIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   locationTitle: { color: '#1F2937', fontSize: 11.5, fontWeight: '800', textAlign: 'right' },
-  locationSubtitle: { color: '#6B7280', fontSize: 9.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
-  locationRefresh: { width: 36, height: 36, borderRadius: 11, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  proofErrorBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, borderRadius: 12, backgroundColor: '#FEF2F2', padding: 11, marginBottom: 12 },
+  locationSubtitle: { color: COLORS.inkSecondary, fontSize: 9.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
+  locationRefresh: { width: 36, height: 36, borderRadius: 11, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  proofErrorBox: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, borderRadius: 12, backgroundColor: '#FEF2F2', padding: 11, marginBottom: 12 },
   proofErrorText: { flex: 1, color: '#B91C1C', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
-  confirmButton: { minHeight: 50, borderRadius: 13, backgroundColor: '#111827', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  confirmButton: { minHeight: 50, borderRadius: 13, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   confirmButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
 });

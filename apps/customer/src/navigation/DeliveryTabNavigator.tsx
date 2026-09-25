@@ -67,10 +67,12 @@ function OffersNavigator() {
 export type DeliveryTabParamList = {
   DeliveryHome: undefined;
   DeliveryOrders: undefined;
-  DeliveryAction: undefined;
+  DeliveryReturnsTab: undefined;
   DeliveryEarnings: undefined;
   DeliveryMore: undefined;
 };
+
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const Tab = createBottomTabNavigator<DeliveryTabParamList>();
 
@@ -82,8 +84,9 @@ type DeliveryNavItem = {
 };
 
 const DELIVERY_NAV_ITEMS: DeliveryNavItem[] = [
-  { route: 'DeliveryHome', label: 'الرئيسية', icon: 'home-outline', activeIcon: 'home' },
+  { route: 'DeliveryHome', label: 'الطلبات المتاحة', icon: 'flash-outline', activeIcon: 'flash' },
   { route: 'DeliveryOrders', label: 'الطلبات', icon: 'clipboard-outline', activeIcon: 'clipboard' },
+  { route: 'DeliveryReturnsTab', label: 'مهام الإرجاع', icon: 'return-down-back-outline', activeIcon: 'return-down-back' },
   { route: 'DeliveryEarnings', label: 'الأرباح', icon: 'wallet-outline', activeIcon: 'wallet' },
   { route: 'DeliveryMore', label: 'الحساب', icon: 'person-outline', activeIcon: 'person' },
 ];
@@ -157,8 +160,57 @@ export default function DeliveryTabNavigator() {
   const isTablet = width >= BREAKPOINTS.tablet;
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 8);
 
+  const tabIcon = (outline: IconName, filled: IconName) =>
+    ({ color, focused }: { color: string; focused: boolean }) => (
+      <View style={styles.tabIconWrap}>
+        <Ionicons name={focused ? filled : outline} size={22} color={color} />
+        {focused ? <View style={styles.tabIndicator} /> : null}
+      </View>
+    );
+
+  // Listed right-to-left. Native apps run with forceRTL and lay the row out
+  // from the right already; the web build renders LTR, so reverse it there.
+  const tabs: { name: keyof DeliveryTabParamList; component: React.ComponentType<any>; options: any }[] = [
+    {
+      name: 'DeliveryReturnsTab',
+      component: DeliveryReturnsScreen,
+      options: { tabBarLabel: 'مهام الإرجاع', tabBarIcon: tabIcon('return-down-back-outline', 'return-down-back') },
+    },
+    {
+      name: 'DeliveryOrders',
+      component: ActiveDeliveryScreen,
+      options: { tabBarLabel: 'الطلبات', tabBarIcon: tabIcon('clipboard-outline', 'clipboard') },
+    },
+    {
+      name: 'DeliveryHome',
+      component: OffersNavigator,
+      options: {
+        tabBarLabel: 'الطلبات المتاحة',
+        tabBarAccessibilityLabel: 'الطلبات المتاحة',
+        tabBarIcon: ({ focused }: { focused: boolean }) => (
+          <View style={[styles.centerAction, !focused && styles.centerActionIdle]}>
+            <Ionicons name="flash" size={26} color={COLORS.surface} />
+          </View>
+        ),
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, marginTop: 2 },
+      },
+    },
+    {
+      name: 'DeliveryEarnings',
+      component: EarningsScreen,
+      options: { tabBarLabel: 'الأرباح', tabBarIcon: tabIcon('wallet-outline', 'wallet') },
+    },
+    {
+      name: 'DeliveryMore',
+      component: AccountNavigator,
+      options: { tabBarLabel: 'المزيد', tabBarIcon: tabIcon('ellipsis-horizontal-circle-outline', 'ellipsis-horizontal-circle') },
+    },
+  ];
+  const orderedTabs = Platform.OS === 'web' ? [...tabs].reverse() : tabs;
+
   const content = (
     <Tab.Navigator
+      initialRouteName="DeliveryHome"
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,
@@ -186,58 +238,9 @@ export default function DeliveryTabNavigator() {
         tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.medium, marginTop: 2 },
       }}
     >
-      <Tab.Screen
-        name="DeliveryHome"
-        component={OffersNavigator}
-        options={{
-          tabBarLabel: 'الرئيسية',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="DeliveryOrders"
-        component={ActiveDeliveryScreen}
-        options={{
-          tabBarLabel: 'الطلبات',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'clipboard' : 'clipboard-outline'} size={22} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="DeliveryAction"
-        component={OffersNavigator}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('DeliveryHome');
-          },
-        })}
-        options={{
-          tabBarLabel: 'الطلبات المتاحة',
-          tabBarAccessibilityLabel: 'الطلبات المتاحة',
-          tabBarIcon: () => (
-            <View style={styles.centerAction}>
-              <Ionicons name="flash" size={26} color={COLORS.surface} />
-            </View>
-          ),
-          tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, marginTop: 2 },
-        }}
-      />
-      <Tab.Screen
-        name="DeliveryEarnings"
-        component={EarningsScreen}
-        options={{
-          tabBarLabel: 'الأرباح',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={22} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="DeliveryMore"
-        component={AccountNavigator}
-        options={{
-          tabBarLabel: 'المزيد',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} />,
-        }}
-      />
+      {orderedTabs.map((tab) => (
+        <Tab.Screen key={tab.name} name={tab.name} component={tab.component} options={tab.options} />
+      ))}
     </Tab.Navigator>
   );
 
@@ -286,6 +289,22 @@ const styles = StyleSheet.create({
         elevation: 6,
       },
     }),
+  },
+  centerActionIdle: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  tabIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 44,
+  },
+  tabIndicator: {
+    position: 'absolute',
+    top: -8,
+    width: 20,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
   },
   desktopRoot: {
     flex: 1,

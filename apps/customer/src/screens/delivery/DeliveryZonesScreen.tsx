@@ -40,7 +40,7 @@ export default function DeliveryZonesScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
@@ -67,7 +67,7 @@ export default function DeliveryZonesScreen({ navigation }: any) {
           </View>
         ) : null}
         {!loading && zones.length === 0 && (
-          <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginTop: 20 }}>لا توجد مناطق متاحة</Text>
+          <Text style={{ color: COLORS.inkTertiary, fontSize: 13, textAlign: 'center', marginTop: 20 }}>لا توجد مناطق متاحة</Text>
         )}
         {zones.map((zone) => (
           <View key={zone.id} style={[styles.zoneCard, zone.available && styles.zoneCardActive]} accessibilityLabel={`${zone.name}: ${zone.orders}`}>
@@ -89,33 +89,33 @@ export default function DeliveryZonesScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: COLORS.canvas },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     width: '100%', maxWidth: 900, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink },
   scrollContent: { padding: 20, gap: 10, width: '100%', maxWidth: 900, alignSelf: 'center', paddingBottom: 80 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   infoCard: {
-    flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: '#F0F4FF',
+    flexDirection: 'row-reverse', gap: 10, alignItems: 'center', backgroundColor: '#F0F4FF',
     borderRadius: 14, padding: 14, marginBottom: 6,
   },
   infoText: { flex: 1, fontSize: 12.5, color: COLORS.primary, lineHeight: 19, fontWeight: '600' },
   zoneCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
     borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
   },
   zoneCardActive: { borderColor: '#A7F3D0' },
   zoneIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  zoneName: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  zoneOrders: { fontSize: 11.5, color: '#9CA3AF', marginTop: 3 },
+  zoneName: { fontSize: 14, fontWeight: '700', color: COLORS.ink },
+  zoneOrders: { fontSize: 11.5, color: COLORS.inkTertiary, marginTop: 3 },
   statusBadge: { borderRadius: 10, backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 6 },
   statusBadgeAvailable: { backgroundColor: '#DCFCE7' },
-  statusText: { color: '#6B7280', fontSize: 11, fontWeight: '800' },
+  statusText: { color: COLORS.inkSecondary, fontSize: 11, fontWeight: '800' },
   statusTextAvailable: { color: '#047857' },
 });

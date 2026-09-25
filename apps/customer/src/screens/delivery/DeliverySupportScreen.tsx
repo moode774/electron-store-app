@@ -1,3 +1,4 @@
+import { COLORS } from '@marketplace/shared-utils';
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
@@ -15,7 +16,7 @@ const UI = {
   textMuted: '#9CA3AF',
   border: '#E5E7EB',
   green: '#10B981',
-  blue: '#2563EB',
+  blue: COLORS.primary,
 };
 
 const CATEGORIES = [
@@ -118,7 +119,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
           </View>
 
           <View style={styles.channelCard}>
-            <View style={[styles.channelIcon, { backgroundColor: '#EFF6FF' }]}>
+            <View style={[styles.channelIcon, { backgroundColor: COLORS.primarySoft }]}>
               <Ionicons name="call" size={28} color={UI.blue} />
             </View>
             <Text style={styles.channelTitle}>الاتصال</Text>
@@ -249,7 +250,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: UI.border,
     width: '100%', maxWidth: 1000, alignSelf: 'center',
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
   scrollContent: { padding: 20, paddingBottom: 100, gap: 16, width: '100%', maxWidth: 1000, alignSelf: 'center' },
-  channelsRow: { flexDirection: 'row', gap: 12 },
+  channelsRow: { flexDirection: 'row-reverse', gap: 12 },
   channelsRowCompact: { flexDirection: 'column' },
   channelCard: {
     flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, alignItems: 'center',
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
   },
   textArea: { minHeight: 110 },
   submitBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: UI.primary, height: 50, borderRadius: 12, marginTop: 4,
   },
   submitBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },

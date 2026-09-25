@@ -1,3 +1,4 @@
+import { COLORS } from '@marketplace/shared-utils';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -82,7 +83,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                 <Ionicons name="person" size={28} color="#111827" />
               </View>
               <View style={styles.premiumBadge}>
-                <Ionicons name="bicycle" size={10} color="#3B82F6" />
+                <Ionicons name="bicycle" size={10} color={COLORS.primary} />
                 <Text style={styles.premiumText}>مندوب توصيل</Text>
               </View>
             </View>
@@ -141,7 +142,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
-          <Ionicons name="log-out-outline" size={24} color="#3B82F6" />
+          <Ionicons name="log-out-outline" size={24} color={COLORS.primary} />
           <Text style={styles.logoutText}>تسجيل الخروج</Text>
         </TouchableOpacity>
 
@@ -162,16 +163,16 @@ export default function DeliveryAccountScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.canvas,
   },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.canvas,
     width: '100%', maxWidth: 960, alignSelf: 'center',
   },
   iconBtn: {
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#111827',
+    color: COLORS.ink,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
   },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 16, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
-  retryText: { color: '#2563EB', fontSize: 12.5, fontWeight: '800' },
+  retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   profileCard: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -215,21 +216,21 @@ const styles = StyleSheet.create({
   },
   profileZoneCenter: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   userName: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#111827',
+    color: COLORS.ink,
     marginBottom: 6,
-    textAlign: 'left'
+    textAlign: 'right'
   },
   premiumBadge: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: COLORS.primarySoft,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 20,
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     bottom: -10,
   },
   premiumText: {
-    color: '#3B82F6',
+    color: COLORS.primary,
     fontSize: 9,
     fontWeight: '700',
     marginLeft: 4,
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.canvas,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
@@ -298,12 +299,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#111827',
+    color: COLORS.ink,
     marginBottom: 2,
   },
   statTitle: {
     fontSize: 10,
-    color: '#6B7280',
+    color: COLORS.inkSecondary,
     fontWeight: '600',
   },
   promoBannerWrapper: {
@@ -327,9 +328,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#111827',
+    color: COLORS.ink,
     marginBottom: 16,
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
     paddingHorizontal: 8,
   },
   menuCard: {
@@ -345,13 +346,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   menuItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
   },
   menuItemRight: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     flex: 1,
     minWidth: 0,
@@ -359,11 +360,11 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: COLORS.ink,
     flexShrink: 1,
   },
   menuItemIcon: {
-    marginEnd: 12,
+    marginLeft: 12,
   },
   menuDivider: {
     height: 1,
@@ -375,7 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 24,
     paddingVertical: 20,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     shadowColor: '#000',
@@ -387,6 +388,6 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: COLORS.ink,
   },
 });

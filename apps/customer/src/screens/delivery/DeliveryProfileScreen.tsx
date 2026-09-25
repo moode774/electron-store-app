@@ -76,7 +76,7 @@ export default function DeliveryProfileScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
@@ -155,20 +155,20 @@ export default function DeliveryProfileScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: COLORS.canvas },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     width: '100%', maxWidth: 820, alignSelf: 'center',
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink },
   scrollContent: { padding: 24, width: '100%', maxWidth: 820, alignSelf: 'center', paddingBottom: 80 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 18, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
-  label: { fontSize: 13, color: '#111827', marginBottom: 10, fontWeight: '600' },
-  vehiclesRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  label: { fontSize: 13, color: COLORS.ink, marginBottom: 10, fontWeight: '600' },
+  vehiclesRow: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
   vehiclesRowCompact: { flexWrap: 'wrap' },
   vehicleCard: {
     flex: 1, alignItems: 'center', gap: 8, paddingVertical: 16, borderRadius: 14,
@@ -176,13 +176,13 @@ const styles = StyleSheet.create({
   },
   vehicleCardCompact: { flexBasis: '46%', flexGrow: 1 },
   vehicleCardActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  vehicleLabel: { fontSize: 11.5, fontWeight: '700', color: '#6B7280' },
+  vehicleLabel: { fontSize: 11.5, fontWeight: '700', color: COLORS.inkSecondary },
   docCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
     borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6', marginBottom: 10,
   },
   docIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F0F4FF', alignItems: 'center', justifyContent: 'center' },
-  docTitle: { fontSize: 13.5, fontWeight: '700', color: '#111827' },
+  docTitle: { fontSize: 13.5, fontWeight: '700', color: COLORS.ink },
   docStatus: { fontSize: 11.5, color: '#059669', marginTop: 3, fontWeight: '600' },
-  verificationNote: { fontSize: 11.5, color: '#6B7280', lineHeight: 18, textAlign: 'right', marginBottom: 8 },
+  verificationNote: { fontSize: 11.5, color: COLORS.inkSecondary, lineHeight: 18, textAlign: 'right', marginBottom: 8 },
 });
