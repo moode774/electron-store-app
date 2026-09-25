@@ -130,7 +130,7 @@ export type MerchantTabParamList = {
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
-import { useNavigation, useNavigationState } from '@react-navigation/native';
+import { getFocusedRouteNameFromRoute, useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 
 function DesktopSidebar() {
@@ -249,6 +249,26 @@ export default function MerchantTabNavigator() {
   const isTablet = width >= BREAKPOINTS.tablet;
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 8);
 
+  const barStyle: any = isDesktop ? { display: 'none' } : {
+    backgroundColor: COLORS.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.hairline,
+    elevation: 0,
+    shadowOpacity: 0,
+    height: 60 + bottomInset,
+    paddingBottom: bottomInset,
+    paddingTop: 6,
+    position: 'absolute',
+    ...(isTablet ? {
+      left: Math.max(24, (width - 680) / 2),
+      right: Math.max(24, (width - 680) / 2),
+      bottom: 14,
+      borderWidth: 1,
+      borderColor: COLORS.hairline,
+      borderRadius: RADIUS.xl,
+    } : {}),
+  };
+
   const tabIcon = (outline: IconName, filled: IconName) =>
     ({ color, focused }: { color: string; focused: boolean }) => (
       <View style={tabStyles.tabIconWrap}>
@@ -272,7 +292,13 @@ export default function MerchantTabNavigator() {
     {
       name: 'MerchantProducts',
       component: ProductsNavigator,
-      options: { tabBarLabel: 'المنتجات', tabBarAccessibilityLabel: 'منتجات المتجر', tabBarIcon: tabIcon('cube-outline', 'cube') },
+      // The add-product form has its own sticky publish bar.
+      options: ({ route }: any) => ({
+        tabBarLabel: 'المنتجات',
+        tabBarAccessibilityLabel: 'منتجات المتجر',
+        tabBarIcon: tabIcon('cube-outline', 'cube'),
+        tabBarStyle: getFocusedRouteNameFromRoute(route) === 'AddProduct' ? { display: 'none' } : barStyle,
+      }),
     },
     {
       name: 'MerchantOrders',
@@ -329,25 +355,7 @@ export default function MerchantTabNavigator() {
         tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.inkTertiary,
-        tabBarStyle: isDesktop ? { display: 'none' } : {
-          backgroundColor: COLORS.surface,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: COLORS.hairline,
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 60 + bottomInset,
-          paddingBottom: bottomInset,
-          paddingTop: 6,
-          position: 'absolute',
-          ...(isTablet ? {
-            left: Math.max(24, (width - 680) / 2),
-            right: Math.max(24, (width - 680) / 2),
-            bottom: 14,
-            borderWidth: 1,
-            borderColor: COLORS.hairline,
-            borderRadius: RADIUS.xl,
-          } : {}),
-        },
+        tabBarStyle: barStyle,
         tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.medium, marginTop: 2 },
       }}
     >
