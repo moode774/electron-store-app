@@ -15,7 +15,7 @@ const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
 
 const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: string; backgroundColor: string }> = {
   pending: { label: 'قيد المراجعة', color: '#92400E', backgroundColor: '#FEF3C7' },
-  approved: { label: 'معتمد — لم يُثبت التحويل بعد', color: '#1D4ED8', backgroundColor: '#DBEAFE' },
+  approved: { label: 'معتمد — لم يُثبت التحويل بعد', color: COLORS.primary, backgroundColor: COLORS.primarySoft },
   processing: { label: 'جاري التحويل', color: '#6D28D9', backgroundColor: '#EDE9FE' },
   paid: { label: 'مدفوع', color: '#047857', backgroundColor: '#D1FAE5' },
   rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
@@ -107,7 +107,7 @@ export default function EarningsScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <Text style={styles.headerTitle}>أرباحي</Text>
       </View>
@@ -117,7 +117,7 @@ export default function EarningsScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, layout.compact && styles.modalCardCompact]}>
             <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
-            <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: '#111827' }}>{balance} ر.ي</Text></Text>
+            <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: COLORS.ink }}>{balance} ر.ي</Text></Text>
             <TextInput
               style={styles.modalInput}
               placeholder="المبلغ المراد سحبه (ر.ي)"
@@ -207,7 +207,7 @@ export default function EarningsScreen() {
                     <View key={request.id} style={styles.withdrawalRow}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
-                        <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-SA')}</Text>
+                        <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</Text>
                       </View>
                       <Text
                         style={[
@@ -230,7 +230,7 @@ export default function EarningsScreen() {
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: '#9CA3AF', fontSize: 13 }}>لا توجد أرباح مسجّلة بعد</Text>
+            <Text style={{ color: COLORS.inkTertiary, fontSize: 13 }}>لا توجد أرباح مسجّلة بعد</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -240,7 +240,7 @@ export default function EarningsScreen() {
             </View>
             <View style={styles.info}>
               <Text style={styles.route}>توصيلة مكتملة</Text>
-              <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+              <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</Text>
             </View>
             <Text style={styles.fee}>+{item.total_earning} ر.ي</Text>
           </View>
@@ -252,17 +252,17 @@ export default function EarningsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: COLORS.canvas },
   header: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12, width: '100%', maxWidth: 920, alignSelf: 'center' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#111827' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.ink },
   listContent: { padding: 20, gap: 12, paddingBottom: 100, width: '100%', maxWidth: 920, alignSelf: 'center' },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   withdrawalSection: { gap: 8, marginBottom: 6 },
-  withdrawalRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB' },
-  withdrawalAmount: { color: '#111827', fontSize: 13.5, fontWeight: '800' },
-  withdrawalDate: { color: '#9CA3AF', fontSize: 10.5, marginTop: 3 },
+  withdrawalRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  withdrawalAmount: { color: COLORS.ink, fontSize: 13.5, fontWeight: '800' },
+  withdrawalDate: { color: COLORS.inkTertiary, fontSize: 10.5, marginTop: 3 },
   withdrawalStatus: { maxWidth: '52%', fontSize: 11, fontWeight: '700', textAlign: 'right', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, overflow: 'hidden' },
   summaryCard: {
     backgroundColor: COLORS.primary, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 8,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   summaryValue: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', marginTop: 6, marginBottom: 20 },
   summaryRow: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)',
+    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 14, padding: 14, width: '100%', justifyContent: 'space-around',
   },
   summaryRowCompact: { paddingHorizontal: 8 },
@@ -279,33 +279,33 @@ const styles = StyleSheet.create({
   summaryItemValue: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   summaryItemLabel: { fontSize: 10.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
   summaryDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.2)' },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#111827', marginTop: 12, marginBottom: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.ink, marginTop: 12, marginBottom: 2 },
   card: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
     borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
   },
   iconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1, marginHorizontal: 12 },
-  route: { fontSize: 13.5, fontWeight: '700', color: '#111827' },
-  meta: { fontSize: 11, color: '#9CA3AF', marginTop: 3 },
+  route: { fontSize: 13.5, fontWeight: '700', color: COLORS.ink },
+  meta: { fontSize: 11, color: COLORS.inkTertiary, marginTop: 3 },
   fee: { fontSize: 14, fontWeight: '800', color: '#059669' },
   withdrawBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, marginTop: 16,
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, marginTop: 16, minHeight: 48,
   },
-  withdrawBtnText: { fontSize: 14, fontWeight: '800', color: '#111827' },
+  withdrawBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.ink },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, width: '100%', maxWidth: 380 },
   modalCardCompact: { padding: 18 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#111827', textAlign: 'right', marginBottom: 6 },
-  modalSub: { fontSize: 13, color: '#6B7280', textAlign: 'right', marginBottom: 20, fontWeight: '600' },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink, textAlign: 'right', marginBottom: 6 },
+  modalSub: { fontSize: 13, color: COLORS.inkSecondary, textAlign: 'right', marginBottom: 20, fontWeight: '600' },
   modalInput: {
-    backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB',
-    paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#111827',
+    backgroundColor: COLORS.canvas, borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB',
+    paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: COLORS.ink,
     fontWeight: '700', marginBottom: 16,
   },
   modalBtn: { backgroundColor: '#111827', borderRadius: 12, height: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   modalBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   modalCancel: { alignItems: 'center', paddingVertical: 10 },
-  modalCancelText: { fontSize: 14, color: '#9CA3AF', fontWeight: '700' },
+  modalCancelText: { fontSize: 14, color: COLORS.inkTertiary, fontWeight: '700' },
 });
