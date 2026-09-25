@@ -18,7 +18,6 @@ import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 const MENU_ITEMS = [
   { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
   { id: '2', title: 'المحفظة والتحصيلات', icon: 'wallet-outline', screen: 'DeliveryWallet', params: undefined },
-  { id: '3', title: 'مهام الإرجاع', icon: 'return-down-back-outline', screen: 'DeliveryReturns', params: undefined },
   { id: '4', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
   { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },

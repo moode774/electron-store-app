@@ -26,7 +26,6 @@ export type DeliveryAccountStackParamList = {
   DeliveryProfile: undefined;
   DeliveryZones: undefined;
   DeliveryWallet: undefined;
-  DeliveryReturns: undefined;
   DeliverySupport: undefined;
   SupportTicket: { ticketId: string };
   RoleNotifications: { role: 'delivery' };
@@ -41,7 +40,6 @@ function AccountNavigator() {
       <AccountStack.Screen name="DeliveryProfile" component={DeliveryProfileScreen} />
       <AccountStack.Screen name="DeliveryZones" component={DeliveryZonesScreen} />
       <AccountStack.Screen name="DeliveryWallet" component={DeliveryWalletScreen} />
-      <AccountStack.Screen name="DeliveryReturns" component={DeliveryReturnsScreen} />
       <AccountStack.Screen name="DeliverySupport" component={DeliverySupportScreen} />
       <AccountStack.Screen name="SupportTicket" component={SupportTicketThreadScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />

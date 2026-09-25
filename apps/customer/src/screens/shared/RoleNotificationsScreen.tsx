@@ -59,7 +59,8 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
     } else if (role === 'delivery' && isCodEvent) {
       navigation.navigate('DeliveryWallet');
     } else if (role === 'delivery' && (returnRequestId || isPhysicalReturnEvent)) {
-      navigation.navigate('DeliveryReturns');
+      // Returns live in their own bottom tab (one mounted instance only).
+      navigation.getParent()?.navigate('DeliveryReturnsTab');
     } else if (orderId && role === 'merchant') {
       navigation.getParent()?.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId } });
     } else if (orderId && role === 'delivery') {
