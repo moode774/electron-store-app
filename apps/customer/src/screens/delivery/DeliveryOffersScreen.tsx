@@ -1,14 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
+  Animated,
+  Easing,
   Platform,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -21,7 +25,7 @@ import {
   supabase,
   useAuthStore,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 import IncomingOrderModal from '../../components/IncomingOrderModal';
 import {
@@ -65,9 +69,7 @@ const sortOffersByProximity = (
 
 export default function DeliveryOffersScreen({ navigation }: any) {
   const user = useAuthStore((state) => state.user);
-  const { width, height } = useWindowDimensions();
-  const isShort = height < 680;
-  const contentWidth = Math.min(Math.max(width - 32, 288), 560);
+  const insets = useSafeAreaInsets();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [profile, setProfile] = useState<DeliveryRuntimeProfile | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -76,6 +78,10 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [onlineUpdating, setOnlineUpdating] = useState(false);
   const [todayEarnings, setTodayEarnings] = useState(0);
   const [earningsFailed, setEarningsFailed] = useState(false);
+  const [todayDeliveries, setTodayDeliveries] = useState(0);
+  const [totalDeliveries, setTotalDeliveries] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [locationMessage, setLocationMessage] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -144,12 +150,14 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 
       if (earningsResult) {
         const today = new Date().toDateString();
-        setTodayEarnings(
-          earningsResult.earnings
-            .filter((earning) => new Date(earning.created_at).toDateString() === today)
-            .reduce((sum, earning) => sum + (earning.total_earning ?? 0), 0),
-        );
+        const todays = earningsResult.earnings
+          .filter((earning) => new Date(earning.created_at).toDateString() === today);
+        setTodayEarnings(todays.reduce((sum, earning) => sum + (earning.total_earning ?? 0), 0));
+        setTodayDeliveries(todays.length);
+        setTotalDeliveries(earningsResult.totalDeliveries ?? 0);
+        setWalletBalance(earningsResult.balance ?? 0);
       }
+      setLastUpdatedAt(Date.now());
 
       if (!runtimeProfile.is_online || !runtimeProfile.is_approved) {
         setOrders([]);
@@ -305,151 +313,196 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     void rejectDeliveryOffer(rejectedId).catch(() => { /* الإخفاء المحلي يبقى ساريًا */ });
   }, [accepting, current]);
 
-  const openDeliveryAccount = useCallback(() => {
-    navigation.getParent()?.navigate('DeliveryMore');
+  const openNotifications = useCallback(() => {
+    navigation.getParent()?.navigate('DeliveryMore', {
+      screen: 'RoleNotifications',
+      params: { role: 'delivery' },
+    });
   }, [navigation]);
 
-  const statusLabel = onlineUpdating
-    ? 'جاري التحديث...'
-    : isOnline
-      ? 'متصل الآن'
-      : 'غير متصل';
+  const openEarnings = useCallback(() => {
+    navigation.getParent()?.navigate('DeliveryEarnings');
+  }, [navigation]);
+
+  const firstName = (user?.full_name ?? '').trim().split(/\s+/)[0] || 'كابتن';
+  const todayLabel = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+  const controlsDisabled = onlineUpdating || initialLoading || !profile;
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-
-      <View style={[styles.radarArea, isShort && styles.radarAreaShort]}>
-        <View style={[styles.radarBadge, isShort && styles.radarBadgeShort]}>
-          <Ionicons name="navigate-circle" size={16} color={COLORS.primary} />
-          <Text style={styles.radarBadgeText}>نطاق العمل المباشر</Text>
-        </View>
-        <View style={[styles.centerPulseOuter, isShort && styles.centerPulseOuterShort, !isOnline && styles.centerPulseOffline]}>
-          <View style={[styles.centerPulseInner, isShort && styles.centerPulseInnerShort, !isOnline && styles.centerPulseInnerOffline]}>
-            <Ionicons name={isOnline ? 'navigate' : 'pause'} size={32} color={isOnline ? COLORS.primary : COLORS.textMuted} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 120 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.page}>
+          {/* 1. Header */}
+          <View style={styles.header}>
+            <View style={styles.avatar} accessibilityLabel={isOnline ? 'حالتك: متصل' : 'حالتك: غير متصل'}>
+              <Ionicons name="person" size={20} color={COLORS.primary} />
+              <View style={[styles.avatarDot, { backgroundColor: isOnline ? COLORS.statusOnline : COLORS.inkTertiary }]} />
+            </View>
+            <View style={styles.greeting}>
+              <Text style={styles.greetingTitle} numberOfLines={1}>مرحبًا، {firstName}</Text>
+              <Text style={styles.greetingCaption} numberOfLines={1}>{todayLabel}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={openNotifications}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="الإشعارات"
+            >
+              <Ionicons name="notifications-outline" size={22} color={COLORS.ink} />
+            </TouchableOpacity>
           </View>
-        </View>
-        <Text style={[styles.radarTitle, isShort && styles.radarTitleShort, !isOnline && styles.offlineText]}>
-          {isOnline ? 'البحث عن عروض التوصيل مفعّل' : 'استقبال العروض متوقف'}
-        </Text>
-        <Text style={[styles.radarSubtitle, isShort && styles.radarSubtitleShort]} numberOfLines={isShort ? 1 : undefined}>
-          {location
-            ? 'تم تحديد موقعك، وسيتم إرسال التحديثات أثناء التوصيلة النشطة فقط.'
-            : locationMessage || 'جاري التحقق من الموقع...'}
-        </Text>
-      </View>
 
-      <View style={[styles.topSafeArea, isShort && styles.topSafeAreaShort]}>
-        <View style={[styles.topPanel, { width: contentWidth }]}>
-          <View style={styles.headerRow}>
+          {/* 2. Online toggle */}
           <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={openDeliveryAccount}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="فتح حساب المندوب"
+            style={styles.card}
+            activeOpacity={0.85}
+            onPress={handleToggleOnline}
+            disabled={controlsDisabled}
+            accessibilityRole="switch"
+            accessibilityLabel="استقبال طلبات التوصيل"
+            accessibilityState={{ checked: isOnline, disabled: controlsDisabled, busy: onlineUpdating }}
           >
-            <Ionicons name="menu" size={22} color={COLORS.textPrimary} />
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleCopy}>
+                <Text style={[styles.sectionTitle, !isOnline && styles.mutedTitle]}>
+                  {isOnline ? 'أنت متصل' : 'أنت غير متصل'}
+                </Text>
+                <Text style={styles.caption}>
+                  {!isApproved && profile
+                    ? 'بانتظار اعتماد حسابك لاستقبال الطلبات'
+                    : isOnline
+                      ? 'تستقبل طلبات التوصيل الآن'
+                      : 'فعّل الاتصال لاستقبال الطلبات'}
+                </Text>
+              </View>
+              {onlineUpdating ? (
+                <View style={styles.switchSlot}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : (
+                <OnlineSwitch value={isOnline} />
+              )}
+            </View>
           </TouchableOpacity>
 
-          <View style={styles.centerStatus} accessibilityLiveRegion="polite">
-            <Text style={styles.statusTextTop}>{statusLabel}</Text>
-            <View style={[styles.statusDotTop, !isOnline && styles.statusDotOffline]} />
-          </View>
-
-          <View style={styles.avatarWrap}>
-            <Ionicons name="person" size={22} color={COLORS.primary} />
-            {isOnline && <View style={styles.avatarOnlineDot} />}
-          </View>
-          </View>
-
-          <View style={[styles.earningsPillWrap, isShort && styles.earningsPillWrapShort]}>
-            <View style={styles.earningsPill}>
-              <View style={styles.walletIconWrap}>
-                <Ionicons name="wallet" size={18} color={COLORS.primary} />
+          {/* 3. Today summary */}
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryTop}>
+              <Text style={styles.summaryLabel}>أرباح اليوم</Text>
+              <TouchableOpacity
+                onPress={openEarnings}
+                style={styles.detailsLink}
+                accessibilityRole="button"
+                accessibilityLabel="تفاصيل الأرباح"
+              >
+                <Text style={styles.detailsText}>التفاصيل</Text>
+                <Ionicons name="chevron-back" size={16} color="rgba(255,255,255,0.8)" />
+              </TouchableOpacity>
+            </View>
+            {initialLoading ? (
+              <View style={styles.amountSkeleton} />
+            ) : (
+              <View style={styles.amountRow}>
+                <CountUpAmount value={earningsFailed ? 0 : todayEarnings} style={styles.amount} />
+                <Text style={styles.currency}>ر.ي</Text>
               </View>
-              <View style={styles.earningsTexts}>
-                <Text style={styles.earningsLabel}>أرباح اليوم</Text>
-                {earningsFailed ? (
-                  <Text style={styles.earningsValue}>—</Text>
-                ) : (
-                  <Text style={styles.earningsValue}>{todayEarnings.toLocaleString()} <Text style={styles.earningsCurrency}>ر.ي</Text></Text>
-                )}
-              </View>
+            )}
+            {earningsFailed && !initialLoading ? (
+              <Text style={styles.summaryNote}>تعذّر تحميل الأرباح الآن</Text>
+            ) : null}
+            <View style={styles.summaryDivider} />
+            <View style={styles.statsRow}>
+              <SummaryStat value={initialLoading ? null : formatInt(todayDeliveries)} label="طلبات اليوم" />
+              <View style={styles.statsDivider} />
+              <SummaryStat value={initialLoading ? null : formatInt(totalDeliveries)} label="إجمالي التوصيلات" />
+              <View style={styles.statsDivider} />
+              <SummaryStat value={initialLoading ? null : formatMoney(walletBalance)} label="الرصيد (ر.ي)" />
             </View>
           </View>
 
-          <View style={[styles.connectionDropdownWrap, isShort && styles.connectionDropdownWrapShort]}>
-            <TouchableOpacity
-              style={[styles.connectionDropdown, !isOnline && styles.connectionDropdownOffline]}
-              activeOpacity={0.7}
-              onPress={handleToggleOnline}
-              disabled={onlineUpdating || initialLoading}
-              accessibilityRole="switch"
-              accessibilityLabel="استقبال طلبات التوصيل"
-              accessibilityState={{ checked: isOnline, disabled: onlineUpdating || initialLoading, busy: onlineUpdating }}
-            >
-              {onlineUpdating ? (
-                <ActivityIndicator size="small" color={COLORS.primary} />
-              ) : (
-                <View style={[styles.connectionDotLarge, !isOnline && styles.statusDotOffline]} />
-              )}
-              <Text style={[styles.connectionText, isOnline && styles.connectionTextOnline]}>{isOnline ? 'متصل بالطلبات' : 'اضغط للاتصال'}</Text>
-            </TouchableOpacity>
+          {/* 4. Search state */}
+          <View style={[styles.card, styles.stateCard]}>
+            {initialLoading ? (
+              <View style={styles.stateSkeleton}>
+                <View style={styles.skeletonCircle} />
+                <View style={styles.skeletonLineWide} />
+                <View style={styles.skeletonLine} />
+              </View>
+            ) : loadError ? (
+              <>
+                <View style={[styles.stateIcon, styles.stateIconError]}>
+                  <Ionicons name="cloud-offline-outline" size={24} color={COLORS.error} />
+                </View>
+                <Text style={styles.stateTitle}>تعذّر تحديث الطلبات</Text>
+                <Text style={styles.stateCaption}>{loadError}</Text>
+                <RefreshButton refreshing={refreshing} onPress={() => void loadData(true)} label="إعادة المحاولة" />
+              </>
+            ) : !isApproved ? (
+              <>
+                <View style={styles.stateIcon}>
+                  <Ionicons name="shield-checkmark-outline" size={24} color={COLORS.primary} />
+                </View>
+                <Text style={styles.stateTitle}>حسابك قيد المراجعة</Text>
+                <Text style={styles.stateCaption}>ستتمكن من استقبال الطلبات فور اعتماد بياناتك.</Text>
+              </>
+            ) : !isOnline ? (
+              <>
+                <View style={styles.stateIcon}>
+                  <Ionicons name="pause" size={22} color={COLORS.inkSecondary} />
+                </View>
+                <Text style={styles.stateTitle}>استقبال الطلبات متوقف</Text>
+                <Text style={styles.stateCaption}>عند الاتصال ستصلك الطلبات الجاهزة القريبة منك.</Text>
+                <TouchableOpacity
+                  style={[styles.primaryButton, controlsDisabled && styles.disabled]}
+                  onPress={handleToggleOnline}
+                  disabled={controlsDisabled}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="ابدأ استقبال الطلبات"
+                >
+                  <Text style={styles.primaryButtonText}>ابدأ استقبال الطلبات</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <SearchPulse />
+                <Text style={styles.stateTitle}>
+                  {current ? 'وصل طلب توصيل جديد' : 'جاري البحث عن طلبات قريبة'}
+                </Text>
+                <Text style={styles.stateCaption}>
+                  <LastUpdated at={lastUpdatedAt} />
+                </Text>
+                {realtimeDegraded ? (
+                  <View style={styles.warningChip}>
+                    <Ionicons name="alert-circle-outline" size={14} color={COLORS.warningInk} />
+                    <Text style={styles.warningChipText}>التحديث اللحظي متوقف مؤقتًا</Text>
+                  </View>
+                ) : null}
+                <RefreshButton refreshing={refreshing} onPress={() => void loadData(true)} label="تحديث الآن" />
+              </>
+            )}
           </View>
-        </View>
-      </View>
 
-      <View style={[styles.bottomCardWrap, isShort && styles.bottomCardWrapShort]}>
-        <View style={[styles.orderCard, { width: contentWidth }, isShort && styles.orderCardShort]}>
-          {initialLoading ? (
-            <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="جاري تحميل عروض التوصيل" />
-          ) : loadError ? (
-            <>
-              <Ionicons name="cloud-offline-outline" size={38} color={COLORS.error} />
-              <Text style={styles.cardTitle}>تعذّر تحديث العروض</Text>
-              <Text style={styles.errorText}>{loadError}</Text>
-            </>
-          ) : !isApproved ? (
-            <>
-              <Ionicons name="shield-checkmark-outline" size={40} color={COLORS.warning} />
-              <Text style={styles.cardTitle}>الحساب بانتظار الاعتماد</Text>
-              <Text style={styles.cardSubtitle}>ستتمكن من استقبال الطلبات بعد اعتماد بيانات المندوب.</Text>
-            </>
-          ) : !isOnline ? (
-            <>
-              <Ionicons name="notifications-off-outline" size={40} color={COLORS.textMuted} />
-              <Text style={styles.cardTitle}>أنت غير متصل</Text>
-              <Text style={styles.cardSubtitle}>فعّل استقبال الطلبات من الزر أعلاه.</Text>
-            </>
-          ) : (
-            <>
-              <Ionicons name="radio-outline" size={40} color={COLORS.primary} />
-              <Text style={styles.cardTitle}>
-                {current ? 'وصل عرض توصيل جديد' : 'جاري البحث عن طلبات جاهزة...'}
-              </Text>
-              <Text style={styles.cardSubtitle}>
-                {realtimeDegraded
-                  ? 'التحديث اللحظي غير متاح مؤقتًا؛ يتم التحديث تلقائيًا كل عدة ثوانٍ.'
-                  : 'ستظهر العروض الجديدة تلقائيًا عند تجهيزها من المتجر.'}
-              </Text>
-            </>
-          )}
-
-          <TouchableOpacity
-            onPress={() => void loadData(true)}
-            style={styles.refreshBtn}
-            disabled={refreshing}
-            accessibilityRole="button"
-            accessibilityLabel="تحديث عروض التوصيل"
-            accessibilityState={{ busy: refreshing, disabled: refreshing }}
-          >
-            {refreshing
-              ? <ActivityIndicator size="small" color={COLORS.primary} />
-              : <Text style={styles.refreshText}>تحديث الآن</Text>}
-          </TouchableOpacity>
+          {locationMessage ? (
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={16} color={COLORS.inkSecondary} />
+              <Text style={styles.infoText}>{locationMessage}</Text>
+            </View>
+          ) : null}
         </View>
-      </View>
+      </ScrollView>
 
       <IncomingOrderModal
         visible={showIncomingModal}
@@ -462,94 +515,286 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Presentational pieces
+// ---------------------------------------------------------------------------
+
+// Western digits match the rest of the app and stay unambiguous with the
+// Arabic font (its decimal/thousands separators render almost identically).
+const formatMoney = (value: number) =>
+  value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatInt = (value: number) => value.toLocaleString('en-US');
+const secondsLabel = (n: number) => (n >= 3 && n <= 10 ? 'ثوانٍ' : 'ثانية');
+const minutesLabel = (n: number) => (n >= 3 && n <= 10 ? 'دقائق' : 'دقيقة');
+
+function useReduceMotion() {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => { if (mounted) setReduce(enabled); })
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', setReduce);
+    return () => { mounted = false; sub?.remove?.(); };
+  }, []);
+  return reduce;
+}
+
+function OnlineSwitch({ value }: { value: boolean }) {
+  const progress = useRef(new Animated.Value(value ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: value ? 1 : 0,
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [progress, value]);
+
+  // RTL: "on" sits at the leading (right) edge of the track.
+  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, -24] });
+  const backgroundColor = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [COLORS.hairline, COLORS.primary],
+  });
+
+  return (
+    <View style={styles.switchSlot} importantForAccessibility="no-hide-descendants">
+      <Animated.View style={[styles.switchTrack, { backgroundColor }]}>
+        <Animated.View style={[styles.switchThumb, { transform: [{ translateX }] }]} />
+      </Animated.View>
+    </View>
+  );
+}
+
+function CountUpAmount({ value, style }: { value: number; style: any }) {
+  const reduceMotion = useReduceMotion();
+  const animated = useRef(new Animated.Value(0)).current;
+  const [display, setDisplay] = useState(value);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setDisplay(value);
+      return;
+    }
+    const id = animated.addListener(({ value: v }) => setDisplay(v));
+    Animated.timing(animated, {
+      toValue: value,
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    return () => animated.removeListener(id);
+  }, [animated, reduceMotion, value]);
+
+  return (
+    <Text style={style} accessibilityLabel={`${formatMoney(value)} ريال يمني`}>
+      {formatMoney(display)}
+    </Text>
+  );
+}
+
+function SummaryStat({ value, label }: { value: string | null; label: string }) {
+  return (
+    <View style={styles.stat}>
+      {value === null ? (
+        <View style={styles.statSkeleton} />
+      ) : (
+        <Text style={styles.statValue} numberOfLines={1}>{value}</Text>
+      )}
+      <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
+    </View>
+  );
+}
+
+function SearchPulse() {
+  const reduceMotion = useReduceMotion();
+  const ring = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const loop = Animated.loop(
+      Animated.timing(ring, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduceMotion, ring]);
+
+  const scale = ring.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
+  const opacity = ring.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] });
+
+  return (
+    <View style={styles.pulse} importantForAccessibility="no-hide-descendants">
+      {!reduceMotion ? (
+        <Animated.View style={[styles.pulseRing, { opacity, transform: [{ scale }] }]} />
+      ) : null}
+      <View style={styles.pulseHalo} />
+      <View style={styles.pulseCore}>
+        <Ionicons name="navigate" size={22} color={COLORS.surface} />
+      </View>
+    </View>
+  );
+}
+
+function LastUpdated({ at }: { at: number | null }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(id);
+  }, []);
+  if (!at) return <Text>ستظهر الطلبات الجديدة تلقائيًا</Text>;
+  const seconds = Math.max(0, Math.round((now - at) / 1000));
+  const text = seconds < 5
+    ? 'آخر تحديث الآن'
+    : seconds < 60
+      ? `آخر تحديث قبل ${formatInt(seconds)} ${secondsLabel(seconds)}`
+      : `آخر تحديث قبل ${formatInt(Math.round(seconds / 60))} ${minutesLabel(Math.round(seconds / 60))}`;
+  return <Text>{text}</Text>;
+}
+
+function RefreshButton({ refreshing, onPress, label }: { refreshing: boolean; onPress: () => void; label: string }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.textButton}
+      disabled={refreshing}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ busy: refreshing, disabled: refreshing }}
+    >
+      {refreshing ? (
+        <ActivityIndicator size="small" color={COLORS.primary} />
+      ) : (
+        <>
+          <Ionicons name="refresh" size={16} color={COLORS.primary} />
+          <Text style={styles.textButtonLabel}>{label}</Text>
+        </>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+const CARD_SHADOW = Platform.select({
+  web: { boxShadow: '0 4px 16px rgba(15,23,42,0.06)' } as any,
+  default: {
+    shadowColor: COLORS.ink,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 2,
+  },
+});
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F7FC' },
-  radarArea: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 36,
+  container: { flex: 1, backgroundColor: COLORS.canvas },
+  content: { paddingHorizontal: 16 },
+  page: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 16 },
+
+  header: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, minHeight: 48 },
+  avatar: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center', justifyContent: 'center',
   },
-  radarAreaShort: { justifyContent: 'center', paddingTop: 46 },
-  centerPulseOuter: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(5, 150, 105, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  avatarDot: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 12, height: 12, borderRadius: 6,
+    borderWidth: 2, borderColor: COLORS.canvas,
   },
-  centerPulseOuterShort: { width: 76, height: 76, borderRadius: 38 },
-  centerPulseOffline: { backgroundColor: 'rgba(156, 163, 175, 0.15)' },
-  centerPulseInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(5, 150, 105, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#059669',
+  greeting: { flex: 1, alignItems: 'flex-end' },
+  greetingTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'right' },
+  greetingCaption: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.inkSecondary, textAlign: 'right' },
+  iconButton: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.hairline,
+    alignItems: 'center', justifyContent: 'center',
   },
-  centerPulseInnerShort: { width: 52, height: 52, borderRadius: 26, borderWidth: 2 },
-  centerPulseInnerOffline: { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB' },
-  radarTitle: { marginTop: 24, color: '#059669', fontWeight: '800', fontSize: 18, textAlign: 'center' },
-  radarTitleShort: { marginTop: 8, fontSize: 14 },
-  radarSubtitle: { marginTop: 8, color: '#6B7280', fontWeight: '600', fontSize: 13, textAlign: 'center', lineHeight: 20 },
-  radarSubtitleShort: { marginTop: 3, fontSize: 10.5, lineHeight: 15, maxWidth: 360 },
-  offlineText: { color: '#6B7280' },
-  topSafeArea: { paddingTop: Platform.OS === 'ios' ? 60 : 40, width: '100%', position: 'absolute', top: 0, zIndex: 10 },
-  topSafeAreaShort: { paddingTop: 10 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
-  menuBtn: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
+
+  card: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 16, ...CARD_SHADOW },
+  toggleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16 },
+  toggleCopy: { flex: 1, alignItems: 'flex-end', gap: 2 },
+  sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'right' },
+  mutedTitle: { color: COLORS.inkSecondary },
+  caption: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.inkSecondary, textAlign: 'right' },
+  switchSlot: { width: 56, height: 44, alignItems: 'center', justifyContent: 'center' },
+  switchTrack: { width: 52, height: 28, borderRadius: 14, padding: 2, alignItems: 'flex-end', justifyContent: 'center' },
+  switchThumb: {
+    width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.surface,
+    ...Platform.select({
+      web: { boxShadow: '0 1px 3px rgba(15,23,42,0.2)' } as any,
+      default: { shadowColor: COLORS.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 2 },
+    }),
   },
-  centerStatus: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  statusTextTop: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
-  statusDotTop: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#10B981' },
-  statusDotOffline: { backgroundColor: '#EF4444' },
-  avatarWrap: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
+
+  summaryCard: { backgroundColor: COLORS.primary, borderRadius: 24, padding: 20 },
+  summaryTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  summaryLabel: { fontFamily: FONTS.medium, fontSize: 15, lineHeight: 21, color: 'rgba(255,255,255,0.78)' },
+  detailsLink: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2, minHeight: 44, paddingHorizontal: 4 },
+  detailsText: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  amountRow: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 6, marginTop: 2 },
+  amount: {
+    fontFamily: FONTS.bold, fontSize: 28, lineHeight: 39, color: COLORS.surface,
+    fontVariant: ['tabular-nums', 'lining-nums'],
   },
-  avatarOnlineDot: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#10B981', borderWidth: 2.5, borderColor: '#FFFFFF' },
-  earningsPillWrap: { alignItems: 'center', marginTop: 12 },
-  earningsPillWrapShort: { marginTop: 4 },
-  earningsPill: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.04, shadowRadius: 16, elevation: 4, gap: 12,
+  currency: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.78)' },
+  amountSkeleton: { width: 140, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.14)', marginTop: 6, alignSelf: 'flex-end' },
+  summaryNote: { fontFamily: FONTS.regular, fontSize: 13, color: 'rgba(255,255,255,0.7)', textAlign: 'right', marginTop: 2 },
+  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.14)', marginVertical: 16 },
+  statsRow: { flexDirection: 'row-reverse', alignItems: 'center' },
+  statsDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.14)' },
+  stat: { flex: 1, alignItems: 'center', gap: 2 },
+  statValue: { fontFamily: FONTS.semiBold, fontSize: 15, lineHeight: 21, color: COLORS.surface, fontVariant: ['tabular-nums'] },
+  statLabel: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 17, color: 'rgba(255,255,255,0.7)' },
+  statSkeleton: { width: 36, height: 16, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.14)', marginVertical: 2.5 },
+
+  stateCard: { alignItems: 'center', paddingVertical: 24, gap: 6 },
+  stateIcon: {
+    width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primarySoft,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 6,
   },
-  earningsTexts: { alignItems: 'center' },
-  earningsLabel: { fontSize: 10, fontWeight: '600', color: '#9CA3AF', marginBottom: 2 },
-  earningsValue: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  earningsCurrency: { fontSize: 11, fontWeight: '700' },
-  walletIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  connectionDropdownWrap: { alignItems: 'center', marginTop: 18 },
-  connectionDropdownWrapShort: { marginTop: 5 },
-  connectionDropdown: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 12,
-    borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 3, gap: 12,
+  stateIconError: { backgroundColor: '#FDECEC' },
+  stateTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'center' },
+  stateCaption: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.inkSecondary, textAlign: 'center' },
+
+  pulse: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  pulseRing: { position: 'absolute', width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.primary },
+  pulseHalo: { position: 'absolute', width: 68, height: 68, borderRadius: 34, backgroundColor: 'rgba(23,37,84,0.1)' },
+  pulseCore: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center',
   },
-  connectionDropdownOffline: { backgroundColor: '#FEF2F2' },
-  connectionText: { fontSize: 13, fontWeight: '700', color: '#111827' },
-  connectionDotLarge: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981' },
-  bottomCardWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Platform.OS === 'ios' ? 120 : 100 },
-  bottomCardWrapShort: { padding: 10, paddingBottom: 80 },
-  orderCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, minHeight: 190, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 10,
+
+  warningChip: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    backgroundColor: COLORS.warningSoft, borderRadius: 999,
+    paddingHorizontal: 12, paddingVertical: 6, marginTop: 4,
   },
-  orderCardShort: { minHeight: 138, padding: 14, borderRadius: 22 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#111827', marginTop: 12, textAlign: 'center' },
-  cardSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 6, textAlign: 'center', lineHeight: 20 },
-  errorText: { fontSize: 12.5, color: '#DC2626', marginTop: 6, textAlign: 'center', lineHeight: 19 },
-  refreshBtn: { marginTop: 14, minHeight: 38, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
-  refreshText: { color: '#2563EB', fontWeight: '800', fontSize: 13 },
-  radarBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, position: 'absolute', top: Platform.OS === 'ios' ? 110 : 90, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  radarBadgeShort: { display: 'none' },
-  radarBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
-  topPanel: { alignSelf: 'center' },
-  connectionTextOnline: { color: COLORS.success },
+  warningChipText: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.warningInk },
+
+  textButton: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 6,
+    minHeight: 44, minWidth: 120, paddingHorizontal: 16, marginTop: 6, borderRadius: 12,
+  },
+  textButtonLabel: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.primary },
+
+  primaryButton: {
+    alignSelf: 'stretch', minHeight: 48, borderRadius: 12, marginTop: 12,
+    backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
+  },
+  primaryButtonText: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.surface },
+  disabled: { opacity: 0.5 },
+
+  stateSkeleton: { alignItems: 'center', gap: 10, width: '100%' },
+  skeletonCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.surfaceMuted },
+  skeletonLineWide: { width: '60%', height: 16, borderRadius: 6, backgroundColor: COLORS.surfaceMuted },
+  skeletonLine: { width: '40%', height: 12, borderRadius: 6, backgroundColor: COLORS.surfaceMuted },
+
+  infoRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 4 },
+  infoText: { flex: 1, fontFamily: FONTS.regular, fontSize: 13, color: COLORS.inkSecondary, textAlign: 'right' },
 });

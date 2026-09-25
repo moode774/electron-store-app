@@ -30,6 +30,16 @@ export const COLORS = {
   error: '#D84A4A',
   info: '#2F6EA3',
   overlay: 'rgba(11,23,54,0.52)',
+  // Operational (driver) surfaces: calm neutral canvas, navy as the only brand
+  // color, green reserved for the small "online" status signal.
+  canvas: '#F6F7FB',
+  ink: '#0F172A',
+  inkSecondary: '#64748B',
+  inkTertiary: '#94A3B8',
+  statusOnline: '#16A34A',
+  hairline: '#E2E8F0',
+  warningSoft: '#FEF3C7',
+  warningInk: '#92400E',
 } as const;
 
 // ---- Spacing -----------------------------------------------
