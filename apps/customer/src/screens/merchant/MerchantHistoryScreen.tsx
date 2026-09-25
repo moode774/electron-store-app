@@ -1,310 +1,214 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, useWindowDimensions, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, OrderSummary } from '@marketplace/shared-hooks';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import { getMerchantOrderStatusInfo, HISTORY_MERCHANT_ORDER_STATUSES } from './merchantOrderState';
+import { Banner, Chips, EmptyState, ScreenHeader, card, formatMoney, paymentLabel, ui, useIsDesktop } from './merchantUi';
 
-const UI = {
-  primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.background,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
-  green: COLORS.success,
-  red: COLORS.error,
-};
+type Filter = 'all' | 'delivered' | 'cancelled' | 'issues';
+type Row = { kind: 'day'; key: string; label: string; total: number } | { kind: 'order'; key: string; order: OrderSummary; last: boolean };
 
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 2,
+const ISSUE_STATUSES = new Set<string>([
+  ORDER_STATUS.RETURNED, ORDER_STATUS.FAILED_DELIVERY, ORDER_STATUS.PARTIAL_DELIVERY, ORDER_STATUS.DISPUTED,
+]);
+
+const dayLabel = (iso: string) => {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(Date.now() - 86400000);
+  if (d.toDateString() === today.toDateString()) return 'اليوم';
+  if (d.toDateString() === yesterday.toDateString()) return 'أمس';
+  return d.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 export default function MerchantHistoryScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
-  const [searchQuery, setSearchQuery] = useState('');
-  const { width } = useWindowDimensions();
-  const isCompact = width < BREAKPOINTS.compact;
-  const isTablet = width >= BREAKPOINTS.tablet;
-  const isDesktop = width >= BREAKPOINTS.desktop;
+  const isDesktop = useIsDesktop();
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
   const { orders: allOrders, loading, refreshing, error, realtimeError, refresh } = useMerchantOrderFeed(user?.id, 'history');
-  const orders = useMemo(
-    () => allOrders.filter((order) => HISTORY_MERCHANT_ORDER_STATUSES.has(order.status)),
-    [allOrders],
-  );
+  const orders = useMemo(() => allOrders.filter((o) => HISTORY_MERCHANT_ORDER_STATUSES.has(o.status)), [allOrders]);
 
-  // Group by Date + Search Logic
-  const groupedOrders = useMemo(() => {
-    const query = searchQuery.toLowerCase();
-    const filtered = orders.filter(o => {
-      if (!query) return true;
-      return o.order_number.toLowerCase().includes(query) || 
-             (o.customer_profiles?.full_name || '').toLowerCase().includes(query);
+  const groups: Record<Filter, (o: OrderSummary) => boolean> = {
+    all: () => true,
+    delivered: (o) => o.status === ORDER_STATUS.DELIVERED,
+    cancelled: (o) => o.status === ORDER_STATUS.CANCELLED,
+    issues: (o) => ISSUE_STATUSES.has(o.status),
+  };
+  const count = (key: Filter) => orders.filter(groups[key]).length;
+
+  const delivered = orders.filter(groups.delivered);
+  const deliveredValue = delivered.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+
+  const rows = useMemo<Row[]>(() => {
+    const q = query.trim().toLowerCase();
+    const list = orders.filter((o) => groups[filter](o) && (!q
+      || o.order_number.toLowerCase().includes(q)
+      || (o.customer_profiles?.full_name || '').toLowerCase().includes(q)));
+    const byDay = new Map<string, OrderSummary[]>();
+    list.forEach((o) => {
+      const key = new Date(o.created_at).toDateString();
+      byDay.set(key, [...(byDay.get(key) ?? []), o]);
     });
-
-    const groups: { [key: string]: OrderSummary[] } = {};
-    filtered.forEach(o => {
-      let dateKey = 'تاريخ غير محدد';
-      try {
-        dateKey = new Date(o.created_at).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      } catch (e) {}
-      
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(o);
+    const out: Row[] = [];
+    byDay.forEach((dayOrders, key) => {
+      out.push({
+        kind: 'day',
+        key: `d-${key}`,
+        label: dayLabel(dayOrders[0].created_at),
+        total: dayOrders.filter(groups.delivered).reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
+      });
+      dayOrders.forEach((order, i) => out.push({ kind: 'order', key: order.id, order, last: i === dayOrders.length - 1 }));
     });
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, filter, query]);
 
-    return Object.keys(groups).map(date => ({
-      date,
-      data: groups[date]
-    }));
-  }, [orders, searchQuery]);
-
-  const totalDelivered = useMemo(() => orders.filter(o => o.status === ORDER_STATUS.DELIVERED).reduce((acc, o) => acc + (o.total_amount || 0), 0), [orders]);
-  const totalOrders = orders.length;
-
-  const renderItem = ({ item, index, sectionData }: { item: OrderSummary, index: number, sectionData: OrderSummary[] }) => {
-    const info = getMerchantOrderStatusInfo(item.status);
-    const customerName = item.customer_profiles?.full_name || 'عميل غير مسجل';
-    const payment = item.payment_method === 'cash' ? 'نقداً عند الاستلام' : 'دفع غير نقدي';
-    
-    let timeStr = '';
-    try {
-      timeStr = new Date(item.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    } catch (e) {
-      timeStr = '';
-    }
-
-    const isLast = index === sectionData.length - 1;
-
-    return (
-      <TouchableOpacity 
-        style={styles.ledgerRowWrap} 
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
-        accessibilityRole="button"
-        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
-      >
-        {/* Timeline connector */}
-        <View style={styles.timelineCol}>
-          <View style={[styles.timelineNode, { borderColor: info.color }]} />
-          {!isLast && <View style={styles.timelineLine} />}
+  const renderRow = ({ item }: { item: Row }) => {
+    if (item.kind === 'day') {
+      return (
+        <View style={styles.day}>
+          <Text style={styles.dayLabel}>{item.label}</Text>
+          {item.total ? <Text style={styles.dayTotal}>{formatMoney(item.total)} ر.ي مسلّمة</Text> : null}
         </View>
-
-        {/* Content Row */}
-        <View style={[styles.ledgerCard, isCompact && styles.ledgerCardCompact, isDesktop && styles.ledgerCardDesktop]}>
-          <View style={[styles.ledgerHeader, isCompact && styles.ledgerHeaderCompact]}>
-            <View>
-              <Text style={styles.orderNumber}>{item.order_number}</Text>
-              <Text style={styles.timeText}>{timeStr}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-start' }}>
-               <Text style={[styles.amountText, item.status === ORDER_STATUS.CANCELLED && styles.amountCancelled]}>
-                 {item.total_amount} <Text style={{ fontSize: 12 }}>ر.ي</Text>
-               </Text>
-               <View style={styles.statusWrap}>
-                 <Ionicons name={info.icon as any} size={14} color={info.color} />
-                 <Text style={[styles.statusText, { color: info.color }]}>{info.label}</Text>
-               </View>
-            </View>
-          </View>
-          
-          <View style={styles.ledgerDetails}>
-            <View style={styles.ledgerDetailItem}>
-              <Ionicons name="person-outline" size={14} color={UI.textMuted} />
-              <Text style={styles.ledgerDetailText}>{customerName}</Text>
-            </View>
-            <View style={styles.ledgerDetailItem}>
-              <Ionicons name="location-outline" size={14} color={UI.textMuted} />
-              <Text style={styles.ledgerDetailText}>{payment}</Text>
-            </View>
-          </View>
+      );
+    }
+    const { order } = item;
+    const info = getMerchantOrderStatusInfo(order.status);
+    const cancelled = order.status === ORDER_STATUS.CANCELLED;
+    return (
+      <TouchableOpacity
+        style={[styles.row, item.last && styles.rowLast]}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('OrderDetails', { orderId: order.id })}
+        accessibilityRole="button"
+        accessibilityLabel={`فتح تفاصيل الطلب ${order.order_number}`}
+      >
+        <View style={[styles.icon, { backgroundColor: info.background }]}>
+          <Ionicons name={info.icon as any} size={18} color={info.color} />
+        </View>
+        <View style={styles.copy}>
+          <Text style={styles.number}>#{order.order_number}</Text>
+          <Text style={styles.meta} numberOfLines={1}>
+            {order.customer_profiles?.full_name || 'عميل'} · {new Date(order.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {paymentLabel(order.payment_method)}
+          </Text>
+        </View>
+        <View style={styles.end}>
+          <Text style={[styles.amount, cancelled && styles.amountCancelled]}>{formatMoney(order.total_amount)}</Text>
+          <Text style={[styles.status, { color: info.color }]}>{info.label}</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
-      
-      {!isDesktop && (
-        <View style={styles.headerMobile}>
-          <Text style={styles.headerTitleMobile}>سجل الطلبات</Text>
-        </View>
-      )}
+    <View style={ui.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScreenHeader title="سجل الطلبات" subtitle={loading ? 'جاري التحميل...' : `${orders.length} طلب منتهٍ`} />
 
-      <View style={[styles.pageContent, isTablet && styles.pageContentTablet, isDesktop && styles.pageContentDesktop]}>
-        
-        <View style={styles.topSection}>
-          {isDesktop && (
-            <View style={styles.pageHeaderRow}>
-              <View>
-                <Text style={styles.pageTitle}>سجل الطلبات</Text>
-                <Text style={styles.pageSubtitle}>الطلبات المكتملة والملغاة والمرتجعة وحالات تعذر التسليم</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Quick Stats & Search Box */}
-          <View style={[styles.dashboardCard, isDesktop && styles.dashboardCardDesktop]}>
-             <View style={[styles.statsRow, isCompact && styles.statsRowCompact]}>
-                <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>قيمة الطلبات المسلّمة</Text>
-                  <Text style={styles.statValueGreen}>{totalDelivered} ر.ي</Text>
-                </View>
-                {!isCompact && <View style={styles.statDivider} />}
-                <View style={styles.statBox}>
-                  <Text style={styles.statLabel}>عدد العمليات</Text>
-                  <Text style={styles.statValueDark}>{totalOrders}</Text>
-                </View>
-             </View>
-
-             <View style={styles.searchWrap}>
-               <Ionicons name="search" size={20} color={UI.textMuted} style={styles.searchIcon} />
-               <TextInput 
-                 style={styles.searchInput}
-                 placeholder="ابحث برقم الطلب أو اسم العميل..."
-                 placeholderTextColor={UI.textMuted}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  accessibilityLabel="البحث في سجل الطلبات"
-               />
-             </View>
-          </View>
-        </View>
-
-        <View style={[styles.contentBox, isDesktop && styles.contentBoxDesktop]}>
-          {realtimeError || (error && orders.length > 0) ? (
-            <View style={styles.inlineWarning} accessibilityRole="alert">
-              <Ionicons name="cloud-offline-outline" size={18} color="#92400E" />
-              <Text style={styles.inlineWarningText}>{realtimeError ?? error}</Text>
-            </View>
-          ) : null}
-          {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={UI.primary} />
-            </View>
-          ) : error && orders.length === 0 ? (
-            <View style={styles.empty}>
-              <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
-              <Text style={styles.emptyTitle}>تعذر تحميل السجل</Text>
-              <Text style={styles.emptyText}>{error}</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل سجل الطلبات">
-                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={groupedOrders}
-              keyExtractor={(item) => item.date}
-              contentContainerStyle={styles.listContent}
-              refreshing={refreshing}
-              onRefresh={() => void refresh()}
-              renderItem={({ item }) => (
-                <View style={styles.dateGroup}>
-                  <View style={styles.dateBadge}>
-                     <Text style={styles.dateBadgeText}>{item.date}</Text>
-                  </View>
-                  {item.data.map((order, idx) => (
-                    <View key={order.id}>
-                      {renderItem({ item: order, index: idx, sectionData: item.data })}
-                    </View>
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
+      ) : (
+        <FlatList
+          data={rows}
+          keyExtractor={(row) => row.key}
+          renderItem={renderRow}
+          contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, styles.listGap]}
+          refreshing={refreshing}
+          onRefresh={() => void refresh()}
+          ListHeaderComponent={
+            <View style={styles.toolbar}>
+              {realtimeError || error ? <Banner text={(realtimeError ?? error) as string} tone="warning" actionLabel="تحديث" onAction={() => void refresh()} /> : null}
+              <View style={styles.summary}>
+                <Text style={styles.summaryLabel}>قيمة الطلبات المسلّمة</Text>
+                <Text style={styles.summaryValue}>{formatMoney(deliveredValue)} <Text style={styles.summaryCurrency}>ر.ي</Text></Text>
+                <View style={styles.summaryStats}>
+                  {[
+                    { label: 'مسلّم', value: count('delivered') },
+                    { label: 'ملغي', value: count('cancelled') },
+                    { label: 'مرتجع / تعذّر', value: count('issues') },
+                  ].map((s, i) => (
+                    <React.Fragment key={s.label}>
+                      {i > 0 ? <View style={styles.summaryDivider} /> : null}
+                      <View style={styles.summaryStat}>
+                        <Text style={styles.summaryStatValue}>{s.value}</Text>
+                        <Text style={styles.summaryStatLabel}>{s.label}</Text>
+                      </View>
+                    </React.Fragment>
                   ))}
                 </View>
-              )}
-              ListEmptyComponent={
-                <View style={styles.empty}>
-                  <Ionicons name="documents-outline" size={64} color={UI.border} />
-                  <Text style={styles.emptyTitle}>سجل الطلبات فارغ</Text>
-                  <Text style={styles.emptyText}>لم يتم العثور على أي حركات متطابقة.</Text>
-                </View>
-              }
+              </View>
+              {orders.length ? (
+                <>
+                  <View style={styles.search}>
+                    <Ionicons name="search" size={18} color={COLORS.inkTertiary} />
+                    <TextInput
+                      style={styles.searchInput}
+                      value={query}
+                      onChangeText={setQuery}
+                      placeholder="رقم الطلب أو اسم العميل"
+                      placeholderTextColor={COLORS.inkTertiary}
+                      accessibilityLabel="البحث في سجل الطلبات"
+                    />
+                  </View>
+                  <Chips
+                    items={[
+                      { key: 'all', label: 'الكل', count: orders.length },
+                      { key: 'delivered', label: 'مسلّم', count: count('delivered') },
+                      { key: 'cancelled', label: 'ملغي', count: count('cancelled') },
+                      { key: 'issues', label: 'مرتجع / تعذّر', count: count('issues') },
+                    ]}
+                    value={filter}
+                    onChange={setFilter}
+                  />
+                </>
+              ) : null}
+            </View>
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="time-outline"
+              title={orders.length ? 'لا توجد نتائج' : 'لا يوجد سجل بعد'}
+              text={orders.length ? 'جرّب بحثاً أو تصفية مختلفة.' : 'ستظهر هنا الطلبات بعد تسليمها أو إلغائها.'}
             />
-          )}
-        </View>
-      </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: UI.bgMobile },
-  
-  headerMobile: { paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerTitleMobile: { fontSize: 20, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right' },
-  
-  pageContent: { flex: 1 },
-  pageContentTablet: { width: '100%', maxWidth: 1240, alignSelf: 'center', paddingHorizontal: 24 },
-  pageContentDesktop: { paddingTop: 40, paddingBottom: 40, alignItems: 'center' },
-  
-  topSection: { width: '100%', maxWidth: 1200, zIndex: 2 },
-  
-  pageHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
-  pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-  
-  dashboardCard: { backgroundColor: '#FFFFFF', padding: 20, borderBottomWidth: 1, borderBottomColor: UI.border, gap: 20 },
-  dashboardCardDesktop: { borderRadius: 20, borderWidth: 1, ...softShadow, marginBottom: 24, borderBottomWidth: 1 },
-  
-  statsRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-around', backgroundColor: UI.bg, padding: 16, borderRadius: 16 },
-  statsRowCompact: { flexDirection: 'column', gap: 14, alignItems: 'stretch' },
-  statBox: { alignItems: 'center' },
-  statDivider: { width: 1, height: 40, backgroundColor: UI.border },
-  statLabel: { fontSize: 13, color: UI.textGrey, fontWeight: '700', marginBottom: 4 },
-  statValueGreen: { fontSize: 24, fontWeight: '900', color: UI.green },
-  statValueDark: { fontSize: 24, fontWeight: '900', color: UI.textDark },
-
-  searchWrap: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, borderRadius: 12, paddingHorizontal: 16, height: 50 },
-  searchIcon: { marginLeft: 10 },
-  searchInput: { flex: 1, textAlign: 'right', fontSize: 14, fontWeight: '600', color: UI.textDark, height: '100%' },
-
-  contentBox: { flex: 1, width: '100%', maxWidth: 1200 },
-  contentBoxDesktop: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, ...softShadow, borderWidth: 1, borderColor: COLORS.surface, overflow: 'hidden' },
-  
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 400 },
-  
-  listContent: { padding: 16, paddingBottom: 120 },
-  
-  dateGroup: { marginBottom: 32 },
-  dateBadge: { alignSelf: 'flex-end', backgroundColor: '#111827', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 100, marginBottom: 16, marginRight: 20 },
-  dateBadgeText: { fontSize: 12, fontWeight: '800', color: '#FFFFFF' },
-
-  ledgerRowWrap: { flexDirection: 'row-reverse', alignItems: 'stretch' },
-  
-  timelineCol: { width: 40, alignItems: 'center' },
-  timelineNode: { width: 14, height: 14, borderRadius: 7, borderWidth: 3, backgroundColor: '#FFFFFF', zIndex: 2, marginTop: 24 },
-  timelineLine: { width: 2, backgroundColor: UI.border, flex: 1, position: 'absolute', top: 38, bottom: -24, zIndex: 1 },
-
-  ledgerCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: UI.border, marginBottom: 16 },
-  ledgerCardCompact: { padding: 14 },
-  ledgerCardDesktop: { padding: 24 },
-  
-  ledgerHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  ledgerHeaderCompact: { flexDirection: 'column', gap: 12, alignItems: 'stretch' },
-  orderNumber: { fontSize: 16, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
-  timeText: { fontSize: 12, color: UI.textMuted, fontWeight: '600', marginTop: 4, textAlign: 'right' },
-  
-  amountText: { fontSize: 18, fontWeight: '900', color: UI.primary },
-  amountCancelled: { textDecorationLine: 'line-through', color: UI.textMuted },
-  
-  statusWrap: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, marginTop: 4 },
-  statusText: { fontSize: 12, fontWeight: '800' },
-
-  ledgerDetails: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: UI.bg },
-  ledgerDetailItem: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, backgroundColor: UI.bg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  ledgerDetailText: { fontSize: 12, fontWeight: '600', color: UI.textGrey },
-
-  empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
-  emptyText: { fontSize: 14, color: UI.textMuted, textAlign: 'center' },
-  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: RADIUS.md, paddingHorizontal: 22 },
-  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  inlineWarning: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#FFFBEB', borderBottomWidth: 1, borderBottomColor: '#FDE68A', paddingHorizontal: 18, paddingVertical: 10 },
-  inlineWarningText: { flex: 1, color: '#92400E', fontSize: 12.5, fontWeight: '700', textAlign: 'right' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  listGap: { gap: 0 },
+  toolbar: { gap: 12, marginBottom: 6 },
+  summary: { backgroundColor: COLORS.primary, borderRadius: RADIUS.xl, padding: 18 },
+  summaryLabel: { fontSize: 12, fontFamily: FONTS.medium, color: '#CBD5E1', textAlign: 'right' },
+  summaryValue: { fontSize: 28, fontFamily: FONTS.bold, color: COLORS.surface, textAlign: 'right', marginTop: 4 },
+  summaryCurrency: { fontSize: 14, fontFamily: FONTS.medium, color: '#CBD5E1' },
+  summaryStats: { flexDirection: 'row-reverse', alignItems: 'center', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.14)' },
+  summaryStat: { flex: 1, alignItems: 'center' },
+  summaryStatValue: { fontSize: 17, fontFamily: FONTS.bold, color: COLORS.surface },
+  summaryStatLabel: { fontSize: 11, fontFamily: FONTS.regular, color: '#CBD5E1', marginTop: 2 },
+  summaryDivider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.14)' },
+  search: { ...card, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 14, minHeight: 46 },
+  searchInput: { flex: 1, width: 0, minWidth: 0, minHeight: 44, fontSize: 14, fontFamily: FONTS.medium, color: COLORS.ink, textAlign: 'right', outlineStyle: 'none' as any },
+  day: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, paddingBottom: 8, paddingHorizontal: 4 },
+  dayLabel: { fontSize: 13, fontFamily: FONTS.bold, color: COLORS.ink },
+  dayTotal: { fontSize: 12, fontFamily: FONTS.medium, color: COLORS.inkSecondary },
+  row: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.hairline, borderBottomWidth: 0,
+  },
+  rowLast: { borderBottomWidth: 1, borderBottomLeftRadius: RADIUS.lg, borderBottomRightRadius: RADIUS.lg },
+  icon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  copy: { flex: 1, alignItems: 'flex-end' },
+  number: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.ink },
+  meta: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.inkTertiary, textAlign: 'right', marginTop: 3 },
+  end: { alignItems: 'flex-start' },
+  amount: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.ink },
+  amountCancelled: { color: COLORS.inkTertiary, textDecorationLine: 'line-through' },
+  status: { fontSize: 11, fontFamily: FONTS.semiBold, marginTop: 3 },
 });

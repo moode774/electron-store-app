@@ -1,51 +1,37 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Switch, ActivityIndicator, Image, useWindowDimensions, I18nManager } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Switch, ActivityIndicator, Image, TextInput, I18nManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProducts, getMerchantProfile, updateProduct } from '@marketplace/shared-hooks';
-import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
-
-const UI = {
-  primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.surface,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
-  green: COLORS.success,
-  amber: COLORS.warning,
-  blue: COLORS.info,
-  red: COLORS.error,
-};
+import { Banner, Chips, EmptyState, IconButton, ScreenHeader, StatusPill, card, formatMoney, ui, useIsDesktop } from './merchantUi';
 
 const APPROVAL_META = {
-  pending: { label: 'بانتظار المراجعة', color: UI.amber, background: '#FFFBEB', icon: 'time-outline' as const },
-  approved: { label: 'معتمد', color: UI.green, background: '#ECFDF5', icon: 'checkmark-circle-outline' as const },
-  rejected: { label: 'مرفوض', color: UI.red, background: '#FEF2F2', icon: 'close-circle-outline' as const },
+  pending: { label: 'بانتظار المراجعة', color: '#B45309', background: COLORS.warningSoft, icon: 'time-outline' },
+  approved: { label: 'معتمد', color: '#15803D', background: '#DCFCE7', icon: 'checkmark-circle-outline' },
+  rejected: { label: 'مرفوض', color: '#B91C1C', background: '#FEE2E2', icon: 'close-circle-outline' },
 };
 
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 1,
-};
+const LOW_STOCK = 5;
+
+type Filter = 'all' | 'active' | 'hidden' | 'pending' | 'rejected' | 'out';
+
+const stockOf = (item: any): number =>
+  Array.isArray(item.product_variants) && item.product_variants.length
+    ? item.product_variants.reduce((sum: number, v: { stock_quantity?: number }) => sum + (v.stock_quantity ?? 0), 0)
+    : item.stock_quantity ?? 0;
 
 export default function MerchantProductsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
+  const isDesktop = useIsDesktop();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  
-  const { width } = useWindowDimensions();
-  const isCompact = width < BREAKPOINTS.compact;
-  const isTablet = width >= BREAKPOINTS.tablet;
-  const isDesktop = width >= BREAKPOINTS.desktop;
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
 
   const load = useCallback(async (initial = false) => {
     if (initial) setLoading(true); else setRefreshing(true);
@@ -56,8 +42,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
         setProducts([]);
         return;
       }
-      const data = await getMerchantProducts(merchant.id);
-      setProducts(data || []);
+      setProducts((await getMerchantProducts(merchant.id)) || []);
       setError(null);
     } catch {
       setError('تعذر تحميل المنتجات. تحقق من الاتصال ثم أعد المحاولة.');
@@ -83,216 +68,182 @@ export default function MerchantProductsScreen({ navigation }: any) {
     }
   };
 
-  const renderDesktopHeader = () => {
-    if (!isDesktop || products.length === 0) return null;
+  const matches: Record<Filter, (p: any) => boolean> = {
+    all: () => true,
+    active: (p) => p.is_active,
+    hidden: (p) => !p.is_active,
+    pending: (p) => (p.approval_status ?? 'pending') === 'pending',
+    rejected: (p) => p.approval_status === 'rejected',
+    out: (p) => stockOf(p) <= 0,
+  };
+
+  const counts = useMemo(() => {
+    const result = {} as Record<Filter, number>;
+    (Object.keys(matches) as Filter[]).forEach((key) => { result[key] = products.filter(matches[key]).length; });
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return products.filter((p) => matches[filter](p) && (!q || String(p.name ?? '').toLowerCase().includes(q)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, filter, query]);
+
+  const filters: { key: Filter; label: string; count: number }[] = [
+    { key: 'all', label: 'الكل', count: counts.all },
+    { key: 'active', label: 'معروض', count: counts.active },
+    { key: 'hidden', label: 'مخفي', count: counts.hidden },
+    { key: 'pending', label: 'قيد المراجعة', count: counts.pending },
+    { key: 'rejected', label: 'مرفوض', count: counts.rejected },
+    { key: 'out', label: 'نفد المخزون', count: counts.out },
+  ];
+
+  const renderItem = ({ item }: { item: any }) => {
+    const approval = APPROVAL_META[item.approval_status as keyof typeof APPROVAL_META] ?? APPROVAL_META.pending;
+    const stock = stockOf(item);
+    const onSale = item.sale_price != null && Number(item.sale_price) < Number(item.base_price);
+    const stockTone = stock <= 0
+      ? { label: 'نفد المخزون', color: '#B91C1C', bg: '#FEE2E2' }
+      : stock <= LOW_STOCK
+        ? { label: `متبقي ${stock}`, color: '#B45309', bg: COLORS.warningSoft }
+        : { label: `المخزون ${stock}`, color: COLORS.inkSecondary, bg: COLORS.canvas };
     return (
-      <View style={styles.tableHeaderRow}>
-        <Text style={[styles.th, { flex: 3 }]}>المنتج</Text>
-        <Text style={[styles.th, { flex: 1, textAlign: 'center' }]}>السعر</Text>
-        <Text style={[styles.th, { flex: 1.5, textAlign: 'center' }]}>مخزون الخيارات</Text>
-        <Text style={[styles.th, { flex: 1.5, textAlign: 'left' }]}>الحالة</Text>
+      <View style={[styles.item, isDesktop && styles.itemDesktop, !item.is_active && styles.itemHidden]}>
+        <View style={styles.thumb}>
+          {item.og_image_url ? (
+            <Image source={{ uri: item.og_image_url }} style={styles.thumbImg} resizeMode="cover" />
+          ) : (
+            <Ionicons name="image-outline" size={24} color={COLORS.inkTertiary} />
+          )}
+        </View>
+        <View style={styles.body}>
+          <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>{formatMoney(onSale ? item.sale_price : item.base_price)} <Text style={styles.currency}>ر.ي</Text></Text>
+            {onSale ? <Text style={styles.oldPrice}>{formatMoney(item.base_price)}</Text> : null}
+          </View>
+          <View style={styles.pills}>
+            <StatusPill label={approval.label} color={approval.color} background={approval.background} icon={approval.icon} />
+            <StatusPill label={stockTone.label} color={stockTone.color} background={stockTone.bg} />
+          </View>
+          {item.approval_status === 'rejected' && item.approval_note ? (
+            <Text style={styles.rejection} numberOfLines={3}>سبب الرفض: {item.approval_note}</Text>
+          ) : null}
+        </View>
+        <View style={styles.visibility}>
+          <Switch
+            value={item.is_active}
+            onValueChange={() => toggleActive(item.id, item.is_active)}
+            disabled={!!updatingId}
+            accessibilityLabel={`${item.is_active ? 'إخفاء' : 'إظهار'} المنتج ${item.name}`}
+            trackColor={{ false: COLORS.hairline, true: COLORS.primaryLight }}
+            thumbColor={COLORS.surface}
+            {...({ activeThumbColor: COLORS.surface } as any)}
+            style={{ transform: [{ scaleX: I18nManager?.isRTL ? -0.9 : 0.9 }, { scaleY: 0.9 }] }}
+          />
+          <Text style={[styles.visibilityText, item.is_active && styles.visibilityTextOn]}>
+            {updatingId === item.id ? '...' : item.is_active ? 'معروض' : 'مخفي'}
+          </Text>
+        </View>
       </View>
     );
   };
 
   return (
-    <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
-      
-      {!isDesktop && (
-        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={UI.textDark} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitleMobile}>إدارة المنتجات</Text>
-          <View style={{ width: 44 }} />
-        </View>
-      )}
+    <View style={ui.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScreenHeader
+        title="منتجاتي"
+        subtitle={loading ? 'جاري التحميل...' : `${products.length} منتج · ${counts.active ?? 0} معروض`}
+        right={<IconButton icon="add" label="إضافة منتج" primary onPress={() => navigation.navigate('AddProduct')} />}
+      />
 
-      <View style={[styles.pageContent, isTablet && styles.pageContentTablet, isDesktop && styles.pageContentDesktop]}>
-        
-        {/* Page Header */}
-        <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
-          <View>
-            <Text style={styles.pageTitle}>منتجاتي</Text>
-            <Text style={styles.pageSubtitle}>إدارة منتجات متجرك ومتابعة حالة مراجعتها قبل ظهورها للعملاء</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('AddProduct')}
-            accessibilityRole="button"
-            accessibilityLabel="إضافة منتج"
-          >
-            <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>إضافة منتج</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Content Box */}
-          <View style={[styles.contentBox, isTablet && styles.contentBoxTablet, isDesktop && styles.contentBoxDesktop]}>
-          {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={UI.primary} />
-            </View>
-          ) : error && products.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <Ionicons name="cloud-offline-outline" size={48} color={UI.textMuted} />
-              <Text style={styles.emptyText}>{error}</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel="إعادة تحميل المنتجات">
-                <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={products}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContent}
-              ListHeaderComponent={renderDesktopHeader}
-              refreshing={refreshing}
-              onRefresh={() => void load(false)}
-              ListEmptyComponent={
-                <View style={styles.emptyWrap}>
-                  <Ionicons name="cube-outline" size={48} color={UI.textMuted} style={{ marginBottom: 16 }} />
-                  <Text style={styles.emptyText}>لا توجد منتجات بعد</Text>
-                </View>
-              }
-              renderItem={({ item }) => {
-                const approval = APPROVAL_META[item.approval_status as keyof typeof APPROVAL_META] ?? APPROVAL_META.pending;
-                return (
-                <View style={[styles.cardRow, isCompact && styles.cardRowCompact, !item.is_active && styles.cardInactive]}>
-                  {/* Product Info (Flex 3) */}
-                  <View style={[styles.td, { flex: isDesktop ? 3 : 1, flexDirection: 'row-reverse', alignItems: 'center', gap: 16 }]}>
-                    <View style={styles.imageWrap}>
-                      {item.og_image_url ? (
-                        <Image source={{ uri: item.og_image_url }} style={styles.thumbImg} resizeMode="cover" />
-                      ) : (
-                        <Ionicons name="image-outline" size={24} color={UI.textMuted} />
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-                      <View style={[styles.approvalBadge, { backgroundColor: approval.background }]}>
-                        <Ionicons name={approval.icon} size={14} color={approval.color} />
-                        <Text style={[styles.approvalBadgeText, { color: approval.color }]}>{approval.label}</Text>
-                      </View>
-                      {item.approval_status === 'rejected' && item.approval_note ? (
-                        <Text style={styles.rejectionNote} numberOfLines={3}>سبب الرفض: {item.approval_note}</Text>
-                      ) : null}
-                      {!isDesktop && (
-                        <Text style={styles.priceMobile}>{item.sale_price ?? item.base_price} ر.ي</Text>
-                      )}
-                    </View>
-                  </View>
-
-                  {/* Price (Flex 1) Desktop Only */}
-                  {isDesktop && (
-                    <Text style={[styles.td, styles.priceDesktop, { flex: 1, textAlign: 'center' }]}>
-                      {item.sale_price ?? item.base_price} ر.ي
-                    </Text>
-                  )}
-
-                  {/* Category / Stock (Flex 1.5) Desktop Only */}
-                  {isDesktop && (
-                    <Text style={[styles.td, styles.categoryDesktop, { flex: 1.5, textAlign: 'center' }]}>
-                      {Array.isArray(item.product_variants)
-                        ? item.product_variants.reduce((sum: number, variant: { stock_quantity?: number }) => sum + (variant.stock_quantity ?? 0), 0)
-                        : '—'}
-                    </Text>
-                  )}
-
-                  {/* Actions (Flex 1.5) */}
-                  <View style={[styles.td, styles.actionsCell, isCompact && styles.actionsCellCompact, { flex: isDesktop ? 1.5 : undefined }]}>
-                    <View style={styles.statusWrap}>
-                       <View style={[styles.statusDot, { backgroundColor: item.is_active ? UI.primary : UI.textMuted }]} />
-                       <Text style={[styles.statusText, { color: item.is_active ? UI.textDark : UI.textMuted }]}>
-                         {item.is_active ? 'معروض' : 'مخفي'}
-                       </Text>
-                    </View>
-                    <Switch
-                      value={item.is_active}
-                      onValueChange={() => toggleActive(item.id, item.is_active)}
-                      disabled={updatingId === item.id || (!!updatingId && updatingId !== item.id)}
-                      accessibilityLabel={`${item.is_active ? 'إخفاء' : 'إظهار'} المنتج ${item.name}`}
-                      trackColor={{ false: UI.border, true: `${UI.primary}80` }}
-                      thumbColor={item.is_active ? UI.primary : UI.textMuted}
-                      style={{ transform: [{ scaleX: I18nManager?.isRTL ? -1 : 1 }, { scaleX: 0.9 }, { scaleY: 0.9 }] }}
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
+      ) : (
+        <FlatList
+          key={isDesktop ? 'grid' : 'list'}
+          data={visible}
+          numColumns={isDesktop ? 2 : 1}
+          keyExtractor={(item) => item.id}
+          columnWrapperStyle={isDesktop ? styles.columns : undefined}
+          contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop]}
+          refreshing={refreshing}
+          onRefresh={() => void load(false)}
+          ListHeaderComponent={
+            <View style={styles.toolbar}>
+              {error ? <Banner text={error} tone="error" actionLabel="إعادة المحاولة" onAction={() => void load(true)} /> : null}
+              {products.length ? (
+                <>
+                  <View style={styles.search}>
+                    <Ionicons name="search" size={18} color={COLORS.inkTertiary} />
+                    <TextInput
+                      style={styles.searchInput}
+                      value={query}
+                      onChangeText={setQuery}
+                      placeholder="ابحث باسم المنتج"
+                      placeholderTextColor={COLORS.inkTertiary}
+                      accessibilityLabel="البحث في المنتجات"
                     />
+                    {query ? (
+                      <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="مسح البحث">
+                        <Ionicons name="close-circle" size={18} color={COLORS.inkTertiary} />
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
-                </View>
-              );}}
-            />
-          )}
-        </View>
-
-      </View>
+                  <Chips items={filters.filter((f) => f.key === 'all' || f.count > 0)} value={filter} onChange={setFilter} />
+                </>
+              ) : null}
+            </View>
+          }
+          ListEmptyComponent={
+            products.length ? (
+              <EmptyState icon="search-outline" title="لا توجد نتائج" text="جرّب كلمة أخرى أو اختر تصفية مختلفة." />
+            ) : error ? null : (
+              <EmptyState
+                icon="cube-outline"
+                title="ابدأ بإضافة أول منتج"
+                text="أضف صوراً واضحة وسعراً ووصفاً مختصراً، وسيظهر للعملاء بعد المراجعة."
+                action={{ label: 'إضافة منتج', onPress: () => navigation.navigate('AddProduct') }}
+              />
+            )
+          }
+          renderItem={renderItem}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: UI.bgMobile },
-  
-  headerMobile: { flexDirection: 'row-reverse', alignItems: 'center', padding: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerMobileCompact: { paddingHorizontal: 14 },
-  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark, flex: 1, textAlign: 'center' },
-  
-  pageContent: { flex: 1 },
-  pageContentTablet: { width: '100%', maxWidth: 1180, alignSelf: 'center', paddingHorizontal: 24 },
-  pageContentDesktop: { paddingTop: 32, paddingBottom: 32 },
-  
-  pageHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
-  pageHeaderCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14, paddingHorizontal: 14 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
-  pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-  
-  addBtn: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
-    backgroundColor: UI.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12,
-    ...softShadow, shadowOpacity: 0.2, shadowColor: UI.primary, minHeight: 44, justifyContent: 'center'
-  },
-  addBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-
-  contentBox: { flex: 1 },
-  contentBoxTablet: { borderRadius: RADIUS.lg, overflow: 'hidden' },
-  contentBoxDesktop: { backgroundColor: '#FFFFFF', borderRadius: 16, ...softShadow, borderWidth: 1, borderColor: '#F3F4F6', padding: 24 },
-
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  
-  listContent: { paddingHorizontal: 14, paddingBottom: 100 },
-  
-  tableHeaderRow: { flexDirection: 'row-reverse', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: UI.border, marginBottom: 12 },
-  th: { fontSize: 12, color: UI.textMuted, fontWeight: '700', textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.5 },
-  
-  cardRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
-    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: UI.bg,
+  toolbar: { gap: 12 },
+  search: {
+    ...card, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 14, minHeight: 46,
   },
-  cardRowCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 14, paddingVertical: 18 },
-  cardInactive: { opacity: 0.5 },
-  td: { },
-  actionsCell: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'flex-end', gap: 12 },
-  actionsCellCompact: { justifyContent: 'space-between', minHeight: 44 },
-  
-  imageWrap: { width: 56, height: 56, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  searchInput: {
+    flex: 1, width: 0, minWidth: 0, minHeight: 44, fontSize: 14, fontFamily: FONTS.medium, color: COLORS.ink,
+    textAlign: 'right', outlineStyle: 'none' as any,
+  },
+  columns: { flexDirection: 'row-reverse', gap: 14 },
+  item: { ...card, flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12, padding: 12 },
+  itemDesktop: { flex: 1 },
+  itemHidden: { backgroundColor: '#FAFBFC' },
+  thumb: {
+    width: 76, height: 76, borderRadius: RADIUS.md, backgroundColor: COLORS.canvas, overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
+  },
   thumbImg: { width: '100%', height: '100%' },
-  
-  name: { fontSize: 15, fontWeight: '700', color: UI.textDark, textAlign: 'right', lineHeight: 22 },
-  approvalBadge: { alignSelf: 'flex-end', flexDirection: 'row-reverse', alignItems: 'center', gap: 4, borderRadius: 999, marginTop: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  approvalBadgeText: { fontSize: 11, fontWeight: '800' },
-  rejectionNote: { color: UI.red, fontSize: 11, lineHeight: 17, marginTop: 5, textAlign: 'right' },
-  priceMobile: { fontSize: 14, fontWeight: '800', color: UI.primary, marginTop: 4, textAlign: 'right' },
-  
-  priceDesktop: { fontSize: 15, fontWeight: '800', color: UI.textDark },
-  categoryDesktop: { fontSize: 14, color: UI.textGrey, fontWeight: '500' },
-  
-  statusWrap: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusText: { fontSize: 12, fontWeight: '600' },
-
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
-  emptyText: { color: UI.textMuted, fontSize: 16, fontWeight: '600' },
-  retryBtn: { minHeight: 44, justifyContent: 'center', marginTop: 16, backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22 },
-  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  body: { flex: 1, alignItems: 'flex-end', gap: 6 },
+  name: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.ink, textAlign: 'right', lineHeight: 21 },
+  priceRow: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 6 },
+  price: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.ink },
+  currency: { fontSize: 11, fontFamily: FONTS.medium, color: COLORS.inkSecondary },
+  oldPrice: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.inkTertiary, textDecorationLine: 'line-through' },
+  pills: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 },
+  rejection: { fontSize: 11, fontFamily: FONTS.medium, color: '#B91C1C', textAlign: 'right', lineHeight: 17 },
+  visibility: { alignItems: 'center', gap: 2, minWidth: 52 },
+  visibilityText: { fontSize: 11, fontFamily: FONTS.medium, color: COLORS.inkTertiary },
+  visibilityTextOn: { color: COLORS.primary, fontFamily: FONTS.semiBold },
 });

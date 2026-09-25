@@ -1,37 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Linking, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { BREAKPOINTS, COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { getOrderById, updateOrderStatus, cancelOrder, getCancellationReasons, getOrderPickupCode, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
 import {
   getMerchantOrderStatusInfo,
   getOrderTransitionErrorMessage,
   merchantOrderProgress,
 } from './merchantOrderState';
-
-const UI = {
-  primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.background,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
-  green: COLORS.success,
-  red: COLORS.error,
-  blue: COLORS.info,
-  orange: COLORS.warning,
-};
-
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.05,
-  shadowRadius: 24,
-  elevation: 3,
-};
+import { Banner, EmptyState, ScreenHeader, StatusPill, card, formatDate, formatMoney, paymentLabel, ui, useIsDesktop } from './merchantUi';
 
 export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const orderId: string = route?.params?.orderId ?? route?.params?.order?.id;
@@ -56,9 +36,8 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       .catch(() => { if (active) setPickupCode(null); });
     return () => { active = false; };
   }, [orderId, status]);
-  const { width } = useWindowDimensions();
-  const isCompact = width < BREAKPOINTS.compact;
-  const isDesktop = width >= BREAKPOINTS.desktop;
+  const isDesktop = useIsDesktop();
+  const insets = useSafeAreaInsets();
 
   const load = useCallback(async (showLoading = false) => {
     if (!orderId) {
@@ -113,7 +92,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const customerPhone = order?.customer?.phone ?? '';
   const customerAddress = order?.addresses?.full_address ?? 'عنوان غير متوفر';
   const customerCity = order?.addresses?.city ?? '';
-  const paymentMethod = order?.payment_method === 'cash' ? 'الدفع عند الاستلام' : 'طريقة دفع غير نقدية';
+  const paymentMethod = paymentLabel(order?.payment_method);
   const notes = order?.notes || '';
 
   const changeStatus = async (next: string) => {
@@ -158,46 +137,38 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: isDesktop ? UI.bg : UI.bgMobile }}>
-        <ActivityIndicator size="large" color={UI.primary} />
+      <View style={[ui.screen, styles.center]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   if (!order) {
     return (
-      <View style={styles.loadErrorWrap}>
-        <Ionicons name="cloud-offline-outline" size={56} color={UI.textMuted} />
-        <Text style={styles.loadErrorTitle}>تعذر فتح الطلب</Text>
-        <Text style={styles.loadErrorText}>{loadError ?? 'لم يتم العثور على الطلب.'}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => void load(true)} accessibilityRole="button" accessibilityLabel="إعادة تحميل تفاصيل الطلب">
-          <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة للطلبات">
-          <Text style={styles.backLinkText}>العودة للطلبات</Text>
-        </TouchableOpacity>
+      <View style={ui.screen}>
+        <ScreenHeader title="تفاصيل الطلب" onBack={() => navigation.goBack()} />
+        <View style={ui.content}>
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="تعذر فتح الطلب"
+            text={loadError ?? 'لم يتم العثور على الطلب.'}
+            action={{ label: 'إعادة المحاولة', onPress: () => void load(true) }}
+          />
+        </View>
       </View>
     );
   }
 
-  let dateStr = '';
-  try {
-    const d = new Date(order.created_at);
-    dateStr = d.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' - ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  } catch (e) {
-    dateStr = order.created_at;
-  }
+  const primaryAction = status === ORDER_STATUS.PENDING || status === ORDER_STATUS.CONFIRMED
+    ? { label: status === ORDER_STATUS.PENDING ? 'قبول الطلب وبدء التجهيز' : 'بدء التجهيز', next: ORDER_STATUS.PREPARING, icon: 'checkmark' as const }
+    : status === ORDER_STATUS.PREPARING
+      ? { label: 'الطلب جاهز للمندوب', next: ORDER_STATUS.READY, icon: 'bag-check-outline' as const }
+      : null;
 
-  // Next action buttons logic
-  let nextActionBtn: React.ReactNode = null;
+  // After "ready" the order belongs to the courier flow (pickup code, proof of
+  // delivery), so the store only watches it.
   let actionNotice = '';
-  if (status === ORDER_STATUS.PENDING) {
-    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.PREPARING)} disabled={updating} accessibilityRole="button" accessibilityLabel="قبول الطلب وبدء التجهيز" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>قبول الطلب وبدء التجهيز</Text>}</TouchableOpacity>;
-  } else if (status === ORDER_STATUS.PREPARING) {
-    nextActionBtn = <TouchableOpacity style={[styles.btnPrimary, updating && styles.btnDisabled]} activeOpacity={0.8} onPress={() => changeStatus(ORDER_STATUS.READY)} disabled={updating} accessibilityRole="button" accessibilityLabel="تحديد الطلب جاهزًا للمندوب" accessibilityState={{ disabled: updating, busy: updating }}>{updating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPrimaryText}>الطلب جاهز للمندوب</Text>}</TouchableOpacity>;
-  } else if (status === ORDER_STATUS.READY) {
-    // مسار الطلب بعد "جاهز" حصري للمندوب بحسب قواعد القاعدة —
-    // التاجر لا يستطيع on_the_way أو delivered (تتطلب إثبات تسليم من مندوب).
+  if (status === ORDER_STATUS.READY) {
     actionNotice = deliveryId
       ? 'تم إسناد الطلب إلى مندوب. ستتحدث الحالة تلقائيًا عند الاستلام.'
       : 'الطلب جاهز وبانتظار أن يستلمه مندوب. ستتحدث الحالة تلقائيًا.';
@@ -205,380 +176,308 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
     actionNotice = 'الطلب الآن ضمن مسار المندوب، ولا يحتاج إلى تغيير يدوي من التاجر.';
   }
 
-  // الإلغاء متاح للتاجر قبل أن يصبح الطلب جاهزًا (نفس قاعدة marketplace_cancel_order_as)
+  // Same rule as marketplace_cancel_order_as: the store may cancel before "ready".
   const canCancel = [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING].includes(status as any);
+  const itemsCount = items.reduce((sum, i) => sum + (i.quantity ?? 0), 0);
+  const steps = ['جديد', 'تجهيز', 'جاهز', 'التوصيل', 'مكتمل'];
+
+  const callCustomer = () =>
+    Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert('تعذر الاتصال', 'لا يمكن فتح تطبيق الاتصال على هذا الجهاز.'));
+
+  const actionButton = primaryAction ? (
+    <TouchableOpacity
+      style={[ui.primaryBtn, styles.flex, updating && styles.busy]}
+      onPress={() => void changeStatus(primaryAction.next)}
+      disabled={updating || cancelling}
+      accessibilityRole="button"
+      accessibilityLabel={primaryAction.label}
+      accessibilityState={{ disabled: updating, busy: updating }}
+    >
+      {updating ? <ActivityIndicator color={COLORS.surface} /> : <Ionicons name={primaryAction.icon} size={18} color={COLORS.surface} />}
+      <Text style={ui.primaryBtnText}>{primaryAction.label}</Text>
+    </TouchableOpacity>
+  ) : null;
+
+  const cancelButton = canCancel && !showCancel ? (
+    <TouchableOpacity
+      style={styles.cancelBtn}
+      onPress={openCancel}
+      disabled={updating || cancelling}
+      accessibilityRole="button"
+      accessibilityLabel="إلغاء الطلب"
+    >
+      <Text style={styles.cancelBtnText}>إلغاء</Text>
+    </TouchableOpacity>
+  ) : null;
+
+  const pickupCard = pickupCode ? (
+    <View style={styles.pickup}>
+      <View style={styles.pickupIcon}><Ionicons name="key-outline" size={20} color={COLORS.primary} /></View>
+      <View style={styles.flexEnd}>
+        <Text style={styles.pickupTitle}>كود التسليم للمندوب</Text>
+        <Text style={styles.pickupHint}>أعطه للمندوب فقط عند تسليم الطلب فعلياً.</Text>
+      </View>
+      <Text style={styles.pickupCode} selectable>{pickupCode}</Text>
+    </View>
+  ) : null;
+
+  const cancelReasonsCard = canCancel && showCancel ? (
+    <View style={ui.card}>
+      <Text style={[ui.cardTitle, styles.mb8]}>سبب الإلغاء</Text>
+      <Text style={[ui.muted, styles.mb8]}>سيُعاد المخزون تلقائياً ويُشعَر العميل.</Text>
+      {(cancelReasons.length > 0
+        ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? 'سبب آخر' }))
+        : [
+          { key: 'out_of_stock', label: 'المنتج غير متوفر حالياً' },
+          { key: 'cannot_fulfill', label: 'تعذّر تجهيز الطلب' },
+          { key: 'other', label: 'سبب آخر' },
+        ]
+      ).map((r) => (
+        <TouchableOpacity key={r.key} style={styles.reason} onPress={() => void doCancel(r.label)} disabled={cancelling} accessibilityRole="button" accessibilityLabel={r.label}>
+          <Text style={styles.reasonText}>{r.label}</Text>
+          {cancelling ? <ActivityIndicator size="small" color={COLORS.error} /> : <Ionicons name="chevron-back" size={16} color={COLORS.inkTertiary} />}
+        </TouchableOpacity>
+      ))}
+      <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.reasonBack} accessibilityRole="button" accessibilityLabel="تراجع">
+        <Text style={styles.reasonBackText}>تراجع</Text>
+      </TouchableOpacity>
+    </View>
+  ) : null;
+
+  const timeline = (
+    <View style={ui.card}>
+      <Text style={[ui.cardTitle, styles.mb12]}>مسار الطلب</Text>
+      <View style={styles.steps}>
+        {steps.map((label, i) => {
+          const done = progress >= i + 1;
+          const current = progress === i + 1;
+          return (
+            <View key={label} style={styles.step}>
+              <View style={[styles.stepDot, done && styles.stepDotDone, current && styles.stepDotCurrent]}>
+                {done && !current ? <Ionicons name="checkmark" size={12} color={COLORS.surface} /> : null}
+              </View>
+              <Text style={[styles.stepText, done && styles.stepTextDone]}>{label}</Text>
+              {i < steps.length - 1 ? <View style={[styles.stepLine, progress >= i + 2 && styles.stepLineDone]} /> : null}
+            </View>
+          );
+        })}
+      </View>
+      {progress === 0 ? <Text style={[ui.muted, styles.centerText]}>الحالة الحالية: {info.label}</Text> : null}
+    </View>
+  );
+
+  const itemsCard = (
+    <View style={ui.card}>
+      <View style={[ui.row, styles.between, styles.mb8]}>
+        <Text style={ui.cardTitle}>المنتجات</Text>
+        <Text style={ui.muted}>{itemsCount} قطعة</Text>
+      </View>
+      {items.map((item, i) => (
+        <View key={item.id} style={[styles.item, i < items.length - 1 && styles.itemDivider]}>
+          <View style={styles.qty}><Text style={styles.qtyText}>×{item.quantity}</Text></View>
+          <View style={styles.flexEnd}>
+            <Text style={styles.itemName} numberOfLines={2}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
+            <Text style={ui.muted}>{formatMoney(item.unit_price)} ر.ي للقطعة</Text>
+          </View>
+          <Text style={styles.itemTotal}>{formatMoney(item.total_price)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+
+  const customerCard = (
+    <View style={ui.card}>
+      <Text style={[ui.cardTitle, styles.mb12]}>العميل</Text>
+      <View style={[ui.row, styles.mb12]}>
+        <View style={styles.avatar}><Text style={styles.avatarText}>{customerName.substring(0, 1)}</Text></View>
+        <View style={styles.flexEnd}>
+          <Text style={styles.customerName}>{customerName}</Text>
+          <Text style={ui.muted}>{customerPhone || 'رقم غير متوفر'}</Text>
+        </View>
+        {customerPhone ? (
+          <TouchableOpacity style={styles.call} onPress={callCustomer} accessibilityRole="button" accessibilityLabel={`الاتصال بالعميل ${customerName}`}>
+            <Ionicons name="call" size={16} color={COLORS.surface} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      <View style={styles.address}>
+        <Ionicons name="location-outline" size={16} color={COLORS.inkSecondary} />
+        <Text style={styles.addressText}>{customerCity ? `${customerCity} - ` : ''}{customerAddress}</Text>
+      </View>
+    </View>
+  );
+
+  const paymentCard = (
+    <View style={ui.card}>
+      <View style={[ui.row, styles.between, styles.mb12]}>
+        <Text style={ui.cardTitle}>الدفع</Text>
+        <StatusPill
+          label={order.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع بعد'}
+          color={order.payment_status === 'paid' ? '#15803D' : '#B45309'}
+          background={order.payment_status === 'paid' ? '#DCFCE7' : COLORS.warningSoft}
+        />
+      </View>
+      <Text style={[ui.text, styles.mb12]}>{paymentMethod}</Text>
+      {[
+        { label: 'المجموع الفرعي', value: subtotal },
+        { label: 'رسوم التوصيل', value: deliveryFee },
+        ...(discountAmount > 0 ? [{ label: 'الخصم', value: -discountAmount }] : []),
+        ...(taxAmount > 0 ? [{ label: 'الضريبة', value: taxAmount }] : []),
+      ].map((line) => (
+        <View key={line.label} style={styles.line}>
+          <Text style={ui.text}>{line.label}</Text>
+          <Text style={[styles.lineValue, line.value < 0 && { color: '#15803D' }]}>{line.value < 0 ? `- ${formatMoney(-line.value)}` : formatMoney(line.value)} ر.ي</Text>
+        </View>
+      ))}
+      <View style={styles.totalLine}>
+        <Text style={styles.totalLabel}>الإجمالي</Text>
+        <Text style={styles.totalValue}>{formatMoney(order.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount))} <Text style={styles.totalCurrency}>ر.ي</Text></Text>
+      </View>
+    </View>
+  );
+
+  const notesCard = notes ? (
+    <View style={styles.notes}>
+      <Ionicons name="chatbox-ellipses-outline" size={18} color="#92400E" />
+      <View style={styles.flexEnd}>
+        <Text style={styles.notesTitle}>ملاحظة العميل</Text>
+        <Text style={styles.notesText}>{notes}</Text>
+      </View>
+    </View>
+  ) : null;
+
+  const hasActions = !!(actionButton || cancelButton);
 
   return (
-    <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
-      
-      {!isDesktop && (
-        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color={UI.textDark} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitleMobile}>تفاصيل الطلب</Text>
-          <View style={{ width: 44 }} />
-        </View>
-      )}
+    <View style={ui.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScreenHeader
+        title={`#${order.order_number}`}
+        subtitle={formatDate(order.created_at, true)}
+        onBack={() => navigation.goBack()}
+        right={<StatusPill label={info.label} color={info.color} background={info.background} icon={info.icon} />}
+      />
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
-        
-        {isDesktop && (
-          <View style={styles.pageHeaderRow}>
-             <View>
-               <Text style={styles.pageTitle}>تفاصيل الطلب</Text>
-               <Text style={styles.pageSubtitle}>نظرة شاملة لجميع بيانات الطلب والعميل والفاتورة</Text>
-             </View>
-             <TouchableOpacity style={styles.backBtnDesktop} onPress={() => navigation.goBack()}>
-                <Text style={styles.backBtnText}>العودة للطلبات</Text>
-                <Ionicons name="arrow-back" size={16} color={UI.textDark} />
-             </TouchableOpacity>
+      <ScrollView contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, !isDesktop && hasActions && styles.padForBar]} showsVerticalScrollIndicator={false}>
+        {loadError ? <Banner text={loadError} tone="warning" actionLabel="تحديث" onAction={() => void load(false)} /> : null}
+        {isDesktop ? (
+          <View style={styles.grid}>
+            <View style={styles.main}>
+              {timeline}
+              {notesCard}
+              {itemsCard}
+            </View>
+            <View style={styles.side}>
+              {pickupCard}
+              {actionNotice ? <Banner text={actionNotice} tone="info" /> : null}
+              {hasActions ? <View style={[ui.card, styles.actionsCard]}>{actionButton}{cancelButton}</View> : null}
+              {cancelReasonsCard}
+              {customerCard}
+              {paymentCard}
+            </View>
           </View>
+        ) : (
+          <>
+            {pickupCard}
+            {actionNotice ? <Banner text={actionNotice} tone="info" /> : null}
+            {cancelReasonsCard}
+            {timeline}
+            {notesCard}
+            {itemsCard}
+            {customerCard}
+            {paymentCard}
+          </>
         )}
-
-        {/* Main Grid Wrapper */}
-        <View style={[styles.gridContainer, isDesktop && { flexDirection: 'row-reverse' }]}>
-          
-          {/* Main Column (Receipt & Timeline) */}
-          <View style={[styles.mainCol, isDesktop && { flex: 7 }]}>
-            
-            {/* Header Info */}
-            <View style={[styles.card, isCompact && styles.cardCompact]}>
-              <View style={[styles.cardHeaderRow, isCompact && styles.cardHeaderCompact]}>
-                <View>
-                  <Text style={styles.orderIdText}>{order.order_number}</Text>
-                  <Text style={styles.dateText}>{dateStr}</Text>
-                </View>
-                <View style={[styles.badge, { backgroundColor: info.background }]}>
-                  <Text style={[styles.badgeText, { color: info.color }]}>{info.label}</Text>
-                </View>
-              </View>
-              {notes ? (
-                <View style={styles.notesBox}>
-                  <Ionicons name="reader-outline" size={18} color={UI.textDark} />
-                  <Text style={styles.notesText}>{notes}</Text>
-                </View>
-              ) : null}
-            </View>
-
-            {/* Timeline */}
-            <View style={[styles.card, isCompact && styles.cardCompact]}>
-              <Text style={styles.sectionTitle}>مسار الطلب</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timelineScrollContent}>
-              <View style={[styles.timelineRow, isCompact && styles.timelineRowCompact]}>
-                <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: progress >= 1 ? UI.orange : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: UI.textDark }]}>جديد</Text>
-                </View>
-                <View style={[styles.timelineLine, { backgroundColor: progress >= 2 ? UI.blue : UI.border }]} />
-                <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: progress >= 2 ? UI.blue : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 2 ? UI.textDark : UI.textMuted }]}>تجهيز</Text>
-                </View>
-                <View style={[styles.timelineLine, { backgroundColor: progress >= 3 ? '#7C3AED' : UI.border }]} />
-                <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: progress >= 3 ? '#7C3AED' : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 3 ? UI.textDark : UI.textMuted }]}>جاهز</Text>
-                </View>
-                <View style={[styles.timelineLine, { backgroundColor: progress >= 4 ? '#0369A1' : UI.border }]} />
-                <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: progress >= 4 ? '#0369A1' : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 4 ? UI.textDark : UI.textMuted }]}>التوصيل</Text>
-                </View>
-                <View style={[styles.timelineLine, { backgroundColor: progress >= 5 ? UI.green : UI.border }]} />
-                <View style={[styles.timelineStep, { flex: 1 }]}>
-                  <View style={[styles.timelineDot, { backgroundColor: progress >= 5 ? UI.green : UI.border }]} />
-                  <Text style={[styles.timelineText, { color: progress >= 5 ? UI.textDark : UI.textMuted }]}>مكتمل</Text>
-                </View>
-              </View>
-              </ScrollView>
-              {progress === 0 && (
-                <Text style={styles.terminalStatusNote}>الحالة الحالية: {info.label}</Text>
-              )}
-            </View>
-
-            {/* Receipt (Items) */}
-            <View style={[styles.card, isCompact && styles.cardCompact]}>
-              <View style={[styles.cardHeaderRow, isCompact && styles.cardHeaderCompact]}>
-                <Text style={styles.sectionTitle}>المنتجات المطلوبة</Text>
-                <Text style={styles.itemsCount}>{items.length} منتجات</Text>
-              </View>
-              <View style={styles.itemsWrapper}>
-                {items.map((item, i) => (
-                  <View key={item.id} style={[styles.itemRow, isCompact && styles.itemRowCompact, i < items.length - 1 && styles.borderBottom]}>
-                    <View style={styles.itemImagePlaceholder}>
-                      <Ionicons name="cube-outline" size={24} color={UI.textMuted} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.itemName}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
-                      <Text style={styles.itemMeta}>السعر: {item.unit_price} ر.ي</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-start' }}>
-                      <Text style={styles.itemTotal}>{item.total_price} ر.ي</Text>
-                      <Text style={styles.itemQtyBadge}>الكمية: {item.quantity}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-          </View>
-          
-          {/* Side Column (Customer & Payment) */}
-          <View style={[styles.sideCol, isDesktop && { flex: 3 }]}>
-             
-             {/* Customer Box */}
-             <View style={[styles.card, isCompact && styles.cardCompact]}>
-               <Text style={styles.sectionTitle}>معلومات العميل</Text>
-               <View style={styles.customerRow}>
-                 <View style={styles.avatarBig}>
-                   <Text style={styles.avatarBigText}>{customerName.substring(0, 1)}</Text>
-                 </View>
-                 <View style={{ flex: 1 }}>
-                   <Text style={styles.customerNameBig}>{customerName}</Text>
-                 </View>
-               </View>
-
-               <View style={styles.infoList}>
-                 <View style={styles.infoRow}>
-                   <Ionicons name="call-outline" size={20} color={UI.textGrey} style={styles.infoIcon} />
-                   <View style={{ flex: 1 }}>
-                     <Text style={styles.infoLabel}>رقم الجوال</Text>
-                     <Text style={styles.infoValue}>{customerPhone || 'غير متوفر'}</Text>
-                   </View>
-                   {!!customerPhone && (
-                      <TouchableOpacity style={styles.callIconBtn} onPress={() => Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert('تعذر الاتصال', 'لا يمكن فتح تطبيق الاتصال على هذا الجهاز.'))} accessibilityRole="button" accessibilityLabel={`الاتصال بالعميل ${customerName}`}>
-                       <Ionicons name="call" size={16} color="#FFFFFF" />
-                     </TouchableOpacity>
-                   )}
-                 </View>
-                 
-                 <View style={styles.infoRow}>
-                   <Ionicons name="location-outline" size={20} color={UI.textGrey} style={styles.infoIcon} />
-                   <View style={{ flex: 1 }}>
-                     <Text style={styles.infoLabel}>عنوان التوصيل</Text>
-                     <Text style={styles.infoValue}>{customerCity ? `${customerCity} - ` : ''}{customerAddress}</Text>
-                   </View>
-                 </View>
-               </View>
-             </View>
-
-             {/* Payment Summary */}
-             <View style={[styles.card, isCompact && styles.cardCompact]}>
-               <Text style={styles.sectionTitle}>ملخص الدفع</Text>
-               
-                <View style={styles.paymentMethodBox}>
-                  <Ionicons name="card-outline" size={20} color={UI.primary} />
-                  <Text style={styles.paymentMethodText}>{paymentMethod} · {order.payment_status === 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'}</Text>
-               </View>
-
-               <View style={styles.summaryLines}>
-                 <View style={styles.summaryLine}>
-                   <Text style={styles.summaryLineLabel}>المجموع الفرعي</Text>
-                   <Text style={styles.summaryLineValue}>{subtotal} ر.ي</Text>
-                 </View>
-                 <View style={styles.summaryLine}>
-                   <Text style={styles.summaryLineLabel}>رسوم التوصيل</Text>
-                   <Text style={styles.summaryLineValue}>{deliveryFee} ر.ي</Text>
-                 </View>
-                 {/* بدون هذين السطرين لا يتطابق الإجمالي مع مكوّناته */}
-                 {discountAmount > 0 && (
-                   <View style={styles.summaryLine}>
-                     <Text style={styles.summaryLineLabel}>الخصم</Text>
-                     <Text style={[styles.summaryLineValue, { color: UI.green }]}>- {discountAmount} ر.ي</Text>
-                   </View>
-                 )}
-                 {taxAmount > 0 && (
-                   <View style={styles.summaryLine}>
-                     <Text style={styles.summaryLineLabel}>الضريبة</Text>
-                     <Text style={styles.summaryLineValue}>{taxAmount} ر.ي</Text>
-                   </View>
-                 )}
-               </View>
-               <View style={styles.summaryTotalLine}>
-                 <Text style={styles.summaryTotalLabel}>الإجمالي المستحق</Text>
-                 <Text style={styles.summaryTotalValue}>{order?.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount)} <Text style={{ fontSize: 14 }}>ر.ي</Text></Text>
-               </View>
-             </View>
-
-             {/* كود تسليم الطلب للمندوب */}
-             {!!pickupCode && (
-               <View style={styles.pickupCodeCard}>
-                 <View style={{ flex: 1 }}>
-                   <Text style={styles.pickupCodeTitle}>كود تسليم الطلب للمندوب</Text>
-                   <Text style={styles.pickupCodeHint}>لا تُعطِ الكود إلا عند تسليم الطلب للمندوب فعلياً — هو إثبات الاستلام.</Text>
-                 </View>
-                 <Text style={styles.pickupCodeValue}>{pickupCode}</Text>
-               </View>
-             )}
-
-             {/* Actions */}
-             {(nextActionBtn || actionNotice || canCancel) && (
-               <View style={styles.actionsCard}>
-                 {!!actionNotice && (
-                   <View style={styles.waitingDriverNotice}>
-                     <Ionicons name="information-circle-outline" size={20} color="#5B21B6" />
-                     <Text style={styles.waitingDriverText}>{actionNotice}</Text>
-                   </View>
-                 )}
-                 {nextActionBtn}
-
-                 {/* إلغاء الطلب (متاح قبل مرحلة "جاهز") */}
-                 {canCancel && !showCancel && (
-                   <TouchableOpacity
-                     style={styles.btnCancelOutline}
-                     onPress={openCancel}
-                     disabled={updating || cancelling}
-                     activeOpacity={0.8}
-                     accessibilityRole="button"
-                     accessibilityLabel="إلغاء الطلب"
-                   >
-                     <Text style={styles.btnCancelOutlineText}>إلغاء الطلب</Text>
-                   </TouchableOpacity>
-                 )}
-                 {canCancel && showCancel && (
-                   <View style={styles.cancelReasonsCard}>
-                     <Text style={styles.cancelReasonsTitle}>سبب الإلغاء</Text>
-                     {(cancelReasons.length > 0
-                       ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? 'سبب آخر' }))
-                       : [
-                           { key: 'out_of_stock', label: 'المنتج غير متوفر حالياً' },
-                           { key: 'cannot_fulfill', label: 'تعذّر تجهيز الطلب' },
-                           { key: 'other', label: 'سبب آخر' },
-                         ]
-                     ).map((r) => (
-                       <TouchableOpacity
-                         key={r.key}
-                         style={styles.cancelReasonItem}
-                         onPress={() => doCancel(r.label)}
-                         disabled={cancelling}
-                         activeOpacity={0.7}
-                       >
-                         <Text style={styles.cancelReasonText}>{r.label}</Text>
-                         {cancelling ? <ActivityIndicator size="small" color={UI.red} /> : <Ionicons name="chevron-back" size={16} color={UI.textMuted} />}
-                       </TouchableOpacity>
-                     ))}
-                     <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.cancelBackBtn}>
-                       <Text style={styles.cancelBackText}>تراجع</Text>
-                     </TouchableOpacity>
-                   </View>
-                 )}
-               </View>
-             )}
-
-          </View>
-
-        </View>
       </ScrollView>
+
+      {!isDesktop && hasActions ? (
+        <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          {actionButton}
+          {cancelButton}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: UI.bgMobile },
-  pickupCodeCard: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0', borderRadius: 14, padding: 14, marginBottom: 12 },
-  pickupCodeTitle: { fontSize: 14, fontWeight: '800', color: '#065F46' },
-  pickupCodeHint: { fontSize: 11.5, color: '#047857', marginTop: 3, lineHeight: 17 },
-  pickupCodeValue: { fontSize: 26, fontWeight: '900', color: '#065F46', letterSpacing: 6 },
-  btnCancelOutline: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1.5, borderColor: UI.red, marginTop: 10 },
-  btnCancelOutlineText: { color: UI.red, fontSize: 14, fontWeight: '800' },
-  cancelReasonsCard: { marginTop: 10, borderWidth: 1, borderColor: UI.border, borderRadius: 12, padding: 12, backgroundColor: '#FFFFFF' },
-  cancelReasonsTitle: { fontSize: 14, fontWeight: '800', color: UI.textDark, marginBottom: 6 },
-  cancelReasonItem: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: UI.border },
-  cancelReasonText: { fontSize: 13.5, fontWeight: '600', color: UI.textDark },
-  cancelBackBtn: { alignItems: 'center', paddingVertical: 10 },
-  cancelBackText: { color: UI.textMuted, fontSize: 13, fontWeight: '700' },
-  loadErrorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bgMobile, padding: 24, gap: 14 },
-  loadErrorTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
-  loadErrorText: { fontSize: 14, color: UI.textGrey, textAlign: 'center', lineHeight: 21 },
-  retryBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 24 },
-  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  backLinkText: { color: UI.textGrey, fontSize: 14, fontWeight: '700', padding: 8 },
-  
-  headerMobile: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerMobileCompact: { paddingHorizontal: 14 },
-  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
-  
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  scrollContentCompact: { paddingHorizontal: 14 },
-  scrollContentDesktop: { padding: 40, alignItems: 'center' },
-  
-  pageHeaderRow: { width: '100%', maxWidth: 1200, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: UI.textDark, marginBottom: 8, textAlign: 'right', letterSpacing: -0.5 },
-  pageSubtitle: { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-  backBtnDesktop: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: UI.border, ...softShadow },
-  backBtnText: { fontSize: 13, fontWeight: '700', color: UI.textDark },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  centerText: { textAlign: 'center', marginTop: 10 },
+  flex: { flex: 1 },
+  flexEnd: { flex: 1, alignItems: 'flex-end' },
+  between: { justifyContent: 'space-between' },
+  mb8: { marginBottom: 8 },
+  mb12: { marginBottom: 12 },
+  busy: { opacity: 0.6 },
+  padForBar: { paddingBottom: 120 },
 
-  gridContainer: { width: '100%', maxWidth: 1280, gap: 24, flexDirection: 'column' },
-  mainCol: { gap: 16 },
-  sideCol: { gap: 16 },
+  grid: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 20 },
+  main: { flex: 7, gap: 14 },
+  side: { flex: 4, gap: 14 },
+  actionsCard: { flexDirection: 'row-reverse', gap: 10 },
 
-  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
-  cardCompact: { padding: 14, borderRadius: RADIUS.md },
-  cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
-  cardHeaderCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 10 },
-  
-  orderIdText: { fontSize: 22, fontWeight: '900', color: UI.textDark, textAlign: 'right' },
-  dateText: { fontSize: 13, color: UI.textGrey, marginTop: 4, textAlign: 'right' },
-  
-  badge: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100 },
-  badgeText: { fontSize: 13, fontWeight: '800' },
-  
-  notesBox: { marginTop: 16, padding: 16, backgroundColor: '#FEF3C7', borderRadius: 12, flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 10 },
-  notesText: { flex: 1, fontSize: 13, color: '#92400E', textAlign: 'right', lineHeight: 20, fontWeight: '600' },
+  bar: {
+    position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row-reverse', gap: 10,
+    paddingHorizontal: 16, paddingTop: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.hairline,
+  },
+  cancelBtn: {
+    minWidth: 88, minHeight: 48, borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#FECACA',
+    backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
+  },
+  cancelBtnText: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.error },
 
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: UI.textDark, marginBottom: 20, textAlign: 'right' },
-  
-  timelineRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
-  timelineScrollContent: { minWidth: '100%' },
-  timelineRowCompact: { minWidth: 480, paddingHorizontal: 4 },
-  timelineStep: { alignItems: 'center', gap: 8 },
-  timelineDot: { width: 14, height: 14, borderRadius: 7 },
-  timelineText: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
-  timelineLine: { height: 2, flex: 1, marginHorizontal: 4, marginTop: -20 },
-  terminalStatusNote: { marginTop: 14, color: UI.textGrey, textAlign: 'center', fontSize: 13, fontWeight: '700' },
+  pickup: {
+    ...card, flexDirection: 'row-reverse', alignItems: 'center', gap: 12, padding: 14,
+    borderColor: COLORS.primary, borderWidth: 1.5, backgroundColor: COLORS.primarySoft,
+  },
+  pickupIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' },
+  pickupTitle: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  pickupHint: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.inkSecondary, textAlign: 'right', marginTop: 2 },
+  pickupCode: { fontSize: 26, fontFamily: FONTS.bold, color: COLORS.primary, letterSpacing: 5 },
 
-  itemsCount: { fontSize: 13, fontWeight: '600', color: UI.textMuted },
-  itemsWrapper: { marginTop: 8 },
-  itemRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 16, gap: 16 },
-  itemRowCompact: { flexWrap: 'wrap', gap: 12 },
-  borderBottom: { borderBottomWidth: 1, borderBottomColor: UI.border },
-  itemImagePlaceholder: { width: 56, height: 56, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  itemName: { fontSize: 15, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
-  itemMeta: { fontSize: 13, color: UI.textGrey, marginTop: 4, textAlign: 'right' },
-  itemTotal: { fontSize: 16, fontWeight: '800', color: UI.primary, textAlign: 'left' },
-  itemQtyBadge: { fontSize: 12, fontWeight: '700', color: UI.textGrey, backgroundColor: UI.bg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginTop: 4, alignSelf: 'flex-start' },
+  steps: { flexDirection: 'row-reverse' },
+  step: { flex: 1, alignItems: 'center', gap: 6 },
+  stepDot: {
+    width: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.surface, borderWidth: 2, borderColor: COLORS.hairline,
+    alignItems: 'center', justifyContent: 'center', zIndex: 1,
+  },
+  stepDotDone: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  stepDotCurrent: { backgroundColor: COLORS.surface, borderColor: COLORS.primary, borderWidth: 6 },
+  stepText: { fontSize: 11, fontFamily: FONTS.medium, color: COLORS.inkTertiary },
+  stepTextDone: { color: COLORS.ink, fontFamily: FONTS.semiBold },
+  stepLine: { position: 'absolute', top: 10, left: '-50%', right: '50%', height: 2, backgroundColor: COLORS.hairline },
+  stepLineDone: { backgroundColor: COLORS.primary },
 
-  customerRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16, marginBottom: 24 },
-  avatarBig: { width: 56, height: 56, borderRadius: 28, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  avatarBigText: { fontSize: 20, fontWeight: '800', color: UI.textGrey },
-  customerNameBig: { fontSize: 18, fontWeight: '800', color: UI.textDark, textAlign: 'right' },
+  item: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  itemDivider: { borderBottomWidth: 1, borderBottomColor: COLORS.hairline },
+  qty: { minWidth: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  qtyText: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.primary },
+  itemName: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.ink, textAlign: 'right' },
+  itemTotal: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.ink },
 
-  infoList: { gap: 16 },
-  infoRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12 },
-  infoIcon: { marginTop: 2 },
-  infoLabel: { fontSize: 12, color: UI.textGrey, textAlign: 'right', marginBottom: 2 },
-  infoValue: { fontSize: 14, fontWeight: '600', color: UI.textDark, textAlign: 'right', lineHeight: 20 },
-  callIconBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 17, fontFamily: FONTS.bold, color: COLORS.primary },
+  customerName: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  call: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.statusOnline, alignItems: 'center', justifyContent: 'center' },
+  address: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8, backgroundColor: COLORS.canvas, borderRadius: RADIUS.md, padding: 12 },
+  addressText: { flex: 1, fontSize: 13, fontFamily: FONTS.medium, color: COLORS.ink, textAlign: 'right', lineHeight: 20 },
 
-  paymentMethodBox: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: UI.border, marginBottom: 20 },
-  paymentMethodText: { fontSize: 14, fontWeight: '700', color: UI.textDark },
-  
-  summaryLines: { gap: 12, borderBottomWidth: 1, borderBottomColor: UI.border, paddingBottom: 16, marginBottom: 16 },
-  summaryLine: { flexDirection: 'row-reverse', justifyContent: 'space-between' },
-  summaryLineLabel: { fontSize: 14, color: UI.textGrey, fontWeight: '600' },
-  summaryLineValue: { fontSize: 15, fontWeight: '800', color: UI.textDark },
-  
-  summaryTotalLine: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
-  summaryTotalLabel: { fontSize: 16, fontWeight: '900', color: UI.textDark },
-  summaryTotalValue: { fontSize: 24, fontWeight: '900', color: UI.primary },
+  line: { flexDirection: 'row-reverse', justifyContent: 'space-between', paddingVertical: 5 },
+  lineValue: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.ink },
+  totalLine: {
+    flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: COLORS.hairline,
+  },
+  totalLabel: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.ink },
+  totalValue: { fontSize: 22, fontFamily: FONTS.bold, color: COLORS.primary },
+  totalCurrency: { fontSize: 13, fontFamily: FONTS.medium, color: COLORS.inkSecondary },
 
-  actionsCard: { padding: 24, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: UI.border, ...softShadow, gap: 12 },
-  btnPrimary: { height: 52, backgroundColor: UI.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnPrimaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-  btnDisabled: { opacity: 0.6 },
-  waitingDriverNotice: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: '#F5F3FF', borderWidth: 1, borderColor: '#DDD6FE', borderRadius: 14, padding: 15 },
-  waitingDriverText: { flex: 1, color: '#5B21B6', fontSize: 14, fontWeight: '700', textAlign: 'right' },
+  notes: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 10, backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A', borderRadius: RADIUS.lg, padding: 14 },
+  notesTitle: { fontSize: 13, fontFamily: FONTS.bold, color: '#92400E', textAlign: 'right' },
+  notesText: { fontSize: 13, fontFamily: FONTS.medium, color: '#92400E', textAlign: 'right', lineHeight: 20, marginTop: 2 },
+
+  reason: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', minHeight: 48, borderBottomWidth: 1, borderBottomColor: COLORS.hairline },
+  reasonText: { fontSize: 14, fontFamily: FONTS.medium, color: COLORS.ink },
+  reasonBack: { alignItems: 'center', paddingTop: 12 },
+  reasonBackText: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.inkSecondary },
 });

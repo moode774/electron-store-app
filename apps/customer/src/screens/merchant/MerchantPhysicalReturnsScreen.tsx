@@ -31,6 +31,7 @@ import {
   useAuthStore,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 type Recommendation = 'approve' | 'reject';
@@ -653,17 +654,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 
   return (
     <View style={styles.page}>
-      <View style={[styles.header, isCompact && styles.headerCompact, isDesktop && styles.headerWide]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
-          <Ionicons name="arrow-forward" size={23} color="#111827" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>المرتجعات الفعلية</Text>
-          <Text style={styles.subtitle}>راجع الطلب، أكد وصول المنتجات، ثم سجل نتيجة الفحص لكل كمية.</Text>
-        </View>
-      </View>
+      <ScreenHeader title="المرتجعات الفعلية" subtitle="أكّد وصول المنتجات وسجّل نتيجة الفحص" onBack={() => navigation.goBack()} />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filters, isDesktop && styles.filtersWide]}>
+      <View style={[styles.filters, isDesktop && styles.filtersWide]}>
         {FILTERS.map((option) => (
           <TouchableOpacity
             key={option.key}
@@ -675,7 +668,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{option.label}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#111827" /></View>
@@ -900,19 +893,19 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: COLORS.background },
+  page: { flex: 1, backgroundColor: COLORS.canvas },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   headerCompact: { paddingHorizontal: 14 },
   headerWide: { width: '100%', maxWidth: 1240, alignSelf: 'center' },
   backButton: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
   title: { color: COLORS.textPrimary, fontSize: 21, fontFamily: FONTS.bold, textAlign: 'right' },
   subtitle: { color: '#64748B', fontSize: 11.5, lineHeight: 18, textAlign: 'right', marginTop: 3 },
-  filters: { flexDirection: 'row-reverse', padding: 14, gap: 8 },
+  filters: { flexDirection: 'row-reverse', flexWrap: 'wrap', padding: 14, gap: 8 },
   filtersWide: { width: '100%', maxWidth: 1240, alignSelf: 'center' },
-  filter: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: RADIUS.full, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
+  filter: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 13, borderRadius: RADIUS.full, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
   filterActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  filterText: { color: '#64748B', fontWeight: '700' },
-  filterTextActive: { color: '#FFFFFF' },
+  filterText: { color: '#64748B', fontFamily: FONTS.medium, fontSize: 13 },
+  filterTextActive: { color: '#FFFFFF', fontFamily: FONTS.semiBold },
   list: { width: '100%', maxWidth: 1240, alignSelf: 'center', padding: 16, paddingTop: 2, gap: 12, paddingBottom: 90 },
   columnWrapper: { gap: 12 },
   listFooter: { alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 16 },

@@ -1,77 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
-  Platform, Switch, ActivityIndicator, useWindowDimensions, TextInput
+  Switch, ActivityIndicator, TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, getMerchantProfile, updateMerchantProfileByUser } from '@marketplace/shared-hooks';
-import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { EmptyState, ScreenHeader, ui, useIsDesktop } from './merchantUi';
 
-// ─── Design System ──────────────────────────────────────────────────────────
-const UI = {
-  primary:   COLORS.primary,
-  bg:        COLORS.background,
-  bgMobile:  COLORS.background,
-  white:     COLORS.surface,
-  textDark:  COLORS.textPrimary,
-  textGrey:  COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border:    COLORS.border,
-  green:     COLORS.success,
-  red:       COLORS.error,
-  blue:      COLORS.info,
-};
-
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 3,
-};
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-function Card({ children, style }: { children: React.ReactNode; style?: object }) {
-  return <View style={[s.card, style]}>{children}</View>;
-}
-
-function SectionHeader({ title, icon }: { title: string; icon: any }) {
+function Section({ title, icon, children, hint }: { title: string; icon: any; children: React.ReactNode; hint?: string }) {
   return (
-    <View style={s.sectionHeader}>
-      <Ionicons name={icon} size={18} color={UI.primary} />
-      <Text style={s.sectionTitle}>{title}</Text>
+    <View style={ui.card}>
+      <View style={s.sectionHead}>
+        <View style={s.sectionIcon}><Ionicons name={icon} size={17} color={COLORS.primary} /></View>
+        <View style={s.flexEnd}>
+          <Text style={ui.cardTitle}>{title}</Text>
+          {hint ? <Text style={ui.muted}>{hint}</Text> : null}
+        </View>
+      </View>
+      {children}
     </View>
   );
 }
 
-function InputField({ label, value, onChangeText, multiline = false, placeholder = '', editable = true, keyboardType = 'default' as any }: {
+function InputField({ label, value, onChangeText, multiline = false, placeholder = '', keyboardType = 'default' as any }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   multiline?: boolean;
   placeholder?: string;
-  editable?: boolean;
   keyboardType?: any;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <View style={s.inputGroup}>
-      <Text style={s.inputLabel}>{label}</Text>
+    <View style={s.field}>
+      <Text style={ui.label}>{label}</Text>
       <TextInput
-        style={[
-          s.inputBox,
-          multiline && s.inputArea,
-          !editable && s.inputReadOnly,
-        ]}
+        style={[ui.input, multiline && s.area, focused && s.focused]}
         value={value ?? ''}
         onChangeText={onChangeText}
         multiline={multiline}
         placeholder={placeholder}
-        placeholderTextColor={UI.textMuted}
-        editable={editable}
+        placeholderTextColor={COLORS.inkTertiary}
         keyboardType={keyboardType}
-        textAlign="right"
         textAlignVertical={multiline ? 'top' : 'center'}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        accessibilityLabel={label}
       />
     </View>
   );
@@ -80,9 +57,9 @@ function InputField({ label, value, onChangeText, multiline = false, placeholder
 // ─── Main Screen ────────────────────────────────────────────────────────────
 export default function StoreSettingsScreen({ navigation }: any) {
   const user     = useAuthStore((s) => s.user);
-  const { width } = useWindowDimensions();
-  const isCompact = width < BREAKPOINTS.compact;
-  const isDesktop = width >= BREAKPOINTS.desktop;
+  const isDesktop = useIsDesktop();
+  const insets = useSafeAreaInsets();
+  const [savedSnapshot, setSavedSnapshot] = useState('');
 
   // Basic
   const [storeName,    setStoreName]    = useState('');
@@ -137,13 +114,14 @@ export default function StoreSettingsScreen({ navigation }: any) {
         setBankName(p.bank_name ?? '');
         setBankAccount(p.bank_account ?? '');
         setBankAccountName(p.bank_account_name ?? '');
+        setSavedSnapshot('');
       }
     }).catch((error: unknown) => setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل إعدادات المتجر.')).finally(() => setLoading(false));
   }, [user?.id, loadAttempt]);
 
-  const handleSave = async () => {
-    if (!storeName.trim()) { Alert.alert('تنبيه', 'اسم المتجر مطلوب'); return; }
-    if (!user?.id) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!storeName.trim()) { Alert.alert('تنبيه', 'اسم المتجر مطلوب'); return false; }
+    if (!user?.id) return false;
     setSaving(true);
     try {
       await updateMerchantProfileByUser(user.id, {
@@ -163,238 +141,205 @@ export default function StoreSettingsScreen({ navigation }: any) {
         bank_account:        bankAccount.trim()     || undefined,
         bank_account_name:   bankAccountName.trim() || undefined,
       });
-      Alert.alert('تم الحفظ', 'تم تحديث كافة بيانات المتجر بنجاح.');
+      Alert.alert('تم الحفظ', 'تم تحديث بيانات المتجر.');
+      return true;
     } catch (e: any) {
       Alert.alert('خطأ', e?.message ?? 'تعذّر الحفظ');
+      return false;
     } finally { setSaving(false); }
+  };
+
+  const values = [storeName, storeCategory, description, isOpen, city, address, storePhone, whatsapp,
+    ownerName, nationalId, commercialRegister, taxNumber, bankName, bankAccount, bankAccountName];
+  const snapshot = JSON.stringify(values);
+  // The first render after loading defines the saved state.
+  React.useEffect(() => {
+    if (!loading && !savedSnapshot) setSavedSnapshot(snapshot);
+  }, [loading, savedSnapshot, snapshot]);
+  const dirty = !!savedSnapshot && snapshot !== savedSnapshot;
+
+  const completeness = [
+    { label: 'اسم المتجر', done: !!storeName.trim() },
+    { label: 'وصف المتجر', done: description.trim().length >= 30 },
+    { label: 'المدينة والعنوان', done: !!city.trim() && !!address.trim() },
+    { label: 'رقم التواصل', done: !!storePhone.trim() || !!whatsapp.trim() },
+    { label: 'بيانات المالك', done: !!ownerName.trim() && !!nationalId.trim() },
+    { label: 'الحساب البنكي', done: !!bankName.trim() && !!bankAccount.trim() && !!bankAccountName.trim() },
+  ];
+  const score = Math.round((completeness.filter((c) => c.done).length / completeness.length) * 100);
+  const missing = completeness.filter((c) => !c.done).map((c) => c.label);
+
+  const save = async () => {
+    if (await handleSave()) setSavedSnapshot(JSON.stringify(values));
   };
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: isDesktop ? UI.bg : UI.bgMobile }}>
-        <ActivityIndicator size="large" color={UI.primary} />
+      <View style={[ui.screen, s.center]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
 
   if (loadError) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: isDesktop ? UI.bg : UI.bgMobile }} accessibilityRole="alert">
-        <Ionicons name="cloud-offline-outline" size={44} color={UI.red} />
-        <Text style={{ color: UI.red, textAlign: 'center', lineHeight: 21 }}>{loadError}</Text>
-        <TouchableOpacity style={{ minHeight: 44, justifyContent: 'center', backgroundColor: UI.primary, borderRadius: 11, paddingHorizontal: 18 }} onPress={() => setLoadAttempt((value) => value + 1)} accessibilityRole="button">
-          <Text style={{ color: UI.white, fontWeight: '800' }}>إعادة المحاولة</Text>
-        </TouchableOpacity>
+      <View style={ui.screen}>
+        <ScreenHeader title="بيانات المتجر" onBack={() => navigation.goBack()} />
+        <View style={ui.content}>
+          <EmptyState icon="cloud-offline-outline" title="تعذّر تحميل البيانات" text={loadError} action={{ label: 'إعادة المحاولة', onPress: () => setLoadAttempt((v) => v + 1) }} />
+        </View>
       </View>
     );
   }
 
-  return (
-    <View style={[s.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
+  const statusCard = (
+    <View style={[ui.card, s.status, !isOpen && s.statusClosed]}>
+      <View style={[s.statusIcon, { backgroundColor: isOpen ? '#DCFCE7' : '#FEE2E2' }]}>
+        <Ionicons name={isOpen ? 'storefront' : 'lock-closed'} size={22} color={isOpen ? '#15803D' : '#B91C1C'} />
+      </View>
+      <View style={s.flexEnd}>
+        <Text style={ui.cardTitle}>{isOpen ? 'المتجر مفتوح' : 'المتجر مغلق مؤقتاً'}</Text>
+        <Text style={ui.muted}>{isOpen ? 'يستقبل الطلبات الآن' : 'لن تصلك طلبات جديدة حتى تفتحه'}</Text>
+      </View>
+      <Switch
+        value={isOpen}
+        onValueChange={setIsOpen}
+        trackColor={{ false: '#FECACA', true: '#86EFAC' }}
+        thumbColor={COLORS.surface}
+        {...({ activeThumbColor: COLORS.surface } as any)}
+        accessibilityLabel="حالة المتجر"
+      />
+    </View>
+  );
 
-      {/* Mobile Header */}
-      {!isDesktop && (
-        <View style={[s.headerMobile, isCompact && s.headerMobileCompact]}>
-          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color={UI.textDark} />
-          </TouchableOpacity>
-          <Text style={s.headerTitleMobile}>معلومات المتجر</Text>
-          <View style={{ width: 44 }} />
+  const completenessCard = (
+    <View style={ui.card}>
+      <View style={s.scoreHead}>
+        <View style={[s.ring, { borderColor: score === 100 ? COLORS.statusOnline : score >= 50 ? '#F59E0B' : COLORS.inkTertiary }]}>
+          <Text style={s.ringText}>{score}%</Text>
         </View>
-      )}
+        <View style={s.flexEnd}>
+          <Text style={ui.cardTitle}>{score === 100 ? 'ملف المتجر مكتمل' : 'اكتمال ملف المتجر'}</Text>
+          <Text style={ui.muted}>{missing.length ? `ينقص: ${missing.join('، ')}` : 'بيانات كاملة تزيد ثقة العملاء وتسرّع صرف أرباحك.'}</Text>
+        </View>
+      </View>
+      <View style={s.bar}><View style={[s.barFill, { width: `${score}%` }]} /></View>
+    </View>
+  );
 
+  const basics = (
+    <Section title="الهوية" icon="storefront-outline" hint="تظهر للعملاء في صفحة المتجر">
+      <InputField label="الاسم التجاري" value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
+      <InputField label="التصنيف" value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: أزياء، إلكترونيات" />
+      <InputField label="نبذة عن المتجر" value={description} onChangeText={setDescription} multiline placeholder="ماذا تبيع؟ ولماذا يشتري منك العميل؟" />
+    </Section>
+  );
+
+  const contact = (
+    <Section title="الموقع والتواصل" icon="location-outline" hint="يستخدمه المندوب للاستلام">
+      <View style={s.pair}>
+        <View style={s.pairItem}><InputField label="المدينة" value={city} onChangeText={setCity} placeholder="صنعاء" /></View>
+        <View style={s.pairItem}><InputField label="هاتف المتجر" value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" /></View>
+      </View>
+      <InputField label="العنوان التفصيلي" value={address} onChangeText={setAddress} placeholder="الحي، الشارع، أقرب معلم" />
+      <InputField label="واتساب (اختياري)" value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
+    </Section>
+  );
+
+  const legal = (
+    <Section title="البيانات الرسمية" icon="document-text-outline" hint="سرّية، تُستخدم للتحقق فقط">
+      <View style={s.pair}>
+        <View style={s.pairItem}><InputField label="اسم المالك" value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" /></View>
+        <View style={s.pairItem}><InputField label="رقم الهوية" value={nationalId} onChangeText={setNationalId} placeholder="رقم الهوية" keyboardType="numeric" /></View>
+      </View>
+      <View style={s.pair}>
+        <View style={s.pairItem}><InputField label="السجل التجاري" value={commercialRegister} onChangeText={setCommercialRegister} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label="الرقم الضريبي" value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
+      </View>
+    </Section>
+  );
+
+  const bank = (
+    <Section title="استلام الأرباح" icon="wallet-outline" hint="تُحوَّل طلبات السحب إلى هذا الحساب">
+      <InputField label="البنك أو المحفظة" value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
+      <InputField label="اسم صاحب الحساب" value={bankAccountName} onChangeText={setBankAccountName} placeholder="كما هو في الحساب" />
+      <InputField label="رقم الحساب" value={bankAccount} onChangeText={setBankAccount} placeholder="رقم الحساب" keyboardType="numeric" />
+    </Section>
+  );
+
+  const saveBar = (
+    <View style={[s.saveBar, isDesktop ? s.saveBarDesktop : { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <Text style={[s.saveHint, dirty && s.saveHintDirty]}>{dirty ? 'لديك تغييرات غير محفوظة' : 'كل التغييرات محفوظة'}</Text>
+      <TouchableOpacity
+        style={[ui.primaryBtn, s.saveBtn, (saving || !dirty) && s.saveBtnIdle]}
+        onPress={() => void save()}
+        disabled={saving || !dirty}
+        accessibilityRole="button"
+        accessibilityLabel="حفظ التغييرات"
+        accessibilityState={{ disabled: saving || !dirty }}
+      >
+        {saving ? <ActivityIndicator color={COLORS.surface} size="small" /> : <Ionicons name="checkmark" size={18} color={COLORS.surface} />}
+        <Text style={ui.primaryBtnText}>حفظ</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <View style={ui.screen}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScreenHeader title="بيانات المتجر" subtitle={storeName || undefined} onBack={() => navigation.goBack()} />
       <ScrollView
-        contentContainerStyle={[s.scrollContent, isCompact && s.scrollContentCompact, isDesktop && s.scrollContentDesktop]}
+        contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, s.padForBar]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Desktop Title */}
-        {isDesktop && (
-          <View style={s.pageHeaderRow}>
-            <Text style={s.pageTitle}>لوحة بيانات المتجر</Text>
-            <Text style={s.pageSubtitle}>جميع البيانات الحقيقية لمتجرك مجمعة في مكان واحد</Text>
+        {isDesktop ? (
+          <View style={s.grid}>
+            <View style={s.main}>{basics}{contact}{legal}</View>
+            <View style={s.side}>{statusCard}{completenessCard}{bank}</View>
           </View>
+        ) : (
+          <>{statusCard}{completenessCard}{basics}{contact}{bank}{legal}</>
         )}
-
-        <View style={[s.grid, isDesktop && { flexDirection: 'row-reverse', alignItems: 'flex-start' }]}>
-
-          {/* ── العمود الرئيسي ─────────────────────────────────── */}
-          <View style={[s.mainCol, isDesktop && { flex: 3 }]}>
-
-            {/* حالة المتجر */}
-            <Card style={[s.statusCard, isCompact && s.statusCardCompact, { borderColor: isOpen ? UI.green : UI.red }]}>
-              <View style={s.statusCardLeft}>
-                <View style={[s.statusIconBox, { backgroundColor: isOpen ? '#D1FAE5' : '#FEE2E2' }]}>
-                  <Ionicons name={isOpen ? 'storefront' : 'lock-closed'} size={26} color={isOpen ? UI.green : UI.red} />
-                </View>
-                <View>
-                  <Text style={s.statusTitle}>حالة المتجر</Text>
-                  <Text style={[s.statusSub, { color: isOpen ? UI.green : UI.red }]}>
-                    {isOpen ? 'مفتوح — يستقبل الطلبات' : 'مغلق مؤقتاً'}
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={isOpen}
-                onValueChange={setIsOpen}
-                trackColor={{ false: '#FECACA', true: '#A7F3D0' }}
-                thumbColor={isOpen ? '#059669' : '#EF4444'}
-              />
-            </Card>
-
-            {/* البيانات الأساسية */}
-            <Card>
-              <SectionHeader title="البيانات الأساسية" icon="business-outline" />
-              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="الاسم التجاري للمتجر" value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
-                <InputField label="تصنيف المتجر" value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: مطاعم وطعام" />
-              </View>
-              <InputField label="وصف المتجر (يظهر للعملاء)" value={description} onChangeText={setDescription} multiline placeholder="نبذة تعريفية عن متجرك..." />
-            </Card>
-
-            {/* الوثائق القانونية */}
-            <Card>
-              <SectionHeader title="البيانات القانونية والرسمية" icon="document-text-outline" />
-              <View style={s.infoBox}>
-                <Ionicons name="lock-closed-outline" size={16} color="#1D4ED8" />
-                <Text style={s.infoText}>لتعديل الوثائق الرسمية يرجى التواصل مع فريق الدعم المتقدم.</Text>
-              </View>
-              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="اسم صاحب المتجر" value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" />
-                <InputField label="رقم الهوية الوطنية" value={nationalId} onChangeText={setNationalId} placeholder="رقم الهوية" keyboardType="numeric" />
-              </View>
-              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="رقم السجل التجاري" value={commercialRegister} onChangeText={setCommercialRegister} placeholder="رقم السجل" keyboardType="numeric" />
-                <InputField label="الرقم الضريبي (VAT)" value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" />
-              </View>
-            </Card>
-
-          </View>
-
-          {/* ── العمود الجانبي ─────────────────────────────────── */}
-          <View style={[s.sideCol, isDesktop && { flex: 2 }]}>
-
-            {/* الموقع والتواصل */}
-            <Card>
-              <SectionHeader title="الموقع والتواصل" icon="location-outline" />
-              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="المدينة / المحافظة" value={city} onChangeText={setCity} placeholder="مثال: صنعاء" />
-                <InputField label="رقم هاتف المتجر" value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
-              </View>
-              <InputField label="العنوان التفصيلي" value={address} onChangeText={setAddress} placeholder="الحي، الشارع، اقرب معلم" />
-              <InputField label="رقم واتساب (اختياري)" value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
-            </Card>
-
-            {/* البيانات البنكية */}
-            <Card>
-              <SectionHeader title="البيانات البنكية لاستلام الأرباح" icon="wallet-outline" />
-              <InputField label="اسم البنك" value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
-              <View style={[s.formGrid, isCompact && s.formGridCompact]}>
-                <InputField label="اسم صاحب الحساب" value={bankAccountName} onChangeText={setBankAccountName} placeholder="الاسم في الحساب" />
-                <InputField label="رقم الحساب" value={bankAccount} onChangeText={setBankAccount} placeholder="رقم الحساب" keyboardType="numeric" />
-              </View>
-              <View style={s.bankNote}>
-                <Ionicons name="information-circle-outline" size={16} color={UI.blue} />
-                <Text style={s.bankNoteText}>تحويل الأرباح يتم دورياً لهذا الحساب بعد اكتمال الطلبات.</Text>
-              </View>
-            </Card>
-
-          </View>
-        </View>
       </ScrollView>
-
-      {/* Save Button */}
-      <View style={[s.footer, isDesktop && s.footerDesktop]}>
-        <TouchableOpacity
-          style={[s.saveBtn, isDesktop && s.saveBtnDesktop, saving && { opacity: 0.7 }]}
-          onPress={handleSave}
-          disabled={saving}
-          activeOpacity={0.85}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <>
-              <Text style={s.saveBtnText}>حفظ كافة التغييرات</Text>
-              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      {saveBar}
     </View>
   );
 }
 
-// ─── Styles ─────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: UI.bgMobile },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  flexEnd: { flex: 1, alignItems: 'flex-end', gap: 2 },
+  padForBar: { paddingBottom: 130 },
+  grid: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 20 },
+  main: { flex: 3, gap: 14 },
+  side: { flex: 2, gap: 14 },
 
-  headerMobile: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: UI.border, backgroundColor: UI.white,
+  sectionHead: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 14 },
+  sectionIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  field: { marginBottom: 12 },
+  area: { minHeight: 96, paddingTop: 12 },
+  focused: { borderColor: COLORS.primary, backgroundColor: COLORS.surface },
+  pair: { flexDirection: 'row-reverse', gap: 10 },
+  pairItem: { flex: 1 },
+
+  status: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, borderColor: '#BBF7D0' },
+  statusClosed: { borderColor: '#FECACA' },
+  statusIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+
+  scoreHead: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
+  ring: { width: 48, height: 48, borderRadius: 24, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  ringText: { fontSize: 12, fontFamily: FONTS.bold, color: COLORS.ink },
+  bar: { height: 6, borderRadius: 3, backgroundColor: COLORS.hairline, marginTop: 14, overflow: 'hidden', flexDirection: 'row-reverse' },
+  barFill: { height: 6, borderRadius: 3, backgroundColor: COLORS.primary },
+
+  saveBar: {
+    position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingTop: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.hairline,
   },
-  headerMobileCompact: { paddingHorizontal: 14 },
-  backBtn:         { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
-
-  scrollContent:        { padding: 20, paddingBottom: 120 },
-  scrollContentCompact: { paddingHorizontal: 14 },
-  scrollContentDesktop: { width: '100%', maxWidth: 1280, alignSelf: 'center', padding: 40, paddingBottom: 100 },
-
-  pageHeaderRow: { marginBottom: 28 },
-  pageTitle:     { fontSize: 26, fontWeight: '900', color: UI.textDark, marginBottom: 6, textAlign: 'right', letterSpacing: -0.5 },
-  pageSubtitle:  { fontSize: 14, color: UI.textGrey, textAlign: 'right' },
-
-  grid:    { gap: 20 },
-  mainCol: { gap: 20 },
-  sideCol: { gap: 20 },
-
-  card: { backgroundColor: UI.white, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
-
-  statusCard:    { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderWidth: 2 },
-  statusCardCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 16 },
-  statusCardLeft: { flexDirection: 'row-reverse', alignItems: 'center', gap: 14 },
-  statusIconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  statusTitle:   { fontSize: 16, fontWeight: '800', color: UI.textDark, marginBottom: 4 },
-  statusSub:     { fontSize: 13, fontWeight: '700' },
-
-  sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 20, borderBottomWidth: 1, borderBottomColor: UI.bg, paddingBottom: 14 },
-  sectionTitle:  { fontSize: 17, fontWeight: '800', color: UI.textDark },
-
-  formGrid:   { flexDirection: 'row-reverse', gap: 14, flexWrap: 'wrap' },
-  formGridCompact: { flexDirection: 'column', gap: 0 },
-  inputGroup: { flex: 1, minWidth: '45%', marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '700', color: UI.textGrey, marginBottom: 7, textAlign: 'right' },
-  inputBox: {
-    backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: UI.border,
-    paddingHorizontal: 14, paddingVertical: 13, fontSize: 14, color: UI.textDark, fontWeight: '600',
-  },
-  inputArea:     { minHeight: 100 },
-  inputReadOnly: { backgroundColor: UI.bg, color: UI.textGrey },
-
-  infoBox:  { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8, backgroundColor: '#EFF6FF', padding: 14, borderRadius: 10, marginBottom: 18 },
-  infoText: { flex: 1, fontSize: 12, color: '#1D4ED8', textAlign: 'right', lineHeight: 18, fontWeight: '600' },
-
-  bankNote:     { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8, backgroundColor: '#F0F4FF', padding: 12, borderRadius: 10, marginTop: 4 },
-  bankNoteText: { flex: 1, fontSize: 12, color: '#1E3A8A', textAlign: 'right', lineHeight: 18, fontWeight: '600' },
-
-  footer: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: UI.white, padding: 20,
-    borderTopWidth: 1, borderTopColor: UI.border, ...softShadow,
-  },
-  footerDesktop: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: UI.white, paddingHorizontal: 40, paddingVertical: 20,
-    borderTopWidth: 1, borderTopColor: UI.border,
-  },
-  saveBtn: {
-    flexDirection: 'row-reverse', backgroundColor: UI.primary,
-    height: 54, borderRadius: 14, alignItems: 'center',
-    justifyContent: 'center', paddingHorizontal: 32,
-  },
-  saveBtnDesktop: { width: '100%', maxWidth: 1200, alignSelf: 'center' },
-  saveBtnText: { color: UI.white, fontWeight: '800', fontSize: 16 },
+  saveBarDesktop: { paddingVertical: 14, paddingHorizontal: 24 },
+  saveHint: { flex: 1, fontSize: 12, fontFamily: FONTS.medium, color: COLORS.inkTertiary, textAlign: 'right' },
+  saveHintDirty: { color: '#B45309', fontFamily: FONTS.semiBold },
+  saveBtn: { minWidth: 120 },
+  saveBtnIdle: { opacity: 0.5 },
 });

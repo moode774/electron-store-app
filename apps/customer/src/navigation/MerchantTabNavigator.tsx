@@ -292,7 +292,7 @@ export default function MerchantTabNavigator() {
     {
       name: 'MerchantProducts',
       component: ProductsNavigator,
-      // The add-product form has its own sticky publish bar.
+      // Screens with their own sticky action bar hide the tab bar.
       options: ({ route }: any) => ({
         tabBarLabel: 'المنتجات',
         tabBarAccessibilityLabel: 'منتجات المتجر',
@@ -303,7 +303,7 @@ export default function MerchantTabNavigator() {
     {
       name: 'MerchantOrders',
       component: OrdersNavigator,
-      options: {
+      options: ({ route }: any) => ({
         tabBarLabel: 'الطلبات',
         tabBarAccessibilityLabel: 'الطلبات النشطة',
         tabBarIcon: ({ focused }: { focused: boolean }) => (
@@ -312,20 +312,31 @@ export default function MerchantTabNavigator() {
           </View>
         ),
         tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, marginTop: 2 },
-      },
+        tabBarStyle: getFocusedRouteNameFromRoute(route) === 'OrderDetails' ? { display: 'none' } : barStyle,
+      }),
     },
     {
       name: 'MerchantHistory',
       component: HistoryNavigator,
-      options: { tabBarLabel: 'السجل', tabBarAccessibilityLabel: 'سجل الطلبات', tabBarIcon: tabIcon('time-outline', 'time') },
+      options: ({ route }: any) => ({
+        tabBarLabel: 'السجل',
+        tabBarAccessibilityLabel: 'سجل الطلبات',
+        tabBarIcon: tabIcon('time-outline', 'time'),
+        tabBarStyle: getFocusedRouteNameFromRoute(route) === 'OrderDetails' ? { display: 'none' } : barStyle,
+      }),
     },
     {
       name: 'MerchantAccount',
       component: AccountNavigator,
-      options: {
-        tabBarLabel: 'المزيد',
-        tabBarAccessibilityLabel: 'المزيد',
-        tabBarIcon: tabIcon('ellipsis-horizontal-circle-outline', 'ellipsis-horizontal-circle'),
+      // Sub-pages opened from المزيد are full-screen with their own back button.
+      options: ({ route }: any) => {
+        const focused = getFocusedRouteNameFromRoute(route);
+        return {
+          tabBarLabel: 'المزيد',
+          tabBarAccessibilityLabel: 'المزيد',
+          tabBarIcon: tabIcon('ellipsis-horizontal-circle-outline', 'ellipsis-horizontal-circle'),
+          tabBarStyle: focused && focused !== 'AccountMain' ? { display: 'none' } : barStyle,
+        };
       },
     },
     {

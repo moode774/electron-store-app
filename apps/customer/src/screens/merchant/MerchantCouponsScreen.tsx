@@ -26,27 +26,22 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { IconButton, ScreenHeader } from './merchantUi';
 
 const UI = {
   primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.surface,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
+  bg: COLORS.canvas,
+  bgMobile: COLORS.canvas,
+  textDark: COLORS.ink,
+  textGrey: COLORS.inkSecondary,
+  textMuted: COLORS.inkTertiary,
+  border: COLORS.hairline,
   green: COLORS.success,
   red: COLORS.error,
   yellow: COLORS.warning,
 };
 
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 1,
-};
+const softShadow = {};
 
 function formatDate(iso: string | null) {
   if (!iso) return 'بلا انتهاء';
@@ -254,30 +249,14 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      {/* Mobile Header */}
-      {!isDesktop && (
-        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={UI.textDark} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>كوبونات المتجر</Text>
-          <View style={{ width: 44 }} />
-        </View>
-      )}
+      <ScreenHeader
+        title="كوبونات المتجر"
+        subtitle="خصومات تجذب العملاء وتزيد الطلبات"
+        onBack={() => navigation.goBack()}
+        right={<IconButton icon="add" label="كوبون جديد" primary onPress={openModal} />}
+      />
 
       <View style={[styles.pageContent, isTablet && styles.pageContentWide]}>
-        {/* Page Header Row */}
-        <View style={[styles.pageHeaderRow, isCompact && styles.pageHeaderCompact]}>
-          <View>
-            <Text style={styles.pageTitle}>الكوبونات</Text>
-            <Text style={styles.pageSubtitle}>أنشئ وأدر كوبونات الخصم لمتجرك</Text>
-          </View>
-          <TouchableOpacity style={styles.addBtn} onPress={openModal} activeOpacity={0.85}>
-            <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>كوبون جديد</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Stats bar */}
         {coupons.length > 0 && (
           <View style={styles.statsBar}>

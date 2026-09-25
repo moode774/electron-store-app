@@ -5,26 +5,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { ScreenHeader } from './merchantUi';
 
 const UI = {
   primary: COLORS.primary,
-  bg: COLORS.background,
-  bgMobile: COLORS.background,
-  textDark: COLORS.textPrimary,
-  textGrey: COLORS.textSecondary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
+  bg: COLORS.canvas,
+  bgMobile: COLORS.canvas,
+  textDark: COLORS.ink,
+  textGrey: COLORS.inkSecondary,
+  textMuted: COLORS.inkTertiary,
+  border: COLORS.hairline,
   green: COLORS.success,
   blue: COLORS.info,
 };
 
-const softShadow = {
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.04,
-  shadowRadius: 16,
-  elevation: 2,
-};
+const softShadow = {};
 
 const CATEGORIES = [
   { value: 'technical', label: 'مشكلة تقنية' },
@@ -97,52 +92,12 @@ export default function MerchantSupportScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       
-      {!isDesktop && (
-        <View style={[styles.headerMobile, isCompact && styles.headerMobileCompact]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color={UI.textDark} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitleMobile}>الدعم الفني للشركاء</Text>
-          <View style={{ width: 44 }} />
-        </View>
-      )}
+      <ScreenHeader title="مركز المساعدة" subtitle="افتح تذكرة وتابع ردود فريق الدعم" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
         
-        {isDesktop && (
-          <View style={styles.pageHeaderRow}>
-            <TouchableOpacity style={styles.backBtnDesktop} onPress={() => navigation.goBack()}>
-                <Text style={styles.backBtnText}>العودة لحسابي</Text>
-                <Ionicons name="arrow-back" size={16} color={UI.textDark} />
-             </TouchableOpacity>
-             <View>
-               <Text style={styles.pageTitle}>مركز مساعدة الشركاء</Text>
-               <Text style={styles.pageSubtitle}>افتح تذكرة وتابع ردود فريق الدعم من المكان نفسه</Text>
-             </View>
-          </View>
-        )}
-
-        {/* Contact Channels */}
-        <View style={[styles.channelsRow, isCompact && styles.channelsRowCompact]}>
-          <View style={styles.channelCard}>
-            <View style={[styles.channelIcon, { backgroundColor: '#DCFCE7' }]}>
-              <Ionicons name="logo-whatsapp" size={28} color="#059669" />
-            </View>
-            <Text style={styles.channelTitle}>قناة واتساب</Text>
-            <Text style={styles.channelSub}>غير مفعلة حالياً</Text>
-          </View>
-
-          <View style={styles.channelCard}>
-            <View style={[styles.channelIcon, { backgroundColor: '#F0F4FF' }]}>
-              <Ionicons name="call" size={28} color={UI.blue} />
-            </View>
-            <Text style={styles.channelTitle}>تذاكر الدعم</Text>
-            <Text style={styles.channelSub}>القناة المتاحة حالياً</Text>
-          </View>
-        </View>
-
         {/* Form and Tickets Wrapper */}
         <View style={[styles.gridContainer, isDesktop && { flexDirection: 'row-reverse' }]}>
            
@@ -160,8 +115,8 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   ))}
                 </View>
 
-                <TextInput style={styles.inputField} placeholder="عنوان المشكلة الملحّة..." placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
-                <TextInput style={[styles.inputField, styles.textArea]} placeholder="اشرح لنا تفاصيل المشكلة أو طلب المساعدة هنا..." placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
+                <TextInput style={styles.inputField} placeholder="عنوان المشكلة" placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
+                <TextInput style={[styles.inputField, styles.textArea]} placeholder="اشرح تفاصيل المشكلة ورقم الطلب إن وُجد" placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
                 
                 <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
                   {sending ? <ActivityIndicator color="#fff" size="small" /> : (
@@ -238,7 +193,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitleMobile: { fontSize: 18, fontFamily: FONTS.bold, color: UI.textDark },
   
-  scrollContent: { padding: 20, paddingBottom: 100 },
+  scrollContent: { padding: 16, paddingBottom: 60 },
   scrollContentCompact: { paddingHorizontal: 14 },
   scrollContentDesktop: { padding: 40, alignItems: 'center' },
   
@@ -259,18 +214,18 @@ const styles = StyleSheet.create({
   mainCol: { gap: 24 },
   sideCol: { gap: 24 },
 
-  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: UI.border, ...softShadow },
   cardCompact: { padding: 14, borderRadius: RADIUS.md },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: UI.textDark, marginBottom: 8, textAlign: 'right' },
+  sectionTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.textDark, marginBottom: 6, textAlign: 'right' },
   sectionDesc: { fontSize: 13, color: UI.textGrey, marginBottom: 20, textAlign: 'right', lineHeight: 20 },
 
   catRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  catChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: RADIUS.full, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
+  catChip: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 16, borderRadius: RADIUS.full, backgroundColor: UI.bg, borderWidth: 1, borderColor: 'transparent' },
   catChipActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   catChipText: { fontSize: 13, fontWeight: '700', color: UI.textGrey },
   catChipTextActive: { color: '#FFFFFF' },
 
-  inputField: { backgroundColor: UI.bgMobile, borderRadius: 12, borderWidth: 1, borderColor: UI.border, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14, color: UI.textDark, marginBottom: 12, fontWeight: '600' },
+  inputField: { backgroundColor: COLORS.canvas, fontFamily: FONTS.medium, textAlign: 'right', outlineStyle: 'none' as any, borderRadius: 12, borderWidth: 1, borderColor: UI.border, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14, color: UI.textDark, marginBottom: 12 },
   textArea: { minHeight: 120 },
   
   submitBtn: { flexDirection: 'row-reverse', backgroundColor: UI.primary, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
