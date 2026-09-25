@@ -6,7 +6,195 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuthStore, getMerchantStats, getMerchantSalesChart } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
-import { getMerchantOrderStatusInfo } from './merchantOrderState';
+import { ACTIVE_MERCHANT_ORDER_STATUSES, getMerchantOrderStatusInfo } from './merchantOrderState';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ORDER_STATUS } from '@marketplace/shared-utils';
+import type { OrderSummary } from '@marketplace/shared-hooks';
+
+// Orders still waiting on the store itself (accept, prepare, hand over).
+const MERCHANT_ACTION_STATUSES = new Set<string>([
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.CONFIRMED,
+  ORDER_STATUS.PREPARING,
+]);
+
+const formatMoney = (value: number | null | undefined) =>
+  Number(value ?? 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+function OrderRow({ order, onPress, last }: { order: OrderSummary; onPress: () => void; last?: boolean }) {
+  const st = getMerchantOrderStatusInfo(order.status);
+  const items = order.order_items?.reduce((sum, item) => sum + (item.quantity ?? 0), 0) ?? 0;
+  return (
+    <TouchableOpacity
+      style={[mobile.orderRow, !last && mobile.orderRowDivider]}
+      onPress={onPress}
+      activeOpacity={0.75}
+      accessibilityRole="button"
+      accessibilityLabel={`فتح الطلب ${order.order_number}`}
+    >
+      <View style={[mobile.orderIcon, { backgroundColor: st.background }]}>
+        <Ionicons name={st.icon as any} size={18} color={st.color} />
+      </View>
+      <View style={mobile.orderCopy}>
+        <Text style={mobile.orderNumber} numberOfLines={1}>#{order.order_number}</Text>
+        <Text style={mobile.orderMeta} numberOfLines={1}>
+          {order.customer_profiles?.full_name || 'عميل'}{items ? ` · ${items} منتج` : ''} · {formatTime(order.created_at)}
+        </Text>
+      </View>
+      <View style={mobile.orderEnd}>
+        <Text style={mobile.orderAmount}>{formatMoney(order.total_amount)} ر.ي</Text>
+        <View style={[mobile.statusChip, { backgroundColor: st.background }]}>
+          <Text style={[mobile.statusChipText, { color: st.color }]}>{st.label}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function MobileDashboard({
+  name, orders, stats, metricsLoading, paused, error, onRetry,
+}: {
+  name: string;
+  orders: OrderSummary[];
+  stats: { todayOrders: number; todayRevenue: number; totalProducts: number; pendingOrders: number };
+  metricsLoading: boolean;
+  paused: string | null;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const needsAction = useMemo(() => orders.filter((o) => MERCHANT_ACTION_STATUSES.has(o.status)), [orders]);
+  const pendingCount = useMemo(() => orders.filter((o) => o.status === ORDER_STATUS.PENDING).length, [orders]);
+  const activeCount = useMemo(() => orders.filter((o) => ACTIVE_MERCHANT_ORDER_STATUSES.has(o.status)).length, [orders]);
+  const recent = useMemo(() => orders.slice(0, 5), [orders]);
+  const today = new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' });
+  const openOrder = (orderId: string) => navigation.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId } });
+
+  const actions = [
+    { label: 'منتج جديد', icon: 'add-circle-outline', onPress: () => navigation.navigate('MerchantProducts', { screen: 'AddProduct' }) },
+    { label: 'الطلبات', icon: 'receipt-outline', onPress: () => navigation.navigate('MerchantOrders') },
+    { label: 'المحفظة', icon: 'wallet-outline', onPress: () => navigation.navigate('MerchantAccount', { screen: 'Wallet' }) },
+    { label: 'التقارير', icon: 'bar-chart-outline', onPress: () => navigation.navigate('MerchantAccount', { screen: 'Reports' }) },
+  ];
+
+  return (
+    <View style={mobile.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
+      <ScrollView contentContainerStyle={[mobile.content, { paddingTop: insets.top + 16 }]} showsVerticalScrollIndicator={false}>
+        <View style={mobile.header}>
+          <View style={mobile.headerCopy}>
+            <Text style={mobile.greeting} numberOfLines={1}>مرحباً، {name}</Text>
+            <Text style={mobile.date}>{today}</Text>
+          </View>
+          <TouchableOpacity
+            style={mobile.headerBtn}
+            onPress={() => navigation.navigate('MerchantAccount', { screen: 'RoleNotifications', params: { role: 'merchant' } })}
+            accessibilityRole="button"
+            accessibilityLabel="الإشعارات"
+          >
+            <Ionicons name="notifications-outline" size={20} color={COLORS.ink} />
+          </TouchableOpacity>
+        </View>
+
+        {paused ? (
+          <View style={styles.pausedBanner}>
+            <View style={styles.pausedIcon}><Ionicons name="warning" size={20} color={COLORS.error} /></View>
+            <View style={styles.pausedCopy}>
+              <Text style={styles.pausedTitle}>تم إيقاف متجرك</Text>
+              <Text style={styles.pausedText}>السبب: {paused}. يرجى التواصل مع الإدارة.</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {error ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="cloud-offline-outline" size={20} color="#B45309" />
+            <Text style={styles.errorBannerText}>{error}</Text>
+            <TouchableOpacity onPress={onRetry} accessibilityRole="button" accessibilityLabel="إعادة المحاولة">
+              <Text style={styles.errorRetryText}>إعادة المحاولة</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <View style={mobile.summary}>
+          <Text style={mobile.summaryLabel}>قيمة طلبات اليوم</Text>
+          <Text style={mobile.summaryValue}>
+            {metricsLoading ? '—' : formatMoney(stats.todayRevenue)} <Text style={mobile.summaryCurrency}>ر.ي</Text>
+          </Text>
+          <View style={mobile.summaryStats}>
+            {[
+              { label: 'طلبات اليوم', value: stats.todayOrders },
+              { label: 'بانتظار القبول', value: pendingCount },
+              { label: 'قيد التنفيذ', value: activeCount },
+            ].map((item, index) => (
+              <React.Fragment key={item.label}>
+                {index > 0 ? <View style={mobile.summaryDivider} /> : null}
+                <View style={mobile.summaryStat}>
+                  <Text style={mobile.summaryStatValue}>{metricsLoading && index === 0 ? '—' : item.value}</Text>
+                  <Text style={mobile.summaryStatLabel}>{item.label}</Text>
+                </View>
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+
+        <View style={mobile.sectionHeader}>
+          <View style={mobile.sectionTitleRow}>
+            <Text style={mobile.sectionTitle}>تحتاج إجراء منك</Text>
+            {needsAction.length ? <View style={mobile.countBadge}><Text style={mobile.countBadgeText}>{needsAction.length}</Text></View> : null}
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="كل الطلبات النشطة">
+            <Text style={mobile.sectionLink}>كل الطلبات</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={mobile.card}>
+          {needsAction.length ? (
+            needsAction.slice(0, 4).map((order, i, list) => (
+              <OrderRow key={order.id} order={order} last={i === list.length - 1} onPress={() => openOrder(order.id)} />
+            ))
+          ) : (
+            <View style={mobile.empty}>
+              <View style={mobile.emptyIcon}><Ionicons name="checkmark-done" size={22} color={COLORS.statusOnline} /></View>
+              <Text style={mobile.emptyTitle}>لا توجد طلبات بانتظارك</Text>
+              <Text style={mobile.emptyText}>ستظهر الطلبات الجديدة هنا فور وصولها.</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={mobile.actions}>
+          {actions.map((action) => (
+            <TouchableOpacity key={action.label} style={mobile.action} onPress={action.onPress} activeOpacity={0.75} accessibilityRole="button" accessibilityLabel={action.label}>
+              <View style={mobile.actionIcon}><Ionicons name={action.icon as any} size={21} color={COLORS.primary} /></View>
+              <Text style={mobile.actionLabel} numberOfLines={1}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={mobile.sectionHeader}>
+          <Text style={mobile.sectionTitle}>أحدث الطلبات</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel="سجل الطلبات">
+            <Text style={mobile.sectionLink}>السجل</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={mobile.card}>
+          {recent.length ? (
+            recent.map((order, i) => (
+              <OrderRow key={order.id} order={order} last={i === recent.length - 1} onPress={() => openOrder(order.id)} />
+            ))
+          ) : (
+            <View style={mobile.empty}>
+              <Text style={mobile.emptyText}>لا توجد طلبات بعد.</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
 
 const UI = {
   bg: COLORS.background,
@@ -123,6 +311,20 @@ export default function MerchantDashboardScreen() {
       });
     return () => { cancelled = true; };
   }, [orders, profile?.id]);
+
+  if (!isTablet) {
+    return (
+      <MobileDashboard
+        name={profile?.store_name ?? user?.full_name ?? 'التاجر'}
+        orders={orders}
+        stats={stats}
+        metricsLoading={metricsLoading}
+        paused={profile?.is_active === false ? (profile.pause_reason || 'غير محدد') : null}
+        error={ordersError ?? metricsError ?? realtimeError}
+        onRetry={() => void refresh()}
+      />
+    );
+  }
 
   const containerStyle = [styles.container, { backgroundColor: isDesktop ? UI.bg : UI.bgMobile }];
 
@@ -477,4 +679,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 15,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
+});
+
+const mobile = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.canvas },
+  content: { paddingHorizontal: 16, paddingBottom: 120 },
+  header: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 18 },
+  headerCopy: { flex: 1, alignItems: 'flex-end' },
+  greeting: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  date: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.inkSecondary, textAlign: 'right', marginTop: 3 },
+  headerBtn: {
+    width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center',
+  },
+  summary: { backgroundColor: COLORS.primary, borderRadius: RADIUS.xl, padding: 18, marginBottom: 22 },
+  summaryLabel: { fontSize: 12, fontFamily: FONTS.medium, color: '#CBD5E1', textAlign: 'right' },
+  summaryValue: { fontSize: 30, fontFamily: FONTS.bold, color: COLORS.surface, textAlign: 'right', marginTop: 4 },
+  summaryCurrency: { fontSize: 14, fontFamily: FONTS.medium, color: '#CBD5E1' },
+  summaryStats: {
+    flexDirection: 'row-reverse', alignItems: 'center', marginTop: 16, paddingTop: 14,
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.14)',
+  },
+  summaryStat: { flex: 1, alignItems: 'center' },
+  summaryStatValue: { fontSize: 18, fontFamily: FONTS.bold, color: COLORS.surface },
+  summaryStatLabel: { fontSize: 11, fontFamily: FONTS.regular, color: '#CBD5E1', marginTop: 2 },
+  summaryDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.14)' },
+  sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 2 },
+  sectionTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  sectionTitle: { fontSize: 16, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  sectionLink: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.primary, paddingVertical: 4 },
+  countBadge: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: COLORS.warningSoft, alignItems: 'center', justifyContent: 'center' },
+  countBadgeText: { fontSize: 12, fontFamily: FONTS.bold, color: COLORS.warningInk },
+  card: {
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.hairline,
+    paddingHorizontal: 14, marginBottom: 22,
+  },
+  orderRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 13 },
+  orderRowDivider: { borderBottomWidth: 1, borderBottomColor: COLORS.hairline },
+  orderIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  orderCopy: { flex: 1, alignItems: 'flex-end' },
+  orderNumber: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.ink, textAlign: 'right' },
+  orderMeta: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.inkTertiary, textAlign: 'right', marginTop: 3 },
+  orderEnd: { alignItems: 'flex-start', gap: 5 },
+  orderAmount: { fontSize: 13, fontFamily: FONTS.bold, color: COLORS.ink },
+  statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full },
+  statusChipText: { fontSize: 10, fontFamily: FONTS.semiBold },
+  empty: { alignItems: 'center', paddingVertical: 24, gap: 6 },
+  emptyIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  emptyTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.ink },
+  emptyText: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.inkSecondary, textAlign: 'center' },
+  actions: { flexDirection: 'row-reverse', gap: 10, marginBottom: 22 },
+  action: {
+    flex: 1, alignItems: 'center', gap: 8, paddingVertical: 14, backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.hairline,
+  },
+  actionIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  actionLabel: { fontSize: 12, fontFamily: FONTS.medium, color: COLORS.ink },
 });

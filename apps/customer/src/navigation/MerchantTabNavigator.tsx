@@ -1,5 +1,6 @@
 import React from 'react';
-import { useWindowDimensions, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Platform, useWindowDimensions, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -239,108 +240,120 @@ const sidebarStyles = StyleSheet.create({
   },
 });
 
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
 export default function MerchantTabNavigator() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isDesktop = width >= BREAKPOINTS.desktop;
+  const isTablet = width >= BREAKPOINTS.tablet;
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 8);
+
+  const tabIcon = (outline: IconName, filled: IconName) =>
+    ({ color, focused }: { color: string; focused: boolean }) => (
+      <View style={tabStyles.tabIconWrap}>
+        <Ionicons name={focused ? filled : outline} size={22} color={color} />
+        {focused ? <View style={tabStyles.tabIndicator} /> : null}
+      </View>
+    );
+
+  // Screens the desktop sidebar opens directly. On phones and tablets they
+  // live under "المزيد" so the bottom bar keeps five destinations only.
+  const hiddenOnBar = isDesktop ? {} : { tabBarButton: () => null, tabBarItemStyle: { display: 'none' as const } };
+
+  // Listed right-to-left. Native apps run with forceRTL and lay the row out
+  // from the right already; the web build renders LTR, so reverse it there.
+  const tabs: { name: keyof MerchantTabParamList; component: React.ComponentType<any>; options: any }[] = [
+    {
+      name: 'MerchantDashboard',
+      component: MerchantDashboardScreen,
+      options: { tabBarLabel: 'الرئيسية', tabBarIcon: tabIcon('home-outline', 'home') },
+    },
+    {
+      name: 'MerchantProducts',
+      component: ProductsNavigator,
+      options: { tabBarLabel: 'المنتجات', tabBarAccessibilityLabel: 'منتجات المتجر', tabBarIcon: tabIcon('cube-outline', 'cube') },
+    },
+    {
+      name: 'MerchantOrders',
+      component: OrdersNavigator,
+      options: {
+        tabBarLabel: 'الطلبات',
+        tabBarAccessibilityLabel: 'الطلبات النشطة',
+        tabBarIcon: ({ focused }: { focused: boolean }) => (
+          <View style={[tabStyles.centerAction, !focused && tabStyles.centerActionIdle]}>
+            <Ionicons name="receipt" size={24} color={COLORS.surface} />
+          </View>
+        ),
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, marginTop: 2 },
+      },
+    },
+    {
+      name: 'MerchantHistory',
+      component: HistoryNavigator,
+      options: { tabBarLabel: 'السجل', tabBarAccessibilityLabel: 'سجل الطلبات', tabBarIcon: tabIcon('time-outline', 'time') },
+    },
+    {
+      name: 'MerchantAccount',
+      component: AccountNavigator,
+      options: {
+        tabBarLabel: 'المزيد',
+        tabBarAccessibilityLabel: 'المزيد',
+        tabBarIcon: tabIcon('ellipsis-horizontal-circle-outline', 'ellipsis-horizontal-circle'),
+      },
+    },
+    {
+      name: 'MerchantWallet',
+      component: MerchantWalletScreen,
+      options: { tabBarLabel: 'المحفظة', tabBarStyle: { display: 'none' }, ...hiddenOnBar },
+    },
+    {
+      name: 'MerchantSupport',
+      component: SupportNavigator,
+      options: { tabBarLabel: 'الدعم', tabBarStyle: { display: 'none' }, ...hiddenOnBar },
+    },
+    {
+      name: 'MerchantStoreSettings',
+      component: StoreSettingsScreen,
+      options: { tabBarLabel: 'المعلومات', tabBarStyle: { display: 'none' }, ...hiddenOnBar },
+    },
+  ];
+  const visible = tabs.slice(0, 5);
+  const orderedTabs = Platform.OS === 'web' ? [...visible].reverse().concat(tabs.slice(5)) : tabs;
 
   const content = (
     <Tab.Navigator
       initialRouteName="MerchantDashboard"
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarInactiveTintColor: COLORS.inkTertiary,
         tabBarStyle: isDesktop ? { display: 'none' } : {
           backgroundColor: COLORS.surface,
-          borderTopWidth: 0,
-          elevation: 14,
-          shadowColor: COLORS.primaryDark,
-          shadowOffset: { width: 0, height: -8 },
-          shadowOpacity: 0.08,
-          shadowRadius: 24,
-          height: 72,
-          paddingBottom: 10,
-          paddingTop: 10,
-          borderTopLeftRadius: RADIUS.xl,
-          borderTopRightRadius: RADIUS.xl,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: COLORS.hairline,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 60 + bottomInset,
+          paddingBottom: bottomInset,
+          paddingTop: 6,
           position: 'absolute',
+          ...(isTablet ? {
+            left: Math.max(24, (width - 680) / 2),
+            right: Math.max(24, (width - 680) / 2),
+            bottom: 14,
+            borderWidth: 1,
+            borderColor: COLORS.hairline,
+            borderRadius: RADIUS.xl,
+          } : {}),
         },
-        tabBarItemStyle: { borderRadius: RADIUS.lg, marginHorizontal: 2 },
-        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.medium, marginTop: 2 },
       }}
     >
-      <Tab.Screen
-        name="MerchantDashboard"
-        component={MerchantDashboardScreen}
-        options={{
-          tabBarLabel: 'الرئيسية',
-          tabBarAccessibilityLabel: 'الرئيسية',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="MerchantOrders"
-        component={OrdersNavigator}
-        options={{
-          tabBarLabel: 'الطلبات',
-          tabBarAccessibilityLabel: 'الطلبات النشطة',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="MerchantProducts"
-        component={ProductsNavigator}
-        options={{
-          tabBarLabel: 'منتجاتي',
-          tabBarAccessibilityLabel: 'منتجات المتجر',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'cube' : 'cube-outline'} size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="MerchantHistory"
-        component={HistoryNavigator}
-        options={{
-          tabBarLabel: 'السجل',
-          tabBarAccessibilityLabel: 'سجل الطلبات',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="MerchantAccount"
-        component={AccountNavigator}
-        options={{
-          tabBarLabel: 'حسابي',
-          tabBarAccessibilityLabel: 'حساب التاجر',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="MerchantWallet"
-        component={MerchantWalletScreen}
-        options={{
-          tabBarLabel: 'المحفظة',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={size} color={color} />,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tab.Screen
-        name="MerchantSupport"
-        component={SupportNavigator}
-        options={{
-          tabBarLabel: 'الدعم',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'headset' : 'headset-outline'} size={size} color={color} />,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tab.Screen
-        name="MerchantStoreSettings"
-        component={StoreSettingsScreen}
-        options={{
-          tabBarLabel: 'المعلومات',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={size} color={color} />,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
+      {orderedTabs.map((tab) => (
+        <Tab.Screen key={tab.name} name={tab.name} component={tab.component} options={tab.options} />
+      ))}
     </Tab.Navigator>
   );
 
@@ -500,5 +513,39 @@ const topHeaderStyles = StyleSheet.create({
   avatarMini: {
     width: 40, height: 40, borderRadius: 14, backgroundColor: UI.primary,
     alignItems: 'center', justifyContent: 'center',
+  },
+});
+
+const tabStyles = StyleSheet.create({
+  centerAction: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -28,
+    borderWidth: 4,
+    borderColor: COLORS.surface,
+    ...Platform.select({
+      web: { boxShadow: '0 6px 16px rgba(23,37,84,0.25)' } as any,
+      default: {
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 6,
+      },
+    }),
+  },
+  centerActionIdle: { backgroundColor: COLORS.primaryLight },
+  tabIconWrap: { alignItems: 'center', justifyContent: 'center', minWidth: 44 },
+  tabIndicator: {
+    position: 'absolute',
+    top: -8,
+    width: 20,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
   },
 });

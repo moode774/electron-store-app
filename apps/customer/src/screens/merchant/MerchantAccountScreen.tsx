@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
@@ -28,7 +29,195 @@ const MENU_ITEMS = [
   { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
 ];
 
-export default function MerchantAccountScreen({ navigation }: any) {
+export default function MerchantAccountScreen(props: any) {
+  const { width } = useWindowDimensions();
+  return width >= BREAKPOINTS.desktop ? <MerchantAccountDesktop {...props} /> : <MerchantMoreScreen {...props} />;
+}
+
+type MoreItem = { title: string; subtitle: string; icon: string; screen: string; params?: object };
+
+const MORE_SECTIONS: { title: string; items: MoreItem[] }[] = [
+  {
+    title: 'إدارة المتجر',
+    items: [
+      { title: 'التقارير والإحصائيات', subtitle: 'المبيعات وأداء المنتجات', icon: 'bar-chart-outline', screen: 'Reports' },
+      { title: 'كوبونات المتجر', subtitle: 'الخصومات والعروض', icon: 'pricetag-outline', screen: 'Coupons' },
+    ],
+  },
+  {
+    title: 'المالية والمرتجعات',
+    items: [
+      { title: 'المحفظة والمدفوعات', subtitle: 'الرصيد والتسويات والسحب', icon: 'wallet-outline', screen: 'Wallet' },
+      { title: 'طلبات الاسترداد', subtitle: 'مراجعة طلبات العملاء', icon: 'refresh-circle-outline', screen: 'Refunds' },
+      { title: 'المرتجعات الفعلية', subtitle: 'استلام المنتجات المرتجعة', icon: 'return-down-back-outline', screen: 'PhysicalReturns' },
+    ],
+  },
+  {
+    title: 'الحساب والدعم',
+    items: [
+      { title: 'الإشعارات', subtitle: 'تنبيهات الطلبات والحساب', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
+      { title: 'مركز المساعدة', subtitle: 'تذاكر الدعم والتواصل', icon: 'headset-outline', screen: 'Support' },
+      { title: 'مفاتيح API', subtitle: 'ربط المتجر بالأنظمة الخارجية', icon: 'key-outline', screen: 'ApiKeys' },
+    ],
+  },
+];
+
+function MerchantMoreScreen({ navigation }: any) {
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
+  const insets = useSafeAreaInsets();
+  const [profile, setProfile] = useState<Awaited<ReturnType<typeof getMerchantProfile>>>(null);
+  const [loadError, setLoadError] = useState('');
+
+  const load = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadError('');
+    try {
+      setProfile(await getMerchantProfile(user.id));
+    } catch {
+      setLoadError('تعذّر تحميل بيانات المتجر.');
+    }
+  }, [user?.id]);
+
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
+
+  const confirmSignOut = () =>
+    Alert.alert('تسجيل الخروج', 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
+      { text: 'تراجع', style: 'cancel' },
+      { text: 'تسجيل الخروج', style: 'destructive', onPress: () => signOut() },
+    ]);
+
+  const approved = !!profile?.is_approved;
+
+  return (
+    <View style={more.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[more.content, { paddingTop: insets.top + 16 }]}
+      >
+        <View style={more.header}>
+          <Text style={more.title}>المزيد</Text>
+          <TouchableOpacity
+            style={more.headerBtn}
+            onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })}
+            accessibilityRole="button"
+            accessibilityLabel="الإشعارات"
+          >
+            <Ionicons name="notifications-outline" size={20} color={COLORS.ink} />
+          </TouchableOpacity>
+        </View>
+
+        {loadError ? (
+          <TouchableOpacity style={more.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel="إعادة المحاولة">
+            <Text style={more.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <TouchableOpacity
+          style={more.storeCard}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('StoreSettings')}
+          accessibilityRole="button"
+          accessibilityLabel="بيانات المتجر"
+        >
+          <View style={more.storeAvatar}>
+            <Ionicons name="storefront" size={24} color={COLORS.primary} />
+          </View>
+          <View style={more.storeCopy}>
+            <Text style={more.storeName} numberOfLines={1}>{profile?.store_name ?? user?.full_name ?? 'متجري'}</Text>
+            <View style={more.storeMeta}>
+              <View style={[more.statusDot, { backgroundColor: approved ? COLORS.statusOnline : '#F59E0B' }]} />
+              <Text style={more.storeStatus}>{approved ? 'تاجر معتمد' : 'قيد المراجعة'}</Text>
+            </View>
+          </View>
+          <View style={more.storeAction}>
+            <Text style={more.storeActionText}>بيانات المتجر</Text>
+            <Ionicons name="chevron-back" size={14} color={COLORS.surface} />
+          </View>
+        </TouchableOpacity>
+
+        {MORE_SECTIONS.map((section) => (
+          <View key={section.title} style={more.section}>
+            <Text style={more.sectionTitle}>{section.title}</Text>
+            <View style={more.group}>
+              {section.items.map((item, index) => (
+                <TouchableOpacity
+                  key={item.screen}
+                  style={[more.row, index < section.items.length - 1 && more.rowDivider]}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate(item.screen, item.params)}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
+                >
+                  <View style={more.rowIcon}>
+                    <Ionicons name={item.icon as any} size={19} color={COLORS.primary} />
+                  </View>
+                  <View style={more.rowCopy}>
+                    <Text style={more.rowTitle}>{item.title}</Text>
+                    <Text style={more.rowSubtitle}>{item.subtitle}</Text>
+                  </View>
+                  <Ionicons name="chevron-back" size={18} color={COLORS.inkTertiary} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
+
+        <TouchableOpacity style={more.logout} onPress={confirmSignOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+          <Text style={more.logoutText}>تسجيل الخروج</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+}
+
+const more = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.canvas },
+  content: { paddingHorizontal: 16, paddingBottom: 120, width: '100%', maxWidth: 680, alignSelf: 'center' },
+  header: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title: { fontSize: 24, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  headerBtn: {
+    width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center',
+  },
+  errorCard: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 13, padding: 12, marginBottom: 12 },
+  errorText: { color: '#991B1B', fontSize: 12, lineHeight: 19, textAlign: 'right', fontFamily: FONTS.semiBold },
+  storeCard: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.xl, padding: 16, marginBottom: 22,
+  },
+  storeAvatar: {
+    width: 50, height: 50, borderRadius: 16, backgroundColor: COLORS.surface,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  storeCopy: { flex: 1, alignItems: 'flex-end' },
+  storeName: { fontSize: 16, fontFamily: FONTS.bold, color: COLORS.surface, textAlign: 'right' },
+  storeMeta: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 4 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  storeStatus: { fontSize: 12, fontFamily: FONTS.medium, color: '#CBD5E1' },
+  storeAction: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 10, paddingVertical: 7, borderRadius: RADIUS.full,
+  },
+  storeActionText: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.surface },
+  section: { marginBottom: 18 },
+  sectionTitle: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.inkSecondary, textAlign: 'right', marginBottom: 8, paddingHorizontal: 4 },
+  group: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.hairline, paddingHorizontal: 14 },
+  row: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, minHeight: 64, paddingVertical: 12 },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: COLORS.hairline },
+  rowIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  rowCopy: { flex: 1, alignItems: 'flex-end' },
+  rowTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.ink, textAlign: 'right' },
+  rowSubtitle: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.inkTertiary, textAlign: 'right', marginTop: 2 },
+  logout: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52,
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: '#FECACA', marginTop: 4,
+  },
+  logoutText: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.error },
+});
+
+function MerchantAccountDesktop({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const [stat, setStat] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
