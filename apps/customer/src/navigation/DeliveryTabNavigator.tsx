@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
@@ -151,8 +152,10 @@ function DesktopDeliverySidebar() {
 
 export default function DeliveryTabNavigator() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isDesktop = width >= BREAKPOINTS.desktop;
   const isTablet = width >= BREAKPOINTS.tablet;
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 8);
 
   const content = (
     <Tab.Navigator
@@ -160,31 +163,27 @@ export default function DeliveryTabNavigator() {
         headerShown: false,
         tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarInactiveTintColor: COLORS.inkTertiary,
         tabBarStyle: isDesktop ? { display: 'none' } : {
           backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.border,
-          elevation: 10,
-          shadowColor: COLORS.primaryDark,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 18,
-          height: Platform.OS === 'ios' ? 88 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 8,
-          borderTopLeftRadius: RADIUS.xl,
-          borderTopRightRadius: RADIUS.xl,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: COLORS.hairline,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 60 + bottomInset,
+          paddingBottom: bottomInset,
+          paddingTop: 6,
           position: 'absolute',
           ...(isTablet ? {
             left: Math.max(24, (width - 680) / 2),
             right: Math.max(24, (width - 680) / 2),
             bottom: 14,
             borderWidth: 1,
-            borderColor: COLORS.border,
+            borderColor: COLORS.hairline,
             borderRadius: RADIUS.xl,
           } : {}),
         },
-        tabBarLabelStyle: { fontSize: 10.5, fontFamily: FONTS.semiBold, marginTop: 4 },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.medium, marginTop: 2 },
       }}
     >
       <Tab.Screen
@@ -213,19 +212,14 @@ export default function DeliveryTabNavigator() {
           },
         })}
         options={{
-          tabBarLabel: 'قبول',
+          tabBarLabel: 'الطلبات المتاحة',
+          tabBarAccessibilityLabel: 'الطلبات المتاحة',
           tabBarIcon: () => (
-            <View style={{
-              width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primary,
-              alignItems: 'center', justifyContent: 'center',
-              marginTop: -32, borderWidth: 4, borderColor: '#F9FAFB',
-              shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
-            }}>
-              <Ionicons name="git-network-outline" size={26} color="#FFFFFF" style={{ transform: [{ rotate: '90deg' }] }} />
+            <View style={styles.centerAction}>
+              <Ionicons name="flash" size={26} color={COLORS.surface} />
             </View>
           ),
-          tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.bold, color: COLORS.primary, marginTop: 4 },
+          tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, marginTop: 2 },
         }}
       />
       <Tab.Screen
@@ -272,6 +266,27 @@ export default function DeliveryTabNavigator() {
 }
 
 const styles = StyleSheet.create({
+  centerAction: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -30,
+    borderWidth: 4,
+    borderColor: COLORS.surface,
+    ...Platform.select({
+      web: { boxShadow: '0 6px 16px rgba(23,37,84,0.25)' } as any,
+      default: {
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 6,
+      },
+    }),
+  },
   desktopRoot: {
     flex: 1,
     flexDirection: 'row-reverse',
