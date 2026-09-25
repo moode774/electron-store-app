@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Platform,
   Image,
-  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -69,11 +68,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]}>
 
         {/* Profile Card */}
-        <ImageBackground
-          source={require('../../../assets/images/profile_card_art.png')}
-          style={styles.profileCard}
-          imageStyle={styles.profileCardBg}
-        >
+        <View style={styles.profileCard}>
 
           {/* Center Zone: Info */}
           <View style={styles.profileZoneCenter}>
@@ -93,7 +88,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
             </View>
           </View>
 
-        </ImageBackground>
+        </View>
 
         {loadError ? (
           <View style={styles.errorCard}>
@@ -197,6 +192,10 @@ const styles = StyleSheet.create({
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: '#2563EB', fontSize: 12.5, fontWeight: '800' },
   profileCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
     borderRadius: 24,
     padding: 24,
     minHeight: 140,
@@ -209,10 +208,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
-  },
-  profileCardBg: {
-    borderRadius: 24,
-    resizeMode: 'cover',
   },
   profileZoneRight: {
     justifyContent: 'center',
