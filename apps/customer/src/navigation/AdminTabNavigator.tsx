@@ -97,6 +97,7 @@ const SIDEBAR_TABS = [
   { name: 'AdminPhysicalReturns', label: 'الإرجاعات', icon: 'return-down-back-outline', activeIcon: 'return-down-back', isMore: true },
   { name: 'AdminCodCollections', label: 'التحصيلات', icon: 'cash-outline', activeIcon: 'cash', isMore: true },
   { name: 'AdminFinancialReconciliation', label: 'المطابقة', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
+  { name: 'AdminMoreMain', label: 'كل الأدوات', icon: 'options-outline', activeIcon: 'options', isMore: true },
   { name: 'AdminSettings', label: 'الإعدادات', icon: 'settings-outline', activeIcon: 'settings', isMore: true },
   { name: 'AdminSupport', label: 'الدعم', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
 ];
@@ -355,23 +356,13 @@ export default function AdminTabNavigator() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: isDesktop ? { display: 'none' } : {
-          left: 14,
-          right: 14,
-          bottom: Platform.OS === 'ios' ? 14 : 10,
           backgroundColor: COLORS.surface,
           borderTopWidth: 1,
-          borderWidth: 1,
-          borderColor: COLORS.border,
-          elevation: 10,
-          shadowColor: COLORS.primaryDark,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 24,
-          height: Platform.OS === 'ios' ? 72 : 66,
-          paddingBottom: Platform.OS === 'ios' ? 14 : 9,
-          paddingTop: 9,
-          borderRadius: RADIUS.xl,
-          position: 'absolute',
+          borderTopColor: COLORS.border,
+          elevation: 0,
+          shadowOpacity: 0,
+          paddingTop: 8,
+
         },
         tabBarLabelStyle: { fontSize: 11.5, fontFamily: FONTS.semiBold },
       }}
@@ -385,7 +376,7 @@ export default function AdminTabNavigator() {
       <Tab.Screen name="AdminUsers" component={AdminUsersScreen}
         options={{ tabBarLabel: 'المستخدمون', tabBarAccessibilityLabel: 'المستخدمون', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMore" component={MoreNavigator}
-        options={{ tabBarLabel: 'المزيد', tabBarAccessibilityLabel: 'المزيد', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: 'الإدارة', tabBarAccessibilityLabel: 'إدارة التطبيق', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
     </Tab.Navigator>
   );
 

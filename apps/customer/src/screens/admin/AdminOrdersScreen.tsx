@@ -58,8 +58,9 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
-  const pagePadding = compact ? 12 : 24;
-  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
+  const desktop = width >= BREAKPOINTS.desktop;
+  const pagePadding = desktop ? 24 : 16;
+  const contentWidth = Math.min(Math.max(width - (desktop ? 122 : 0) - (pagePadding * 2), 280), 1280);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +104,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
     const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     return (
-      <View style={s.card}>
+      <View style={[s.card, !desktop && { padding: 14, borderRadius: 16, shadowOpacity: 0, elevation: 0 }]}>
         <View style={s.cardTop}>
           <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
             <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
@@ -146,8 +147,8 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
   return (
     <View style={s.root}>
       {/* Modern Header */}
-      <View style={s.header}>
-      <View style={[s.headerContent, { width: contentWidth }]}>
+      <View style={[s.header, !desktop && { paddingTop: Platform.OS === 'web' ? 18 : 52, paddingBottom: 14 }]}>
+      <View style={[s.headerContent, { width: contentWidth, paddingHorizontal: 0 }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
@@ -202,7 +203,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
           columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderOrder}
-          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
+          contentContainerStyle={[s.list, { paddingHorizontal: 0, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -294,7 +295,7 @@ const s = StyleSheet.create({
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 24 },
   columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 15, color: UI.textMuted, fontWeight: '600' },
@@ -305,8 +306,8 @@ const s = StyleSheet.create({
   cardTop: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between' },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   statusText: { fontSize: 12, fontWeight: '800' },
-  orderMeta: { alignItems: 'flex-start' },
-  orderNum: { fontSize: 16, fontWeight: '900', color: UI.text },
+  orderMeta: { flex: 1, minWidth: 0, alignItems: 'flex-start' },
+  orderNum: { flexShrink: 1, fontSize: 16, fontWeight: '900', color: UI.text },
   orderDate: { fontSize: 12, color: UI.textMuted, marginTop: 4, fontWeight: '500' },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 16 },
   detailsBlock: { gap: 12 },

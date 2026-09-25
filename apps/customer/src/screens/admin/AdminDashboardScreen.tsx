@@ -101,7 +101,7 @@ function BarChart({ w, h, points, color }: { w: number; h: number; points: numbe
   return (
     <Svg width={w} height={h}>
       {data.map((val, i) => {
-        const barH = Math.max((val / max) * h, 10);
+        const barH = (val / max) * h;
         const x = i * (barWidth + gap);
         const y = h - barH;
         const isMax = val === max && max > 0;
@@ -200,7 +200,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // ── Responsive widths ──
   // Desktop chrome = floating rail (72 + 16) + main horizontal padding (32).
   const desktopChromeWidth = 120;
-  const screenPadding = isCompact ? 32 : 48;
+  const screenPadding = isDesktop ? 48 : 32;
   const dashboardWidth = Math.min(
     isDesktop ? Math.max(width - desktopChromeWidth, 320) : width,
     BREAKPOINTS.wide,
@@ -288,7 +288,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     <View style={containerStyle}>
       <StatusBar barStyle="dark-content" backgroundColor={isDesktop ? UI.bg : UI.bgMobile} />
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { width: dashboardWidth }, isCompact && styles.scrollContentCompact]} showsVerticalScrollIndicator={false}
+      <ScrollView contentContainerStyle={[styles.scrollContent, { width: dashboardWidth }, !isDesktop && styles.scrollContentCompact]} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
       >
 
@@ -296,7 +296,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
         <View style={styles.welcomeRow}>
           <View style={styles.welcomeCopy}>
             <Text style={styles.eyebrow}>مركز العمليات</Text>
-            <Text style={styles.welcomeText}>مرحباً بك، <Text style={styles.welcomeName}>{user?.full_name ?? 'المدير العام'}</Text></Text>
+            <Text style={[styles.welcomeText, !isDesktop && { fontSize: 22 }]}>إدارة التطبيق</Text>
           </View>
           <View style={styles.welcomeActions}>
             <TouchableOpacity style={styles.exportBtn} onPress={exportReport} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
@@ -325,23 +325,34 @@ export default function AdminDashboardScreen({ navigation }: any) {
           </View>
         ) : (
           <>
+            <View style={styles.quickActions}>
+              {[
+                { title: 'المتاجر', icon: 'storefront-outline', route: 'AdminMerchants' },
+                { title: 'الطلبات', icon: 'receipt-outline', route: 'AdminOrders' },
+                { title: 'المستخدمون', icon: 'people-outline', route: 'AdminUsers' },
+                { title: 'كل الأدوات', icon: 'options-outline', route: 'AdminMore' },
+              ].map(action => <TouchableOpacity key={action.route} style={styles.quickAction} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
+                <Ionicons name={action.icon as any} size={21} color={UI.primary} />
+                <Text style={styles.quickActionText}>{action.title}</Text>
+              </TouchableOpacity>)}
+            </View>
             {/* ===== Top Widgets Grid ===== */}
             <View style={[styles.gridRow, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
 
               {/* Column 1: Hero Card + Quick Stat */}
               <View style={[styles.column, { width: col3Width }]}>
-                <View style={[styles.card, styles.heroCard]}>
-                  <View pointerEvents="none" style={styles.heroOrbLime} />
-                  <View pointerEvents="none" style={styles.heroOrbCoral} />
+                <View style={[styles.card, styles.heroCard, !isDesktop && { minHeight: 170, padding: 18, borderRadius: 18 }]}>
+
+
                   <View style={styles.heroContent}>
-                    <View style={styles.heroTop}>
+                    <View style={[styles.heroTop, !isDesktop && { marginBottom: 12 }]}>
                       <Text style={styles.heroLogo}>لوحة الإدارة</Text>
                       <View style={styles.heroIconWrap}>
                         <Ionicons name="shield-checkmark" size={20} color={UI.primary} />
                       </View>
                     </View>
                     <Text style={styles.heroSubtitle}>إجمالي صافي قيمة الطلبات المسدّدة</Text>
-                    <Text style={styles.heroBalance}>{stats?.netSettledGmv.toLocaleString() ?? 0} ر.ي</Text>
+                    <Text style={[styles.heroBalance, !isDesktop && { fontSize: 30, marginBottom: 12 }]}>{stats?.netSettledGmv.toLocaleString() ?? 0} ر.ي</Text>
                     <View style={styles.heroBottom}>
                       <Text style={styles.heroText}>المستخدمين: {stats?.totalUsers.toLocaleString()}</Text>
                       <Text style={styles.heroText}>الطلبات: {stats?.totalOrders.toLocaleString()}</Text>
@@ -368,10 +379,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                       <View style={styles.iconBox}><Ionicons name="bar-chart" size={16} color={UI.textDark} /></View>
                       <Text style={styles.cardTitle}>طلبات آخر 7 أيام</Text>
                     </View>
-                    <View style={styles.togglePills}>
-                      <Text style={styles.togglePill}>أسبوعي</Text>
-                      <Text style={styles.togglePillActive}>شهري</Text>
-                    </View>
+                    <Text style={styles.chartLabel}>أسبوعي</Text>
                   </View>
                   <View style={styles.chartAreaCentered}>
                     <BarChart w={col3Width - 48} h={160} points={chartPoints} color={UI.primary} />
@@ -467,8 +475,8 @@ export default function AdminDashboardScreen({ navigation }: any) {
               </View>
 
               <View style={styles.statSummaryCard}>
-                <View style={[styles.statSummaryIcon, { backgroundColor: UI.limeSoft }]}>
-                  <Ionicons name="navigate" size={20} color="#617A0C" />
+                <View style={[styles.statSummaryIcon, { backgroundColor: UI.primaryLight }]}>
+                  <Ionicons name="navigate" size={20} color={UI.primary} />
                 </View>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                   <Text style={styles.statSummaryValue}>{stats?.onlineDrivers ?? 0}</Text>
@@ -517,7 +525,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { maxWidth: BREAKPOINTS.wide, alignSelf: 'center', padding: 24, paddingBottom: 112 },
+  quickActions: { flexDirection: 'row-reverse', gap: 8, marginBottom: 16 },
+  quickAction: { flex: 1, minWidth: 0, minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: UI.card, borderRadius: 14, borderWidth: 1, borderColor: UI.border },
+  quickActionText: { fontFamily: FONTS.medium, fontSize: 11, color: UI.primary },
+  scrollContent: { maxWidth: BREAKPOINTS.wide, alignSelf: 'center', padding: 24, paddingBottom: 28 },
   scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
   loadingCenter: { height: 300, alignItems: 'center', justifyContent: 'center' },
   errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
@@ -547,14 +558,14 @@ const styles = StyleSheet.create({
 
   // Bento cards
   card: { backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: UI.border, ...softShadow },
-  limeCard: { backgroundColor: UI.limeSoft, borderColor: '#DDEFA9' },
-  mintCard: { backgroundColor: UI.mintSoft, borderColor: '#BEEBDD' },
+  limeCard: { backgroundColor: UI.card, borderColor: UI.border },
+  mintCard: { backgroundColor: UI.card, borderColor: UI.border },
   heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary },
   heroContent: { zIndex: 2 },
   heroOrbLime: { position: 'absolute', width: 132, height: 132, borderRadius: 66, backgroundColor: UI.lime, left: -45, top: -52, opacity: 0.92 },
   heroOrbCoral: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: UI.coral, right: -24, bottom: -24, opacity: 0.85 },
   heroTop: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  heroIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: UI.lime, alignItems: 'center', justifyContent: 'center' },
+  heroIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   heroLogo: { fontSize: 18, fontFamily: FONTS.bold, color: '#FFFFFF' },
   heroSubtitle: { fontSize: 12, fontFamily: FONTS.regular, color: '#DDD8FF', marginBottom: 4, textAlign: 'right' },
   heroBalance: { fontSize: 34, fontFamily: FONTS.bold, color: '#FFFFFF', marginBottom: 24, textAlign: 'right' },
