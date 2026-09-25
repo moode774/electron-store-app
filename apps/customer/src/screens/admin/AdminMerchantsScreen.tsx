@@ -32,8 +32,9 @@ export default function AdminMerchantsScreen() {
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
-  const pagePadding = compact ? 12 : 24;
-  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
+  const desktop = width >= BREAKPOINTS.desktop;
+  const pagePadding = desktop ? 24 : 16;
+  const contentWidth = Math.min(Math.max(width - (desktop ? 122 : 0) - (pagePadding * 2), 280), 1280);
   const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -142,7 +143,7 @@ export default function AdminMerchantsScreen() {
     const userName = (item.users as any)?.full_name ?? item.owner_name ?? 'غير متوفر';
     const phone = (item.users as any)?.phone ?? 'غير متوفر';
     return (
-      <View style={s.card}>
+      <View style={[s.card, !desktop && { padding: 14, borderRadius: 16, shadowOpacity: 0, elevation: 0 }]}>
         <View style={s.cardHeader}>
           <View style={s.avatarCircle}>
             <Ionicons name="storefront" size={24} color={UI.primary} />
@@ -218,8 +219,8 @@ export default function AdminMerchantsScreen() {
   return (
     <View style={s.root}>
       {/* Modern Header */}
-      <View style={s.header}>
-        <View style={[s.headerContent, { width: contentWidth }]}>
+      <View style={[s.header, !desktop && { paddingTop: Platform.OS === 'web' ? 18 : 52, paddingBottom: 14 }]}>
+        <View style={[s.headerContent, { width: contentWidth, paddingHorizontal: 0 }]}>
           <Text style={s.headerCount}>{merchants.length} متجر</Text>
           <Text style={s.headerTitle}>التجار</Text>
         </View>
@@ -270,7 +271,7 @@ export default function AdminMerchantsScreen() {
           columnWrapperStyle={columns > 1 ? s.columnRow : undefined}
           keyExtractor={i => i.id}
           renderItem={renderMerchant}
-          contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
+          contentContainerStyle={[s.list, { paddingHorizontal: 0, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={UI.primary} />}
           ListEmptyComponent={
             <View style={s.center}>
@@ -390,14 +391,14 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
   headerCount: { fontSize: 13, color: UI.primary, fontFamily: FONTS.semiBold, backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.full, overflow: 'hidden' },
   searchBox: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 10, backgroundColor: UI.bg, paddingHorizontal: 16, borderRadius: RADIUS.md, minHeight: 50, borderWidth: 1, borderColor: UI.border },
-  searchInput: { flex: 1, fontSize: 15, color: UI.text, fontFamily: FONTS.medium },
+  searchInput: { flex: 1, fontSize: 16, color: UI.text, fontFamily: FONTS.medium },
   filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
   filterRow: { paddingHorizontal: 20, gap: 10 },
   filterBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
   filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
+  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 24 },
   columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 15, color: UI.textMuted, fontWeight: '600' },

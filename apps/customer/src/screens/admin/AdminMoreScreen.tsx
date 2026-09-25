@@ -1,234 +1,153 @@
-import React from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, useWindowDimensions
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AdminMoreStackParamList } from '../../navigation/AdminTabNavigator';
-import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-
-const UI = {
-  primary: COLORS.primary,
-  primaryLight: COLORS.primarySoft,
-  bg: COLORS.background,
-  card: COLORS.surface,
-  text: COLORS.textPrimary,
-  textMuted: COLORS.textMuted,
-  border: COLORS.border,
-  success: COLORS.success,
-  danger: COLORS.error,
-  warning: COLORS.warning,
-  info: COLORS.info,
-};
+import { BREAKPOINTS, COLORS, FONTS } from '@marketplace/shared-utils';
 
 type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
-
 const MENU_ITEMS = [
+  { title: 'إعدادات المنصة', description: 'العمولات ورسوم التوصيل ومناطق الخدمة', icon: 'settings-outline', screen: 'AdminSettings' as keyof AdminMoreStackParamList },
+  { title: 'مركز الإشعارات', description: 'متابعة تنبيهات المنصة', icon: 'notifications-outline', screen: 'AdminNotifications' as keyof AdminMoreStackParamList },
   {
     title: 'مراجعة المنتجات',
     description: 'اعتماد المنتجات الجديدة أو إعادتها للتاجر مع سبب واضح',
     icon: 'cube',
-    color: '#2563EB',
-    bg: '#EFF6FF',
     screen: 'AdminProducts' as keyof AdminMoreStackParamList,
   },
   {
     title: 'السائقون والمندوبين',
     description: 'إدارة الموافقات ومتابعة أداء المندوبين',
     icon: 'bicycle',
-    color: '#8B5CF6',
-    bg: '#F5F3FF',
     screen: 'AdminDelivery' as keyof AdminMoreStackParamList,
   },
   {
     title: 'طلبات السحب',
     description: 'معالجة طلبات الأرباح للتجار والمندوبين',
     icon: 'wallet',
-    color: '#EC4899',
-    bg: '#FDF2F8',
     screen: 'AdminWallet' as keyof AdminMoreStackParamList,
   },
   {
     title: 'مفاتيح API (ربط الذكاء الاصطناعي)',
     description: 'إنشاء مفاتيح لربط النظام مع Claude أو أي نموذج AI',
     icon: 'key',
-    color: '#1E3A8A',
-    bg: '#EEF2FF',
     screen: 'ApiKeys' as keyof AdminMoreStackParamList,
   },
   {
     title: 'طلبات الاسترجاع',
     description: 'مراجعة الاسترجاعات والموافقة أو الرفض',
     icon: 'refresh',
-    color: '#D97706',
-    bg: '#FFFBEB',
     screen: 'AdminRefunds' as keyof AdminMoreStackParamList,
   },
   {
     title: 'الإرجاعات المادية',
     description: 'مراجعة الكميات وجدولة الاستلام والفحص وإكمال الاسترداد',
     icon: 'return-down-back',
-    color: '#0F766E',
-    bg: '#CCFBF1',
     screen: 'AdminPhysicalReturns' as keyof AdminMoreStackParamList,
   },
   {
     title: 'المطابقة المالية التاريخية',
     description: 'تسوية الطلبات القديمة ذات السجل المالي الناقص قبل الاسترداد',
     icon: 'git-compare',
-    color: '#7C3AED',
-    bg: '#F5F3FF',
     screen: 'AdminFinancialReconciliation' as keyof AdminMoreStackParamList,
   },
   {
     title: 'تحصيلات الدفع عند الاستلام',
     description: 'مراجعة عهدة النقد وإثباتات تحويل المندوبين والنزاعات',
     icon: 'cash',
-    color: '#047857',
-    bg: '#ECFDF5',
     screen: 'AdminCodCollections' as keyof AdminMoreStackParamList,
   },
   {
     title: 'الدعم الفني والشكاوى',
     description: 'متابعة ومعالجة تذاكر دعم المستخدمين',
     icon: 'headset',
-    color: '#F97316',
-    bg: '#FFF7ED',
     screen: 'AdminSupport' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'مناطق الخدمة والتغطية',
-    description: 'تكوين المدن وإدارة تفعيل خدمة التوصيل',
-    icon: 'map',
-    color: '#10B981',
-    bg: '#ECFDF5',
-    screen: 'AdminSettings' as keyof AdminMoreStackParamList,
   },
   {
     title: 'إدارة البنرات (CMS)',
     description: 'إدارة الإعلانات والبنرات في التطبيق',
     icon: 'images',
-    color: '#0ea5e9',
-    bg: '#e0f2fe',
     screen: 'AdminBanners' as keyof AdminMoreStackParamList,
   },
   {
     title: 'إدارة الكوبونات (Coupons)',
     description: 'إنشاء ومتابعة الكوبونات الشاملة للتطبيق',
     icon: 'ticket',
-    color: '#f43f5e',
-    bg: '#ffe4e6',
     screen: 'AdminCoupons' as keyof AdminMoreStackParamList,
   },
   {
     title: 'الحملات التسويقية (Broadcast)',
     description: 'بث التنبيهات والإشعارات لمختلف المستخدمين',
     icon: 'megaphone',
-    color: '#3B82F6',
-    bg: '#EFF6FF',
     screen: 'AdminBroadcast' as keyof AdminMoreStackParamList,
   },
 ];
 
+
+const GROUPS = [
+  { title: 'التشغيل وخدمة العملاء', screens: ['AdminProducts', 'AdminDelivery', 'AdminSupport'] },
+  { title: 'المالية والاسترجاع', screens: ['AdminWallet', 'AdminRefunds', 'AdminPhysicalReturns', 'AdminCodCollections', 'AdminFinancialReconciliation'] },
+  { title: 'التسويق والتواصل', screens: ['AdminBanners', 'AdminCoupons', 'AdminBroadcast', 'AdminNotifications'] },
+  { title: 'إعدادات المنصة والتكاملات', screens: ['AdminSettings', 'ApiKeys'] },
+];
 export default function AdminMoreScreen() {
   const navigation = useNavigation<Nav>();
-  const { user, signOut } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const signOut = useAuthStore(s => s.signOut);
+  const [search, setSearch] = useState('');
   const { width } = useWindowDimensions();
-  const compact = width < BREAKPOINTS.compact;
   const desktop = width >= BREAKPOINTS.desktop;
-  const pagePadding = compact ? 12 : 24;
-  const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
-  const cardWidth = desktop ? (contentWidth - 16) / 2 : contentWidth;
-
-  return (
-    <View style={s.root}>
-      {/* Modern Header */}
-      <View style={s.header}>
-        <View style={[s.profileSection, { width: contentWidth }]}>
-          <View style={s.avatar}>
-            <Ionicons name="shield-checkmark" size={26} color="#FFFFFF" />
-          </View>
-          <View style={s.profileInfo}>
-            <Text style={s.profileName}>{user?.full_name ?? 'مدير النظام'}</Text>
-            <View style={s.roleBadge}>
-              <Text style={s.profileRole}>المدير العام</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} showsVerticalScrollIndicator={false}>
-        <View style={[s.content, { width: contentWidth }]}>
-        <Text style={s.sectionTitle}>الوصول السريع للأدوات</Text>
-        
-        <View style={s.menuGrid}>
-          {MENU_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.screen}
-              style={[s.menuCard, { width: cardWidth }, compact && s.menuCardCompact]}
-              onPress={() => navigation.navigate(item.screen)}
-              activeOpacity={0.8}
-            >
-              <View style={[s.menuIcon, { backgroundColor: item.bg }]}>
-                <Ionicons name={item.icon as any} size={26} color={item.color} />
-              </View>
-              <View style={s.menuTextGroup}>
-                <Text style={s.menuTitle}>{item.title}</Text>
-                <Text style={s.menuDesc}>{item.description}</Text>
-              </View>
-              <View style={s.menuArrowWrap}>
-                <Ionicons name="chevron-back" size={20} color={UI.textMuted} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={s.divider} />
-
-        <TouchableOpacity style={s.logoutBtn} onPress={signOut} activeOpacity={0.8}>
-          <Text style={s.logoutText}>تسجيل الخروج من الحساب</Text>
-          <Ionicons name="log-out" size={22} color={UI.danger} />
-        </TouchableOpacity>
-
-        <Text style={s.versionText}>منصة الإدارة الذكية — الإصدار 1.0.0</Text>
-        </View>
-      </ScrollView>
+  const query = search.trim();
+  const matches = MENU_ITEMS.filter(item => (item.title + ' ' + item.description).includes(query));
+  return <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: Math.max(insets.top, 16) }]} keyboardShouldPersistTaps="handled">
+    <View style={s.heading}>
+      <View style={s.icon}><Ionicons name="shield-checkmark-outline" size={24} color={COLORS.primary} /></View>
+      <View style={{ flex: 1 }}><Text style={s.title}>إدارة التطبيق</Text><Text style={s.subtitle}>إدارة جميع المتاجر والعمليات من مكان واحد</Text></View>
     </View>
-  );
+    <View style={s.search}>
+      <Ionicons name="search-outline" size={20} color={COLORS.textMuted} />
+      <TextInput value={search} onChangeText={setSearch} placeholder="ابحث عن أداة أو إعداد…" accessibilityLabel="البحث في أدوات الإدارة" style={s.input} />
+      {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel="مسح البحث" style={s.clear}><Ionicons name="close" size={20} color={COLORS.textMuted} /></TouchableOpacity>}
+    </View>
+    <Text style={s.subtitle}>{matches.length} أداة إدارية</Text>
+    {GROUPS.map(group => {
+      const items = matches.filter(item => group.screens.includes(item.screen));
+      if (!items.length) return null;
+      return <View key={group.title} style={s.section}>
+        <Text style={s.sectionTitle}>{group.title}</Text>
+        <View style={s.grid}>{items.map(item => <TouchableOpacity key={item.screen} accessibilityRole="button" accessibilityLabel={item.title} onPress={() => navigation.navigate(item.screen)} style={[s.card, desktop && s.desktopCard]} activeOpacity={0.7}>
+          <View style={s.icon}><Ionicons name={item.icon as any} size={22} color={COLORS.primary} /></View>
+          <View style={s.copy}><Text style={s.cardTitle}>{item.title}</Text><Text style={s.description}>{item.description}</Text></View>
+          <Ionicons name="chevron-back" size={16} color={COLORS.textMuted} />
+        </TouchableOpacity>)}</View>
+      </View>;
+    })}
+    {!matches.length && <Text style={s.empty}>لا توجد أدوات مطابقة. جرّب اسمًا آخر.</Text>}
+    <TouchableOpacity onPress={signOut} style={s.logout} accessibilityRole="button"><Ionicons name="log-out-outline" size={20} color={COLORS.error} /><Text style={s.logoutText}>تسجيل الخروج</Text></TouchableOpacity>
+  </ScrollView>;
 }
-
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: UI.bg },
-  header: { 
-    backgroundColor: UI.card, 
-    paddingHorizontal: 24, 
-    paddingTop: Platform.OS === 'ios' ? 70 : 50, 
-    paddingBottom: 30,
-    borderBottomWidth: 1, borderColor: UI.border,
-    shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
-    zIndex: 10
-  },
-  profileSection: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 16 },
-  avatar: { width: 64, height: 64, borderRadius: RADIUS.lg, backgroundColor: UI.primary, alignItems: 'center', justifyContent: 'center', shadowColor: UI.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
-  profileInfo: { alignItems: 'flex-end', gap: 4 },
-  profileName: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
-  roleBadge: { backgroundColor: UI.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.sm },
-  profileRole: { fontSize: 13, color: UI.primary, fontFamily: FONTS.semiBold, textAlign: 'right' },
-  scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
-  content: { maxWidth: 1280, gap: 16 },
-  sectionTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, marginBottom: 8, textAlign: 'right' },
-  menuGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 16 },
-  menuCard: { minHeight: 112, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 18, flexDirection: 'row-reverse', alignItems: 'center', gap: 16, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: UI.border },
-  menuCardCompact: { paddingHorizontal: 14, gap: 12 },
-  menuIcon: { width: 56, height: 56, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
-  menuTextGroup: { flex: 1, alignItems: 'flex-end' },
-  menuTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 4 },
-  menuDesc: { fontSize: 13, color: UI.textMuted, textAlign: 'right', fontFamily: FONTS.regular, lineHeight: 20 },
-  menuArrowWrap: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  divider: { height: 1, backgroundColor: UI.border, marginVertical: 12 },
-  logoutBtn: { minHeight: 52, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: COLORS.accentCoralSoft, borderRadius: RADIUS.md, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.accentCoralSoft },
-  logoutText: { fontSize: 16, fontFamily: FONTS.bold, color: UI.danger },
-  versionText: { fontSize: 12, color: UI.textMuted, textAlign: 'center', marginTop: 24, fontFamily: FONTS.medium, letterSpacing: 0.5 },
+  root: { flex: 1, backgroundColor: COLORS.background },
+  content: { width: '100%', maxWidth: 1200, alignSelf: 'center', padding: 16, paddingBottom: 32, gap: 16 },
+  heading: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  title: { fontFamily: FONTS.bold, fontSize: 23, color: COLORS.textPrimary, textAlign: 'right' },
+  subtitle: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 20, color: COLORS.textSecondary, textAlign: 'right' },
+  search: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface, borderRadius: 12, paddingHorizontal: 12, minHeight: 48 },
+  input: { flex: 1, minWidth: 0, textAlign: 'right', fontFamily: FONTS.regular, fontSize: 16, color: COLORS.textPrimary, paddingVertical: 10 },
+  clear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  section: { gap: 10 },
+  sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary, textAlign: 'right' },
+  grid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 10 },
+  card: { width: '100%', minHeight: 82, flexDirection: 'row-reverse', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  desktopCard: { width: '49%' },
+  icon: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  copy: { flex: 1, minWidth: 0, gap: 3 },
+  cardTitle: { fontFamily: FONTS.semiBold, fontSize: 14, color: COLORS.textPrimary, textAlign: 'right' },
+  description: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 19, color: COLORS.textSecondary, textAlign: 'right' },
+  empty: { padding: 24, textAlign: 'center', color: COLORS.textMuted, fontFamily: FONTS.regular },
+  logout: { flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', gap: 8, minHeight: 48, marginTop: 8 },
+  logoutText: { color: COLORS.error, fontFamily: FONTS.medium, fontSize: 14 },
 });
