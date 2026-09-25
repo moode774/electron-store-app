@@ -129,8 +129,9 @@ function errorMessage(error: unknown): string {
 export default function AdminPhysicalReturnsScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
-  const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
-  const pagePadding = compact ? 12 : 20;
+  const desktop = width >= BREAKPOINTS.desktop;
+  const columns = desktop ? 2 : 1;
+  const pagePadding = compact ? 12 : desktop ? 28 : 20;
   const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [filter, setFilter] = useState<Filter>('requested');
   const [returns, setReturns] = useState<AdminPhysicalReturnBundle[]>([]);
@@ -397,20 +398,29 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
 
   return (
     <View style={s.root}>
-      <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel="العودة">
-          <Ionicons name="arrow-forward" size={22} color={UI.text} />
-        </TouchableOpacity>
-        <View style={s.headerCopy}>
-          <Text style={s.title}>الإرجاعات المادية</Text>
-          <Text style={s.subtitle}>مراجعة الكميات ومسار الاستلام والفحص والاسترداد</Text>
+      <View style={[s.headerShell, { paddingHorizontal: pagePadding }]}>
+        <View style={[s.header, { width: contentWidth }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel="العودة">
+            <Ionicons name="arrow-forward" size={22} color={UI.text} />
+          </TouchableOpacity>
+          <View style={s.headerCopy}>
+            <View style={s.headerEyebrowRow}>
+              <View style={s.headerEyebrowDot} />
+              <Text style={s.headerEyebrow}>مركز إدارة المرتجعات</Text>
+            </View>
+            <Text style={[s.title, compact && s.titleCompact]}>الإرجاعات المادية</Text>
+            <Text style={[s.subtitle, compact && s.subtitleCompact]}>
+              مراجعة الكميات ومسار الاستلام والفحص والاسترداد
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => void load(true)} style={s.headerButton} accessibilityLabel="تحديث">
+            <Ionicons name="refresh" size={21} color={UI.primary} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => void load(true)} style={s.headerButton} accessibilityLabel="تحديث">
-          <Ionicons name="refresh" size={21} color={UI.primary} />
-        </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>
+      <View style={[s.filtersShell, { paddingHorizontal: pagePadding }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[s.filters, { width: contentWidth }]}>
         {FILTERS.map((item) => (
           <TouchableOpacity
             key={item.value}
@@ -421,7 +431,8 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {loading ? (
         <View style={s.center}><ActivityIndicator size="large" color={UI.primary} /></View>
@@ -443,9 +454,15 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} />}
           ListEmptyComponent={(
             <View style={s.empty}>
-              <Ionicons name="checkmark-done-circle-outline" size={50} color={UI.success} />
+              <View style={s.emptyIconWrap}>
+                <Ionicons name="checkmark-done-circle-outline" size={38} color={UI.success} />
+              </View>
               <Text style={s.emptyTitle}>لا توجد إرجاعات في هذه المرحلة</Text>
               <Text style={s.emptyText}>ستظهر الطلبات هنا فور انتقالها إلى الحالة المحددة.</Text>
+              <TouchableOpacity style={s.emptyRefreshButton} onPress={() => void load(true)} accessibilityLabel="تحديث القائمة">
+                <Ionicons name="refresh" size={17} color={UI.primary} />
+                <Text style={s.emptyRefreshText}>تحديث القائمة</Text>
+              </TouchableOpacity>
             </View>
           )}
         />
@@ -700,27 +717,134 @@ function SectionTitle({ title }: { title: string }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: UI.bg },
-  header: { backgroundColor: UI.card, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 18, flexDirection: 'row-reverse', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: UI.border },
-  headerButton: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: '#F5F7FB' },
+  headerShell: {
+    backgroundColor: '#F5F7FB',
+    paddingTop: Platform.OS === 'ios' ? 52 : 22,
+    paddingBottom: 10,
+    alignItems: 'center',
+  },
+  header: {
+    minHeight: 116,
+    backgroundColor: UI.card,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8ECF3',
+    borderRadius: 24,
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 2,
+  },
+  headerButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: '#F4F6FA',
+    borderWidth: 1,
+    borderColor: '#E8ECF3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerCopy: { flex: 1, alignItems: 'flex-end', paddingHorizontal: 14 },
-  title: { fontSize: 22, fontWeight: '900', color: UI.text, textAlign: 'right' },
-  subtitle: { fontSize: 12, color: UI.muted, marginTop: 4, textAlign: 'right' },
-  filters: { paddingHorizontal: 16, paddingVertical: 12, gap: 8, flexDirection: 'row-reverse' },
-  filterButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 9, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border },
-  filterButtonActive: { backgroundColor: UI.primary, borderColor: UI.primary },
-  filterText: { fontSize: 12, color: UI.muted, fontWeight: '700' },
+  headerEyebrowRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginBottom: 4 },
+  headerEyebrowDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: UI.success },
+  headerEyebrow: { fontSize: 10, color: UI.muted, fontWeight: '800' },
+  title: { fontSize: 25, fontWeight: '900', color: UI.text, textAlign: 'right', letterSpacing: -0.2 },
+  titleCompact: { fontSize: 20 },
+  subtitle: { fontSize: 12, color: UI.muted, marginTop: 5, textAlign: 'right', lineHeight: 18 },
+  subtitleCompact: { fontSize: 11, lineHeight: 16 },
+  filtersShell: { alignItems: 'center', paddingBottom: 2 },
+  filters: { paddingVertical: 10, gap: 8, flexDirection: 'row-reverse' },
+  filterButton: {
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 9,
+    borderRadius: RADIUS.full,
+    backgroundColor: UI.card,
+    borderWidth: 1,
+    borderColor: '#E4E8F0',
+  },
+  filterButtonActive: {
+    backgroundColor: UI.primary,
+    borderColor: UI.primary,
+    shadowColor: UI.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  filterText: { fontSize: 12, color: '#687386', fontWeight: '800' },
   filterTextActive: { color: '#FFF' },
-  list: { alignSelf: 'center', paddingTop: 16, paddingBottom: 112, gap: 14, flexGrow: 1 },
-  columnRow: { gap: 14 },
+  list: { alignSelf: 'center', paddingTop: 12, paddingBottom: 112, gap: 16, flexGrow: 1 },
+  columnRow: { gap: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 14 },
   errorText: { color: UI.danger, textAlign: 'center', lineHeight: 21 },
   retryButton: { backgroundColor: UI.primary, paddingHorizontal: 20, paddingVertical: 11, borderRadius: 12 },
   retryText: { color: '#FFF', fontWeight: '800' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 10 },
-  emptyTitle: { fontSize: 17, fontWeight: '900', color: UI.text },
-  emptyText: { color: UI.muted, textAlign: 'center' },
-  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: UI.border, padding: 17, gap: 13, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 360,
+    gap: 11,
+    backgroundColor: UI.card,
+    borderWidth: 1,
+    borderColor: '#E8ECF3',
+    borderRadius: 24,
+    paddingHorizontal: 28,
+    paddingVertical: 42,
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 1,
+  },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '900', color: UI.text, textAlign: 'center' },
+  emptyText: { color: UI.muted, textAlign: 'center', lineHeight: 20, maxWidth: 420 },
+  emptyRefreshButton: {
+    marginTop: 5,
+    minHeight: 40,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: COLORS.primarySoft,
+    borderWidth: 1,
+    borderColor: '#D7E1FF',
+  },
+  emptyRefreshText: { color: UI.primary, fontSize: 12, fontWeight: '900' },
+  card: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: UI.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E8ECF3',
+    padding: 18,
+    gap: 13,
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    elevation: 2,
+  },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitleGroup: { alignItems: 'flex-end' },
   orderNumber: { fontSize: 16, fontWeight: '900', color: UI.text },
@@ -728,12 +852,12 @@ const s = StyleSheet.create({
   statusBadge: { borderRadius: 20, paddingHorizontal: 11, paddingVertical: 6 },
   statusText: { fontSize: 11, fontWeight: '900' },
   partyRow: { flexDirection: 'row-reverse', gap: 10 },
-  infoItem: { flex: 1, minWidth: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 10 },
+  infoItem: { flex: 1, minWidth: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: '#F7F9FC', borderRadius: 13, padding: 11, borderWidth: 1, borderColor: '#EEF1F6' },
   infoItemCopy: { flex: 1, alignItems: 'flex-end' },
   infoLabel: { fontSize: 10, color: UI.muted },
   infoValue: { fontSize: 12, color: UI.text, fontWeight: '800', maxWidth: '100%' },
   metaGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
-  metaItem: { minWidth: '46%', flex: 1, backgroundColor: '#F8FAFC', borderRadius: 10, padding: 9, alignItems: 'flex-end' },
+  metaItem: { minWidth: '46%', flex: 1, backgroundColor: '#F7F9FC', borderRadius: 12, padding: 10, alignItems: 'flex-end', borderWidth: 1, borderColor: '#EEF1F6' },
   metaLabel: { fontSize: 10, color: UI.muted },
   metaValue: { fontSize: 12, color: UI.text, fontWeight: '700', textAlign: 'right', marginTop: 2 },
   description: { color: UI.text, fontSize: 13, lineHeight: 20, textAlign: 'right', backgroundColor: '#F8FAFC', padding: 11, borderRadius: 11 },
@@ -743,16 +867,16 @@ const s = StyleSheet.create({
   merchantResponse: { borderRightWidth: 3, borderRightColor: UI.warning, backgroundColor: '#FFFBEB', borderRadius: 10, padding: 10, alignItems: 'flex-end' },
   merchantResponseTitle: { color: '#92400E', fontSize: 12, fontWeight: '900' },
   merchantResponseText: { color: '#78350F', fontSize: 12, marginTop: 3, textAlign: 'right' },
-  actions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, borderTopWidth: 1, borderTopColor: UI.border, paddingTop: 12 },
-  detailsButton: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: UI.primary, backgroundColor: COLORS.primarySoft, paddingHorizontal: 12, paddingVertical: 10, borderRadius: RADIUS.sm },
+  actions: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, borderTopWidth: 1, borderTopColor: '#EEF1F6', paddingTop: 13 },
+  detailsButton: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#D6DDF5', backgroundColor: '#F4F6FD', paddingHorizontal: 13, paddingVertical: 10, borderRadius: 12 },
   detailsButtonText: { color: UI.primary, fontWeight: '800', fontSize: 12 },
   primaryButton: { backgroundColor: UI.primary, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 11 },
   primaryButtonText: { color: '#FFF', fontWeight: '900', fontSize: 12 },
   rejectButton: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 11 },
   rejectButtonText: { color: UI.danger, fontWeight: '900', fontSize: 12 },
-  modalBackdrop: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end', alignItems: 'center' },
+  modalBackdrop: { flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 8 },
   modalBackdropDesktop: { justifyContent: 'center', padding: 24 },
-  modalCard: { backgroundColor: UI.card, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, maxHeight: '92%', minHeight: '55%', overflow: 'hidden' },
+  modalCard: { backgroundColor: UI.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '92%', minHeight: '55%', overflow: 'hidden', borderWidth: 1, borderColor: '#E8ECF3' },
   modalCardDesktop: { borderBottomLeftRadius: RADIUS.xl, borderBottomRightRadius: RADIUS.xl },
   modalHeader: { flexDirection: 'row', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: UI.border },
   modalClose: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
