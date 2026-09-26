@@ -47,7 +47,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>المحفظة والتحصيلات</Text>
+        <View style={styles.headerCopy}><Text style={styles.headerTitle}>فلوسي</Text><Text style={styles.headerSubtitle}>أرباحك والمبالغ التي استلمتها من العملاء</Text></View>
         <View style={{ width: 40 }} />
       </View>
 
@@ -70,22 +70,24 @@ export default function DeliveryWalletScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             ) : null}
-            <View style={[styles.cardsRow, layout.compact && styles.cardsRowCompact]}>
-              <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
-                <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
-                <Text style={styles.summaryLabel}>رصيد أرباحك · ر.ي</Text>
-              </View>
-              <View style={[styles.summaryCard, styles.summaryCardLight]}>
-                <Ionicons name="receipt-outline" size={20} color={COLORS.primary} />
-                <Text style={styles.summaryValueLight}>{transactions.length}</Text>
-                <Text style={styles.summaryLabelLight}>حركة مالية مسجّلة</Text>
+            <View style={styles.balanceCard}>
+              <View style={styles.balanceIcon}><Ionicons name="wallet-outline" size={22} color="#FFFFFF" /></View>
+              <Text style={styles.balanceLabel}>أرباحك الحالية</Text>
+              <View style={styles.balanceLine}><Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text><Text style={styles.currency}>ر.ي</Text></View>
+              <Text style={styles.balanceHint}>هذا رصيد أرباح التوصيل المسجل في محفظتك</Text>
+            </View>
+
+            <View style={styles.explainCard}>
+              <Ionicons name="bulb-outline" size={20} color={COLORS.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.explainTitle}>ببساطة: عندك نوعان من الفلوس</Text>
+                <Text style={styles.explainText}>أرباح التوصيل لك. أما كاش الطلبات فهو مبلغ استلمته من العميل وتسلّمه للإدارة.</Text>
               </View>
             </View>
 
             <CodRemittancePanel />
 
-            <Text style={styles.sectionTitle}>سجل المعاملات</Text>
+            <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>حركة أرباحك</Text><Text style={styles.sectionCaption}>كل مبلغ دخل أو خرج من محفظتك</Text></View>
           </>
         }
         ListEmptyComponent={
@@ -125,22 +127,31 @@ const styles = StyleSheet.create({
     width: '100%', maxWidth: 960, alignSelf: 'center',
   },
   backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  headerCopy: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   headerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.ink },
+  headerSubtitle: { fontSize: 10.5, color: COLORS.inkSecondary, marginTop: 2, textAlign: 'center' },
   listContent: { padding: 20, gap: 10, paddingBottom: 100, width: '100%', maxWidth: 960, alignSelf: 'center' },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
-  cardsRow: { flexDirection: 'row-reverse', gap: 12, marginBottom: 4 },
-  cardsRowCompact: { flexDirection: 'column' },
-  summaryCard: { flex: 1, borderRadius: 22, padding: 22, gap: 8, minHeight: 138, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  summaryValue: { fontSize: 30, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: -0.4 },
-  summaryLabel: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
+  balanceCard: { borderRadius: 24, padding: 22, backgroundColor: COLORS.primary, minHeight: 180 },
+  balanceIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  balanceLabel: { color: 'rgba(255,255,255,0.78)', fontSize: 12, fontFamily: FONTS.medium },
+  balanceLine: { flexDirection: 'row-reverse', alignItems: 'baseline', justifyContent: 'flex-end', gap: 7, marginTop: 3 },
+  summaryValue: { fontSize: 36, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: -0.5 },
+  currency: { color: '#FFFFFF', fontSize: 14, fontFamily: FONTS.bold },
+  balanceHint: { color: 'rgba(255,255,255,0.66)', fontSize: 10.5, marginTop: 8 },
+  explainCard: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 11, backgroundColor: COLORS.primarySoft, borderRadius: 18, padding: 15, marginTop: 12 },
+  explainTitle: { color: COLORS.ink, fontSize: 13, fontFamily: FONTS.bold, textAlign: 'right' },
+  explainText: { color: COLORS.inkSecondary, fontSize: 11.5, lineHeight: 19, marginTop: 3, textAlign: 'right' },
   noteBox: {
     flexDirection: 'row-reverse', gap: 8, backgroundColor: '#FEF3C7', borderRadius: 12,
     padding: 12, marginTop: 8,
   },
   noteText: { flex: 1, fontSize: 12, color: '#B45309', lineHeight: 18, fontWeight: '600' },
-  sectionTitle: { fontSize: 17, fontFamily: FONTS.bold, color: COLORS.ink, marginTop: 18, marginBottom: 6, textAlign: 'right' },
+  sectionHeading: { marginTop: 20, marginBottom: 6 },
+  sectionTitle: { fontSize: 17, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  sectionCaption: { fontSize: 10.5, color: COLORS.inkSecondary, marginTop: 3, textAlign: 'right' },
   txCard: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
     borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.hairline,
