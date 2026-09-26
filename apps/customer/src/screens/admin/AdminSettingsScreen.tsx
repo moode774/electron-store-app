@@ -204,7 +204,7 @@ const s = StyleSheet.create({
   tabActive: { borderBottomColor: UI.primary },
   tabText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   tabTextActive: { color: UI.primary, fontFamily: FONTS.bold },
-  scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
+  scroll: { alignItems: 'center', paddingTop: 14, paddingBottom: 96 },
   card: { width: '100%', maxWidth: 960, backgroundColor: UI.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: UI.border },
   cardTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 20 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 16 },
