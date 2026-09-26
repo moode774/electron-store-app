@@ -430,7 +430,7 @@ const s = StyleSheet.create({
   rejectBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: UI.card, borderRadius: 13, paddingVertical: 10, borderWidth: 1, borderColor: '#FECACA' },
   rejectBtnText: { fontSize: 14, fontWeight: '800', color: UI.danger },
   modalOverlay: { flex: 1, backgroundColor: '#0F172A66', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modalBox: { maxHeight: '90%', backgroundColor: UI.card, borderRadius: 24, padding: 22, maxWidth: 420, borderWidth: 1, borderColor: UI.border, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 8 },
+  modalBox: { maxHeight: '90%', backgroundColor: UI.card, borderRadius: 24, padding: 22, maxWidth: 420, borderWidth: 1, borderColor: UI.border, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.02, shadowRadius: 24, elevation: 8 },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   modalTitle: { fontSize: 18, fontWeight: '900', color: UI.text, textAlign: 'right' },
   closeBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 12 },
@@ -441,7 +441,7 @@ const s = StyleSheet.create({
   modalActions: { flexDirection: 'row-reverse', gap: 12 },
   modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
   modalCancelText: { fontSize: 15, fontWeight: '800', color: UI.textMuted },
-  modalConfirm: { flex: 2, paddingVertical: 14, borderRadius: 16, backgroundColor: UI.success, alignItems: 'center', shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  modalConfirm: { flex: 2, paddingVertical: 14, borderRadius: 16, backgroundColor: UI.success, alignItems: 'center', shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.025, shadowRadius: 8, elevation: 1 },
   modalConfirmReject: { backgroundColor: UI.danger, shadowColor: UI.danger },
   modalConfirmText: { fontSize: 15, fontWeight: '900', color: '#FFFFFF' },
 });
