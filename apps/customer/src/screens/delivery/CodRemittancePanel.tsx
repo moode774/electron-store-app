@@ -374,7 +374,7 @@ export default function CodRemittancePanel() {
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleWrap}>
           <View style={styles.sectionIcon}>
-            <Ionicons name="cash-outline" size={19} color="#B45309" />
+            <Ionicons name="cash-outline" size={19} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionTitle}>كاش استلمته من العملاء</Text>
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   panel: { gap: 10, marginTop: 14, marginBottom: 8 },
   sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
   sectionTitleWrap: { flex: 1, minWidth: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
-  sectionIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
+  sectionIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { color: COLORS.ink, fontSize: 15, fontWeight: '800', textAlign: 'right', flexShrink: 1 },
   sectionSubtitle: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '600', marginTop: 2, textAlign: 'right' },
   refreshButton: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
@@ -671,11 +671,11 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: 'center', borderRadius: 16, padding: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
   emptyTitle: { color: COLORS.ink, fontSize: 13, fontWeight: '800', marginTop: 7 },
   emptyText: { color: COLORS.inkTertiary, fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center' },
-  actionSummary: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'flex-end' },
-  actionEyebrow: { color: COLORS.inkSecondary, fontSize: 11, fontWeight: '700' },
-  actionAmount: { color: COLORS.ink, fontSize: 30, fontWeight: '900', marginTop: 4 },
-  actionCurrency: { fontSize: 13, color: COLORS.inkSecondary },
-  actionText: { color: COLORS.inkSecondary, fontSize: 11.5, lineHeight: 19, marginTop: 5, textAlign: 'right' },
+  actionSummary: { backgroundColor: COLORS.primary, borderRadius: 22, padding: 20, alignItems: 'flex-end' },
+  actionEyebrow: { color: 'rgba(255,255,255,0.72)', fontSize: 11, fontWeight: '700' },
+  actionAmount: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', marginTop: 4 },
+  actionCurrency: { fontSize: 13, color: 'rgba(255,255,255,0.72)' },
+  actionText: { color: 'rgba(255,255,255,0.78)', fontSize: 11.5, lineHeight: 19, marginTop: 5, textAlign: 'right' },
   simpleStatus: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: COLORS.primarySoft, borderRadius: 14, padding: 12 },
   simpleStatusText: { flex: 1, color: COLORS.primary, fontSize: 11, fontWeight: '700', textAlign: 'right' },
   summaryCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
   summaryDivider: { width: 1, height: 30, backgroundColor: '#E5E7EB' },
   holdNotice: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, padding: 11, borderRadius: 12, backgroundColor: '#FFFBEB' },
   holdNoticeText: { flex: 1, color: '#92400E', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
-  collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: COLORS.hairline, gap: 11 },
+  collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: COLORS.hairline, gap: 11, marginTop: 2 },
   collectionTopRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   collectionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   orderNumber: { color: COLORS.ink, fontSize: 13, fontWeight: '800', textAlign: 'right' },
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   amountLine: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
   amountLabel: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '700' },
   amountValue: { color: COLORS.ink, fontSize: 12, fontWeight: '900' },
-  progressTrack: { height: 7, borderRadius: 999, backgroundColor: '#E5E7EB', overflow: 'hidden' },
+  progressTrack: { height: 5, borderRadius: 999, backgroundColor: '#E5E7EB', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 999, backgroundColor: '#059669' },
   collectionStats: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6 },
   collectionStat: { color: COLORS.inkSecondary, fontSize: 10.5, fontWeight: '700' },
@@ -704,13 +704,13 @@ const styles = StyleSheet.create({
   submissionDate: { color: COLORS.inkTertiary, fontSize: 9.5, marginTop: 2, textAlign: 'right' },
   reviewNote: { color: COLORS.inkSecondary, fontSize: 9.5, lineHeight: 14, marginTop: 3, textAlign: 'right' },
   submissionBadge: { fontSize: 9, fontWeight: '800', paddingHorizontal: 7, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
-  submitButton: { minHeight: 50, borderRadius: 15, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
+  submitButton: { minHeight: 52, borderRadius: 15, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
   submitButtonDisabled: { backgroundColor: '#E5E7EB' },
   submitButtonText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '800', textAlign: 'center' },
   submitButtonTextDisabled: { color: COLORS.inkSecondary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(17,24,39,0.58)' },
   modalScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  modalCard: { width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20 },
+  modalCard: { width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 26, padding: 22, borderWidth: 1, borderColor: COLORS.hairline },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, marginBottom: 14 },
   modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', textAlign: 'right' },
   modalSubtitle: { color: COLORS.inkSecondary, fontSize: 11.5, fontWeight: '600', marginTop: 3, textAlign: 'right' },
