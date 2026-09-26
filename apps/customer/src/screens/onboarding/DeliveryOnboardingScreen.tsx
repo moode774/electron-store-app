@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '@marketplace/shared-utils';
 import {
   createDeliveryProfile,
+  getDeliveryProfile,
   createIdempotencyKey,
   saveDeliveryOnboardingDocuments,
   updateUserProfile,
@@ -85,14 +86,20 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
 
     setSaving(true);
     try {
-      await createDeliveryProfile({
-        user_id: user.id,
-        national_id: nationalId.trim(),
-        vehicle_type: vehicleType,
-        vehicle_plate: vehiclePlate.trim().toUpperCase(),
-      });
+      // Approved couriers may be routed here only because optional onboarding
+      // metadata/documents are missing. Do not rewrite their already verified
+      // identity fields: the database correctly protects those fields.
+      const existingProfile = await getDeliveryProfile(user.id);
+      if (!existingProfile?.is_approved) {
+        await createDeliveryProfile({
+          user_id: user.id,
+          national_id: nationalId.trim(),
+          vehicle_type: vehicleType,
+          vehicle_plate: vehiclePlate.trim().toUpperCase(),
+        });
+      }
 
-      if (fullName.trim() !== (user.full_name ?? '').trim()) {
+      if (!existingProfile?.is_approved && fullName.trim() !== (user.full_name ?? '').trim()) {
         await updateUserProfile(user.id, { full_name: fullName.trim() });
       }
 
