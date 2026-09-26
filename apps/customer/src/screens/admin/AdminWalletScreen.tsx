@@ -64,9 +64,10 @@ function payoutDestinationLines(destination: AdminWithdrawal['payout_destination
 
 export default function AdminWalletScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
-  const compact = width < BREAKPOINTS.compact;
+  const compact = width < 600;
+  const tablet = width >= 700 && width < BREAKPOINTS.desktop;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
-  const pagePadding = compact ? 12 : 24;
+  const pagePadding = compact ? 14 : tablet ? 22 : 28;
   const contentWidth = Math.min(Math.max(width - (pagePadding * 2), 280), 1280);
   const [requests, setRequests] = useState<AdminWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,11 +174,11 @@ export default function AdminWalletScreen({ navigation }: any) {
         </View>
 
         <View style={s.amountBox}>
-          <View style={s.amountRow}>
-            <Text style={s.amountText}>{item.amount.toFixed(2)} ر.ي</Text>
-            <Ionicons name="wallet" size={24} color={UI.primary} />
+          <View>
+            <Text style={s.amountLabel}>المبلغ المطلوب</Text>
+            <View style={s.amountInline}><Text style={s.amountText}>{item.amount.toFixed(2)}</Text><Text style={s.amountCurrency}>ر.ي</Text></View>
           </View>
-          <Text style={s.dateText}>{date}</Text>
+          <View style={s.datePill}><Ionicons name="calendar-outline" size={13} color={UI.textMuted} /><Text style={s.dateText}>{date}</Text></View>
         </View>
 
         {(item.requester_notes ?? item.notes) && (
@@ -188,8 +189,8 @@ export default function AdminWalletScreen({ navigation }: any) {
         )}
         <View style={s.destinationBox}>
           <View style={s.destinationTitleRow}>
-            <Ionicons name="business-outline" size={16} color={UI.primary} />
-            <Text style={s.destinationTitle}>وجهة الصرف المحفوظة وقت الطلب</Text>
+            <View style={s.destinationIcon}><Ionicons name="business-outline" size={15} color={UI.primary} /></View>
+            <Text style={s.destinationTitle}>وجهة التحويل</Text>
           </View>
           {destinationLines.length ? destinationLines.map((line) => <Text key={line} style={s.destinationLine}>{line}</Text>) : (
             <Text style={s.missingDestination}>لا توجد وجهة صرف محفوظة؛ لا تبدأ التحويل قبل التحقق منها.</Text>
@@ -264,7 +265,7 @@ export default function AdminWalletScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>طلبات السحب</Text>
+            <View style={s.headerCopy}><Text style={s.headerEyebrow}>المدفوعات</Text><Text style={s.headerTitle}>طلبات السحب</Text><Text style={s.headerSubtitle}>مراجعة واعتماد وتحويل طلبات السحب</Text></View>
           </View>
           <View style={s.headerBadge}>
             <Text style={s.headerBadgeText}>{requests.length} نتيجة</Text>
@@ -376,60 +377,60 @@ export default function AdminWalletScreen({ navigation }: any) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: UI.bg },
-  header: { 
-    backgroundColor: UI.card, 
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 20, 
-    borderBottomWidth: 1, borderColor: UI.border,
-    shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
-    zIndex: 10
-  },
-  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
-  headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
-  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bg },
-  headerBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#FDE68A' },
-  headerBadgeText: { fontSize: 12, fontWeight: '800', color: '#92400E' },
-  filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
-  filterRow: { flexDirection: 'row-reverse', paddingHorizontal: 20, gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
-  filterBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.full, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  header: { backgroundColor: UI.bg, paddingTop: Platform.OS === 'ios' ? 56 : 30, paddingBottom: 14, zIndex: 10 },
+  headerContent: { maxWidth: 1280, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+  headerCopy: { alignItems: 'flex-end', gap: 1 },
+  headerEyebrow: { fontSize: 10, fontFamily: FONTS.semiBold, color: UI.primary },
+  headerTitle: { fontSize: 24, fontFamily: FONTS.bold, color: UI.text, letterSpacing: -0.4 },
+  headerSubtitle: { fontSize: 10.5, fontFamily: FONTS.regular, color: UI.textMuted },
+  backBtn: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border },
+  headerBadge: { backgroundColor: UI.card, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 12, borderWidth: 1, borderColor: UI.border },
+  headerBadgeText: { fontSize: 11, fontFamily: FONTS.semiBold, color: UI.textMuted },
+  filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 8 },
+  filterRow: { flexDirection: 'row-reverse', paddingHorizontal: 14, gap: 7, flexWrap: 'wrap', justifyContent: 'center' },
+  filterBtn: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 13, paddingVertical: 8, borderRadius: 12, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
-  filterText: { fontSize: 13, fontWeight: '700', color: UI.textMuted },
+  filterText: { fontSize: 11.5, fontFamily: FONTS.semiBold, color: UI.textMuted },
   filterTextActive: { color: '#FFFFFF' },
-  list: { alignSelf: 'center', paddingTop: 6, gap: 16, paddingBottom: 112 },
-  columnRow: { gap: 16 },
+  list: { alignSelf: 'center', paddingTop: 8, gap: 12, paddingBottom: 100 },
+  columnRow: { gap: 12 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 16, color: UI.textMuted, fontWeight: '700' },
   errorText: { color: UI.danger, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
   retryBtn: { backgroundColor: UI.primary, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, gap: 14, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, borderWidth: 1, borderColor: UI.border },
+  card: { flex: 1, minWidth: 0, backgroundColor: UI.card, borderRadius: 20, padding: 18, gap: 12, borderWidth: 1, borderColor: UI.border },
   cardTop: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between' },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  statusText: { fontSize: 12, fontWeight: '800' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  statusText: { fontSize: 10.5, fontFamily: FONTS.semiBold },
   userInfo: { alignItems: 'flex-start', gap: 6 },
-  userName: { fontSize: 16, fontWeight: '900', color: UI.text },
+  userName: { fontSize: 15, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
   roleBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   userRole: { fontSize: 11, color: UI.textMuted, fontWeight: '700' },
-  amountBox: { backgroundColor: UI.primaryLight, borderRadius: 16, padding: 16, borderLeftWidth: 4, borderLeftColor: UI.primary },
-  amountRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  amountText: { fontSize: 24, fontWeight: '900', color: UI.primary, textAlign: 'right' },
-  dateText: { fontSize: 12, color: UI.textMuted, fontWeight: '600' },
+  amountBox: { flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'space-between', backgroundColor: UI.primaryLight, borderRadius: 16, padding: 15 },
+  amountLabel: { fontSize: 10, fontFamily: FONTS.medium, color: UI.textMuted, textAlign: 'right', marginBottom: 2 },
+  amountInline: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 5 },
+  amountText: { fontSize: 26, fontFamily: FONTS.bold, color: UI.primary, textAlign: 'right' },
+  amountCurrency: { fontSize: 11, fontFamily: FONTS.semiBold, color: UI.primary },
+  datePill: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
+  dateText: { fontSize: 10.5, color: UI.textMuted, fontFamily: FONTS.medium },
   notesBox: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 8, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: UI.border },
   notesText: { fontSize: 13, color: UI.text, textAlign: 'right', flex: 1, lineHeight: 20 },
-  destinationBox: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: UI.border, gap: 5 },
-  destinationTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
+  destinationBox: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 13, borderWidth: 1, borderColor: UI.border, gap: 5 },
+  destinationTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: 2 },
+  destinationIcon: { width: 30, height: 30, borderRadius: 9, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   destinationTitle: { color: UI.text, fontSize: 12, fontWeight: '900', textAlign: 'right' },
   destinationLine: { color: '#334155', fontSize: 12, fontWeight: '600', textAlign: 'right' },
   missingDestination: { color: '#B45309', fontSize: 12, fontWeight: '700', lineHeight: 19, textAlign: 'right' },
   auditText: { color: UI.textMuted, fontSize: 11.5, fontWeight: '700', textAlign: 'right', lineHeight: 18 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 4 },
   actionsRow: { flexDirection: 'row-reverse', gap: 12, alignItems: 'center', justifyContent: 'space-between', paddingTop: 4 },
-  approveBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: UI.success, borderRadius: RADIUS.md, paddingVertical: 10, shadowColor: UI.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  approveBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: UI.primary, borderRadius: 13, paddingVertical: 10 },
   approveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
-  rejectBtn: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#FEE2E2' },
+  rejectBtn: { flex: 1, minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: UI.card, borderRadius: 13, paddingVertical: 10, borderWidth: 1, borderColor: '#FECACA' },
   rejectBtnText: { fontSize: 14, fontWeight: '800', color: UI.danger },
   modalOverlay: { flex: 1, backgroundColor: '#0F172A66', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modalBox: { maxHeight: '90%', backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 24, maxWidth: 420, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
+  modalBox: { maxHeight: '90%', backgroundColor: UI.card, borderRadius: 24, padding: 22, maxWidth: 420, borderWidth: 1, borderColor: UI.border, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 8 },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   modalTitle: { fontSize: 18, fontWeight: '900', color: UI.text, textAlign: 'right' },
   closeBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 12 },
