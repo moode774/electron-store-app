@@ -288,7 +288,7 @@ const s = StyleSheet.create({
   input: { minHeight: 88, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 11, padding: 11, color: '#0F172A', textAlignVertical: 'top', backgroundColor: '#FFFFFF' },
   actions: { flexDirection: 'row-reverse', gap: 9 },
   actionButton: { flex: 1, minHeight: 44, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center' },
-  approveButton: { backgroundColor: '#15803D' },
+  approveButton: { backgroundColor: UI.primary },
   approveButtonText: { color: '#FFFFFF', fontWeight: '900' },
   outlineRejectButton: { borderWidth: 1, borderColor: '#DC2626', backgroundColor: '#FFFFFF' },
   outlineRejectText: { color: '#B91C1C', fontWeight: '900' },
