@@ -25,6 +25,7 @@ import {
   getDeliveryOrders,
   getOrderById,
   OrderDetail,
+  reportFailedDelivery,
   supabase,
   updateOrderStatus,
   useAuthStore,
@@ -95,6 +96,9 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const [uploadedProofPath, setUploadedProofPath] = useState<string | null>(null);
   const advanceLock = useRef(false);
   const [pickupCode, setPickupCode] = useState('');
+  const [failVisible, setFailVisible] = useState(false);
+  const [failReason, setFailReason] = useState('');
+  const [reportingFailure, setReportingFailure] = useState(false);
   const completionLock = useRef(false);
   const proofIdempotencyKeyRef = useRef<string | null>(null);
   const proofLocationLock = useRef(false);
@@ -509,6 +513,22 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     else goHome();
   }, [goHome, navigation]);
 
+  const submitFailedDelivery = useCallback(async () => {
+    if (!orderId || reportingFailure) return;
+    setReportingFailure(true);
+    try {
+      await reportFailedDelivery(orderId, failReason);
+      setFailVisible(false);
+      setFailReason('');
+      Alert.alert('تم تسجيل تعذّر التسليم', 'أُبلغت الإدارة. احتفظ بالطلب ولا تحصّل أي مبلغ حتى تتواصل معك الإدارة بخصوص الإرجاع أو إعادة الجدولة.');
+      goHome();
+    } catch (error) {
+      Alert.alert('تعذّر الإرسال', errorMessage(error, 'تحقق من الاتصال وحاول مجددًا.'));
+    } finally {
+      setReportingFailure(false);
+    }
+  }, [failReason, goHome, orderId, reportingFailure]);
+
   if (loading) {
     return (
       <View style={styles.centeredState}>
@@ -685,9 +705,67 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               ? <ActivityIndicator color="#FFFFFF" size="small" />
               : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
           </TouchableOpacity>
+          {(order.status === ORDER_STATUS.PICKED_UP || order.status === ORDER_STATUS.ON_THE_WAY) && (
+            <TouchableOpacity
+              style={styles.failBtn}
+              onPress={() => setFailVisible(true)}
+              activeOpacity={0.8}
+              disabled={advancing || reportingFailure}
+              accessibilityRole="button"
+              accessibilityLabel="تعذّر التسليم"
+            >
+              <Text style={styles.failBtnText}>تعذّر التسليم</Text>
+            </TouchableOpacity>
+          )}
           </View>
         </View>
       )}
+
+      <Modal
+        visible={failVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !reportingFailure && setFailVisible(false)}
+        accessibilityViewIsModal
+      >
+        <View style={[styles.proofModalOverlay, isDesktop && styles.proofModalOverlayDesktop]}>
+          <View style={[styles.proofModalSheet, isDesktop && styles.proofModalSheetDesktop, styles.failSheet]}>
+            <Text style={styles.proofModalTitle}>تعذّر تسليم الطلب</Text>
+            <Text style={styles.proofModalSubtitle}>اكتب السبب (مثال: العميل رفض الاستلام، لا يرد على الهاتف، العنوان خاطئ). لا تحصّل أي مبلغ.</Text>
+            <TextInput
+              style={styles.failInput}
+              value={failReason}
+              onChangeText={setFailReason}
+              placeholder="سبب تعذّر التسليم"
+              placeholderTextColor="#9CA3AF"
+              multiline
+              maxLength={1000}
+              editable={!reportingFailure}
+              textAlign="right"
+              accessibilityLabel="سبب تعذّر التسليم"
+            />
+            <TouchableOpacity
+              style={[styles.failConfirmBtn, (reportingFailure || failReason.trim().length < 3) && styles.disabledAction]}
+              onPress={() => void submitFailedDelivery()}
+              disabled={reportingFailure || failReason.trim().length < 3}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: reportingFailure || failReason.trim().length < 3, busy: reportingFailure }}
+            >
+              {reportingFailure
+                ? <ActivityIndicator color="#FFFFFF" size="small" />
+                : <Text style={styles.actionBtnText}>تأكيد تعذّر التسليم</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.failCancelBtn}
+              onPress={() => setFailVisible(false)}
+              disabled={reportingFailure}
+              accessibilityRole="button"
+            >
+              <Text style={styles.failCancelText}>رجوع</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={proofVisible}
@@ -896,6 +974,13 @@ const styles = StyleSheet.create({
   bottomBarInner: { width: '100%', maxWidth: 900, alignSelf: 'center' },
   actionBtn: { backgroundColor: COLORS.primary, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   actionBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  failBtn: { marginTop: 10, height: 44, borderRadius: 12, borderWidth: 1.5, borderColor: '#DC2626', alignItems: 'center', justifyContent: 'center' },
+  failBtnText: { color: '#DC2626', fontSize: 14, fontWeight: '800' },
+  failSheet: { padding: 20, gap: 12 },
+  failInput: { minHeight: 96, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, fontSize: 15, color: COLORS.ink, textAlignVertical: 'top' },
+  failConfirmBtn: { backgroundColor: '#DC2626', height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  failCancelBtn: { height: 44, alignItems: 'center', justifyContent: 'center' },
+  failCancelText: { color: '#6B7280', fontSize: 14, fontWeight: '700' },
   pickupCodeRow: { marginBottom: 10 },
   pickupCodeInput: { height: 48, borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, backgroundColor: COLORS.canvas, fontSize: 16, fontWeight: '800', letterSpacing: 4, color: COLORS.ink },
   mapsBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.info, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },

@@ -727,6 +727,45 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
   if (error) throw error;
 }
 
+// المندوب يبلّغ عن تعذّر التسليم (رفض العميل/عدم الرد/عنوان خاطئ). السبب إلزامي.
+export async function reportFailedDelivery(orderId: string, reason: string): Promise<void> {
+  const trimmed = reason.trim();
+  if (trimmed.length < 3) throw new Error('اكتب سبب تعذّر التسليم.');
+  if (trimmed.length > 1000) throw new Error('السبب طويل جدًا؛ الحد الأقصى 1000 حرف.');
+  const { error } = await supabase.rpc('transition_order_status_with_reason', {
+    p_order_id: orderId,
+    p_next_status: 'failed_delivery',
+    p_reason: trimmed,
+  });
+  if (error) {
+    const msg = String(error.message ?? '');
+    if (msg.includes('STATUS_TRANSITION_NOT_ALLOWED')) {
+      throw new Error('لا يمكن الإبلاغ عن تعذّر التسليم في حالة الطلب الحالية.');
+    }
+    throw new Error('تعذّر تسجيل تعذّر التسليم، تحقق من الاتصال وحاول مجددًا.');
+  }
+}
+
+// الإدارة: معالجة طلب تعذّر تسليمه — إعادة طرحه لمندوب آخر (failed_delivery → rescheduled → ready).
+export async function adminRequeueFailedDelivery(orderId: string, reason: string, currentStatus: string): Promise<void> {
+  const trimmed = reason.trim();
+  if (trimmed.length < 3) throw new Error('اكتب سبب القرار.');
+  if (currentStatus === 'failed_delivery') {
+    const { error } = await supabase.rpc('transition_order_status_with_reason', {
+      p_order_id: orderId,
+      p_next_status: 'rescheduled',
+      p_reason: trimmed,
+    });
+    if (error) throw new Error('تعذّر إعادة جدولة الطلب. حدّث الصفحة وحاول مجددًا.');
+  }
+  const { error } = await supabase.rpc('transition_order_status_with_reason', {
+    p_order_id: orderId,
+    p_next_status: 'ready',
+    p_reason: trimmed,
+  });
+  if (error) throw new Error('تعذّر إعادة طرح الطلب للمناديب. حدّث الصفحة وحاول مجددًا.');
+}
+
 // ============================================================
 // DELIVERY ORDERS (حلقة المندوب)
 // ============================================================
@@ -3295,7 +3334,23 @@ export async function requestWithdrawal(amount: number, _userId: string, notes?:
     p_amount: amount,
     p_notes: notes?.trim() || null,
   });
-  if (error) throw error;
+  if (error) throw new Error(withdrawalErrorToArabic(String(error.message ?? '')));
+}
+
+const WITHDRAWAL_ERROR_MESSAGES: Array<[RegExp, string]> = [
+  [/COD_FUNDS_NOT_YET_REMITTED/i, 'جزء من الرصيد مرتبط بمبالغ دفع عند الاستلام لم يتم توريدها واعتمادها بعد. يمكنك السحب بعد اكتمال التوريد.'],
+  [/between 50 and/i, 'الحد الأدنى للسحب 50 ر.ي.'],
+  [/exceeds available balance/i, 'المبلغ المطلوب أكبر من الرصيد المتاح.'],
+  [/active withdrawal request already exists/i, 'لديك طلب سحب قائم. انتظر اكتماله أو رفضه قبل إنشاء طلب جديد.'],
+  [/payout destination is required/i, 'أضف بيانات الحساب البنكي أو رقم الجوال في الإعدادات قبل طلب السحب.'],
+  [/approved (active merchant|delivery) profile is required|not allowed to withdraw|only merchants and delivery/i, 'حسابك غير مفعّل للسحب حاليًا. تواصل مع الإدارة.'],
+  [/notes are too long/i, 'الملاحظات طويلة جدًا.'],
+  [/permission denied|row-level security|PGRST|JWT/i, 'تعذّر تنفيذ العملية بسبب الصلاحيات. سجّل الدخول مجددًا وحاول مرة أخرى.'],
+];
+
+function withdrawalErrorToArabic(raw: string): string {
+  const match = WITHDRAWAL_ERROR_MESSAGES.find(([pattern]) => pattern.test(raw));
+  return match ? match[1] : 'تعذّر إرسال طلب السحب، يرجى المحاولة لاحقاً.';
 }
 
 export interface AdminStats {
