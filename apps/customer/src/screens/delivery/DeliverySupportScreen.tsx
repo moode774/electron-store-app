@@ -1,4 +1,4 @@
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
@@ -251,23 +251,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: UI.bgMobile },
   header: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 18,
     backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: UI.border,
     width: '100%', maxWidth: 1000, alignSelf: 'center',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: UI.textDark },
+  backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: UI.textDark },
   scrollContent: { padding: 20, paddingBottom: 100, gap: 16, width: '100%', maxWidth: 1000, alignSelf: 'center' },
   channelsRow: { flexDirection: 'row-reverse', gap: 12 },
   channelsRowCompact: { flexDirection: 'column' },
   channelCard: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, alignItems: 'center',
-    borderWidth: 1.5, borderColor: UI.border,
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, alignItems: 'center',
+    borderWidth: 1, borderColor: COLORS.hairline,
   },
   channelIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   channelTitle: { fontSize: 14, fontWeight: '800', color: UI.textDark },
   channelSub: { fontSize: 11.5, color: UI.textGrey, marginTop: 3, fontWeight: '600' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, borderWidth: 1.5, borderColor: UI.border },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: COLORS.hairline },
   sectionTitle: { fontSize: 16, fontWeight: '900', color: UI.textDark, marginBottom: 6, textAlign: 'right' },
   sectionDesc: { fontSize: 12.5, color: UI.textGrey, marginBottom: 16, textAlign: 'right', lineHeight: 20 },
   catRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   textArea: { minHeight: 110 },
   submitBtn: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: UI.primary, height: 50, borderRadius: 12, marginTop: 4,
+    backgroundColor: COLORS.primary, height: 52, borderRadius: 15, marginTop: 4,
   },
   submitBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
   ticketRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: UI.border },
