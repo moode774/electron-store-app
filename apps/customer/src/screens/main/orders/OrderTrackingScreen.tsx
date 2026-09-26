@@ -488,7 +488,10 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
           <View style={styles.verticalTimeline}>
             {TRACKING_STEPS.map((step, idx) => {
-              // A step is completed only after the order has moved beyond it.\n              // READY must stay highlighted as the current state until a courier is actually assigned.\n              const isDone = idx < currentStatusIndex;\n              const isCurrent = idx === currentStatusIndex;
+              // A step is completed only after the order has moved beyond it.
+              // READY stays current until a courier is actually assigned.
+              const isDone = idx < currentStatusIndex;
+              const isCurrent = idx === currentStatusIndex;
               const isLast = idx === TRACKING_STEPS.length - 1;
 
               return (
