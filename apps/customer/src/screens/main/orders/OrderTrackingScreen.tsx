@@ -520,15 +520,22 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
                   {/* Left Column: Label & Description */}
                   <View style={styles.timelineDetailsCol}>
-                    <Text
-                      style={[
-                        styles.stepTitleText,
-                        isDone && styles.stepTitleDone,
-                        isCurrent && styles.stepTitleCurrent,
-                      ]}
-                    >
-                      {step.label}
-                    </Text>
+                    <View style={styles.stepTitleRow}>
+                      <Text
+                        style={[
+                          styles.stepTitleText,
+                          isDone && styles.stepTitleDone,
+                          isCurrent && styles.stepTitleCurrent,
+                        ]}
+                      >
+                        {step.label}
+                      </Text>
+                      {isCurrent && (
+                        <View style={styles.currentStatusBadge}>
+                          <Text style={styles.currentStatusBadgeText}>الحالة الحالية</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.stepDescText}>{step.desc}</Text>
                   </View>
                 </View>
@@ -1099,6 +1106,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     marginRight: 12,
+  },
+  stepTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 8,
+  },
+  currentStatusBadge: {
+    backgroundColor: '#172554',
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  currentStatusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontFamily: FONTS.bold,
   },
   stepTitleText: {
     fontFamily: FONTS.bold,
