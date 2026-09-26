@@ -21,7 +21,6 @@ const MENU_ITEMS = [
   { id: '4', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
   { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
   { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
-  { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
 ];
 
 export default function DeliveryAccountScreen({ navigation }: any) {
