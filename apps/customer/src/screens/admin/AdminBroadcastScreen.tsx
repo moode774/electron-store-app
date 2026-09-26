@@ -152,26 +152,26 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: UI.bg },
   header: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, backgroundColor: UI.card, borderBottomWidth: 1, borderBottomColor: UI.border },
   headerContent: { maxWidth: 920, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: RADIUS.full, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
+  backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 20, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
   scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
   
-  card: { maxWidth: 920, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 24, borderWidth: 1, borderColor: UI.border },
+  card: { maxWidth: 920, backgroundColor: UI.card, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border },
   cardTitle: { fontSize: 18, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 8 },
   cardDesc: { fontSize: 13, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'right', marginBottom: 24, lineHeight: 22 },
   
   formGroup: { marginBottom: 20 },
   label: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.text, textAlign: 'right', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: UI.border, borderRadius: RADIUS.md, paddingHorizontal: 16, minHeight: 50, backgroundColor: COLORS.surfaceMuted, fontSize: 15, fontFamily: FONTS.regular, color: UI.text },
+  input: { borderWidth: 1, borderColor: UI.border, borderRadius: 13, paddingHorizontal: 16, minHeight: 50, backgroundColor: COLORS.surfaceMuted, fontSize: 15, fontFamily: FONTS.regular, color: UI.text },
   inputArea: { height: 120, paddingTop: 16, textAlignVertical: 'top' },
   charCount: { fontSize: 12, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'left', marginTop: 8 },
   
   audienceRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 12 },
-  audBtn: { minHeight: 44, flexGrow: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: UI.border, backgroundColor: UI.card },
+  audBtn: { minHeight: 38, flexGrow: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 13, paddingVertical: 8, borderRadius: 13, borderWidth: 1, borderColor: UI.border, backgroundColor: UI.card },
   audBtnActive: { borderColor: UI.primary, backgroundColor: UI.primaryLight },
   audText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   audTextActive: { color: UI.primary },
   
-  sendBtn: { flexDirection: 'row-reverse', minHeight: 56, backgroundColor: UI.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 12, gap: 12 },
+  sendBtn: { flexDirection: 'row-reverse', minHeight: 56, backgroundColor: UI.primary, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginTop: 12, gap: 12 },
   sendBtnText: { color: UI.card, fontSize: 18, fontFamily: FONTS.bold },
 });
