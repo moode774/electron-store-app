@@ -350,7 +350,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
               <View style={[styles.avatarDot, { backgroundColor: isOnline ? COLORS.statusOnline : COLORS.inkTertiary }]} />
             </View>
             <View style={styles.greeting}>
-              <Text style={styles.greetingTitle} numberOfLines={1}>مرحبًا، {firstName}</Text>
+              <Text style={styles.eyebrow}>مساحة المندوب</Text>
+              <Text style={styles.greetingTitle} numberOfLines={1}>أهلًا {firstName}</Text>
               <Text style={styles.greetingCaption} numberOfLines={1}>{todayLabel}</Text>
             </View>
             <TouchableOpacity
@@ -377,14 +378,14 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             <View style={styles.toggleRow}>
               <View style={styles.toggleCopy}>
                 <Text style={[styles.sectionTitle, !isOnline && styles.mutedTitle]}>
-                  {isOnline ? 'أنت متصل' : 'أنت غير متصل'}
+                  {isOnline ? 'جاهز لاستقبال الطلبات' : 'استقبال الطلبات متوقف'}
                 </Text>
                 <Text style={styles.caption}>
                   {!isApproved && profile
                     ? 'بانتظار اعتماد حسابك لاستقبال الطلبات'
                     : isOnline
-                      ? 'تستقبل طلبات التوصيل الآن'
-                      : 'فعّل الاتصال لاستقبال الطلبات'}
+                      ? 'سنرسل لك الطلبات المناسبة فور توفرها'
+                      : 'فعّل الاستقبال عندما تكون جاهزًا للعمل'}
                 </Text>
               </View>
               {onlineUpdating ? (
@@ -400,7 +401,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           {/* 3. Today summary */}
           <View style={styles.summaryCard}>
             <View style={styles.summaryTop}>
-              <Text style={styles.summaryLabel}>أرباح اليوم</Text>
+              <Text style={styles.summaryLabel}>ملخص اليوم</Text>
               <TouchableOpacity
                 onPress={openEarnings}
                 style={styles.detailsLink}
@@ -416,7 +417,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             ) : (
               <View style={styles.amountRow}>
                 <CountUpAmount value={earningsFailed ? 0 : todayEarnings} style={styles.amount} />
-                <Text style={styles.currency}>ر.ي</Text>
+                <Text style={styles.currency}>ر.ي أرباح</Text>
               </View>
             )}
             {earningsFailed && !initialLoading ? (
@@ -424,11 +425,11 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             ) : null}
             <View style={styles.summaryDivider} />
             <View style={styles.statsRow}>
-              <SummaryStat value={initialLoading ? null : formatInt(todayDeliveries)} label="طلبات اليوم" />
+              <SummaryStat value={initialLoading ? null : formatInt(todayDeliveries)} label="توصيلات اليوم" />
               <View style={styles.statsDivider} />
               <SummaryStat value={initialLoading ? null : formatInt(totalDeliveries)} label="إجمالي التوصيلات" />
               <View style={styles.statsDivider} />
-              <SummaryStat value={initialLoading ? null : formatMoney(walletBalance)} label="الرصيد (ر.ي)" />
+              <SummaryStat value={initialLoading ? null : formatMoney(walletBalance)} label="رصيد المحفظة" />
             </View>
           </View>
 
@@ -479,10 +480,10 @@ export default function DeliveryOffersScreen({ navigation }: any) {
               <>
                 <SearchPulse />
                 <Text style={styles.stateTitle}>
-                  {current ? 'وصل طلب توصيل جديد' : 'جاري البحث عن طلبات قريبة'}
+                  {current ? 'لديك طلب جديد' : 'أنت جاهز للعمل'}
                 </Text>
                 <Text style={styles.stateCaption}>
-                  <LastUpdated at={lastUpdatedAt} />
+                  {current ? 'راجع تفاصيل الطلب قبل القبول' : <LastUpdated at={lastUpdatedAt} />}
                 </Text>
                 {realtimeDegraded ? (
                   <View style={styles.warningChip}>
@@ -693,9 +694,9 @@ const CARD_SHADOW = Platform.select({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
   content: { paddingHorizontal: 16 },
-  page: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 16 },
+  page: { width: '100%', maxWidth: 620, alignSelf: 'center', gap: 14 },
 
-  header: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, minHeight: 48 },
+  header: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, minHeight: 58, paddingHorizontal: 2 },
   avatar: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: COLORS.primarySoft,
@@ -707,7 +708,8 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: COLORS.canvas,
   },
   greeting: { flex: 1, alignItems: 'flex-end' },
-  greetingTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'right' },
+  eyebrow: { fontFamily: FONTS.medium, fontSize: 11, color: COLORS.primary, textAlign: 'right', marginBottom: 1 },
+  greetingTitle: { fontFamily: FONTS.semiBold, fontSize: 20, lineHeight: 28, color: COLORS.ink, textAlign: 'right' },
   greetingCaption: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.inkSecondary, textAlign: 'right' },
   iconButton: {
     width: 44, height: 44, borderRadius: 12,
@@ -716,7 +718,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  card: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 16, ...CARD_SHADOW },
+  card: { backgroundColor: COLORS.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: COLORS.hairline, ...CARD_SHADOW },
   toggleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16 },
   toggleCopy: { flex: 1, alignItems: 'flex-end', gap: 2 },
   sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'right' },
@@ -732,7 +734,7 @@ const styles = StyleSheet.create({
     }),
   },
 
-  summaryCard: { backgroundColor: COLORS.primary, borderRadius: 24, padding: 20 },
+  summaryCard: { backgroundColor: COLORS.primary, borderRadius: 22, padding: 22, overflow: 'hidden', ...CARD_SHADOW },
   summaryTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   summaryLabel: { fontFamily: FONTS.medium, fontSize: 15, lineHeight: 21, color: 'rgba(255,255,255,0.78)' },
   detailsLink: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2, minHeight: 44, paddingHorizontal: 4 },
@@ -753,7 +755,7 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 17, color: 'rgba(255,255,255,0.7)' },
   statSkeleton: { width: 36, height: 16, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.14)', marginVertical: 2.5 },
 
-  stateCard: { alignItems: 'center', paddingVertical: 24, gap: 6 },
+  stateCard: { alignItems: 'center', paddingVertical: 28, gap: 7, minHeight: 210 },
   stateIcon: {
     width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primarySoft,
     alignItems: 'center', justifyContent: 'center', marginBottom: 6,
@@ -762,11 +764,11 @@ const styles = StyleSheet.create({
   stateTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'center' },
   stateCaption: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.inkSecondary, textAlign: 'center' },
 
-  pulse: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  pulseRing: { position: 'absolute', width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.primary },
-  pulseHalo: { position: 'absolute', width: 68, height: 68, borderRadius: 34, backgroundColor: 'rgba(23,37,84,0.1)' },
+  pulse: { width: 84, height: 84, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  pulseRing: { position: 'absolute', width: 84, height: 84, borderRadius: 42, backgroundColor: COLORS.primary },
+  pulseHalo: { position: 'absolute', width: 62, height: 62, borderRadius: 31, backgroundColor: 'rgba(23,37,84,0.1)' },
   pulseCore: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.primary,
+    width: 46, height: 46, borderRadius: 23, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center',
   },
 
