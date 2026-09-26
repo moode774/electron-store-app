@@ -74,12 +74,12 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               <View style={[styles.summaryCard, { backgroundColor: COLORS.primary }]}>
                 <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.7)" />
                 <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
-                <Text style={styles.summaryLabel}>مستحقاتك (ر.ي)</Text>
+                <Text style={styles.summaryLabel}>رصيد أرباحك · ر.ي</Text>
               </View>
               <View style={[styles.summaryCard, styles.summaryCardLight]}>
                 <Ionicons name="receipt-outline" size={20} color={COLORS.primary} />
                 <Text style={styles.summaryValueLight}>{transactions.length}</Text>
-                <Text style={styles.summaryLabelLight}>عدد المعاملات</Text>
+                <Text style={styles.summaryLabelLight}>حركة مالية مسجّلة</Text>
               </View>
             </View>
 
@@ -124,29 +124,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
     width: '100%', maxWidth: 960, alignSelf: 'center',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.ink },
   listContent: { padding: 20, gap: 10, paddingBottom: 100, width: '100%', maxWidth: 960, alignSelf: 'center' },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   cardsRow: { flexDirection: 'row-reverse', gap: 12, marginBottom: 4 },
   cardsRowCompact: { flexDirection: 'column' },
-  summaryCard: { flex: 1, borderRadius: 18, padding: 18, gap: 6 },
-  summaryValue: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
+  summaryCard: { flex: 1, borderRadius: 20, padding: 20, gap: 7, minHeight: 132 },
+  summaryValue: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
   summaryLabel: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
   noteBox: {
     flexDirection: 'row-reverse', gap: 8, backgroundColor: '#FEF3C7', borderRadius: 12,
     padding: 12, marginTop: 8,
   },
   noteText: { flex: 1, fontSize: 12, color: '#B45309', lineHeight: 18, fontWeight: '600' },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: COLORS.ink, marginTop: 14, marginBottom: 4 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: COLORS.ink, marginTop: 14, marginBottom: 4 },
   txCard: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
+    borderRadius: 16, padding: 15, borderWidth: 1, borderColor: COLORS.hairline,
     minWidth: 0,
   },
-  txIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  txIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   txTitle: { fontSize: 13, fontWeight: '700', color: COLORS.ink },
   txDate: { fontSize: 11, color: COLORS.inkTertiary, marginTop: 3 },
   txAmount: { fontSize: 13.5, fontWeight: '800', flexShrink: 1 },
