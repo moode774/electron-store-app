@@ -252,7 +252,7 @@ export default function AdminProductsScreen({ navigation }: any) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
   header: { backgroundColor: COLORS.surface, paddingTop: 48, paddingBottom: 16, flexDirection: 'row-reverse', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerButton: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  headerButton: { width: 44, height: 44, borderRadius: 13, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   headerCopy: { flex: 1, alignItems: 'center' },
   title: { color: COLORS.textPrimary, fontSize: 20, fontFamily: FONTS.bold },
   subtitle: { color: COLORS.textMuted, fontSize: 11, fontFamily: FONTS.regular, marginTop: 3 },
@@ -269,7 +269,7 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 24 },
   emptyTitle: { color: '#0F172A', fontWeight: '900', fontSize: 17, marginTop: 14 },
   emptyText: { color: '#64748B', fontSize: 13, textAlign: 'center', marginTop: 6 },
-  card: { minWidth: 0, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 15, borderWidth: 1, borderColor: COLORS.border, gap: 11 },
+  card: { minWidth: 0, backgroundColor: COLORS.surface, borderRadius: 16, padding: 15, borderWidth: 1, borderColor: COLORS.border, gap: 11 },
   productRow: { flexDirection: 'row-reverse', gap: 12 },
   image: { width: 82, height: 82, borderRadius: 13, backgroundColor: '#F1F5F9' },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
