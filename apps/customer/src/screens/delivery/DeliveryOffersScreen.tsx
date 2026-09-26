@@ -694,12 +694,13 @@ const CARD_SHADOW = Platform.select({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
   content: { paddingHorizontal: 16 },
-  page: { width: '100%', maxWidth: 620, alignSelf: 'center', gap: 14 },
+  page: { width: '100%', maxWidth: 640, alignSelf: 'center', gap: 14 },
 
   header: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, minHeight: 58, paddingHorizontal: 2 },
   avatar: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 46, height: 46, borderRadius: 23,
     backgroundColor: COLORS.primarySoft,
+    borderWidth: 1, borderColor: '#DCE5F2',
     alignItems: 'center', justifyContent: 'center',
   },
   avatarDot: {
@@ -709,16 +710,16 @@ const styles = StyleSheet.create({
   },
   greeting: { flex: 1, alignItems: 'flex-end' },
   eyebrow: { fontFamily: FONTS.medium, fontSize: 11, color: COLORS.primary, textAlign: 'right', marginBottom: 1 },
-  greetingTitle: { fontFamily: FONTS.semiBold, fontSize: 20, lineHeight: 28, color: COLORS.ink, textAlign: 'right' },
+  greetingTitle: { fontFamily: FONTS.bold, fontSize: 21, lineHeight: 29, color: COLORS.ink, textAlign: 'right' },
   greetingCaption: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.inkSecondary, textAlign: 'right' },
   iconButton: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 46, height: 46, borderRadius: 14,
     backgroundColor: COLORS.surface,
     borderWidth: 1, borderColor: COLORS.hairline,
     alignItems: 'center', justifyContent: 'center',
   },
 
-  card: { backgroundColor: COLORS.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: COLORS.hairline, ...CARD_SHADOW },
+  card: { backgroundColor: COLORS.surface, borderRadius: 22, padding: 20, borderWidth: 1, borderColor: COLORS.hairline, ...CARD_SHADOW },
   toggleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 16 },
   toggleCopy: { flex: 1, alignItems: 'flex-end', gap: 2 },
   sectionTitle: { fontFamily: FONTS.semiBold, fontSize: 18, lineHeight: 25, color: COLORS.ink, textAlign: 'right' },
@@ -734,14 +735,14 @@ const styles = StyleSheet.create({
     }),
   },
 
-  summaryCard: { backgroundColor: COLORS.primary, borderRadius: 22, padding: 22, overflow: 'hidden', ...CARD_SHADOW },
+  summaryCard: { backgroundColor: COLORS.primary, borderRadius: 24, padding: 24, overflow: 'hidden', ...CARD_SHADOW },
   summaryTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   summaryLabel: { fontFamily: FONTS.medium, fontSize: 15, lineHeight: 21, color: 'rgba(255,255,255,0.78)' },
   detailsLink: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2, minHeight: 44, paddingHorizontal: 4 },
   detailsText: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
   amountRow: { flexDirection: 'row-reverse', alignItems: 'baseline', gap: 6, marginTop: 2 },
   amount: {
-    fontFamily: FONTS.bold, fontSize: 28, lineHeight: 39, color: COLORS.surface,
+    fontFamily: FONTS.bold, fontSize: 31, lineHeight: 42, color: COLORS.surface,
     fontVariant: ['tabular-nums', 'lining-nums'],
   },
   currency: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.78)' },
@@ -755,7 +756,7 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 17, color: 'rgba(255,255,255,0.7)' },
   statSkeleton: { width: 36, height: 16, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.14)', marginVertical: 2.5 },
 
-  stateCard: { alignItems: 'center', paddingVertical: 28, gap: 7, minHeight: 210 },
+  stateCard: { alignItems: 'center', paddingVertical: 30, paddingHorizontal: 22, gap: 8, minHeight: 220 },
   stateIcon: {
     width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primarySoft,
     alignItems: 'center', justifyContent: 'center', marginBottom: 6,
@@ -786,7 +787,7 @@ const styles = StyleSheet.create({
   textButtonLabel: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.primary },
 
   primaryButton: {
-    alignSelf: 'stretch', minHeight: 48, borderRadius: 12, marginTop: 12,
+    alignSelf: 'stretch', minHeight: 52, borderRadius: 15, marginTop: 14,
     backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
   },
   primaryButtonText: { fontFamily: FONTS.semiBold, fontSize: 15, color: COLORS.surface },
