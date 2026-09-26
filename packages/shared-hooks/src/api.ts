@@ -2248,6 +2248,23 @@ export async function getMerchantWalletBalance(userId: string): Promise<number> 
   return Number((data as { wallet_balance?: number }).wallet_balance ?? 0);
 }
 
+export interface MerchantWalletSummary {
+  balance: number;
+  codHeld: number;
+  withdrawable: number;
+}
+
+export async function getMerchantWalletSummary(): Promise<MerchantWalletSummary> {
+  const { data, error } = await supabase.rpc('get_my_merchant_wallet_summary');
+  if (error) throw error;
+  const raw = (data ?? {}) as Record<string, unknown>;
+  return {
+    balance: Number(raw.balance ?? 0),
+    codHeld: Number(raw.cod_held ?? 0),
+    withdrawable: Number(raw.withdrawable ?? 0),
+  };
+}
+
 // ============================================================
 // DELIVERY EARNINGS (أرباح المندوب)
 // ============================================================
