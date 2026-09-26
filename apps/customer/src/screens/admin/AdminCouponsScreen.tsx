@@ -181,7 +181,7 @@ const s = StyleSheet.create({
   headerContent: { maxWidth: 1120, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 20, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
-  list: { alignSelf: 'center', paddingTop: 20, paddingBottom: 112 },
+  list: { alignSelf: 'center', paddingTop: 14, paddingBottom: 96 },
   columnRow: { gap: 12 },
   
   addCard: { backgroundColor: UI.card, padding: 20, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: UI.border },
