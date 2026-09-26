@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import {
-  useAuthStore, getWalletTransactions, getMerchantWalletBalance,
+  useAuthStore, getWalletTransactions, getMerchantWalletSummary,
   getMyWithdrawalRequests, requestWithdrawal, WalletTransaction, WithdrawalRequest, WithdrawalStatus,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
@@ -32,6 +32,8 @@ const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: s
 export default function MerchantWalletScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
+  const [codHeld, setCodHeld] = useState(0);
+  const [withdrawable, setWithdrawable] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,12 +51,14 @@ export default function MerchantWalletScreen({ navigation }: any) {
     setLoading(true);
     setLoadError('');
     try {
-      const [nextBalance, nextTransactions, requests] = await Promise.all([
-        getMerchantWalletBalance(user.id),
+      const [walletSummary, nextTransactions, requests] = await Promise.all([
+        getMerchantWalletSummary(),
         getWalletTransactions(user.id),
         getMyWithdrawalRequests(user.id),
       ]);
-      setBalance(nextBalance);
+      setBalance(walletSummary.balance);
+      setCodHeld(walletSummary.codHeld);
+      setWithdrawable(walletSummary.withdrawable);
       setTransactions(nextTransactions);
       setWithdrawals(requests);
     } catch (error: unknown) {
@@ -103,8 +107,10 @@ export default function MerchantWalletScreen({ navigation }: any) {
       Alert.alert('تنبيه', 'أدخل مبلغاً صحيحاً أكبر من صفر');
       return;
     }
-    if (amount > balance) {
-      Alert.alert('تنبيه', `المبلغ المطلوب يتجاوز رصيدك المتاح (${balance.toLocaleString()} ر.ي)`);
+    if (amount > withdrawable) {
+      Alert.alert('المبلغ غير متاح للسحب', codHeld > 0
+        ? `المتاح للسحب الآن ${withdrawable.toLocaleString()} ر.ي. يوجد ${codHeld.toLocaleString()} ر.ي محجوزة من مبالغ الدفع عند الاستلام حتى يتم توريدها وتسويتها.`
+        : `المبلغ المطلوب يتجاوز المتاح للسحب (${withdrawable.toLocaleString()} ر.ي)`);
       return;
     }
     if (amount < 50) {
@@ -124,7 +130,13 @@ export default function MerchantWalletScreen({ navigation }: any) {
         [{ text: 'حسناً' }]
       );
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال طلب السحب، يرجى المحاولة لاحقاً');
+      const message = String(e?.message ?? '');
+      Alert.alert(
+        'تعذّر إرسال طلب السحب',
+        message.includes('COD_FUNDS_NOT_YET_REMITTED')
+          ? 'جزء من الرصيد ناتج عن طلبات دفع عند الاستلام ولم يتم توريده وتسويته بعد. يمكنك السحب بعد اكتمال التسوية.'
+          : (message || 'تعذّر إرسال طلب السحب، يرجى المحاولة لاحقاً'),
+      );
     } finally {
       withdrawLock.current = false;
       setSubmitting(false);
@@ -133,10 +145,10 @@ export default function MerchantWalletScreen({ navigation }: any) {
 
   const income = transactions.filter(isIncome).reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0);
   const outgoing = transactions.filter((t) => !isIncome(t)).reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0);
-  const canWithdraw = balance >= 50 && !hasBlockingWithdrawal && !submitting;
+  const canWithdraw = withdrawable >= 50 && !hasBlockingWithdrawal && !submitting;
   const quickAmounts = [0.25, 0.5, 1].map((ratio) => ({
     label: ratio === 1 ? 'كامل الرصيد' : `${ratio * 100}%`,
-    value: Math.floor(balance * ratio),
+    value: Math.floor(withdrawable * ratio),
   })).filter((q) => q.value >= 50);
 
   return (
@@ -158,8 +170,8 @@ export default function MerchantWalletScreen({ navigation }: any) {
               <View style={styles.balance}>
                 <View style={styles.balanceTop}>
                   <View style={styles.balanceCopy}>
-                    <Text style={styles.balanceLabel}>الرصيد المتاح</Text>
-                    <Text style={styles.balanceValue}>{formatMoney(balance)} <Text style={styles.balanceCurrency}>ر.ي</Text></Text>
+                    <Text style={styles.balanceLabel}>المتاح للسحب</Text>
+                    <Text style={styles.balanceValue}>{formatMoney(withdrawable)} <Text style={styles.balanceCurrency}>ر.ي</Text></Text>
                   </View>
                   <View style={styles.balanceIcon}><Ionicons name="wallet" size={22} color={COLORS.primary} /></View>
                 </View>
@@ -175,7 +187,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.withdrawText}>طلب سحب</Text>
                 </TouchableOpacity>
                 <Text style={styles.balanceNote}>
-                  {hasBlockingWithdrawal ? 'لديك طلب سحب قيد المعالجة.' : balance < 50 ? 'الحد الأدنى للسحب 50 ر.ي' : 'يُحوَّل المبلغ بعد اعتماد الإدارة.'}
+                  {hasBlockingWithdrawal ? 'لديك طلب سحب قيد المعالجة.' : codHeld > 0 ? `${formatMoney(codHeld)} ر.ي محجوزة مؤقتاً من الدفع عند الاستلام حتى التوريد والتسوية.` : withdrawable < 50 ? 'الحد الأدنى للسحب 50 ر.ي' : 'يُحوَّل المبلغ بعد اعتماد الإدارة.'}
                 </Text>
               </View>
 
@@ -251,8 +263,8 @@ export default function MerchantWalletScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             <View style={styles.sheetBalance}>
-              <Text style={ui.text}>الرصيد المتاح</Text>
-              <Text style={styles.sheetBalanceValue}>{formatMoney(balance)} ر.ي</Text>
+              <View style={styles.flexEnd}><Text style={ui.text}>المتاح للسحب</Text>{codHeld > 0 ? <Text style={styles.heldHint}>محجوز COD: {formatMoney(codHeld)} ر.ي</Text> : null}</View>
+              <Text style={styles.sheetBalanceValue}>{formatMoney(withdrawable)} ر.ي</Text>
             </View>
 
             <Text style={ui.label}>المبلغ</Text>
@@ -368,6 +380,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.primarySoft,
     borderRadius: RADIUS.md, padding: 14, marginBottom: 16,
   },
+  heldHint: { marginTop: 3, fontSize: 10, fontFamily: FONTS.regular, color: COLORS.inkSecondary },
   sheetBalanceValue: { fontSize: 16, fontFamily: FONTS.bold, color: COLORS.primary },
   amountBox: {
     flexDirection: 'row-reverse', alignItems: 'center', minHeight: 58, borderRadius: RADIUS.md, borderWidth: 1,
