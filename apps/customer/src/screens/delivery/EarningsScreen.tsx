@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, StatusBar, Platform, ActivityIndicato
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getMyWithdrawalRequests, requestWithdrawal, DeliveryEarning, WithdrawalRequest, WithdrawalStatus } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
@@ -193,7 +193,7 @@ export default function EarningsScreen() {
                 accessibilityLabel="طلب سحب الأرباح"
                 accessibilityState={{ disabled: balance < 50 || hasBlockingWithdrawal || withdrawing }}
               >
-                <Ionicons name="arrow-up-circle-outline" size={18} color="#111827" />
+                <Ionicons name="arrow-up-circle-outline" size={18} color={COLORS.primary} />
                 <Text style={styles.withdrawBtnText}>طلب سحب الأرباح</Text>
               </TouchableOpacity>
             </View>
