@@ -135,11 +135,12 @@ function DesktopSidebar() {
       </View>
 
       <View style={sidebarStyles.menu}>
-        {SIDEBAR_TABS.map((tab) => {
+        {SIDEBAR_TABS.map((tab, index) => {
           const isActive = routeName === tab.name || (tab.name === 'AdminMore' && routeName === 'AdminMoreMain');
           return (
+            <React.Fragment key={tab.name}>
+            {(index === 4 || index === 9) ? <View style={sidebarStyles.sectionDivider} /> : null}
             <TouchableOpacity
-              key={tab.name}
               style={[sidebarStyles.menuItem, isActive && sidebarStyles.menuItemActive]}
               onPress={() => handleNavigate(tab)}
               activeOpacity={0.8}
@@ -150,6 +151,7 @@ function DesktopSidebar() {
               <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={22} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
               {isActive ? <View style={sidebarStyles.activeDot} /> : null}
             </TouchableOpacity>
+            </React.Fragment>
           );
         })}
       </View>
@@ -165,27 +167,31 @@ function DesktopSidebar() {
 
 const sidebarStyles = StyleSheet.create({
   container: {
-    width: 72,
-    marginVertical: 16,
-    marginRight: 16,
+    width: 68,
+    marginVertical: 14,
+    marginRight: 14,
     backgroundColor: COLORS.surface,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.xl,
+    borderRadius: 22,
     zIndex: 10,
-    ...softShadow,
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 22,
+    elevation: 3,
   },
   logoArea: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.24,
@@ -208,12 +214,13 @@ const sidebarStyles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    gap: 6,
+    gap: 3,
   },
+  sectionDivider: { width: 28, height: 1, backgroundColor: COLORS.border, marginVertical: 5 },
   menuItem: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
@@ -222,25 +229,25 @@ const sidebarStyles = StyleSheet.create({
   menuItemActive: {
     backgroundColor: COLORS.primary,
     shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 3,
   },
   activeDot: {
     position: 'absolute',
-    left: -5,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
+    left: -4,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
     backgroundColor: COLORS.secondary,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: COLORS.surface,
   },
   footer: {
     width: '100%',
     alignItems: 'center',
-    gap: 16,
+    gap: 6,
   },
 });
 
