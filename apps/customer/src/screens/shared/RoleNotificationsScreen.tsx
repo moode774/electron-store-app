@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../components/NotificationPreferencesCard';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
@@ -73,7 +73,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }, layout.desktop && styles.headerDesktop]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
@@ -132,23 +132,23 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: COLORS.canvas },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 18,
     width: '100%', maxWidth: 960, alignSelf: 'center',
   },
   headerDesktop: { paddingTop: 28 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.ink },
   listContent: { padding: 20, gap: 12, width: '100%', maxWidth: 960, alignSelf: 'center', paddingBottom: 80 },
   card: {
-    flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-    borderWidth: 1.5, borderColor: '#F3F4F6',
+    flexDirection: 'row-reverse', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16,
+    borderWidth: 1, borderColor: COLORS.hairline,
   },
   cardUnread: { borderColor: `${COLORS.primary}30`, backgroundColor: '#FDFDFF' },
   iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  titleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
   title: { fontSize: 14, fontWeight: '800', color: '#111827' },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
   body: { fontSize: 12.5, color: '#6B7280', lineHeight: 19, marginTop: 4 },
