@@ -24,7 +24,6 @@ import {
   getOrders,
   getStores,
   getWishlist,
-  OrderSummary,
   ProductSummary,
   removeFromWishlist,
   StoreSummary,
@@ -89,7 +88,6 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const [categories, setCategories] = useState<Category[]>([]);
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
-  const [activeOrder, setActiveOrder] = useState<OrderSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [wished, setWished] = useState<Set<string>>(new Set());
@@ -161,16 +159,6 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         try {
           const wishlist = await getWishlist(user.id);
           setWished(new Set(wishlist.map((item) => item.product_id)));
-        } catch {
-          // ignore
-        }
-
-        try {
-          const userOrders = await getOrders(user.id);
-          const ongoing = userOrders.find(
-            (o) => o.status !== 'delivered' && o.status !== 'cancelled'
-          );
-          if (ongoing) setActiveOrder(ongoing);
         } catch {
           // ignore
         }
@@ -615,54 +603,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 96,
     paddingTop: 8,
-  },
-  activeOrderCard: {
-    marginBottom: 16,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 14,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-  },
-  activeOrderIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
-  },
-  activeOrderInfo: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  activeOrderTitle: {
-    color: '#172554',
-    fontFamily: FONTS.bold,
-    fontSize: 13.5,
-  },
-  activeOrderSub: {
-    color: '#64748B',
-    fontFamily: FONTS.regular,
-    fontSize: 11.5,
-    marginTop: 3,
-    textAlign: 'right',
-  },
-  trackButton: {
-    minHeight: 38,
-    borderRadius: 999,
-    backgroundColor: '#172554',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  trackButtonText: {
-    color: '#FFFFFF',
-    fontFamily: FONTS.bold,
-    fontSize: 12.5,
   },
   heroCarouselScroll: {
     paddingBottom: 4,
