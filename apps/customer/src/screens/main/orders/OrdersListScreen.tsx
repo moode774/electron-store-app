@@ -230,129 +230,52 @@ export default function OrdersListScreen({ navigation }: any) {
     const storeName = item.merchant_profiles?.store_name ?? 'المتجر';
     const dateFormatted = formatDate(item.created_at);
     const totalItems = item.order_items?.length || 1;
-    const paymentLabel = PAYMENT_LABELS[(item.payment_method ?? '').toLowerCase()] ?? 'طريقة الدفع غير محددة';
     const isDelivered = item.status === ORDER_STATUS.DELIVERED;
-
-    const thumbnails = (item.order_items ?? [])
-      .slice(0, 3)
-      .map((it) => ({ uri: it.products?.og_image_url ?? null }));
+    const firstImage = item.order_items?.[0]?.products?.og_image_url ?? null;
 
     return (
       <TouchableOpacity
         style={styles.orderCard}
-        activeOpacity={0.92}
+        activeOpacity={0.88}
         onPress={() => navigation.navigate('OrderTracking', { orderId: item.id })}
       >
-        <View style={styles.topRow}>
-          <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusConfig.textColor }]} />
-            <Text style={[styles.statusBadgeText, { color: statusConfig.textColor }]}>
-              {statusConfig.label}
-            </Text>
-          </View>
-
-          <View style={styles.orderMeta}>
-            <Text style={styles.orderNumberText}>طلب #{item.order_number}</Text>
-            <Text style={styles.orderDateText}>{dateFormatted}</Text>
-          </View>
-        </View>
-
-        <View style={styles.storeRow}>
-          <View style={styles.storeAvatar}>
-            <Ionicons name="storefront-outline" size={19} color="#172554" />
-          </View>
-          <View style={styles.storeCopy}>
-            <Text style={styles.storeNameText} numberOfLines={1}>{storeName}</Text>
-            <Text style={styles.storeCaptionText}>
-              {totalItems} {totalItems === 1 ? 'منتج' : 'منتجات'} · {paymentLabel}
-            </Text>
-          </View>
-          <Ionicons name="chevron-back" size={18} color="#A7AFBC" />
-        </View>
-
-        {thumbnails.length > 0 && (
-          <View style={styles.productStrip}>
-            <View style={styles.thumbnailsContainer}>
-              {thumbnails.map((thumb, idx) => (
-                <View key={idx} style={styles.thumbnailWrapper}>
-                  {thumb.uri ? (
-                    <Image source={{ uri: thumb.uri }} style={styles.thumbnailImage} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.thumbnailFallback}>
-                      <Ionicons name="cube-outline" size={18} color="#A3ACB9" />
-                    </View>
-                  )}
-                </View>
-              ))}
+        <View style={styles.orderThumb}>
+          {firstImage ? (
+            <Image source={{ uri: firstImage }} style={styles.orderThumbImage} resizeMode="cover" />
+          ) : (
+            <Ionicons name="bag-handle-outline" size={22} color="#8791A2" />
+          )}
+          {totalItems > 1 ? (
+            <View style={styles.itemCountBadge}>
+              <Text style={styles.itemCountBadgeText}>+{totalItems - 1}</Text>
             </View>
-            <View style={styles.priceCol}>
-              <Text style={styles.priceLabel}>الإجمالي</Text>
-              <Text style={styles.priceAmountText}>
-                {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'} ر.ي
+          ) : null}
+        </View>
+
+        <View style={styles.compactBody}>
+          <View style={styles.compactTopRow}>
+            <Text style={styles.storeNameText} numberOfLines={1}>{storeName}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
+              <View style={[styles.statusDot, { backgroundColor: statusConfig.textColor }]} />
+              <Text style={[styles.statusBadgeText, { color: statusConfig.textColor }]}>
+                {statusConfig.label}
               </Text>
             </View>
           </View>
-        )}
 
-        {!isDelivered && item.status !== ORDER_STATUS.CANCELLED && (
-          <View style={styles.progressArea}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressTitle}>حالة الطلب</Text>
-              <Text style={styles.progressHint}>{statusConfig.label}</Text>
-            </View>
-            <View style={styles.progressTrack}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width:
-                      statusConfig.stepIndex >= 4
-                        ? '100%'
-                        : statusConfig.stepIndex === 3
-                          ? '72%'
-                          : statusConfig.stepIndex === 2
-                            ? '46%'
-                            : '20%',
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.progressLabels}>
-              <Text style={styles.progressLabel}>تم الطلب</Text>
-              <Text style={styles.progressLabel}>التجهيز</Text>
-              <Text style={styles.progressLabel}>التوصيل</Text>
+          <Text style={styles.orderMetaText} numberOfLines={1}>
+            طلب #{item.order_number} · {dateFormatted} · {totalItems} {totalItems === 1 ? 'منتج' : 'منتجات'}
+          </Text>
+
+          <View style={styles.compactBottomRow}>
+            <Text style={styles.priceAmountText}>
+              {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'} ر.ي
+            </Text>
+            <View style={styles.openDetails}>
+              <Text style={styles.openDetailsText}>{isDelivered ? 'التفاصيل' : 'التفاصيل والتتبع'}</Text>
+              <Ionicons name="chevron-back" size={15} color="#172554" />
             </View>
           </View>
-        )}
-
-        <View style={styles.cardFooter}>
-          <View style={styles.footerActionCopy}>
-            <Text style={styles.footerActionTitle}>
-              {isDelivered ? 'اطلب نفس المنتجات مجدداً' : 'عرض تفاصيل الطلب'}
-            </Text>
-            <Text style={styles.footerActionSub}>
-              {isDelivered ? 'بنقرة واحدة' : 'التفاصيل والتتبع المباشر'}
-            </Text>
-          </View>
-
-          {isDelivered ? (
-            <TouchableOpacity
-              style={styles.secondaryActionBtn}
-              onPress={(e) => {
-                e.stopPropagation?.();
-                reorder(item.id, storeName);
-              }}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="refresh-outline" size={16} color="#172554" />
-              <Text style={styles.secondaryActionBtnText}>إعادة الطلب</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.primaryActionBtn}>
-              <Ionicons name="location-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.primaryActionBtnText}>تتبع</Text>
-            </View>
-          )}
         </View>
       </TouchableOpacity>
     );
@@ -499,293 +422,98 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEF1F5',
   },
-  headerRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 48,
-  },
+  headerRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', minHeight: 48 },
   backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#F7F8FB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E9ECF2',
+    width: 42, height: 42, borderRadius: 14, backgroundColor: '#F7F8FB',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E9ECF2',
   },
   headerCenterCol: { alignItems: 'center', flex: 1, paddingHorizontal: 8 },
-  headerTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 21,
-    color: '#111827',
-    letterSpacing: -0.25,
-  },
-  headerSub: {
-    fontFamily: FONTS.regular,
-    fontSize: 11.5,
-    color: '#8A92A1',
-    marginTop: 3,
-  },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 21, color: '#111827', letterSpacing: -0.25 },
+  headerSub: { fontFamily: FONTS.regular, fontSize: 11.5, color: '#8A92A1', marginTop: 3 },
   supportPillBtn: {
-    height: 42,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#F7F8FB',
-    borderWidth: 1,
-    borderColor: '#E9ECF2',
-    borderRadius: 14,
-    paddingHorizontal: 12,
+    height: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 6,
+    backgroundColor: '#F7F8FB', borderWidth: 1, borderColor: '#E9ECF2',
+    borderRadius: 14, paddingHorizontal: 12,
   },
   supportPillText: { fontFamily: FONTS.bold, fontSize: 12, color: '#172554' },
-
-  tabsContainer: {
-    marginTop: 16,
-    backgroundColor: '#F3F5F8',
-    borderRadius: 15,
-    padding: 4,
-  },
+  tabsContainer: { marginTop: 16, backgroundColor: '#F3F5F8', borderRadius: 15, padding: 4 },
   tabsScrollContent: { flexDirection: 'row-reverse', gap: 4, width: '100%' },
   tabChip: {
-    flex: 1,
-    minWidth: 72,
-    height: 39,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 9,
+    flex: 1, minWidth: 72, height: 39, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 9,
   },
   tabChipActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: '#FFFFFF', shadowColor: '#111827', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 2,
   },
   tabChipText: { fontFamily: FONTS.medium, fontSize: 12.5, color: '#7B8494' },
   tabChipTextActive: { fontFamily: FONTS.bold, color: '#172554' },
-
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 120,
-    gap: 12,
-  },
+  listContentContainer: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 120, gap: 10 },
 
   orderCard: {
+    minHeight: 112,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 16,
+    borderRadius: 18,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#E9EDF3',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
-    elevation: 2,
-  },
-  topRow: {
+    borderColor: '#E8ECF2',
     flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: 12,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.035,
+    shadowRadius: 10,
+    elevation: 1,
   },
-  orderMeta: { flex: 1, alignItems: 'flex-end' },
-  orderNumberText: { fontFamily: FONTS.bold, fontSize: 15.5, color: '#151B2B' },
-  orderDateText: {
-    fontFamily: FONTS.regular,
-    fontSize: 10.8,
-    color: '#9AA2B1',
-    marginTop: 4,
+  orderThumb: {
+    width: 76, height: 76, borderRadius: 15, backgroundColor: '#F3F5F8',
+    overflow: 'hidden', alignItems: 'center', justifyContent: 'center', position: 'relative',
+  },
+  orderThumbImage: { width: '100%', height: '100%' },
+  itemCountBadge: {
+    position: 'absolute', left: 5, bottom: 5, minWidth: 24, height: 22,
+    paddingHorizontal: 6, borderRadius: 8, backgroundColor: 'rgba(23,37,84,0.9)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  itemCountBadgeText: { fontFamily: FONTS.bold, fontSize: 10, color: '#FFFFFF' },
+  compactBody: { flex: 1, minWidth: 0 },
+  compactTopRow: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+  },
+  storeNameText: {
+    flex: 1, fontFamily: FONTS.bold, fontSize: 14.5, color: '#171D2B', textAlign: 'right',
   },
   statusBadge: {
-    minHeight: 29,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    gap: 6,
+    minHeight: 25, maxWidth: 132, flexDirection: 'row-reverse', alignItems: 'center',
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, gap: 5,
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusBadgeText: { fontFamily: FONTS.bold, fontSize: 11.2 },
+  statusDot: { width: 5, height: 5, borderRadius: 3 },
+  statusBadgeText: { fontFamily: FONTS.bold, fontSize: 9.8 },
+  orderMetaText: {
+    fontFamily: FONTS.regular, fontSize: 10.5, color: '#8D96A5',
+    textAlign: 'right', marginTop: 7,
+  },
+  compactBottomRow: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: 10, paddingTop: 9, borderTopWidth: 1, borderTopColor: '#F0F2F5',
+  },
+  priceAmountText: { fontFamily: FONTS.bold, fontSize: 15.5, color: '#172554' },
+  openDetails: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2 },
+  openDetailsText: { fontFamily: FONTS.bold, fontSize: 10.5, color: '#172554' },
 
-  storeRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 15,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F2F6',
-  },
-  storeAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#F2F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  storeCopy: { flex: 1, alignItems: 'flex-end' },
-  storeNameText: {
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    color: '#1F2937',
-    textAlign: 'right',
-  },
-  storeCaptionText: {
-    fontFamily: FONTS.regular,
-    fontSize: 10.8,
-    color: '#8F98A7',
-    marginTop: 3,
-    textAlign: 'right',
-  },
-
-  productStrip: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    backgroundColor: '#F8F9FC',
-    borderRadius: 16,
-    padding: 11,
-  },
-  thumbnailsContainer: { flexDirection: 'row-reverse', gap: 7, flex: 1 },
-  thumbnailWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 13,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E8EBF0',
-    overflow: 'hidden',
-  },
-  thumbnailImage: { width: '100%', height: '100%' },
-  thumbnailFallback: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F1F3F7',
-  },
-  priceCol: { alignItems: 'flex-end', marginLeft: 10 },
-  priceLabel: {
-    fontFamily: FONTS.regular,
-    fontSize: 10,
-    color: '#9AA2B1',
-    marginBottom: 2,
-  },
-  priceAmountText: { fontFamily: FONTS.bold, fontSize: 17, color: '#172554' },
-
-  progressArea: {
-    marginTop: 14,
-    paddingTop: 13,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F2F6',
-  },
-  progressHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  progressTitle: { fontFamily: FONTS.bold, fontSize: 11.5, color: '#4B5563' },
-  progressHint: { fontFamily: FONTS.medium, fontSize: 10.5, color: '#7B8494' },
-  progressTrack: {
-    height: 5,
-    backgroundColor: '#E9EDF3',
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginTop: 9,
-  },
-  progressFill: { height: '100%', backgroundColor: '#172554', borderRadius: 999 },
-  progressLabels: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  progressLabel: { fontFamily: FONTS.regular, fontSize: 9.5, color: '#9AA2B1' },
-
-  cardFooter: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    gap: 12,
-  },
-  footerActionCopy: { flex: 1, alignItems: 'flex-end' },
-  footerActionTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 11.8,
-    color: '#333B49',
-    textAlign: 'right',
-  },
-  footerActionSub: {
-    fontFamily: FONTS.regular,
-    fontSize: 10,
-    color: '#9AA2B1',
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  primaryActionBtn: {
-    minWidth: 94,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: '#172554',
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-  },
-  primaryActionBtnText: { fontFamily: FONTS.bold, fontSize: 12.5, color: '#FFFFFF' },
-  secondaryActionBtn: {
-    minWidth: 116,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: '#F2F4FF',
-    borderWidth: 1,
-    borderColor: '#DFE4FF',
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-  },
-  secondaryActionBtnText: { fontFamily: FONTS.bold, fontSize: 12, color: '#172554' },
-
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 76,
-    paddingHorizontal: 28,
-  },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 76, paddingHorizontal: 28 },
   emptyTitleText: {
-    fontFamily: FONTS.bold,
-    fontSize: 16,
-    color: '#1F2937',
-    marginTop: 16,
-    textAlign: 'center',
+    fontFamily: FONTS.bold, fontSize: 16, color: '#1F2937', marginTop: 16, textAlign: 'center',
   },
   emptySubText: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: '#7C8494',
-    marginTop: 7,
-    textAlign: 'center',
-    lineHeight: 19,
+    fontFamily: FONTS.regular, fontSize: 12, color: '#7C8494', marginTop: 7,
+    textAlign: 'center', lineHeight: 19,
   },
   retryBtn: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    borderRadius: 13,
-    backgroundColor: '#172554',
+    marginTop: 16, paddingHorizontal: 20, paddingVertical: 11,
+    borderRadius: 13, backgroundColor: '#172554',
   },
   retryBtnText: { fontFamily: FONTS.bold, fontSize: 13, color: '#FFFFFF' },
 });
