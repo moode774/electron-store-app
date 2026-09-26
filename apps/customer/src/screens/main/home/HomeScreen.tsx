@@ -312,25 +312,6 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         }
       >
         <CustomerResponsiveShell>
-          {/* Active Order Card if present */}
-          {activeOrder ? (
-            <View style={styles.activeOrderCard}>
-              <View style={styles.activeOrderIconWrap}>
-                <Ionicons name="navigate" size={20} color="#172554" />
-              </View>
-              <View style={styles.activeOrderInfo}>
-                <Text style={styles.activeOrderTitle}>طلبك رقم #{activeOrder.order_number}</Text>
-                <Text style={styles.activeOrderSub}>قيد المعالجة الآن — تابع حالته لحظة بلحظة</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.trackButton}
-                onPress={() => openTab('Orders', 'OrderTracking', { orderId: activeOrder.id })}
-                activeOpacity={0.86}
-              >
-                <Text style={styles.trackButtonText}>تتبع</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
 
           {/* Swipable Hero Carousel (Content Cards + Full Image Banners) */}
           <ScrollView
