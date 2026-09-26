@@ -40,25 +40,25 @@ const COLLECTION_STATUS_INFO: Record<CodCollectionStatus, {
   icon: IconName;
 }> = {
   collected: {
-    label: 'بانتظار التسليم',
+    label: 'عليك تسليمه',
     color: '#92400E',
     backgroundColor: '#FEF3C7',
     icon: 'cash-outline',
   },
   partially_remitted: {
-    label: 'مُسلّم جزئيًا',
+    label: 'سُلّم جزء منه',
     color: COLORS.primary,
     backgroundColor: COLORS.primarySoft,
     icon: 'time-outline',
   },
   remitted: {
-    label: 'مُسلّم بالكامل',
+    label: 'تم التسليم',
     color: '#047857',
     backgroundColor: '#D1FAE5',
     icon: 'checkmark-circle-outline',
   },
   disputed: {
-    label: 'متنازع عليه',
+    label: 'راجع الإدارة',
     color: '#B91C1C',
     backgroundColor: '#FEE2E2',
     icon: 'warning-outline',
@@ -70,7 +70,7 @@ const SUBMISSION_STATUS_INFO: Record<CodSubmissionStatus, {
   color: string;
   backgroundColor: string;
 }> = {
-  pending: { label: 'قيد المراجعة', color: '#92400E', backgroundColor: '#FEF3C7' },
+  pending: { label: 'الإدارة تراجعه', color: '#92400E', backgroundColor: '#FEF3C7' },
   approved: { label: 'معتمد', color: '#047857', backgroundColor: '#D1FAE5' },
   rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
   disputed: { label: 'قيد النزاع', color: '#6D28D9', backgroundColor: '#EDE9FE' },
@@ -233,7 +233,7 @@ export default function CodRemittancePanel() {
       if (Platform.OS !== 'web') {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (permission.status !== 'granted') {
-          throw new Error('اسمح بالوصول إلى الصور لاختيار إثبات الحوالة.');
+          throw new Error('اسمح بالوصول إلى الصور لاختيار صورة الإثبات.');
         }
       }
 
@@ -281,7 +281,7 @@ export default function CodRemittancePanel() {
       return;
     }
     if (!reference || reference.length > 200) {
-      setFormError('أدخل رقم مرجع الحوالة أو الإيداع، بحد أقصى 200 حرف.');
+      setFormError('أدخل رقم الحوالة أو الإيداع، بحد أقصى 200 حرف.');
       return;
     }
     if (!proof) {
@@ -377,8 +377,8 @@ export default function CodRemittancePanel() {
             <Ionicons name="cash-outline" size={19} color="#B45309" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.sectionTitle}>تحصيلات الدفع عند الاستلام</Text>
-            <Text style={styles.sectionSubtitle}>سلّم المبالغ للإدارة مع إثبات لكل حوالة</Text>
+            <Text style={styles.sectionTitle}>كاش استلمته من العملاء</Text>
+            <Text style={styles.sectionSubtitle}>هذا ليس من أرباحك — سلّمه للإدارة ثم أرسل الإثبات هنا</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -421,29 +421,12 @@ export default function CodRemittancePanel() {
 
       {collections.length > 0 ? (
         <>
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryCell}>
-              <Text style={styles.summaryValue}>{money(totalCollected)}</Text>
-              <Text style={styles.summaryLabel}>إجمالي مستلم</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryCell}>
-              <Text style={[styles.summaryValue, { color: '#B45309' }]}>{money(totalOutstanding)}</Text>
-              <Text style={styles.summaryLabel}>غير معتمد</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryCell}>
-              <Text style={[styles.summaryValue, { color: COLORS.primary }]}>{money(totalPending)}</Text>
-              <Text style={styles.summaryLabel}>قيد المراجعة</Text>
-            </View>
+          <View style={styles.actionSummary}>
+            <Text style={styles.actionEyebrow}>المطلوب منك الآن</Text>
+            <Text style={styles.actionAmount}>{money(Math.max(totalOutstanding - totalPending, 0))} <Text style={styles.actionCurrency}>ر.ي</Text></Text>
+            <Text style={styles.actionText}>{Math.max(totalOutstanding - totalPending, 0) > 0 ? 'سلّم هذا المبلغ للإدارة وارفع صورة الإثبات' : totalPending > 0 ? 'لا تحتاج تعمل شيء الآن — انتظر مراجعة الإدارة' : 'ممتاز، لا يوجد عليك كاش مطلوب تسليمه'}</Text>
           </View>
-
-          <View style={styles.holdNotice}>
-            <Ionicons name="information-circle-outline" size={18} color="#92400E" />
-            <Text style={styles.holdNoticeText}>
-              المبالغ غير المعتمدة لا تصبح متاحة للسحب حتى تؤكد الإدارة استلامها.
-            </Text>
-          </View>
+          {totalPending > 0 ? <View style={styles.simpleStatus}><Ionicons name="time-outline" size={18} color={COLORS.primary} /><Text style={styles.simpleStatusText}>{money(totalPending)} ر.ي أرسلته بالفعل والإدارة تراجعه الآن</Text></View> : null}
 
           {collections.map((collection) => {
             const status = COLLECTION_STATUS_INFO[collection.status];
@@ -474,7 +457,7 @@ export default function CodRemittancePanel() {
                 </View>
 
                 <View style={styles.amountLine}>
-                  <Text style={styles.amountLabel}>المبلغ المعتمد</Text>
+                  <Text style={styles.amountLabel}>سلّمت للإدارة</Text>
                   <Text style={styles.amountValue}>
                     {money(collection.amount_remitted)} / {money(collection.amount_collected)} ر.ي
                   </Text>
@@ -484,10 +467,10 @@ export default function CodRemittancePanel() {
                 </View>
 
                 <View style={styles.collectionStats}>
-                  <Text style={styles.collectionStat}>المتبقي: {money(collection.amount_outstanding)} ر.ي</Text>
+                  <Text style={styles.collectionStat}>باقي عليك: {money(collection.amount_outstanding)} ر.ي</Text>
                   {collection.amount_pending_review > 0 ? (
                     <Text style={[styles.collectionStat, { color: COLORS.primary }]}>
-                      تحت المراجعة: {money(collection.amount_pending_review)} ر.ي
+                      أرسلته للمراجعة: {money(collection.amount_pending_review)} ر.ي
                     </Text>
                   ) : null}
                 </View>
@@ -536,12 +519,12 @@ export default function CodRemittancePanel() {
                   />
                   <Text style={[styles.submitButtonText, !canSubmit && styles.submitButtonTextDisabled]}>
                     {collection.status === 'remitted'
-                      ? 'تم تسليم المبلغ كاملًا'
+                      ? 'تم — لا يوجد عليك شيء'
                       : collection.status === 'disputed'
                         ? 'موقوف حتى حل النزاع'
                         : available <= 0
-                          ? 'المبلغ المتبقي قيد المراجعة'
-                          : `إرسال تحصيل (${money(available)} ر.ي متاح)`}
+                          ? 'أرسلته — انتظر مراجعة الإدارة'
+                          : `سلّمت المبلغ؟ أرسل الإثبات (${money(available)} ر.ي متاح)`}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -567,7 +550,7 @@ export default function CodRemittancePanel() {
             <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.modalTitle}>إرسال تحصيل نقدي</Text>
+                  <Text style={styles.modalTitle}>أرسل إثبات تسليم الكاش</Text>
                   <Text style={styles.modalSubtitle}>
                     الطلب {selectedCollection?.order_number ?? selectedCollection?.order_id.slice(-8)}
                   </Text>
@@ -584,7 +567,7 @@ export default function CodRemittancePanel() {
               </View>
 
               <View style={styles.availableBox}>
-                <Text style={styles.availableLabel}>المتاح للإرسال الآن</Text>
+                <Text style={styles.availableLabel}>المبلغ المطلوب تسليمه</Text>
                 <Text style={styles.availableValue}>
                   {money(selectedCollection ? availableCodRemittanceAmount(selectedCollection) : 0)} ر.ي
                 </Text>
@@ -658,11 +641,11 @@ export default function CodRemittancePanel() {
                   ? <ActivityIndicator size="small" color="#FFFFFF" />
                   : <Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" />}
                 <Text style={styles.confirmButtonText}>
-                  {submitting ? 'جاري رفع الإثبات والإرسال…' : 'إرسال للمراجعة'}
+                  {submitting ? 'جاري رفع الإثبات والإرسال…' : 'أرسلت المبلغ — إرسال الإثبات'}
                 </Text>
               </TouchableOpacity>
               <Text style={styles.confirmHint}>
-                لا يُعد المبلغ معتمدًا إلا بعد مراجعة الإدارة للإثبات وتأكيد الاستلام.
+                بعد الإرسال انتظر فقط. ستراجع الإدارة الإثبات وتؤكد استلام المبلغ.
               </Text>
             </View>
           </ScrollView>
@@ -688,14 +671,20 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: 'center', borderRadius: 16, padding: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
   emptyTitle: { color: COLORS.ink, fontSize: 13, fontWeight: '800', marginTop: 7 },
   emptyText: { color: COLORS.inkTertiary, fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center' },
-  summaryRow: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 14, borderWidth: 1, borderColor: '#E5E7EB' },
+  actionSummary: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'flex-end' },
+  actionEyebrow: { color: COLORS.inkSecondary, fontSize: 11, fontWeight: '700' },
+  actionAmount: { color: COLORS.ink, fontSize: 30, fontWeight: '900', marginTop: 4 },
+  actionCurrency: { fontSize: 13, color: COLORS.inkSecondary },
+  actionText: { color: COLORS.inkSecondary, fontSize: 11.5, lineHeight: 19, marginTop: 5, textAlign: 'right' },
+  simpleStatus: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: COLORS.primarySoft, borderRadius: 14, padding: 12 },
+  simpleStatusText: { flex: 1, color: COLORS.primary, fontSize: 11, fontWeight: '700', textAlign: 'right' },
   summaryCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
   summaryValue: { color: COLORS.ink, fontSize: 14, fontWeight: '900' },
   summaryLabel: { color: COLORS.inkSecondary, fontSize: 9.5, fontWeight: '700', marginTop: 3 },
   summaryDivider: { width: 1, height: 30, backgroundColor: '#E5E7EB' },
   holdNotice: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, padding: 11, borderRadius: 12, backgroundColor: '#FFFBEB' },
   holdNoticeText: { flex: 1, color: '#92400E', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
-  collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#E5E7EB', gap: 10 },
+  collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: COLORS.hairline, gap: 11 },
   collectionTopRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   collectionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   orderNumber: { color: COLORS.ink, fontSize: 13, fontWeight: '800', textAlign: 'right' },
@@ -715,7 +704,7 @@ const styles = StyleSheet.create({
   submissionDate: { color: COLORS.inkTertiary, fontSize: 9.5, marginTop: 2, textAlign: 'right' },
   reviewNote: { color: COLORS.inkSecondary, fontSize: 9.5, lineHeight: 14, marginTop: 3, textAlign: 'right' },
   submissionBadge: { fontSize: 9, fontWeight: '800', paddingHorizontal: 7, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
-  submitButton: { minHeight: 44, borderRadius: 12, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
+  submitButton: { minHeight: 50, borderRadius: 15, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
   submitButtonDisabled: { backgroundColor: '#E5E7EB' },
   submitButtonText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '800', textAlign: 'center' },
   submitButtonTextDisabled: { color: COLORS.inkSecondary },
