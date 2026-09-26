@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { getServiceAreas } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
@@ -92,23 +92,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
   header: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 18,
     width: '100%', maxWidth: 900, alignSelf: 'center',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink },
+  backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.ink },
   scrollContent: { padding: 20, gap: 10, width: '100%', maxWidth: 900, alignSelf: 'center', paddingBottom: 80 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   infoCard: {
     flexDirection: 'row-reverse', gap: 10, alignItems: 'center', backgroundColor: '#F0F4FF',
-    borderRadius: 14, padding: 14, marginBottom: 6,
+    borderRadius: 18, padding: 16, marginBottom: 8, borderWidth: 1, borderColor: '#DBEAFE',
   },
   infoText: { flex: 1, fontSize: 12.5, color: COLORS.primary, lineHeight: 19, fontWeight: '600' },
   zoneCard: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
+    borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.hairline,
   },
   zoneCardActive: { borderColor: '#A7F3D0' },
   zoneIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
