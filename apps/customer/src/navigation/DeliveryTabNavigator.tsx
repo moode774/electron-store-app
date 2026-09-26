@@ -17,6 +17,7 @@ import DeliveryProfileScreen from '../screens/delivery/DeliveryProfileScreen';
 import DeliveryZonesScreen from '../screens/delivery/DeliveryZonesScreen';
 import DeliverySupportScreen from '../screens/delivery/DeliverySupportScreen';
 import RoleNotificationsScreen from '../screens/shared/RoleNotificationsScreen';
+import NotificationSettingsScreen from '../screens/shared/NotificationSettingsScreen';
 import SupportTicketThreadScreen from '../screens/shared/SupportTicketThreadScreen';
 
 export type DeliveryAccountStackParamList = {
@@ -27,6 +28,7 @@ export type DeliveryAccountStackParamList = {
   DeliverySupport: undefined;
   SupportTicket: { ticketId: string };
   RoleNotifications: { role: 'delivery' };
+  NotificationSettings: undefined;
 };
 
 const AccountStack = createNativeStackNavigator<DeliveryAccountStackParamList>();
@@ -40,6 +42,7 @@ function AccountNavigator() {
       <AccountStack.Screen name="DeliverySupport" component={DeliverySupportScreen} />
       <AccountStack.Screen name="SupportTicket" component={SupportTicketThreadScreen} />
       <AccountStack.Screen name="RoleNotifications" component={RoleNotificationsScreen} />
+      <AccountStack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
     </AccountStack.Navigator>
   );
 }
