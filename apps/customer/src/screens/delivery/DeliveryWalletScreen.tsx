@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
 
 import CodRemittancePanel from './CodRemittancePanel';
@@ -76,10 +76,10 @@ export default function DeliveryWalletScreen({ navigation }: any) {
                 <Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text>
                 <Text style={styles.summaryLabel}>مستحقاتك (ر.ي)</Text>
               </View>
-              <View style={[styles.summaryCard, { backgroundColor: '#B45309' }]}>
-                <Ionicons name="cash-outline" size={20} color="rgba(255,255,255,0.7)" />
-                <Text style={styles.summaryValue}>{transactions.length}</Text>
-                <Text style={styles.summaryLabel}>عدد المعاملات</Text>
+              <View style={[styles.summaryCard, styles.summaryCardLight]}>
+                <Ionicons name="receipt-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.summaryValueLight}>{transactions.length}</Text>
+                <Text style={styles.summaryLabelLight}>عدد المعاملات</Text>
               </View>
             </View>
 
