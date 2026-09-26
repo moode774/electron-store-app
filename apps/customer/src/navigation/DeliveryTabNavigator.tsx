@@ -82,11 +82,11 @@ type DeliveryNavItem = {
 };
 
 const DELIVERY_NAV_ITEMS: DeliveryNavItem[] = [
-  { route: 'DeliveryHome', label: 'الطلبات المتاحة', icon: 'flash-outline', activeIcon: 'flash' },
-  { route: 'DeliveryOrders', label: 'الطلبات', icon: 'clipboard-outline', activeIcon: 'clipboard' },
-  { route: 'DeliveryReturnsTab', label: 'مهام الإرجاع', icon: 'return-down-back-outline', activeIcon: 'return-down-back' },
+  { route: 'DeliveryHome', label: 'الرئيسية', icon: 'home-outline', activeIcon: 'home' },
+  { route: 'DeliveryOrders', label: 'طلباتي', icon: 'receipt-outline', activeIcon: 'receipt' },
+  { route: 'DeliveryReturnsTab', label: 'المرتجعات', icon: 'swap-horizontal-outline', activeIcon: 'swap-horizontal' },
   { route: 'DeliveryEarnings', label: 'الأرباح', icon: 'wallet-outline', activeIcon: 'wallet' },
-  { route: 'DeliveryMore', label: 'الحساب', icon: 'person-outline', activeIcon: 'person' },
+  { route: 'DeliveryMore', label: 'حسابي', icon: 'person-circle-outline', activeIcon: 'person-circle' },
 ];
 
 function DesktopDeliverySidebar() {
@@ -172,25 +172,20 @@ export default function DeliveryTabNavigator() {
     {
       name: 'DeliveryReturnsTab',
       component: DeliveryReturnsScreen,
-      options: { tabBarLabel: 'مهام الإرجاع', tabBarIcon: tabIcon('return-down-back-outline', 'return-down-back') },
+      options: { tabBarLabel: 'المرتجعات', tabBarIcon: tabIcon('swap-horizontal-outline', 'swap-horizontal') },
     },
     {
       name: 'DeliveryOrders',
       component: ActiveDeliveryScreen,
-      options: { tabBarLabel: 'الطلبات', tabBarIcon: tabIcon('clipboard-outline', 'clipboard') },
+      options: { tabBarLabel: 'طلباتي', tabBarIcon: tabIcon('receipt-outline', 'receipt') },
     },
     {
       name: 'DeliveryHome',
       component: OffersNavigator,
       options: {
-        tabBarLabel: 'الطلبات المتاحة',
-        tabBarAccessibilityLabel: 'الطلبات المتاحة',
-        tabBarIcon: ({ focused }: { focused: boolean }) => (
-          <View style={[styles.centerAction, !focused && styles.centerActionIdle]}>
-            <Ionicons name="flash" size={26} color={COLORS.surface} />
-          </View>
-        ),
-        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary, marginTop: 2 },
+        tabBarLabel: 'الرئيسية',
+        tabBarAccessibilityLabel: 'الرئيسية',
+        tabBarIcon: tabIcon('home-outline', 'home'),
       },
     },
     {
@@ -201,7 +196,7 @@ export default function DeliveryTabNavigator() {
     {
       name: 'DeliveryMore',
       component: AccountNavigator,
-      options: { tabBarLabel: 'المزيد', tabBarIcon: tabIcon('ellipsis-horizontal-circle-outline', 'ellipsis-horizontal-circle') },
+      options: { tabBarLabel: 'حسابي', tabBarIcon: tabIcon('person-circle-outline', 'person-circle') },
     },
   ];
   const orderedTabs = Platform.OS === 'web' ? [...tabs].reverse() : tabs;
@@ -220,9 +215,9 @@ export default function DeliveryTabNavigator() {
           borderTopColor: COLORS.hairline,
           elevation: 0,
           shadowOpacity: 0,
-          height: 60 + bottomInset,
+          height: 68 + bottomInset,
           paddingBottom: bottomInset,
-          paddingTop: 6,
+          paddingTop: 8,
           position: 'absolute',
           ...(isTablet ? {
             left: Math.max(24, (width - 680) / 2),
@@ -233,7 +228,8 @@ export default function DeliveryTabNavigator() {
             borderRadius: RADIUS.xl,
           } : {}),
         },
-        tabBarLabelStyle: { fontSize: 11, fontFamily: FONTS.medium, marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 10.5, fontFamily: FONTS.medium, marginTop: 3 },
+        tabBarItemStyle: { paddingTop: 2 },
       }}
     >
       {orderedTabs.map((tab) => (
