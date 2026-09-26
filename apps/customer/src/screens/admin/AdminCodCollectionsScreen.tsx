@@ -602,7 +602,7 @@ const s = StyleSheet.create({
   title: { color: UI.text, fontSize: 22, fontFamily: FONTS.bold, textAlign: 'right' },
   subtitle: { color: UI.muted, fontSize: 13, marginTop: 4, textAlign: 'right' },
   backButton: { width: 44, height: 44, borderRadius: 13, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center', marginLeft: 14 },
-  listContent: { alignSelf: 'center', paddingTop: 16, paddingBottom: 112, flexGrow: 1 },
+  listContent: { alignSelf: 'center', paddingTop: 12, paddingBottom: 96, flexGrow: 1 },
   columnRow: { gap: 12 },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   stateText: { color: UI.muted, fontSize: 14 },
