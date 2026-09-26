@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, VEHICLE_TYPE } from '@marketplace/shared-utils';
+import { COLORS, FONTS, VEHICLE_TYPE } from '@marketplace/shared-utils';
 import { Input, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getDeliveryProfile, updateDeliveryProfileByUser, updateUserProfile } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
@@ -158,11 +158,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
   header: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 18,
     width: '100%', maxWidth: 820, alignSelf: 'center',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.ink },
+  backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.ink },
   scrollContent: { padding: 24, width: '100%', maxWidth: 820, alignSelf: 'center', paddingBottom: 80 },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, marginBottom: 18, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
@@ -171,15 +171,15 @@ const styles = StyleSheet.create({
   vehiclesRow: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
   vehiclesRowCompact: { flexWrap: 'wrap' },
   vehicleCard: {
-    flex: 1, alignItems: 'center', gap: 8, paddingVertical: 16, borderRadius: 14,
-    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E5E7EB',
+    flex: 1, alignItems: 'center', gap: 8, paddingVertical: 16, borderRadius: 18,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline,
   },
   vehicleCardCompact: { flexBasis: '46%', flexGrow: 1 },
   vehicleCardActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   vehicleLabel: { fontSize: 11.5, fontWeight: '700', color: COLORS.inkSecondary },
   docCard: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6', marginBottom: 10,
+    borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.hairline, marginBottom: 10,
   },
   docIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F0F4FF', alignItems: 'center', justifyContent: 'center' },
   docTitle: { fontSize: 13.5, fontWeight: '700', color: COLORS.ink },
