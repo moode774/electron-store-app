@@ -349,7 +349,7 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 22, fontFamily: FONTS.bold, color: UI.text },
   backBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: UI.bg },
   headerCount: { fontSize: 13, color: UI.primary, fontWeight: '700', backgroundColor: UI.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden' },
-  filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 14 },
+  filterRowWrap: { backgroundColor: UI.bg, paddingVertical: 8 },
   filterScroll: { paddingHorizontal: 20, gap: 10 },
   filterBtn: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 13, paddingVertical: 8, borderRadius: 12, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, shadowColor: COLORS.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
   filterBtnActive: { backgroundColor: UI.primary, borderColor: UI.primary },
