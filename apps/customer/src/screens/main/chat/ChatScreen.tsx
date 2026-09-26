@@ -4,7 +4,7 @@ import {
   StatusBar, Platform, KeyboardAvoidingView, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
@@ -86,7 +86,7 @@ export default function ChatScreen({ navigation, route }: any) {
     return (
       <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowOther]}>
         <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
-          <Text style={[styles.bubbleText, mine && { color: '#FFFFFF' }]}>{item.message}</Text>
+          <Text style={[styles.bubbleText, mine && { color: COLORS.surface }]}>{item.message}</Text>
           <Text style={[styles.bubbleTime, mine && { color: 'rgba(255,255,255,0.7)' }]}>
             {new Date(item.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
           </Text>
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
     paddingTop: Platform.OS === 'ios' ? 48 : 32,
-    backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
   },
   headerInner: { width: '100%', maxWidth: 960, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
   backBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   rowOther: { justifyContent: 'flex-end' },
   bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: RADIUS.lg },
   bubbleMine: { backgroundColor: COLORS.primary, borderBottomLeftRadius: 4 },
-  bubbleOther: { backgroundColor: '#FFFFFF', borderBottomRightRadius: 4, borderWidth: 1, borderColor: '#F3F4F6' },
+  bubbleOther: { backgroundColor: COLORS.surface, borderBottomRightRadius: 4, borderWidth: 1, borderColor: '#F3F4F6' },
   bubbleText: { fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textPrimary, lineHeight: 20 },
   bubbleTime: { fontSize: 10, fontFamily: FONTS.regular, color: COLORS.textMuted, marginTop: 4, textAlign: 'left' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 80 },

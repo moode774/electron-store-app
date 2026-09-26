@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '../../../theme/customerTheme';
 import { Card } from '@marketplace/shared-ui';
 import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
@@ -149,5 +149,5 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 60, marginBottom: 16 },
   emptyText: { fontSize: 16, color: COLORS.textMuted },
   retryBtn: { minHeight: 44, marginTop: 14, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10, justifyContent: 'center' },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
+  retryText: { color: COLORS.surface, fontWeight: '800' },
 });

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../../components/NotificationPreferencesCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
@@ -147,5 +147,5 @@ const styles = StyleSheet.create({
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   errorText: { color: '#991B1B', textAlign: 'center' },
   retryButton: { minHeight: 44, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 17, paddingVertical: 10, justifyContent: 'center' },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
+  retryText: { color: COLORS.surface, fontWeight: '800' },
 });

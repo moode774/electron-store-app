@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ProductSummary } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../theme/customerTheme';
 
 type Props = {
   product: ProductSummary;
@@ -146,12 +146,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: 22,
     backgroundColor: COLORS.surface,
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.035,
-    shadowRadius: 12,
+    shadowOpacity: 0.055,
+    shadowRadius: 18,
     elevation: 1,
   },
   cardList: {
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   media: {
     width: '100%',
-    aspectRatio: 1.06,
+    aspectRatio: 1,
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: COLORS.surfaceMuted,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-    minHeight: 26,
+    minHeight: 27,
     justifyContent: 'center',
     paddingHorizontal: 9,
     borderRadius: RADIUS.full,
@@ -202,19 +202,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     left: 10,
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 14,
+    borderRadius: 15,
     backgroundColor: 'rgba(255,255,255,0.92)',
   },
   info: {
-    minHeight: 144,
+    minHeight: 142,
     alignItems: 'flex-end',
-    padding: 12,
+    padding: 13,
     paddingBottom: 56,
   },
   infoList: {
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontFamily: FONTS.semiBold,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 21,
     textAlign: 'right',
   },
   nameList: {
@@ -272,9 +272,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   price: {
-    color: COLORS.textPrimary,
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'right',
   },
   currency: {
@@ -292,11 +292,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     bottom: 12,
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: COLORS.primary,
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 5 },

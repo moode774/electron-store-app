@@ -13,7 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '../../../theme/customerTheme';
 import {
   Address,
   useCartStore,
@@ -48,7 +48,7 @@ const PAYMENT_OPTIONS = [
     subtitle: 'سيتوفر قريباً',
     iconType: 'phone-portrait-outline',
     brand: 'جوالي',
-    brandBg: '#94A3B8',
+    brandBg: COLORS.textMuted,
     available: false,
   },
   {
@@ -57,7 +57,7 @@ const PAYMENT_OPTIONS = [
     subtitle: 'سيتوفر قريباً',
     iconType: 'business-outline',
     brand: 'كريمي',
-    brandBg: '#94A3B8',
+    brandBg: COLORS.textMuted,
     available: false,
   },
   {
@@ -66,7 +66,7 @@ const PAYMENT_OPTIONS = [
     subtitle: 'سيتوفر قريباً',
     iconType: 'card-outline',
     brand: 'CARD',
-    brandBg: '#94A3B8',
+    brandBg: COLORS.textMuted,
     available: false,
   },
 ];
@@ -367,7 +367,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AddressSelection')}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <Ionicons name="arrow-forward" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>الدفع</Text>
@@ -381,7 +381,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           {/* Step 1: Cart */}
           <View style={styles.stepCol}>
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
-              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={14} color={COLORS.surface} />
             </View>
             <Text style={[styles.stepLabel, styles.stepLabelDone]}>سلة المشتريات</Text>
           </View>
@@ -390,7 +390,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           {/* Step 2: Address */}
           <View style={styles.stepCol}>
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
-              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={14} color={COLORS.surface} />
             </View>
             <Text style={[styles.stepLabel, styles.stepLabelDone]}>العنوان</Text>
           </View>
@@ -399,7 +399,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           {/* Step 3: Payment (ACTIVE) */}
           <View style={styles.stepCol}>
             <View style={[styles.stepCircle, styles.stepCircleActive]}>
-              <Ionicons name="card" size={15} color="#FFFFFF" />
+              <Ionicons name="card" size={15} color={COLORS.surface} />
             </View>
             <Text style={[styles.stepLabel, styles.stepLabelActive]}>الدفع</Text>
           </View>
@@ -408,7 +408,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           {/* Step 4: Confirm */}
           <View style={styles.stepCol}>
             <View style={styles.stepCircle}>
-              <Ionicons name="checkmark-done-outline" size={15} color="#94A3B8" />
+              <Ionicons name="checkmark-done-outline" size={15} color={COLORS.textMuted} />
             </View>
             <Text style={styles.stepLabel}>تأكيد الطلب</Text>
           </View>
@@ -427,7 +427,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         >
           <View style={styles.addressRightWrap}>
             <View style={styles.locationIconCircle}>
-              <Ionicons name="location" size={18} color="#172554" />
+              <Ionicons name="location" size={18} color={COLORS.primary} />
             </View>
             <View style={styles.addressTextCol}>
               <Text style={styles.addressBannerTitle}>
@@ -455,7 +455,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <Ionicons
               name={summaryExpanded ? 'chevron-up' : 'chevron-down'}
               size={18}
-              color="#64748B"
+              color={COLORS.textSecondary}
             />
             <View style={styles.summaryTitleWrap}>
               <Text style={styles.cardTitle}>ملخص الطلب</Text>
@@ -554,7 +554,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={styles.secureBadgeRow}>
-              <Ionicons name="information-circle-outline" size={13} color="#64748B" />
+              <Ionicons name="information-circle-outline" size={13} color={COLORS.textSecondary} />
               <Text style={styles.secureBadgeText}>المتاح حالياً: الدفع عند الاستلام</Text>
             </View>
             <Text style={styles.cardTitle}>اختر طريقة الدفع</Text>
@@ -588,7 +588,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   {/* Right Side: Radio Check */}
                   {method.available ? (
                     <View style={[styles.pmRadioCircle, isSelected && styles.pmRadioCircleSelected]}>
-                      {isSelected && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                      {isSelected && <Ionicons name="checkmark" size={12} color={COLORS.surface} />}
                     </View>
                   ) : (
                     <View style={styles.pmSoonBadge}>
@@ -614,7 +614,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         {/* Card 3: Active Coupon Discount */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="pricetag-outline" size={17} color="#172554" />
+            <Ionicons name="pricetag-outline" size={17} color={COLORS.primary} />
             <Text style={styles.cardTitle}>كوبون خصم</Text>
           </View>
 
@@ -648,7 +648,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   disabled={checkingCoupon || !couponCode.trim()}
                 >
                   {checkingCoupon ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={COLORS.surface} />
                   ) : (
                     <Text style={styles.couponApplyBtnText}>تطبيق</Text>
                   )}
@@ -682,13 +682,13 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <Switch
               value={needTaxInvoice}
               onValueChange={setNeedTaxInvoice}
-              trackColor={{ false: '#CBD5E1', true: '#172554' }}
+              trackColor={{ false: '#CBD5E1', true: COLORS.primary }}
               thumbColor="#FFFFFF"
             />
 
             <View style={styles.taxInvoiceRightCol}>
               <View style={styles.taxInvoiceTitleRow}>
-                <Ionicons name="receipt-outline" size={17} color="#172554" style={{ marginLeft: 6 }} />
+                <Ionicons name="receipt-outline" size={17} color={COLORS.primary} style={{ marginLeft: 6 }} />
                 <Text style={styles.taxInvoiceTitle}>فاتورة ضريبية</Text>
               </View>
               <Text style={styles.taxInvoiceSub}>أريد الحصول على فاتورة ضريبية رسمية</Text>
@@ -734,10 +734,10 @@ export default function CheckoutScreen({ navigation, route }: any) {
             activeOpacity={0.88}
           >
             {placing ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={COLORS.surface} />
             ) : (
               <View style={styles.checkoutBtnInner}>
-                <Ionicons name="lock-closed" size={16} color="#FFFFFF" />
+                <Ionicons name="lock-closed" size={16} color={COLORS.surface} />
                 <Text style={styles.checkoutBtnText}>إتمام الدفع</Text>
               </View>
             )}
@@ -751,17 +751,17 @@ export default function CheckoutScreen({ navigation, route }: any) {
         {/* Trust Benefits Footer Bar */}
         <View style={styles.trustFooterBar}>
           <View style={styles.trustItem}>
-            <Ionicons name="shield-checkmark-outline" size={13} color="#64748B" />
+            <Ionicons name="shield-checkmark-outline" size={13} color={COLORS.textSecondary} />
             <Text style={styles.trustText}>دفع آمن 100%</Text>
           </View>
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
-            <Ionicons name="bus-outline" size={13} color="#64748B" />
+            <Ionicons name="bus-outline" size={13} color={COLORS.textSecondary} />
             <Text style={styles.trustText}>توصيل سريع وآمن</Text>
           </View>
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
-            <Ionicons name="ribbon-outline" size={13} color="#64748B" />
+            <Ionicons name="ribbon-outline" size={13} color={COLORS.textSecondary} />
             <Text style={styles.trustText}>تجربة موثوقة</Text>
           </View>
         </View>
@@ -794,15 +794,15 @@ export default function CheckoutScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingTop: Platform.OS === 'ios' ? 44 : 20,
     paddingHorizontal: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.primarySoft,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -813,11 +813,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   headerCenterCol: {
     alignItems: 'center',
@@ -825,12 +825,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONTS.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   headerSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   stepperRow: {
@@ -847,15 +847,15 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   stepCircleActive: {
-    backgroundColor: '#172554', // Dark Royal Blue
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary, // Dark Royal Blue
+    borderColor: COLORS.primary,
   },
   stepCircleDone: {
     backgroundColor: '#059669',
@@ -864,12 +864,12 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: FONTS.medium,
     fontSize: 10,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   stepLabelActive: {
     fontFamily: FONTS.bold,
-    color: '#172554',
+    color: COLORS.primary,
   },
   stepLabelDone: {
     color: '#059669',
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
   stepLine: {
     flex: 1,
     height: 2,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: COLORS.border,
     marginHorizontal: 6,
     marginBottom: 14,
   },
@@ -893,11 +893,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F0F5FF',
+    backgroundColor: COLORS.primarySoft,
     padding: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.borderStrong,
     marginBottom: 14,
   },
   addressRightWrap: {
@@ -910,7 +910,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -921,34 +921,34 @@ const styles = StyleSheet.create({
   addressBannerTitle: {
     fontFamily: FONTS.bold,
     fontSize: 12.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   addressBannerSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 1,
   },
   changeAddressBadge: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.borderStrong,
   },
   changeAddressText: {
     fontFamily: FONTS.bold,
     fontSize: 11,
-    color: '#172554',
+    color: COLORS.primary,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   cardHeaderRow: {
     flexDirection: 'row-reverse',
@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   summaryHeaderRow: {
     flexDirection: 'row',
@@ -974,8 +974,8 @@ const styles = StyleSheet.create({
   itemsCountBadge: {
     fontFamily: FONTS.medium,
     fontSize: 11,
-    color: '#64748B',
-    backgroundColor: '#F8FAFC',
+    color: COLORS.textSecondary,
+    backgroundColor: COLORS.background,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -984,7 +984,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: COLORS.primarySoft,
   },
   summaryMainRow: {
     flexDirection: 'row-reverse',
@@ -1001,9 +1001,9 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   thumbImg: {
     width: '100%',
@@ -1019,16 +1019,16 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   thumbMoreText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   costsCol: {
     alignItems: 'flex-start',
@@ -1041,12 +1041,12 @@ const styles = StyleSheet.create({
   costLabelText: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   costValueText: {
     fontFamily: FONTS.bold,
     fontSize: 12.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   freeGreenText: {
     fontFamily: FONTS.bold,
@@ -1064,22 +1064,22 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: COLORS.primarySoft,
   },
   totalCostLabel: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   totalCostVal: {
     fontFamily: FONTS.bold,
     fontSize: 16,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   vatSubText: {
     fontFamily: FONTS.regular,
     fontSize: 9.5,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
   },
   savingsPillCard: {
     backgroundColor: '#ECFDF5',
@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
   secureBadgeText: {
     fontFamily: FONTS.regular,
     fontSize: 10.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   paymentMethodsList: {
     gap: 8,
@@ -1116,18 +1116,18 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
   pmItemCardSelected: {
-    borderColor: '#172554',
-    backgroundColor: '#F0F5FF',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primarySoft,
   },
   pmItemCardDisabled: {
     opacity: 0.55,
   },
   pmSoonBadge: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -1135,7 +1135,7 @@ const styles = StyleSheet.create({
   pmSoonText: {
     fontFamily: FONTS.bold,
     fontSize: 10.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   pmRadioCircle: {
     width: 20,
@@ -1147,8 +1147,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pmRadioCircleSelected: {
-    borderColor: '#172554',
-    backgroundColor: '#172554',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
   },
   pmInfoCol: {
     flex: 1,
@@ -1159,12 +1159,12 @@ const styles = StyleSheet.create({
   pmNameText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   pmSubText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   pmBrandWrap: {},
@@ -1176,7 +1176,7 @@ const styles = StyleSheet.create({
   pmBrandText: {
     fontFamily: FONTS.bold,
     fontSize: 11,
-    color: '#FFFFFF',
+    color: COLORS.surface,
     letterSpacing: 1,
   },
   expandPaymentBtn: {
@@ -1187,7 +1187,7 @@ const styles = StyleSheet.create({
   expandPaymentText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#172554',
+    color: COLORS.primary,
   },
   appliedCouponRow: {
     flexDirection: 'row-reverse',
@@ -1230,7 +1230,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   couponApplyBtn: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
     height: 44,
     borderRadius: 12,
@@ -1241,18 +1241,18 @@ const styles = StyleSheet.create({
   couponApplyBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   couponTextInput: {
     flex: 1,
     height: 44,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     fontSize: 13,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   couponMsgText: {
     fontFamily: FONTS.bold,
@@ -1275,12 +1275,12 @@ const styles = StyleSheet.create({
   taxInvoiceTitle: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   taxInvoiceSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   errorCard: {
@@ -1306,9 +1306,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: COLORS.border,
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 24 : 12,
@@ -1330,21 +1330,21 @@ const styles = StyleSheet.create({
   bottomTotalLabel: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   bottomTotalValue: {
     fontFamily: FONTS.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   bottomVatSub: {
     fontFamily: FONTS.regular,
     fontSize: 9.5,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
   },
   checkoutBtn: {
     flex: 1,
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     borderRadius: 16,
     height: 48,
     alignItems: 'center',
@@ -1359,12 +1359,12 @@ const styles = StyleSheet.create({
   checkoutBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   termsSubText: {
     fontFamily: FONTS.regular,
     fontSize: 10,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -1376,7 +1376,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: COLORS.primarySoft,
   },
   trustItem: {
     flexDirection: 'row-reverse',
@@ -1386,7 +1386,7 @@ const styles = StyleSheet.create({
   trustText: {
     fontFamily: FONTS.medium,
     fontSize: 10,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   trustDivider: {
     color: '#CBD5E1',
@@ -1403,7 +1403,7 @@ const styles = StyleSheet.create({
   overlayCard: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
@@ -1411,20 +1411,20 @@ const styles = StyleSheet.create({
   overlayTitle: {
     fontFamily: FONTS.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   overlaySub: {
     fontFamily: FONTS.regular,
     fontSize: 13,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
   },
   successBtn: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 14,
@@ -1434,6 +1434,6 @@ const styles = StyleSheet.create({
   successBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });

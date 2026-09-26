@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { useAuthStore, getPaymentMethods, PaymentMethod } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, paddingHorizontal: 12, fontSize: 18, fontFamily: FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
   scrollContent: { width: '100%', maxWidth: 820, alignSelf: 'center', paddingTop: 20, paddingBottom: 64, gap: 12 },
   card: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
     minHeight: 80, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1.5, borderColor: COLORS.border,
   },
   cardDisabled: { opacity: 0.6 },
@@ -149,5 +149,5 @@ const styles = StyleSheet.create({
   loadError: { alignItems: 'center', gap: 10, paddingVertical: 18, paddingHorizontal: 12, backgroundColor: '#FEF2F2', borderRadius: 12 },
   loadErrorText: { color: '#991B1B', textAlign: 'center' },
   retryButton: { minHeight: 44, borderRadius: 10, backgroundColor: COLORS.primary, justifyContent: 'center', paddingHorizontal: 16 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
+  retryText: { color: COLORS.surface, fontWeight: '800' },
 });

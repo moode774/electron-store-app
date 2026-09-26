@@ -10,7 +10,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../theme/customerTheme';
 
 type Props = Omit<TextInputProps, 'style'> & {
   containerStyle?: StyleProp<ViewStyle>;

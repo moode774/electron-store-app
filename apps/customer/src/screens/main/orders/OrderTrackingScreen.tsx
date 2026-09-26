@@ -16,7 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
-import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS } from '../../../theme/customerTheme';
 import {
   useAuthStore,
   getOrderById,
@@ -73,10 +73,10 @@ const REFUND_REASONS = [
 const REFUND_STATUS_META: Record<string, { title: string; detail: string; color: string; background: string; border: string }> = {
   pending: { title: 'طلب الاسترداد المالي قيد المراجعة', detail: 'استلمت الإدارة الطلب وتراجعه حالياً.', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
   approved: { title: 'تمت الموافقة على الاسترداد المالي', detail: 'سيتم استكمال خطوات تنفيذ المبلغ وإثباته.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
-  processing: { title: 'جاري تنفيذ الاسترداد المالي', detail: 'تتم الآن معالجة المبلغ عبر المسار المالي.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
+  processing: { title: 'جاري تنفيذ الاسترداد المالي', detail: 'تتم الآن معالجة المبلغ عبر المسار المالي.', color: COLORS.primaryLight, background: '#EFF6FF', border: '#BFDBFE' },
   completed: { title: 'اكتمل الاسترداد المالي', detail: 'تم إغلاق الطلب بعد تسجيل التنفيذ المالي.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
   rejected: { title: 'تم رفض الاسترداد المالي', detail: 'يمكنك التواصل مع الدعم لمعرفة السبب أو الاعتراض.', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
-  cancelled: { title: 'تم إلغاء الاسترداد المالي', detail: 'هذا الطلب لم يعد قيد المعالجة.', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
+  cancelled: { title: 'تم إلغاء الاسترداد المالي', detail: 'هذا الطلب لم يعد قيد المعالجة.', color: '#475569', background: COLORS.background, border: '#CBD5E1' },
 };
 
 export default function OrderTrackingScreen({ navigation, route }: any) {
@@ -369,7 +369,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const refundStatus = refundRequest ? (REFUND_STATUS_META[refundRequest.status] ?? {
     title: `حالة الاسترداد المالي: ${refundRequest.status}`,
     detail: 'يمكنك متابعة التفاصيل مع مركز الدعم.',
-    color: '#475569', background: '#F8FAFC', border: '#CBD5E1',
+    color: '#475569', background: COLORS.background, border: '#CBD5E1',
   }) : null;
   const refundReason = refundRequest
     ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.label ?? refundRequest.reason)
@@ -378,7 +378,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#172554" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
@@ -408,7 +408,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             onPress={() => setShowSupport(!showSupport)}
             activeOpacity={0.8}
           >
-            <Ionicons name="headset-outline" size={16} color="#172554" />
+            <Ionicons name="headset-outline" size={16} color={COLORS.primary} />
             <Text style={styles.supportPillText}>الدعم</Text>
           </TouchableOpacity>
 
@@ -418,7 +418,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </View>
 
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <Ionicons name="arrow-forward" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -431,7 +431,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => reload(true)}
-            tintColor="#172554"
+            tintColor={COLORS.primary}
           />
         }
       >
@@ -457,7 +457,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </Text>
           {latestLocation ? (
             <TouchableOpacity style={styles.openMapButton} onPress={openTrackedLocation} activeOpacity={0.82}>
-              <Ionicons name="open-outline" size={16} color="#FFFFFF" />
+              <Ionicons name="open-outline" size={16} color={COLORS.surface} />
               <Text style={styles.openMapButtonText}>فتح الموقع على الخريطة</Text>
             </TouchableOpacity>
           ) : null}
@@ -482,7 +482,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Stepper Timeline Progress Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="git-commit-outline" size={18} color="#172554" />
+            <Ionicons name="git-commit-outline" size={18} color={COLORS.primary} />
             <Text style={styles.cardTitle}>مراحل تنفيذ الطلب</Text>
           </View>
 
@@ -506,7 +506,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                       <Ionicons
                         name={(isDone ? 'checkmark' : step.icon) as any}
                         size={14}
-                        color={isDone ? '#FFFFFF' : isCurrent ? '#172554' : '#94A3B8'}
+                        color={isDone ? COLORS.surface : isCurrent ? COLORS.primary : COLORS.textMuted}
                       />
                     </View>
                     {!isLast && (
@@ -541,7 +541,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Address & Delivery Info Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="location-outline" size={18} color="#172554" />
+            <Ionicons name="location-outline" size={18} color={COLORS.primary} />
             <Text style={styles.cardTitle}>تفاصيل التوصيل والمستلم</Text>
           </View>
 
@@ -566,7 +566,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Order Items & Cost Summary Card */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="receipt-outline" size={18} color="#172554" />
+            <Ionicons name="receipt-outline" size={18} color={COLORS.primary} />
             <Text style={styles.cardTitle}>ملخص منتجات الطلب</Text>
           </View>
 
@@ -601,7 +601,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Help & Support Complaint Form Toggle */}
         <View style={styles.card}>
           <TouchableOpacity style={styles.merchantChatBtn} onPress={contactMerchant}>
-            <Ionicons name="chatbubbles-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="chatbubbles-outline" size={18} color={COLORS.surface} />
             <Text style={styles.merchantChatBtnText}>مراسلة المتجر المباشرة</Text>
           </TouchableOpacity>
 
@@ -626,7 +626,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                 disabled={!supportMessage.trim() || sendingSupport}
               >
                 {sendingSupport ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={COLORS.surface} />
                 ) : (
                   <Text style={styles.submitSupportBtnText}>إرسال الشكوى للإدارة</Text>
                 )}
@@ -673,7 +673,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   }
                 >
                   <Text style={styles.optionText}>{r.reason_text_ar}</Text>
-                  <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                  <Ionicons name="chevron-back" size={18} color={COLORS.textMuted} />
                 </TouchableOpacity>
               ))
             )}
@@ -736,7 +736,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   accessibilityState={{ selected }}
                 >
                   <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{r.label}</Text>
-                  <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? COLORS.primary : '#94A3B8'} />
+                  <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? COLORS.primary : COLORS.textMuted} />
                 </TouchableOpacity>
               );
             })}
@@ -761,7 +761,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               accessibilityRole="button"
               accessibilityState={{ disabled: !refundReasonCode || refundDescription.trim().length < 10 || refundSubmitting, busy: refundSubmitting }}
             >
-              {refundSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitSupportBtnText}>إرسال طلب الاسترداد</Text>}
+              {refundSubmitting ? <ActivityIndicator color={COLORS.surface} /> : <Text style={styles.submitSupportBtnText}>إرسال طلب الاسترداد</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => !refundSubmitting && setShowRefund(false)} style={styles.secondaryAction} disabled={refundSubmitting}>
               <Text style={styles.secondaryActionText}>تراجع</Text>
@@ -813,7 +813,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   disabled={rating === 0 || submittingReview}
                 >
                   {submittingReview ? (
-                    <ActivityIndicator color="#FFFFFF" />
+                    <ActivityIndicator color={COLORS.surface} />
                   ) : (
                     <Text style={styles.submitReviewBtnText}>إرسال التقييم</Text>
                   )}
@@ -832,15 +832,15 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingTop: Platform.OS === 'ios' ? 44 : 20,
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.primarySoft,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -851,11 +851,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   headerCenterCol: {
     alignItems: 'center',
@@ -863,21 +863,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONTS.bold,
     fontSize: 19,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   headerSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   supportPillBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
   supportPillText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#172554',
+    color: COLORS.primary,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   openMapButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
     fontSize: 12,
   },
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -969,18 +969,18 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   liveStatusPulse: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   liveStatusText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#172554',
+    color: COLORS.primary,
   },
   centerPinMarker: {
     alignItems: 'center',
@@ -997,17 +997,17 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 6,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   cardHeaderRow: {
     flexDirection: 'row-reverse',
@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: FONTS.bold,
     fontSize: 14.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   driverCardRow: {
     flexDirection: 'row-reverse',
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#F0F5FF',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1041,12 +1041,12 @@ const styles = StyleSheet.create({
   driverNameText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   driverVehicleText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   driverCallBtn: {
@@ -1073,28 +1073,28 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
   },
   timelineCircleDone: {
-    backgroundColor: '#172554',
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   timelineCircleCurrent: {
-    backgroundColor: '#F0F5FF',
-    borderColor: '#172554',
+    backgroundColor: COLORS.primarySoft,
+    borderColor: COLORS.primary,
   },
   timelineVerticalLine: {
     width: 2,
     height: 32,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: COLORS.border,
     marginTop: 2,
   },
   timelineVerticalLineDone: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   timelineDetailsCol: {
     flex: 1,
@@ -1104,28 +1104,28 @@ const styles = StyleSheet.create({
   stepTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
   },
   stepTitleDone: {
-    color: '#172554',
+    color: COLORS.primary,
   },
   stepTitleCurrent: {
-    color: '#172554',
+    color: COLORS.primary,
     fontSize: 13.5,
   },
   stepDescText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
     textAlign: 'right',
   },
   infoBannerBox: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: COLORS.primarySoft,
   },
   infoRow: {
     flexDirection: 'row-reverse',
@@ -1135,7 +1135,7 @@ const styles = StyleSheet.create({
   infoLabelText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#172554',
+    color: COLORS.primary,
   },
   infoValueText: {
     fontFamily: FONTS.regular,
@@ -1157,27 +1157,27 @@ const styles = StyleSheet.create({
   itemNameText: {
     fontFamily: FONTS.bold,
     fontSize: 12.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   itemQtyText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   itemPriceText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#172554',
+    color: COLORS.primary,
   },
   noItemsText: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     textAlign: 'right',
   },
   costDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     marginVertical: 12,
   },
   summaryTotalRow: {
@@ -1188,15 +1188,15 @@ const styles = StyleSheet.create({
   totalPriceLabelText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   totalPriceAmountText: {
     fontFamily: FONTS.bold,
     fontSize: 16,
-    color: '#172554',
+    color: COLORS.primary,
   },
   merchantChatBtn: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     borderRadius: 14,
     height: 48,
     flexDirection: 'row-reverse',
@@ -1207,34 +1207,34 @@ const styles = StyleSheet.create({
   merchantChatBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   supportFormBox: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: COLORS.primarySoft,
   },
   supportFormTitle: {
     fontFamily: FONTS.medium,
     fontSize: 11.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     textAlign: 'right',
     marginBottom: 8,
   },
   supportInput: {
     height: 80,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     borderRadius: 12,
     padding: 10,
     fontSize: 12.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlignVertical: 'top',
   },
   submitSupportBtn: {
-    backgroundColor: '#0F172A',
+    backgroundColor: COLORS.textPrimary,
     borderRadius: 12,
     height: 44,
     alignItems: 'center',
@@ -1244,12 +1244,12 @@ const styles = StyleSheet.create({
   submitSupportBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   actionCardTitle: {
     fontFamily: FONTS.bold,
     fontSize: 14.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'right',
     marginBottom: 6,
   },
@@ -1260,7 +1260,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.primarySoft,
   },
   optionRowSelected: {
     backgroundColor: '#F1F5FB',
@@ -1271,7 +1271,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FONTS.medium,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   optionTextSelected: {
@@ -1285,14 +1285,14 @@ const styles = StyleSheet.create({
   secondaryActionText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   outlineAction: {
     height: 48,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1307,7 +1307,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 11.5,
     lineHeight: 18,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     textAlign: 'right',
     marginTop: 8,
   },
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
   reviewTitle: {
     fontFamily: FONTS.bold,
     fontSize: 14.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'center',
   },
   reviewedText: {
@@ -1387,7 +1387,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitReviewBtn: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
     height: 44,
     paddingHorizontal: 28,
@@ -1398,7 +1398,7 @@ const styles = StyleSheet.create({
   submitReviewBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   loadingContainer: {
     flex: 1,
@@ -1420,12 +1420,12 @@ const styles = StyleSheet.create({
   errorSub: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 4,
     textAlign: 'center',
   },
   retryBtn: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -1434,6 +1434,6 @@ const styles = StyleSheet.create({
   retryBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });

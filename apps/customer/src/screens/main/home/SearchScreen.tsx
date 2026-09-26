@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Category, getCategories, ProductSummary, searchProducts } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';

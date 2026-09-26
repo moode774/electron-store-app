@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
@@ -190,13 +190,13 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={STORE.coverColor} />
-      
+
       <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={[styles.page, layout.tablet && styles.pageWide]}>
         {/* Cover & Header */}
         <View style={[styles.cover, layout.desktop && styles.coverDesktop, { backgroundColor: STORE.coverColor }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
-            <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-forward" size={24} color={COLORS.surface} />
           </TouchableOpacity>
           <View style={styles.coverContent}>
             <Ionicons name={STORE.iconName as any} size={80} color="rgba(255,255,255,0.2)" />
@@ -208,13 +208,13 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
           <View style={styles.storeIconAvatar}>
             <Ionicons name={STORE.iconName as any} size={32} color={COLORS.primary} />
           </View>
-          
+
           <View style={styles.titleRow}>
             <Text style={styles.storeName}>{STORE.name}</Text>
             {STORE.isVerified && <Ionicons name="checkmark-circle" size={18} color="#059669" />}
           </View>
           <Text style={styles.storeDesc}>{STORE.description}</Text>
-          
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <View style={styles.statValRow}>
@@ -246,14 +246,14 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 
         {/* Tabs */}
         <View style={styles.tabsRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'products' && styles.activeTab]}
             onPress={() => setActiveTab('products')}
             activeOpacity={0.7}
           >
             <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>المنتجات</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'about' && styles.activeTab]}
             onPress={() => setActiveTab('about')}
             activeOpacity={0.7}
@@ -301,9 +301,9 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                 <Text style={styles.aboutText}>يقبل المتجر إرجاع المنتجات خلال 3 أيام من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية.</Text>
               </View>
             </View>
-            
+
             <View style={styles.aboutDivider} />
-            
+
             <View style={styles.aboutItem}>
               <View style={styles.aboutIconBox}>
                 <Ionicons name="location-outline" size={20} color={COLORS.primary} />
@@ -357,7 +357,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
             )}
 
             <TouchableOpacity style={styles.chatStoreBtn} onPress={openChat} activeOpacity={0.85}>
-              <Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color={COLORS.surface} />
               <Text style={styles.chatStoreBtnText}>مراسلة المتجر</Text>
             </TouchableOpacity>
           </View>
@@ -371,9 +371,9 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#F9FAFB' 
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB'
   },
   page: { width: '100%', maxWidth: 1120, alignSelf: 'center' },
   pageWide: { marginVertical: 24, overflow: 'hidden', borderRadius: RADIUS.xl, backgroundColor: COLORS.surface },
@@ -381,34 +381,34 @@ const styles = StyleSheet.create({
   errorTitle: { fontSize: 20, fontWeight: '900', color: '#111827' },
   errorMessage: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
   retryButton: { minHeight: 46, minWidth: 150, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
+  retryText: { color: COLORS.surface, fontWeight: '800' },
   backLink: { color: COLORS.primary, fontWeight: '700', padding: 10 },
   backLinkButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  cover: { 
-    height: 180, 
-    paddingTop: 50, 
-    paddingHorizontal: 20 
+  cover: {
+    height: 180,
+    paddingTop: 50,
+    paddingHorizontal: 20
   },
   coverDesktop: { height: 260 },
-  backBtn: { 
+  backBtn: {
     width: 44,
     height: 44,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  coverContent: { 
-    flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  coverContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  infoSection: { 
-    backgroundColor: '#FFFFFF', 
+  infoSection: {
+    backgroundColor: COLORS.surface,
     padding: 24,
     paddingTop: 40,
-    borderBottomLeftRadius: 24, 
-    borderBottomRightRadius: 24, 
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     marginTop: -20,
     borderWidth: 1,
     borderColor: '#F3F4F6',
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -430,66 +430,66 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  titleRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 6, 
-    marginBottom: 8 
+    gap: 6,
+    marginBottom: 8
   },
-  storeName: { 
-    fontSize: 20, 
+  storeName: {
+    fontSize: 20,
     fontFamily: FONTS.bold,
-    color: '#111827' 
+    color: '#111827'
   },
-  storeDesc: { 
-    fontSize: 13, 
-    color: '#6B7280', 
-    lineHeight: 20, 
+  storeDesc: {
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 20,
     textAlign: 'center'
   },
-  statsRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    marginTop: 20, 
-    backgroundColor: '#F9FAFB', 
-    borderRadius: 16, 
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1.5,
     borderColor: '#E5E7EB',
   },
-  statItem: { 
-    alignItems: 'center' 
+  statItem: {
+    alignItems: 'center'
   },
   statValRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  statValue: { 
-    fontSize: 15, 
-    fontWeight: '800', 
-    color: '#111827' 
+  statValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111827'
   },
-  statLabel: { 
-    fontSize: 11, 
-    color: '#6B7280', 
+  statLabel: {
+    fontSize: 11,
+    color: '#6B7280',
     marginTop: 4,
     fontWeight: '500'
   },
-  statDivider: { 
-    width: 1.5, 
-    height: 30, 
-    backgroundColor: '#E5E7EB' 
+  statDivider: {
+    width: 1.5,
+    height: 30,
+    backgroundColor: '#E5E7EB'
   },
-  followBtn: { 
+  followBtn: {
     minHeight: 44,
     justifyContent: 'center',
-    backgroundColor: COLORS.primary, 
-    paddingHorizontal: 20, 
-    paddingVertical: 10, 
-    borderRadius: 12 
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12
   },
   followBtnActive: {
     backgroundColor: '#ECFDF5',
@@ -497,49 +497,49 @@ const styles = StyleSheet.create({
     borderColor: '#059669',
   },
   followBtnText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontSize: 12,
     fontWeight: '700'
   },
   followBtnTextActive: { color: '#059669' },
-  tabsRow: { 
-    flexDirection: 'row', 
-    marginTop: 24, 
+  tabsRow: {
+    flexDirection: 'row',
+    marginTop: 24,
     paddingHorizontal: 24,
     borderBottomWidth: 1.5,
     borderBottomColor: '#E5E7EB',
   },
-  tab: { 
+  tab: {
     minHeight: 44,
     justifyContent: 'center',
-    marginRight: 32, 
-    paddingBottom: 12, 
-    borderBottomWidth: 2, 
-    borderBottomColor: 'transparent' 
+    marginRight: 32,
+    paddingBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent'
   },
-  activeTab: { 
-    borderBottomColor: COLORS.primary 
+  activeTab: {
+    borderBottomColor: COLORS.primary
   },
-  tabText: { 
-    fontSize: 14, 
-    color: '#9CA3AF', 
-    fontWeight: '600' 
+  tabText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontWeight: '600'
   },
-  activeTabText: { 
-    color: COLORS.primary, 
-    fontWeight: '800' 
+  activeTabText: {
+    color: COLORS.primary,
+    fontWeight: '800'
   },
-  productsGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     width: '100%',
     alignSelf: 'center',
   },
-  aboutSection: { 
-    padding: 24, 
-    backgroundColor: '#FFFFFF', 
-    marginTop: 24, 
-    borderRadius: 16, 
+  aboutSection: {
+    padding: 24,
+    backgroundColor: COLORS.surface,
+    marginTop: 24,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: '#F3F4F6',
   },
@@ -558,16 +558,16 @@ const styles = StyleSheet.create({
   aboutContent: {
     flex: 1,
   },
-  aboutTitle: { 
-    fontSize: 14, 
-    fontWeight: '700', 
-    color: '#111827', 
-    marginBottom: 4 
+  aboutTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4
   },
-  aboutText: { 
-    fontSize: 13, 
-    color: '#6B7280', 
-    lineHeight: 22 
+  aboutText: {
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 22
   },
   aboutDivider: {
     height: 1.5,
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
   hourDay: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
   hourTime: { fontSize: 13, color: '#111827', fontWeight: '700' },
   chatStoreBtn: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 14, marginTop: 18 },
-  chatStoreBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  chatStoreBtnText: { color: COLORS.surface, fontWeight: '800', fontSize: 14 },
   reviewRow: { marginTop: 8 },
   reviewStars: { fontSize: 14, color: '#FBBF24' },
   reviewComment: { fontSize: 12.5, color: '#6B7280', marginTop: 2, lineHeight: 18 },

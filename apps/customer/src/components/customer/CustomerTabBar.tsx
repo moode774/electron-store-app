@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'r
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@marketplace/shared-hooks';
-import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '../../theme/customerTheme';
 
 const ITEMS: Record<string, { label: string; active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
   Cart: { label: 'السلة', active: 'bag-handle', idle: 'bag-handle-outline' },
@@ -45,7 +45,7 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
                 <Ionicons
                   name={focused ? item.active : item.idle}
                   size={21}
-                  color={focused ? COLORS.primary : COLORS.textMuted}
+                  color={focused ? COLORS.surface : COLORS.textMuted}
                 />
                 {badge > 0 ? (
                   <View style={styles.badge}>
@@ -64,11 +64,16 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
 
 const styles = StyleSheet.create({
   shell: {
-    paddingTop: 6,
+    paddingTop: 9,
     paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.surface,
+    shadowColor: COLORS.primaryDark,
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.045,
+    shadowRadius: 14,
+    elevation: 7,
   },
   shellFloating: {
     paddingTop: 10,
@@ -76,7 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   bar: {
-    minHeight: 62,
+    minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -100,25 +105,25 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
-    minHeight: 56,
+    minHeight: 60,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
   },
   iconWrap: {
-    minWidth: 42,
-    height: 30,
+    minWidth: 40,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: RADIUS.full,
   },
   iconWrapFocused: {
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: COLORS.primary,
   },
   label: {
     color: COLORS.textMuted,
     fontFamily: FONTS.medium,
-    fontSize: 10.5,
+    fontSize: 11,
     textAlign: 'center',
   },
   labelFocused: {

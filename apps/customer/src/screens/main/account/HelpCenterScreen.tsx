@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
@@ -159,11 +159,11 @@ const styles = StyleSheet.create({
   catChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 22, backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border },
   catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   catChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  catChipTextActive: { color: '#FFFFFF' },
+  catChipTextActive: { color: COLORS.surface },
   ticketInput: { minHeight: 48, backgroundColor: COLORS.background, borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.border, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textPrimary, marginBottom: 10 },
   ticketArea: { minHeight: 90, textAlignVertical: 'top' },
   submitTicket: { backgroundColor: COLORS.primary, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  submitTicketText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  submitTicketText: { color: COLORS.surface, fontWeight: '800', fontSize: 14 },
   ticketError: { color: '#B91C1C', fontSize: 12, fontWeight: '700', textAlign: 'right', marginBottom: 12 },
   ticketRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   ticketSubject: { fontSize: 14, fontWeight: '700', color: '#111827' },
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   ticketStatusBadge: { backgroundColor: '#F0F4FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   ticketStatusText: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
   faqContainer: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16,
+    backgroundColor: COLORS.surface, borderRadius: 16, paddingHorizontal: 16,
     borderWidth: 1.5, borderColor: '#F3F4F6',
   },
   faqItem: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingVertical: 4 },

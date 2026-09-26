@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS } from '../../../theme/customerTheme';
 import {
   useAuthStore,
   useCartStore,
@@ -185,7 +185,7 @@ export default function OrdersListScreen({ navigation }: any) {
           label: 'جاري التجهيز',
           icon: 'cube-outline',
           bgColor: '#EFF6FF',
-          textColor: '#1D4ED8',
+          textColor: COLORS.primaryLight,
           stepIndex: 2,
         };
       // الطلب المعلّق لم يؤكّده المتجر بعد — لا يجوز عرضه كأنه قيد التجهيز
@@ -218,7 +218,7 @@ export default function OrdersListScreen({ navigation }: any) {
         return {
           label: 'جاري المعالجة',
           icon: 'time-outline',
-          bgColor: '#F1F5F9',
+          bgColor: COLORS.primarySoft,
           textColor: '#475569',
           stepIndex: 1,
         };
@@ -252,7 +252,7 @@ export default function OrdersListScreen({ navigation }: any) {
           <View style={styles.headerRightCol}>
             <Text style={styles.orderNumberText}># طلب {item.order_number}</Text>
             <View style={styles.dateSubRow}>
-              <Ionicons name="calendar-outline" size={12} color="#94A3B8" />
+              <Ionicons name="calendar-outline" size={12} color={COLORS.textMuted} />
               <Text style={styles.orderDateText}>{dateFormatted}</Text>
             </View>
           </View>
@@ -264,7 +264,7 @@ export default function OrdersListScreen({ navigation }: any) {
             <Ionicons
               name={item.payment_method === 'cash' || item.payment_method === 'cod' ? 'cash-outline' : 'card-outline'}
               size={14}
-              color="#172554"
+              color={COLORS.primary}
             />
             <Text style={styles.paymentPillText}>{paymentLabel}</Text>
           </View>
@@ -285,8 +285,8 @@ export default function OrdersListScreen({ navigation }: any) {
                 {thumb.uri ? (
                   <Image source={{ uri: thumb.uri }} style={styles.thumbnailImage} resizeMode="cover" />
                 ) : (
-                  <View style={[styles.thumbnailImage, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' }]}>
-                    <Ionicons name="cube-outline" size={18} color="#94A3B8" />
+                  <View style={[styles.thumbnailImage, { alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primarySoft }]}>
+                    <Ionicons name="cube-outline" size={18} color={COLORS.textMuted} />
                   </View>
                 )}
               </View>
@@ -300,7 +300,7 @@ export default function OrdersListScreen({ navigation }: any) {
             {/* Step 1: Confirmed — يكتمل فقط بعد تأكيد المتجر فعلياً */}
             <View style={styles.stepItem}>
               <View style={[styles.stepCircle, statusConfig.stepIndex >= 2 && styles.stepCircleDone]}>
-                {statusConfig.stepIndex >= 2 && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+                {statusConfig.stepIndex >= 2 && <Ionicons name="checkmark" size={12} color={COLORS.surface} />}
               </View>
               <Text style={[styles.stepLabel, statusConfig.stepIndex >= 2 && styles.stepLabelDone]}>تم التأكيد</Text>
             </View>
@@ -316,7 +316,7 @@ export default function OrdersListScreen({ navigation }: any) {
                 ]}
               >
                 {statusConfig.stepIndex > 2 ? (
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={12} color={COLORS.surface} />
                 ) : (
                   <View
                     style={[
@@ -348,7 +348,7 @@ export default function OrdersListScreen({ navigation }: any) {
                 ]}
               >
                 {statusConfig.stepIndex > 3 ? (
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={12} color={COLORS.surface} />
                 ) : (
                   <View
                     style={[
@@ -373,7 +373,7 @@ export default function OrdersListScreen({ navigation }: any) {
             {/* Step 4: Delivered */}
             <View style={styles.stepItem}>
               <View style={[styles.stepCircle, statusConfig.stepIndex >= 4 && styles.stepCircleDone]}>
-                <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={12} color={COLORS.surface} />
               </View>
               <Text style={[styles.stepLabel, statusConfig.stepIndex >= 4 && styles.stepLabelDone]}>
                 تم التوصيل
@@ -385,14 +385,14 @@ export default function OrdersListScreen({ navigation }: any) {
         {/* Address & Expected Delivery Info Banner */}
         <View style={styles.infoBannerBox}>
           <View style={styles.infoBannerRow}>
-            <Ionicons name="location-outline" size={15} color="#64748B" />
+            <Ionicons name="location-outline" size={15} color={COLORS.textSecondary} />
             <Text style={styles.infoBannerText} numberOfLines={1}>
               <Text style={styles.infoBannerLabel}>العنوان: </Text>
               {addressStr}
             </Text>
           </View>
           <View style={[styles.infoBannerRow, { marginTop: 4 }]}>
-            <Ionicons name="time-outline" size={15} color="#172554" />
+            <Ionicons name="time-outline" size={15} color={COLORS.primary} />
             <Text style={styles.infoBannerText}>
               <Text style={styles.infoBannerLabel}>
                 {item.status === ORDER_STATUS.DELIVERED ? 'تم التوصيل في: ' : 'حالة التوصيل: '}
@@ -414,7 +414,7 @@ export default function OrdersListScreen({ navigation }: any) {
               onPress={() => reorder(item.id, storeName)}
               activeOpacity={0.85}
             >
-              <Ionicons name="refresh-outline" size={16} color="#172554" />
+              <Ionicons name="refresh-outline" size={16} color={COLORS.primary} />
               <Text style={styles.reorderPrimaryBtnText}>إعادة الطلب</Text>
             </TouchableOpacity>
           ) : (
@@ -423,7 +423,7 @@ export default function OrdersListScreen({ navigation }: any) {
               onPress={() => navigation.navigate('OrderTracking', { orderId: item.id })}
               activeOpacity={0.85}
             >
-              <Ionicons name="map-outline" size={16} color="#FFFFFF" />
+              <Ionicons name="map-outline" size={16} color={COLORS.surface} />
               <Text style={styles.trackPrimaryBtnText}>تتبع الطلب</Text>
             </TouchableOpacity>
           )}
@@ -452,7 +452,7 @@ export default function OrdersListScreen({ navigation }: any) {
             onPress={() => Alert.alert('خدمة العملاء', 'نحن هنا لمساعدتك على مدار الساعة.')}
             activeOpacity={0.8}
           >
-            <Ionicons name="headset-outline" size={16} color="#172554" />
+            <Ionicons name="headset-outline" size={16} color={COLORS.primary} />
             <Text style={styles.supportPillText}>الدعم</Text>
           </TouchableOpacity>
 
@@ -463,7 +463,7 @@ export default function OrdersListScreen({ navigation }: any) {
 
           {navigation.canGoBack() ? (
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+              <Ionicons name="arrow-forward" size={20} color={COLORS.textPrimary} />
             </TouchableOpacity>
           ) : (
             <View style={{ width: 42 }} />
@@ -533,7 +533,7 @@ export default function OrdersListScreen({ navigation }: any) {
       {/* Main Orders List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#172554" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
         <FlatList
@@ -546,7 +546,7 @@ export default function OrdersListScreen({ navigation }: any) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => loadOrders(true)}
-              tintColor="#172554"
+              tintColor={COLORS.primary}
             />
           }
           ListEmptyComponent={
@@ -574,15 +574,15 @@ export default function OrdersListScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingTop: Platform.OS === 'ios' ? 44 : 20,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.primarySoft,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -593,33 +593,33 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   headerCenterCol: {
     alignItems: 'center',
   },
   headerTitle: {
     fontFamily: FONTS.bold,
-    fontSize: 19,
-    color: '#0F172A',
+    fontSize: 22,
+    color: COLORS.textPrimary,
   },
   headerSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   supportPillBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -632,12 +632,12 @@ const styles = StyleSheet.create({
   supportPillText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#172554',
+    color: COLORS.primary,
   },
   tabsContainer: {
-    marginTop: 14,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 14,
+    marginTop: 18,
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: 16,
     padding: 4,
   },
   tabsScrollContent: {
@@ -648,15 +648,15 @@ const styles = StyleSheet.create({
   tabChip: {
     flex: 1,
     minWidth: 70,
-    height: 38,
-    borderRadius: 10,
+    height: 42,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
   tabChipActive: {
-    backgroundColor: '#172554', // Solid Royal Blue matching mockup
-    shadowColor: '#172554',
+    backgroundColor: COLORS.primary, // Solid Royal Blue matching mockup
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -665,11 +665,11 @@ const styles = StyleSheet.create({
   tabChipText: {
     fontFamily: FONTS.medium,
     fontSize: 12.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   tabChipTextActive: {
     fontFamily: FONTS.bold,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   loadingContainer: {
     flex: 1,
@@ -677,17 +677,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingHorizontal: 20,
+    paddingTop: 18,
     paddingBottom: 120,
     gap: 14,
   },
   orderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    padding: 18,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   orderNumberText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   dateSubRow: {
     flexDirection: 'row-reverse',
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   orderDateText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
   },
   statusBadge: {
     flexDirection: 'row-reverse',
@@ -742,21 +742,21 @@ const styles = StyleSheet.create({
   priceAmountText: {
     fontFamily: FONTS.bold,
     fontSize: 17,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   itemCountText: {
     fontFamily: FONTS.medium,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   paymentPill: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -775,9 +775,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 14,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
@@ -800,59 +800,59 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
   },
   stepCircleDone: {
-    backgroundColor: '#172554',
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   stepCircleActive: {
-    borderColor: '#172554',
-    backgroundColor: '#F0F5FF',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primarySoft,
   },
   stepDotInner: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#94A3B8',
+    backgroundColor: COLORS.textMuted,
   },
   stepDotActiveInner: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   stepLabel: {
     fontFamily: FONTS.medium,
     fontSize: 9.5,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   stepLabelDone: {
-    color: '#172554',
+    color: COLORS.primary,
   },
   stepLabelActive: {
     fontFamily: FONTS.bold,
-    color: '#172554',
+    color: COLORS.primary,
   },
   stepLine: {
     flex: 1,
     height: 2,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: COLORS.border,
     marginHorizontal: 4,
     marginBottom: 14,
   },
   stepLineDone: {
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   infoBannerBox: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderRadius: 14,
     padding: 12,
     marginTop: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: COLORS.primarySoft,
   },
   infoBannerRow: {
     flexDirection: 'row-reverse',
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   },
   infoBannerLabel: {
     fontFamily: FONTS.bold,
-    color: '#172554',
+    color: COLORS.primary,
   },
   actionButtonsRow: {
     flexDirection: 'row-reverse',
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#172554', // Solid Royal Blue matching mockup
+    backgroundColor: COLORS.primary, // Solid Royal Blue matching mockup
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
@@ -888,15 +888,15 @@ const styles = StyleSheet.create({
   trackPrimaryBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   reorderPrimaryBtn: {
     flex: 1,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1.5,
-    borderColor: '#172554',
+    borderColor: COLORS.primary,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
@@ -905,15 +905,15 @@ const styles = StyleSheet.create({
   reorderPrimaryBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#172554',
+    color: COLORS.primary,
   },
   detailsSecondaryBtn: {
     flex: 1,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -931,14 +931,14 @@ const styles = StyleSheet.create({
   emptyTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     marginTop: 14,
     textAlign: 'center',
   },
   emptySubText: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 6,
     textAlign: 'center',
     lineHeight: 18,
@@ -948,11 +948,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   retryBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });

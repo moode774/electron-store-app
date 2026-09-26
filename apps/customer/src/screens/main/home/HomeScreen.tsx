@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  ImageBackground,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -32,7 +33,7 @@ import {
   useAuthStore,
   useCartStore,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '../../../theme/customerTheme';
 import { HomeStackParamList } from '../../../navigation/types';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
@@ -43,7 +44,7 @@ type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
-const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
+const STORE_LOGO_COLORS = ['#EDF2FC', '#EAF1FA', '#E8EFF9', '#F1F4FA', '#E8F0F7', '#EFF2F9'];
 
 function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
   const label = `${category.name_ar ?? ''} ${category.name ?? ''}`.toLowerCase();
@@ -56,27 +57,7 @@ function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
   return 'grid-outline';
 }
 
-// @ts-ignore - Dynamic folder reader for assets/images/banners (Scans directory automatically)
-const bannerContext = require.context('../../../../assets/images/banners', false, /\.(png|jpe?g|svg|webp)$/);
-const DYNAMIC_BANNER_IMAGES = bannerContext.keys().map((key: string, index: number) => ({
-  type: 'image' as const,
-  id: `dyn_banner_${index}`,
-  img: bannerContext(key),
-  route: 'Offers',
-}));
-
-const HERO_BANNERS = [
-  {
-    type: 'content',
-    id: 'c1',
-    title: 'اكتشف الجديد',
-    sub: 'منتجات ومتاجر مختارة في مكان واحد',
-    btnText: 'تسوق الآن',
-    img: require('../../../../assets/images/home/smool_bannar.png'),
-    route: 'Offers',
-  },
-  ...DYNAMIC_BANNER_IMAGES,
-];
+const HERO_IMAGE = require('../../../../assets/images/home/premium-hero-desktop.png');
 
 export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -93,21 +74,6 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [wished, setWished] = useState<Set<string>>(new Set());
-  const [heroIndex, setHeroIndex] = useState<number>(0);
-  const heroScrollRef = React.useRef<ScrollView>(null);
-
-  useEffect(() => {
-    if (HERO_BANNERS.length <= 1) return;
-    const timer = setInterval(() => {
-      setHeroIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % HERO_BANNERS.length;
-        const cardW = layout.usableWidth || 340;
-        heroScrollRef.current?.scrollTo({ x: nextIndex * cardW, animated: true });
-        return nextIndex;
-      });
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [layout.usableWidth]);
 
   const isTabletUp = layout.width >= 768;
   const isDesktopUp = layout.width >= 1024;
@@ -252,7 +218,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           logo_url: s.store_logo_url,
           logo_bg: STORE_LOGO_COLORS[idx % STORE_LOGO_COLORS.length],
           logo_text: s.store_name?.slice(0, 2) || 'متجر',
-          logo_text_color: '#172554',
+          logo_text_color: COLORS.primary,
           is_verified: s.is_approved === true,
         }))
       : [];
@@ -275,11 +241,11 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 accessibilityRole="button"
                 accessibilityLabel="تغيير عنوان التوصيل"
               >
-                <Ionicons name="location" size={17} color="#172554" />
+                <Ionicons name="location" size={17} color={COLORS.primary} />
                 <Text style={styles.locationValueText}>
                   {defaultCity || 'اختر عنوان التوصيل'}
                 </Text>
-                <Ionicons name="chevron-down" size={14} color="#64748B" />
+                <Ionicons name="chevron-down" size={14} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -290,9 +256,14 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               accessibilityRole="button"
               accessibilityLabel="الإشعارات"
             >
-              <Ionicons name="notifications" size={20} color="#172554" />
+              <Ionicons name="notifications" size={20} color={COLORS.primary} />
               {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.welcomeBlock}>
+            <Text style={styles.welcomeEyebrow}>وجهتك لكل جديد</Text>
+            <Text style={styles.welcomeTitle}>تسوّق على ذوقك.</Text>
           </View>
 
           <CustomerSearchField
@@ -308,7 +279,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#172554" />
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={COLORS.primary} />
         }
       >
         <CustomerResponsiveShell>
@@ -316,7 +287,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           {activeOrder ? (
             <View style={styles.activeOrderCard}>
               <View style={styles.activeOrderIconWrap}>
-                <Ionicons name="navigate" size={20} color="#172554" />
+                <Ionicons name="navigate" size={20} color={COLORS.primary} />
               </View>
               <View style={styles.activeOrderInfo}>
                 <Text style={styles.activeOrderTitle}>طلبك رقم #{activeOrder.order_number}</Text>
@@ -332,62 +303,17 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             </View>
           ) : null}
 
-          {/* Swipable Hero Carousel (Content Cards + Full Image Banners) */}
-          <ScrollView
-            ref={heroScrollRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.heroCarouselScroll}
-            onScroll={(e) => {
-              const offsetX = e.nativeEvent.contentOffset.x;
-              const cardW = layout.usableWidth || 340;
-              const index = Math.round(offsetX / cardW);
-              setHeroIndex(Math.max(0, Math.min(HERO_BANNERS.length - 1, index)));
-            }}
-            scrollEventThrottle={16}
-          >
-            {HERO_BANNERS.map((banner) => {
-              if (banner.type === 'image') {
-                return (
-                  <TouchableOpacity
-                    key={banner.id}
-                    style={[styles.heroFullImageCard, { width: layout.usableWidth || '100%' }]}
-                    activeOpacity={0.92}
-                    onPress={() => navigation.navigate(banner.route as any)}
-                  >
-                    <Image source={banner.img} style={styles.heroFullImage} resizeMode="cover" />
-                  </TouchableOpacity>
-                );
-              }
-
-              return (
-                <View key={banner.id} style={[styles.heroCollectionCard, { width: layout.usableWidth || '100%' }]}>
-                  <View style={styles.heroCollectionContent}>
-                    <Text style={styles.heroCollectionTitle}>{banner.title}</Text>
-                    <Text style={styles.heroCollectionSub}>{banner.sub}</Text>
-                    <TouchableOpacity
-                      style={styles.shopNowBtn}
-                      onPress={() => navigation.navigate(banner.route as any)}
-                      activeOpacity={0.88}
-                    >
-                      <Text style={styles.shopNowBtnText}>{banner.btnText}</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.heroCollectionMedia}>
-                    <Image source={banner.img} style={styles.heroCollectionImage} resizeMode="cover" />
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
-
-          {/* 3 Fixed Aesthetic Carousel Dots */}
-          <View style={styles.heroDotsContainer}>
-            <View style={heroIndex % 3 === 0 ? styles.dotActiveDark : styles.dotInactive} />
-            <View style={heroIndex % 3 === 1 ? styles.dotActiveDark : styles.dotInactive} />
-            <View style={heroIndex % 3 === 2 ? styles.dotActiveDark : styles.dotInactive} />
-          </View>
+          <ImageBackground source={HERO_IMAGE} resizeMode="cover" style={[styles.heroCard, isTabletUp && styles.heroCardWide]} imageStyle={styles.heroImage}>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroEyebrow}>اختيارات تستحق الاكتشاف</Text>
+              <Text style={styles.heroTitle}>كل جديد،{ '\n' }على ذوقك.</Text>
+              <Text style={styles.heroSub}>منتجات مميزة من متاجر تثق بها</Text>
+              <TouchableOpacity style={styles.heroButton} onPress={() => navigation.navigate('Offers')} activeOpacity={0.86}>
+                <Text style={styles.heroButtonText}>اكتشف العروض</Text>
+                <Ionicons name="arrow-back" size={16} color={COLORS.primaryDark} />
+              </TouchableOpacity>
+            </View>
+          </ImageBackground>
 
           <CustomerSectionHeader
             title="التصنيفات"
@@ -444,7 +370,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           >
             {displayStores.length === 0 && (
               <View style={styles.storesEmptyState}>
-                <Ionicons name="storefront-outline" size={22} color="#94A3B8" />
+                <Ionicons name="storefront-outline" size={22} color={COLORS.textMuted} />
                 <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة حالياً</Text>
               </View>
             )}
@@ -471,11 +397,11 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                       </Text>
                     </View>
                   ) : (
-                    <Ionicons name="storefront-outline" size={24} color="#172554" />
+                    <Ionicons name="storefront-outline" size={24} color={COLORS.primary} />
                   )}
                   {store.is_verified ? (
                     <View style={styles.verifiedCircleBadge}>
-                      <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                      <Ionicons name="checkmark" size={10} color={COLORS.surface} />
                     </View>
                   ) : null}
                 </View>
@@ -547,9 +473,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: 14,
+    paddingBottom: 18,
   },
   headerTopRow: {
     flexDirection: 'row-reverse',
@@ -563,7 +487,7 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontFamily: FONTS.medium,
     fontSize: 11,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     marginBottom: 2,
   },
   locationPickerRow: {
@@ -574,13 +498,13 @@ const styles = StyleSheet.create({
   locationValueText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#172554',
+    color: COLORS.primary,
   },
   notifCircleBtn: {
     width: 44,
     height: 44,
-    borderRadius: 18,
-    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: 15,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -594,7 +518,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#38BDF8',
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.surface,
   },
   searchRowContainer: {
     flexDirection: 'row-reverse',
@@ -605,7 +529,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: 14,
@@ -613,7 +537,7 @@ const styles = StyleSheet.create({
   },
   searchPlaceholderText: {
     flex: 1,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     fontFamily: FONTS.regular,
     fontSize: 13,
     textAlign: 'right',
@@ -622,10 +546,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#172554', // Deep Dark Slate filter button matching screenshot
+    backgroundColor: COLORS.primary, // Deep Dark Slate filter button matching screenshot
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#172554',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -633,14 +557,91 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 96,
-    paddingTop: 8,
+    paddingTop: 18,
+  },
+  welcomeBlock: {
+    alignItems: 'flex-end',
+    marginTop: 14,
+    marginBottom: 16,
+  },
+  welcomeEyebrow: {
+    color: COLORS.primaryLight,
+    fontFamily: FONTS.semiBold,
+    fontSize: 12,
+    textAlign: 'right',
+  },
+  welcomeTitle: {
+    marginTop: 2,
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.bold,
+    fontSize: 26,
+    lineHeight: 36,
+    textAlign: 'right',
+  },
+  heroCard: {
+    minHeight: 218,
+    borderRadius: 26,
+    overflow: 'hidden',
+    backgroundColor: COLORS.primaryDark,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  heroCardWide: {
+    minHeight: 280,
+  },
+  heroImage: {
+    borderRadius: 26,
+  },
+  heroCopy: {
+    width: '58%',
+    alignItems: 'flex-end',
+    paddingRight: 18,
+    paddingVertical: 18,
+  },
+  heroEyebrow: {
+    color: '#D9BD8C',
+    fontFamily: FONTS.semiBold,
+    fontSize: 10,
+    textAlign: 'right',
+  },
+  heroTitle: {
+    marginTop: 7,
+    color: COLORS.surface,
+    fontFamily: FONTS.bold,
+    fontSize: 23,
+    lineHeight: 31,
+    textAlign: 'right',
+  },
+  heroSub: {
+    marginTop: 4,
+    color: '#DEE7F5',
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: 'right',
+  },
+  heroButton: {
+    minHeight: 38,
+    marginTop: 13,
+    paddingHorizontal: 13,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  heroButtonText: {
+    color: COLORS.primaryDark,
+    fontFamily: FONTS.bold,
+    fontSize: 11,
   },
   activeOrderCard: {
     marginBottom: 16,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     padding: 14,
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -652,19 +653,19 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
   },
   activeOrderInfo: {
     flex: 1,
     alignItems: 'flex-end',
   },
   activeOrderTitle: {
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 13.5,
   },
   activeOrderSub: {
-    color: '#64748B',
+    color: COLORS.textSecondary,
     fontFamily: FONTS.regular,
     fontSize: 11.5,
     marginTop: 3,
@@ -673,104 +674,15 @@ const styles = StyleSheet.create({
   trackButton: {
     minHeight: 38,
     borderRadius: 999,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   trackButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
     fontSize: 12.5,
-  },
-  heroCarouselScroll: {
-    paddingBottom: 4,
-  },
-  heroFullImageCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    minHeight: 150,
-    maxHeight: 150,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-  },
-  heroFullImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroCollectionCard: {
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 18,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 150,
-    marginBottom: 12,
-  },
-  heroCollectionContent: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  heroCollectionTitle: {
-    color: '#172554',
-    fontFamily: FONTS.bold,
-    fontSize: 20,
-    textAlign: 'right',
-  },
-  heroCollectionSub: {
-    color: '#64748B',
-    fontFamily: FONTS.regular,
-    fontSize: 11.5,
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  shopNowBtn: {
-    backgroundColor: '#172554',
-    paddingHorizontal: 20,
-    height: 38,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 14,
-  },
-  shopNowBtnText: {
-    color: '#FFFFFF',
-    fontFamily: FONTS.bold,
-    fontSize: 12.5,
-  },
-  heroCollectionMedia: {
-    width: 120,
-    height: 110,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  heroCollectionImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroDotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginBottom: 16,
-  },
-  dotInactive: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#CBD5E1',
-  },
-  dotActiveDark: {
-    width: 18,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#172554',
   },
   sectionHeader: {
     flexDirection: 'row-reverse',
@@ -780,13 +692,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitleBold: {
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 18,
     textAlign: 'right',
   },
   seeAllLink: {
-    color: '#64748B',
+    color: COLORS.textSecondary,
     fontFamily: FONTS.bold,
     fontSize: 13,
   },
@@ -802,10 +714,12 @@ const styles = StyleSheet.create({
   categoryCircleWrap: {
     width: 66,
     height: 66,
-    borderRadius: 33,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 21,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   categoryCircleName: {
     color: '#334155',
@@ -828,7 +742,7 @@ const styles = StyleSheet.create({
   },
   storesEmptyText: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     fontFamily: FONTS.medium,
   },
   storeCircleItem: {
@@ -838,29 +752,29 @@ const styles = StyleSheet.create({
   storeCircleWrap: {
     width: 68,
     height: 68,
-    borderRadius: 34,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     position: 'relative',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 1,
   },
   storeCircleLogo: {
     width: '100%',
     height: '100%',
-    borderRadius: 34,
+    borderRadius: 22,
     resizeMode: 'cover',
   },
   storeCircleLogoFallback: {
     width: '100%',
     height: '100%',
-    borderRadius: 34,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
@@ -877,15 +791,15 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.surface,
   },
   storeCircleName: {
     width: '100%',
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 12.5,
     marginTop: 8,
@@ -905,15 +819,15 @@ const styles = StyleSheet.create({
   timerBadge: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   timerText: {
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 11.5,
   },
@@ -926,13 +840,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   flashPillSelected: {
-    backgroundColor: '#172554',
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   flashPillText: {
     color: '#475569',
@@ -940,7 +854,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
   },
   flashPillTextSelected: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
   },
   productsGrid: {
@@ -951,10 +865,10 @@ const styles = StyleSheet.create({
   productCard: {
     overflow: 'hidden',
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#172554',
+    borderColor: COLORS.border,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
     shadowRadius: 14,
@@ -964,7 +878,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     aspectRatio: 1.08,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
   },
   productImage: {
     width: '100%',
@@ -974,7 +888,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
   },
   discountBadge: {
     position: 'absolute',
@@ -984,10 +898,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
     borderRadius: 999,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   discountText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
     fontSize: 10,
   },
@@ -1002,7 +916,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   productBody: {
     minHeight: 126,
@@ -1011,7 +925,7 @@ const styles = StyleSheet.create({
   },
   productStore: {
     maxWidth: '100%',
-    color: '#64748B',
+    color: COLORS.textSecondary,
     fontFamily: FONTS.semiBold,
     fontSize: 10.5,
     marginBottom: 3,
@@ -1019,7 +933,7 @@ const styles = StyleSheet.create({
   productName: {
     width: '100%',
     minHeight: 38,
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 13,
     lineHeight: 18,
@@ -1032,12 +946,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   ratingText: {
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 11.5,
   },
   soldText: {
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     fontFamily: FONTS.regular,
     fontSize: 10.5,
   },
@@ -1053,17 +967,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   priceText: {
-    color: '#172554',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontSize: 15.5,
   },
   currencyText: {
-    color: '#64748B',
+    color: COLORS.textSecondary,
     fontFamily: FONTS.medium,
     fontSize: 10.5,
   },
   oldPriceText: {
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     fontFamily: FONTS.regular,
     fontSize: 10.5,
     textDecorationLine: 'line-through',
@@ -1075,7 +989,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   productsEmptyState: {
     minHeight: 220,

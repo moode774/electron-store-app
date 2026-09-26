@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore, updateUserProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
 import { Input } from '@marketplace/shared-ui';
@@ -102,8 +102,8 @@ export default function EditProfileScreen({ navigation }: any) {
               accessibilityState={{ disabled: uploadingAvatar, busy: uploadingAvatar }}
             >
               {uploadingAvatar
-                ? <ActivityIndicator size="small" color="#FFFFFF" />
-                : <Ionicons name="camera" size={14} color="#FFFFFF" />}
+                ? <ActivityIndicator size="small" color={COLORS.surface} />
+                : <Ionicons name="camera" size={14} color={COLORS.surface} />}
             </TouchableOpacity>
           </View>
         </View>
@@ -128,7 +128,7 @@ export default function EditProfileScreen({ navigation }: any) {
           activeOpacity={0.8}
         >
           {isSaving ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
+            <ActivityIndicator color={COLORS.surface} size="small" />
           ) : (
             <Text style={styles.saveBtnText}>حفظ التغييرات</Text>
           )}
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     width: 88, height: 88, borderRadius: 44, backgroundColor: '#111827',
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { fontSize: 30, fontWeight: '800', color: '#FFFFFF' },
+  avatarText: { fontSize: 30, fontWeight: '800', color: COLORS.surface },
   cameraBtn: {
     position: 'absolute', bottom: -4, left: -4, width: 44, height: 44, borderRadius: 16,
     backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
@@ -170,5 +170,5 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary, minHeight: 52, borderRadius: RADIUS.md,
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
-  saveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  saveBtnText: { color: COLORS.surface, fontSize: 15, fontWeight: '800' },
 });

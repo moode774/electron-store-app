@@ -13,7 +13,7 @@ import {
   supabase,
   uploadPrivateFileToStorage,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '../../../theme/customerTheme';
 import { Alert } from '../../../components/appAlert';
 
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -23,9 +23,9 @@ const STATUS_META: Record<string, { title: string; detail: string; color: string
   requested: { title: 'طلب الإرجاع قيد المراجعة', detail: 'وصل الطلب إلى التاجر والإدارة للمراجعة.', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
   approved: { title: 'تمت الموافقة على الإرجاع', detail: 'تنتظر العملية تحديد موعد وطريقة استلام المنتجات.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
   rejected: { title: 'رُفض طلب الإرجاع', detail: 'راجع سبب القرار، ويمكنك فتح شكوى إذا كان لديك اعتراض.', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
-  cancelled: { title: 'أُلغي طلب الإرجاع', detail: 'أُلغي الطلب قبل اعتماده.', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
-  pickup_scheduled: { title: 'تمت جدولة استلام المنتجات', detail: 'سيظهر تقدم المندوب هنا حتى تسليمها إلى المتجر.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
-  picked_up: { title: 'استلم المندوب المنتجات', detail: 'المنتجات الآن بعهدة المندوب وفي طريقها إلى المتجر.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
+  cancelled: { title: 'أُلغي طلب الإرجاع', detail: 'أُلغي الطلب قبل اعتماده.', color: '#475569', background: COLORS.background, border: '#CBD5E1' },
+  pickup_scheduled: { title: 'تمت جدولة استلام المنتجات', detail: 'سيظهر تقدم المندوب هنا حتى تسليمها إلى المتجر.', color: COLORS.primaryLight, background: '#EFF6FF', border: '#BFDBFE' },
+  picked_up: { title: 'استلم المندوب المنتجات', detail: 'المنتجات الآن بعهدة المندوب وفي طريقها إلى المتجر.', color: COLORS.primaryLight, background: '#EFF6FF', border: '#BFDBFE' },
   received: { title: 'وصلت المنتجات إلى المتجر', detail: 'ينتظر الطلب فحص حالة المنتجات والكميات المقبولة.', color: '#6D28D9', background: '#F5F3FF', border: '#DDD6FE' },
   inspected: { title: 'اكتمل فحص المنتجات', detail: 'تراجع الإدارة نتيجة الفحص قبل تنفيذ الاسترداد المالي.', color: '#6D28D9', background: '#F5F3FF', border: '#DDD6FE' },
   completed: { title: 'اكتملت معالجة الإرجاع', detail: 'أُغلقت العملية بعد الفحص وقرار الإدارة المثبت.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
@@ -233,7 +233,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   };
 
   if (loading) {
-    return <View style={styles.loading}><ActivityIndicator color="#172554" /><Text style={styles.loadingText}>جارٍ التحقق من إرجاع المنتجات…</Text></View>;
+    return <View style={styles.loading}><ActivityIndicator color={COLORS.primary} /><Text style={styles.loadingText}>جارٍ التحقق من إرجاع المنتجات…</Text></View>;
   }
 
   const completedWithoutRefund = latestRequest?.status === 'completed'
@@ -292,7 +292,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
 
       {canCreate && !loadError && !showForm ? (
         <TouchableOpacity style={styles.openBtn} onPress={openForm} accessibilityRole="button" accessibilityLabel="فتح طلب إرجاع منتجات">
-          <Ionicons name="cube-outline" size={19} color="#172554" />
+          <Ionicons name="cube-outline" size={19} color={COLORS.primary} />
           <Text style={styles.openBtnText}>{latestRequest?.status === 'completed' ? 'إرجاع كمية متبقية' : 'طلب إرجاع منتجات'}</Text>
         </TouchableOpacity>
       ) : null}
@@ -321,7 +321,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
           {RETURN_REASONS.map((item) => (
             <TouchableOpacity key={item.value} style={[styles.choiceRow, reason === item.value && styles.choiceSelected]} onPress={() => setReason(item.value)} accessibilityRole="radio" accessibilityState={{ selected: reason === item.value }}>
               <Text style={[styles.choiceText, reason === item.value && styles.choiceTextSelected]}>{item.label}</Text>
-              <Ionicons name={reason === item.value ? 'radio-button-on' : 'radio-button-off'} size={20} color={reason === item.value ? '#172554' : '#94A3B8'} />
+              <Ionicons name={reason === item.value ? 'radio-button-on' : 'radio-button-off'} size={20} color={reason === item.value ? COLORS.primary : COLORS.textMuted} />
             </TouchableOpacity>
           ))}
 
@@ -332,7 +332,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
           ] as const).map(([value, label]) => (
             <TouchableOpacity key={value} style={[styles.choiceRow, pickupMethod === value && styles.choiceSelected]} onPress={() => setPickupMethod(value)} accessibilityRole="radio" accessibilityState={{ selected: pickupMethod === value }}>
               <Text style={[styles.choiceText, pickupMethod === value && styles.choiceTextSelected]}>{label}</Text>
-              <Ionicons name={pickupMethod === value ? 'radio-button-on' : 'radio-button-off'} size={20} color={pickupMethod === value ? '#172554' : '#94A3B8'} />
+              <Ionicons name={pickupMethod === value ? 'radio-button-on' : 'radio-button-off'} size={20} color={pickupMethod === value ? COLORS.primary : COLORS.textMuted} />
             </TouchableOpacity>
           ))}
 
@@ -356,7 +356,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
           ))}
           <View style={styles.notice}><Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" /><Text style={styles.noticeText}>المبلغ لا يُنفذ الآن. بعد الاستلام والفحص تحسبه قاعدة البيانات من الكميات المقبولة والتسوية المثبتة، ولا تعيد رسوم التوصيل تلقائيًا.</Text></View>
           <TouchableOpacity style={[styles.submitBtn, (submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0)) && { opacity: 0.5 }]} onPress={submit} disabled={submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0)} accessibilityRole="button" accessibilityState={{ disabled: submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0), busy: submitting }}>
-            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>إرسال طلب إرجاع المنتجات</Text>}
+            {submitting ? <ActivityIndicator color={COLORS.surface} /> : <Text style={styles.submitText}>إرسال طلب إرجاع المنتجات</Text>}
           </TouchableOpacity>
           <TouchableOpacity style={styles.dismissBtn} onPress={() => !submitting && setShowForm(false)} disabled={submitting}><Text style={styles.dismissText}>تراجع</Text></TouchableOpacity>
         </View>
@@ -367,10 +367,10 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
 
 const styles = StyleSheet.create({
   loading: { marginTop: 12, padding: 14, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  loadingText: { color: '#64748B', fontSize: 12 },
+  loadingText: { color: COLORS.textSecondary, fontSize: 12 },
   sectionIntro: { marginTop: 18, padding: 14, borderRadius: RADIUS.md, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
-  sectionTitle: { color: '#172554', fontFamily: FONTS.bold, fontSize: 15, textAlign: 'right' },
-  sectionText: { color: '#1D4ED8', fontSize: 12, lineHeight: 19, textAlign: 'right', marginTop: 4 },
+  sectionTitle: { color: COLORS.primary, fontFamily: FONTS.bold, fontSize: 15, textAlign: 'right' },
+  sectionText: { color: COLORS.primaryLight, fontSize: 12, lineHeight: 19, textAlign: 'right', marginTop: 4 },
   statusCard: { marginTop: 10, padding: 15, borderRadius: 14, borderWidth: 1 },
   statusTitle: { fontWeight: '900', fontSize: 15, textAlign: 'right' },
   statusText: { fontSize: 12.5, lineHeight: 19, textAlign: 'right', marginTop: 4 },
@@ -378,34 +378,34 @@ const styles = StyleSheet.create({
   cancelRequestText: { color: '#B91C1C', fontSize: 12, fontWeight: '800' },
   errorCard: { marginTop: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
   errorText: { color: '#991B1B', fontSize: 12, lineHeight: 19, textAlign: 'right' },
-  openBtn: { minHeight: 48, marginTop: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#172554', flexDirection: 'row-reverse', gap: 7, alignItems: 'center', justifyContent: 'center' },
-  openBtnText: { color: '#1D4ED8', fontWeight: '900', fontSize: 14 },
-  formCard: { margin: 16, padding: 16, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#CBD5E1' },
-  formTitle: { color: '#0F172A', fontWeight: '900', fontSize: 14, textAlign: 'right', marginBottom: 7 },
-  itemRow: { minHeight: 68, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
+  openBtn: { minHeight: 48, marginTop: 10, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.primary, flexDirection: 'row-reverse', gap: 7, alignItems: 'center', justifyContent: 'center' },
+  openBtnText: { color: COLORS.primaryLight, fontWeight: '900', fontSize: 14 },
+  formCard: { margin: 16, padding: 16, backgroundColor: COLORS.surface, borderRadius: 16, borderWidth: 1, borderColor: '#CBD5E1' },
+  formTitle: { color: COLORS.textPrimary, fontWeight: '900', fontSize: 14, textAlign: 'right', marginBottom: 7 },
+  itemRow: { minHeight: 68, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   itemInfo: { flex: 1, minWidth: 180 },
-  itemName: { color: '#0F172A', fontWeight: '800', fontSize: 13, textAlign: 'right' },
-  itemSub: { color: '#64748B', fontSize: 11, textAlign: 'right', marginTop: 3 },
+  itemName: { color: COLORS.textPrimary, fontWeight: '800', fontSize: 13, textAlign: 'right' },
+  itemSub: { color: COLORS.textSecondary, fontSize: 11, textAlign: 'right', marginTop: 3 },
   counter: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
   counterBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  counterText: { color: '#1D4ED8', fontSize: 19, fontWeight: '900' },
-  quantity: { minWidth: 22, textAlign: 'center', color: '#0F172A', fontWeight: '900' },
-  choiceRow: { minHeight: 52, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  counterText: { color: COLORS.primaryLight, fontSize: 19, fontWeight: '900' },
+  quantity: { minWidth: 22, textAlign: 'center', color: COLORS.textPrimary, fontWeight: '900' },
+  choiceRow: { minHeight: 52, flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   choiceSelected: { backgroundColor: '#EFF6FF', borderRadius: 10, borderBottomColor: '#BFDBFE' },
   choiceText: { color: '#334155', fontSize: 13, fontWeight: '700' },
-  choiceTextSelected: { color: '#1D4ED8' },
-  input: { minHeight: 105, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12, padding: 12, color: '#0F172A', textAlignVertical: 'top', marginTop: 14 },
+  choiceTextSelected: { color: COLORS.primaryLight },
+  input: { minHeight: 105, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12, padding: 12, color: COLORS.textPrimary, textAlignVertical: 'top', marginTop: 14 },
   evidenceHeader: { flexDirection: 'row-reverse', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginTop: 16 },
-  evidenceHint: { color: '#64748B', fontSize: 10.5, textAlign: 'right' },
+  evidenceHint: { color: COLORS.textSecondary, fontSize: 10.5, textAlign: 'right' },
   addEvidenceBtn: { minHeight: 44, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#EFF6FF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 },
-  addEvidenceText: { color: '#1D4ED8', fontWeight: '900', fontSize: 12 },
-  evidenceRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  addEvidenceText: { color: COLORS.primaryLight, fontWeight: '900', fontSize: 12 },
+  evidenceRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   evidenceName: { flex: 1, color: '#475569', fontSize: 12, textAlign: 'right' },
   removeEvidenceBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   notice: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 7, backgroundColor: '#EFF6FF', borderRadius: 11, padding: 11, marginTop: 10 },
   noticeText: { flex: 1, color: '#1E40AF', fontSize: 11.5, lineHeight: 18, textAlign: 'right' },
   submitBtn: { minHeight: 48, backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
-  submitText: { color: '#FFFFFF', fontWeight: '900' },
+  submitText: { color: COLORS.surface, fontWeight: '900' },
   dismissBtn: { minHeight: 44, paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
-  dismissText: { color: '#64748B', fontWeight: '800' },
+  dismissText: { color: COLORS.textSecondary, fontWeight: '800' },
 });

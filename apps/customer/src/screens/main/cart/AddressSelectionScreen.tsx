@@ -12,7 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SERVICE_AREAS, COLORS, FONTS } from '@marketplace/shared-utils';
+import { SERVICE_AREAS, COLORS, FONTS } from '../../../theme/customerTheme';
 import {
   Address,
   useAuthStore,
@@ -233,7 +233,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <Ionicons name="arrow-forward" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>عنوان التوصيل</Text>
@@ -247,7 +247,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* Step 1: Cart */}
           <View style={styles.stepCol}>
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
-              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={14} color={COLORS.surface} />
             </View>
             <Text style={[styles.stepLabel, styles.stepLabelDone]}>سلة المشتريات</Text>
           </View>
@@ -256,7 +256,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* Step 2: Address (ACTIVE) */}
           <View style={styles.stepCol}>
             <View style={[styles.stepCircle, styles.stepCircleActive]}>
-              <Ionicons name="location" size={15} color="#FFFFFF" />
+              <Ionicons name="location" size={15} color={COLORS.surface} />
             </View>
             <Text style={[styles.stepLabel, styles.stepLabelActive]}>العنوان</Text>
           </View>
@@ -265,7 +265,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* Step 3: Payment */}
           <View style={styles.stepCol}>
             <View style={styles.stepCircle}>
-              <Ionicons name="card-outline" size={15} color="#94A3B8" />
+              <Ionicons name="card-outline" size={15} color={COLORS.textMuted} />
             </View>
             <Text style={styles.stepLabel}>الدفع</Text>
           </View>
@@ -274,7 +274,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* Step 4: Confirm */}
           <View style={styles.stepCol}>
             <View style={styles.stepCircle}>
-              <Ionicons name="checkmark-done-outline" size={15} color="#94A3B8" />
+              <Ionicons name="checkmark-done-outline" size={15} color={COLORS.textMuted} />
             </View>
             <Text style={styles.stepLabel}>تأكيد الطلب</Text>
           </View>
@@ -321,7 +321,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         <View style={styles.card}>
           {/* 1. المدينة */}
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="location-outline" size={16} color="#172554" />
+            <Ionicons name="location-outline" size={16} color={COLORS.primary} />
             <Text style={styles.sectionTitleText}>المدينة</Text>
           </View>
           <View style={styles.cityChipsRow}>
@@ -334,7 +334,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                   onPress={() => setSelectedCity(cityKey)}
                   activeOpacity={0.8}
                 >
-                  {isSelected && <Ionicons name="checkmark-circle" size={16} color="#172554" style={{ marginLeft: 4 }} />}
+                  {isSelected && <Ionicons name="checkmark-circle" size={16} color={COLORS.primary} style={{ marginLeft: 4 }} />}
                   <Text style={[styles.cityChipText, isSelected && styles.cityChipTextSelected]}>
                     {AREA_LABELS[cityKey] || cityKey}
                   </Text>
@@ -345,7 +345,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
 
           {/* 2. نوع العنوان */}
           <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
-            <Ionicons name="pricetag-outline" size={16} color="#172554" />
+            <Ionicons name="pricetag-outline" size={16} color={COLORS.primary} />
             <Text style={styles.sectionTitleText}>نوع العنوان</Text>
           </View>
           <View style={styles.typeChipsRow}>
@@ -361,7 +361,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                   <Ionicons
                     name={(isSelected ? typeObj.selectedIcon : typeObj.icon) as any}
                     size={16}
-                    color={isSelected ? '#FFFFFF' : '#64748B'}
+                    color={isSelected ? COLORS.surface : COLORS.textSecondary}
                     style={{ marginLeft: 6 }}
                   />
                   <Text style={[styles.typeChipText, isSelected && styles.typeChipTextSelected]}>
@@ -375,7 +375,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 3. الشارع والحي * */}
           <View style={styles.inputFieldContainer}>
             <View style={styles.inputIconWrap}>
-              <Ionicons name="location-outline" size={18} color="#94A3B8" />
+              <Ionicons name="location-outline" size={18} color={COLORS.textMuted} />
             </View>
             <View style={styles.inputCol}>
               <Text style={styles.inputLabelText}>الشارع والحي *</Text>
@@ -393,7 +393,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 4. أقرب معلم بارز (اختياري) */}
           <View style={styles.inputFieldContainer}>
             <View style={styles.inputIconWrap}>
-              <Ionicons name="business-outline" size={18} color="#94A3B8" />
+              <Ionicons name="business-outline" size={18} color={COLORS.textMuted} />
             </View>
             <View style={styles.inputCol}>
               <Text style={styles.inputLabelText}>أقرب معلم بارز (اختياري)</Text>
@@ -411,7 +411,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 5. رقم هاتف جهة التواصل عند التوصيل (اختياري) */}
           <View style={styles.inputFieldContainer}>
             <View style={styles.inputIconWrap}>
-              <Ionicons name="call-outline" size={18} color="#94A3B8" />
+              <Ionicons name="call-outline" size={18} color={COLORS.textMuted} />
             </View>
             <View style={styles.inputCol}>
               <Text style={styles.inputLabelText}>رقم هاتف جهة التواصل عند التوصيل (اختياري)</Text>
@@ -432,11 +432,11 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <Switch
               value={makeDefault}
               onValueChange={setMakeDefault}
-              trackColor={{ false: '#CBD5E1', true: '#172554' }}
+              trackColor={{ false: '#CBD5E1', true: COLORS.primary }}
               thumbColor="#FFFFFF"
             />
             <View style={styles.switchRightTextWrap}>
-              <Ionicons name="shield-checkmark-outline" size={16} color="#172554" style={{ marginLeft: 6 }} />
+              <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.primary} style={{ marginLeft: 6 }} />
               <Text style={styles.switchLabelText}>حفظ هذا العنوان لاستخدامه مستقبلاً في حسابك</Text>
             </View>
           </View>
@@ -445,12 +445,12 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         {/* Section 2: العناوين المحفوظة */}
         <View style={styles.card}>
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="bookmark-outline" size={18} color="#172554" />
+            <Ionicons name="bookmark-outline" size={18} color={COLORS.primary} />
             <Text style={styles.sectionTitleText}>العناوين المحفوظة</Text>
           </View>
 
           {loadingAddresses ? (
-            <ActivityIndicator size="small" color="#172554" style={{ marginVertical: 14 }} />
+            <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 14 }} />
           ) : savedAddresses.length > 0 ? (
             <View style={styles.savedList}>
               {savedAddresses.map((item) => {
@@ -476,7 +476,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                       accessibilityRole="button"
                       accessibilityLabel="إدارة العناوين"
                     >
-                      <Ionicons name="ellipsis-vertical" size={16} color="#94A3B8" />
+                      <Ionicons name="ellipsis-vertical" size={16} color={COLORS.textMuted} />
                     </TouchableOpacity>
 
                     {/* Middle Column: Details */}
@@ -500,7 +500,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                         <Ionicons
                           name={isHome ? 'home-outline' : 'briefcase-outline'}
                           size={18}
-                          color="#172554"
+                          color={COLORS.primary}
                         />
                       </View>
                       <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
@@ -520,7 +520,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       {/* Fixed Bottom Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.bottomSubRow}>
-          <Ionicons name="shield-checkmark-outline" size={14} color="#64748B" />
+          <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.textSecondary} />
           <Text style={styles.bottomSubText}>سيتم استخدام هذا العنوان لإتمام الطلب</Text>
         </View>
 
@@ -531,10 +531,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           activeOpacity={0.88}
         >
           {submitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={COLORS.surface} />
           ) : (
             <View style={styles.continueBtnInner}>
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={18} color={COLORS.surface} />
               <Text style={styles.continueBtnText}>المتابعة إلى الدفع</Text>
             </View>
           )}
@@ -547,15 +547,15 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingTop: Platform.OS === 'ios' ? 44 : 20,
     paddingHorizontal: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.primarySoft,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -566,11 +566,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   headerCenterCol: {
     alignItems: 'center',
@@ -578,12 +578,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: FONTS.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   headerSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   stepperRow: {
@@ -600,15 +600,15 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   stepCircleActive: {
-    backgroundColor: '#172554', // Dark Royal Blue
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary, // Dark Royal Blue
+    borderColor: COLORS.primary,
   },
   stepCircleDone: {
     backgroundColor: '#059669',
@@ -617,12 +617,12 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontFamily: FONTS.medium,
     fontSize: 10,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   stepLabelActive: {
     fontFamily: FONTS.bold,
-    color: '#172554',
+    color: COLORS.primary,
   },
   stepLabelDone: {
     color: '#059669',
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
   stepLine: {
     flex: 1,
     height: 2,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: COLORS.border,
     marginHorizontal: 6,
     marginBottom: 14,
   },
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#EBF3FE',
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.borderStrong,
     overflow: 'hidden',
     marginBottom: 14,
     position: 'relative',
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -704,12 +704,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   floatingLocateText: {
     fontFamily: FONTS.bold,
     fontSize: 11.5,
-    color: '#172554',
+    color: COLORS.primary,
   },
   mapCenterPinWrap: {
     alignItems: 'center',
@@ -726,22 +726,22 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#172554',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 6,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   sectionHeaderRow: {
     flexDirection: 'row-reverse',
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
   sectionTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   cityChipsRow: {
     flexDirection: 'row-reverse',
@@ -762,25 +762,25 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row-reverse',
   },
   cityChipSelected: {
-    borderColor: '#172554',
-    backgroundColor: '#F0F5FF',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primarySoft,
   },
   cityChipText: {
     fontFamily: FONTS.medium,
     fontSize: 12.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   cityChipTextSelected: {
     fontFamily: FONTS.bold,
-    color: '#172554',
+    color: COLORS.primary,
   },
   typeChipsRow: {
     flexDirection: 'row-reverse',
@@ -790,32 +790,32 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row-reverse',
   },
   typeChipSelected: {
-    backgroundColor: '#172554', // Solid Royal Blue matching mockup
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary, // Solid Royal Blue matching mockup
+    borderColor: COLORS.primary,
   },
   typeChipText: {
     fontFamily: FONTS.medium,
     fontSize: 11.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   typeChipTextSelected: {
     fontFamily: FONTS.bold,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   inputFieldContainer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -832,13 +832,13 @@ const styles = StyleSheet.create({
   inputLabelText: {
     fontFamily: FONTS.medium,
     fontSize: 10.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 4,
   },
   textInputStyle: {
     fontFamily: FONTS.regular,
     fontSize: 12.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     width: '100%',
     paddingVertical: 4,
   },
@@ -849,7 +849,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: COLORS.primarySoft,
   },
   switchRightTextWrap: {
     flexDirection: 'row-reverse',
@@ -870,12 +870,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   savedAddressCardSelected: {
-    borderColor: '#172554',
-    backgroundColor: '#F0F5FF',
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primarySoft,
   },
   dotsBtn: {
     padding: 6,
@@ -894,10 +894,10 @@ const styles = StyleSheet.create({
   savedLabelText: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   preferredBadge: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: COLORS.borderStrong,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -905,12 +905,12 @@ const styles = StyleSheet.create({
   preferredBadgeText: {
     fontFamily: FONTS.bold,
     fontSize: 9.5,
-    color: '#172554',
+    color: COLORS.primary,
   },
   savedFullAddressText: {
     fontFamily: FONTS.regular,
     fontSize: 11.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 3,
     textAlign: 'right',
   },
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -937,18 +937,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioCircleSelected: {
-    borderColor: '#172554',
+    borderColor: COLORS.primary,
   },
   radioDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
   },
   noAddressesText: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     textAlign: 'right',
     marginTop: 6,
   },
@@ -957,9 +957,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: COLORS.border,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: Platform.OS === 'ios' ? 24 : 12,
@@ -979,10 +979,10 @@ const styles = StyleSheet.create({
   bottomSubText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   continueBtn: {
-    backgroundColor: '#172554', // Solid Royal Blue matching mockup
+    backgroundColor: COLORS.primary, // Solid Royal Blue matching mockup
     borderRadius: 16,
     height: 48,
     alignItems: 'center',
@@ -997,6 +997,6 @@ const styles = StyleSheet.create({
   continueBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });

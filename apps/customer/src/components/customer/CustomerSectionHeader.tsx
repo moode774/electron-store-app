@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '../../theme/customerTheme';
 
 type Props = {
   title: string;
@@ -20,7 +20,10 @@ export function CustomerSectionHeader({
     <View style={styles.container}>
       <View style={styles.titleWrap}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <View style={styles.titleMarker} />
+          <Text style={styles.title}>{title}</Text>
+        </View>
       </View>
       {actionLabel && onActionPress ? (
         <TouchableOpacity
@@ -40,17 +43,28 @@ export function CustomerSectionHeader({
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 48,
+    minHeight: 52,
     flexDirection: 'row-reverse',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: 28,
-    marginBottom: 12,
+    marginTop: 29,
+    marginBottom: 14,
     gap: 12,
   },
   titleWrap: {
     flex: 1,
     alignItems: 'flex-end',
+  },
+  titleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+  },
+  titleMarker: {
+    width: 4,
+    height: 22,
+    borderRadius: 3,
+    backgroundColor: COLORS.accentCoral,
   },
   eyebrow: {
     color: COLORS.primary,
@@ -61,7 +75,7 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.textPrimary,
     fontFamily: FONTS.bold,
-    fontSize: 19,
+    fontSize: 20,
     textAlign: 'right',
   },
   action: {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image, Share } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
@@ -182,7 +182,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           </View>
 
           <Text style={styles.productName}>{PRODUCT.name}</Text>
-          
+
           <View style={styles.priceRow}>
             <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.ي</Text></Text>
             {PRODUCT.oldPrice ? (
@@ -244,7 +244,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           {/* Description */}
           <Text style={styles.sectionTitle}>تفاصيل المنتج</Text>
           <Text style={styles.description}>{PRODUCT.description}</Text>
-          
+
         </View>
         </View>
         </View>
@@ -254,8 +254,8 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       <View style={styles.bottomBar}>
         <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }, layout.compact && styles.bottomBarInnerCompact]}>
         <View style={styles.quantityWrap}>
-          <TouchableOpacity 
-            style={styles.qtyBtn} 
+          <TouchableOpacity
+            style={styles.qtyBtn}
             onPress={() => setQuantity(Math.max(1, quantity - 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
@@ -320,18 +320,18 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#FFFFFF' 
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.surface
   },
-  errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12, backgroundColor: '#FFFFFF' },
+  errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12, backgroundColor: COLORS.surface },
   errorTitle: { fontSize: 20, fontWeight: '900', color: '#111827' },
   errorMessage: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
   retryButton: { marginTop: 8, minWidth: 150, minHeight: 46, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  retryButtonText: { color: '#FFFFFF', fontWeight: '800' },
+  retryButtonText: { color: COLORS.surface, fontWeight: '800' },
   backLink: { color: COLORS.primary, fontWeight: '700', padding: 10 },
   backLinkButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { 
+  scrollContent: {
     paddingBottom: 132,
   },
   page: { width: '100%', maxWidth: 1180, alignSelf: 'center' },
@@ -339,28 +339,28 @@ const styles = StyleSheet.create({
   productLayoutDesktop: { flexDirection: 'row-reverse', alignItems: 'stretch', gap: 24, paddingTop: 28 },
   mediaPanel: { width: '100%', position: 'relative' },
   mediaPanelDesktop: { flex: 1, minWidth: 0, overflow: 'hidden', borderRadius: RADIUS.xl, backgroundColor: COLORS.background },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
-    paddingTop: Platform.OS === 'ios' ? 60 : 40, 
-    position: 'absolute', 
-    top: 0, 
-    left: 0, 
-    right: 0, 
-    zIndex: 10 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10
   },
   headerDesktop: { paddingTop: 20 },
-  headerRight: { 
-    flexDirection: 'row', 
-    gap: 12 
+  headerRight: {
+    flexDirection: 'row',
+    gap: 12
   },
-  iconBtn: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
-    backgroundColor: '#FFFFFF', 
-    alignItems: 'center', 
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -381,36 +381,36 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  dots: { 
-    position: 'absolute', 
-    bottom: 24, 
-    flexDirection: 'row', 
-    gap: 8 
+  dots: {
+    position: 'absolute',
+    bottom: 24,
+    flexDirection: 'row',
+    gap: 8
   },
-  dot: { 
-    width: 6, 
-    height: 6, 
-    borderRadius: 3, 
-    backgroundColor: '#D1D5DB' 
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D1D5DB'
   },
-  dotActive: { 
-    width: 24, 
-    backgroundColor: '#111827' 
+  dotActive: {
+    width: 24,
+    backgroundColor: '#111827'
   },
-  infoContainer: { 
-    padding: 24, 
-    backgroundColor: '#FFFFFF', 
-    borderTopLeftRadius: 32, 
-    borderTopRightRadius: 32, 
+  infoContainer: {
+    padding: 24,
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     marginTop: -32,
     paddingBottom: 40,
   },
   infoContainerDesktop: { flex: 1, minWidth: 0, marginTop: 0, borderRadius: RADIUS.xl, padding: 32, paddingBottom: 32 },
-  storeRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 16 
+  storeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16
   },
   storePill: {
     minHeight: 44,
@@ -422,69 +422,69 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
   },
-  storeName: { 
-    fontSize: 13, 
-    color: COLORS.primary, 
-    fontWeight: '700' 
+  storeName: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '700'
   },
-  ratingBadge: { 
+  ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7', 
-    paddingHorizontal: 8, 
-    paddingVertical: 4, 
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
     gap: 4,
   },
-  ratingText: { 
-    fontSize: 12, 
-    fontWeight: '800', 
-    color: '#B45309' 
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#B45309'
   },
   reviewsText: {
     fontSize: 11,
     color: '#D97706',
     fontWeight: '600',
   },
-  productName: { 
-    fontSize: 20, 
+  productName: {
+    fontSize: 20,
     fontFamily: FONTS.bold,
-    color: '#111827', 
-    lineHeight: 30 
+    color: '#111827',
+    lineHeight: 30
   },
-  priceRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 16 
+    marginTop: 16
   },
-  price: { 
-    fontSize: 24, 
-    fontWeight: '800', 
-    color: COLORS.primary 
+  price: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.primary
   },
   currency: {
     fontSize: 14,
     fontWeight: '600',
   },
-  oldPrice: { 
-    fontSize: 14, 
-    color: '#9CA3AF', 
+  oldPrice: {
+    fontSize: 14,
+    color: '#9CA3AF',
     textDecorationLine: 'line-through',
     marginLeft: 0,
   },
-  discountBadge: { 
-    backgroundColor: '#EF4444', 
-    paddingHorizontal: 8, 
-    paddingVertical: 4, 
+  discountBadge: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
     marginLeft: 0,
   },
-  discountText: { 
-    color: '#FFFFFF', 
-    fontSize: 11, 
-    fontWeight: '800' 
+  discountText: {
+    color: COLORS.surface,
+    fontSize: 11,
+    fontWeight: '800'
   },
   soldRow: {
     flexDirection: 'row',
@@ -521,21 +521,21 @@ const styles = StyleSheet.create({
     color: '#059669',
     fontWeight: '700',
   },
-  soldText: { 
-    fontSize: 12, 
-    color: '#DC2626', 
-    fontWeight: '700', 
+  soldText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '700',
   },
-  divider: { 
-    height: 1.5, 
-    backgroundColor: '#F3F4F6', 
-    marginVertical: 24 
+  divider: {
+    height: 1.5,
+    backgroundColor: '#F3F4F6',
+    marginVertical: 24
   },
-  sectionTitle: { 
-    fontSize: 16, 
-    fontWeight: '800', 
-    color: '#111827', 
-    marginBottom: 16 
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 16
   },
   variantsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   variantChip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB' },
@@ -547,74 +547,74 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16
   },
-  colorCircleWrap: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
-    borderWidth: 2, 
-    borderColor: 'transparent', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  colorCircleWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  colorCircleWrapActive: { 
-    borderColor: COLORS.primary 
+  colorCircleWrapActive: {
+    borderColor: COLORS.primary
   },
-  colorCircle: { 
-    width: 32, 
-    height: 32, 
-    borderRadius: 16, 
-    borderWidth: 1, 
-    borderColor: 'rgba(0,0,0,0.1)' 
+  colorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)'
   },
-  description: { 
-    fontSize: 14, 
-    color: '#4B5563', 
-    lineHeight: 26, 
+  description: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 26,
     fontWeight: '500',
   },
-  bottomBar: { 
-    position: 'absolute', 
-    bottom: 0, 
-    left: 0, 
-    right: 0, 
-    backgroundColor: '#FFFFFF', 
-    borderTopWidth: 1.5, 
-    borderTopColor: '#F3F4F6', 
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1.5,
+    borderTopColor: '#F3F4F6',
     alignItems: 'center',
   },
   bottomBarInner: { width: '100%', maxWidth: 820, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 16, paddingTop: 12, paddingBottom: Platform.OS === 'ios' ? 32 : 16 },
   bottomBarInnerCompact: { gap: 8 },
-  quantityWrap: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#F9FAFB', 
-    borderRadius: 14, 
+  quantityWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
     height: 52,
     borderWidth: 1.5,
     borderColor: '#E5E7EB',
   },
-  qtyBtn: { 
-    width: 44, 
-    height: 52, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  qtyBtn: {
+    width: 44,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  qtyText: { 
-    fontSize: 16, 
-    fontWeight: '800', 
-    color: '#111827', 
-    width: 32, 
-    textAlign: 'center' 
+  qtyText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    width: 32,
+    textAlign: 'center'
   },
-  addToCartBtn: { 
-    flex: 1, 
+  addToCartBtn: {
+    flex: 1,
     minWidth: 0,
-    backgroundColor: COLORS.primary, 
-    height: 52, 
-    borderRadius: 14, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
+    backgroundColor: COLORS.primary,
+    height: 52,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingLeft: 24,
     paddingRight: 8,
     shadowColor: COLORS.primary,
@@ -625,11 +625,11 @@ const styles = StyleSheet.create({
   },
   addToCartText: {
     flexShrink: 1,
-    color: '#FFFFFF', 
-    fontSize: 15, 
+    color: COLORS.surface,
+    fontSize: 15,
     fontWeight: '800',
   },
-  addToCartPriceBox: { 
+  addToCartPriceBox: {
     flexShrink: 1,
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
@@ -637,8 +637,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   addToCartPrice: {
-    color: '#FFFFFF', 
-    fontSize: 13, 
+    color: COLORS.surface,
+    fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
   },

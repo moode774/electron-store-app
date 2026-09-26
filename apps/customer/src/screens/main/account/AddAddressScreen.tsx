@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import * as Location from 'expo-location';
 import { Alert } from '../../../components/appAlert';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '../../../theme/customerTheme';
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';

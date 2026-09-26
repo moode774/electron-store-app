@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '../../../theme/customerTheme';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 const CONTENT = {

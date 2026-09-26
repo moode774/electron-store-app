@@ -6,7 +6,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { BREAKPOINTS } from '@marketplace/shared-utils';
+import { BREAKPOINTS } from '../../theme/customerTheme';
 
 const MAX_CONTENT_WIDTH = 1320;
 

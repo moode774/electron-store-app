@@ -20,7 +20,7 @@ import {
   useAuthStore,
   useCartStore,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
 // اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
@@ -134,8 +134,8 @@ export default function CartScreen({ navigation }: any) {
       {/* Header Bar */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+          <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.getParent()?.navigate('Home')}>
+            <Ionicons name="arrow-forward" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.headerCenterRow}>
@@ -200,7 +200,7 @@ export default function CartScreen({ navigation }: any) {
                         <Ionicons
                           name={isWishlisted ? 'heart' : 'heart-outline'}
                           size={18}
-                          color={isWishlisted ? '#EF4444' : '#64748B'}
+                          color={isWishlisted ? '#EF4444' : COLORS.textSecondary}
                         />
                       </TouchableOpacity>
 
@@ -208,7 +208,7 @@ export default function CartScreen({ navigation }: any) {
                         style={styles.actionIconButton}
                         onPress={() => removeFromCart(item.id)}
                       >
-                        <Ionicons name="trash-outline" size={18} color="#64748B" />
+                        <Ionicons name="trash-outline" size={18} color={COLORS.textSecondary} />
                       </TouchableOpacity>
                     </View>
 
@@ -218,7 +218,7 @@ export default function CartScreen({ navigation }: any) {
                         style={[styles.checkboxSquare, isSelected && styles.checkboxSquareActive]}
                         onPress={() => toggleSelected(item.id)}
                       >
-                        {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                        {isSelected && <Ionicons name="checkmark" size={14} color={COLORS.surface} />}
                       </TouchableOpacity>
 
                       <Text style={styles.itemPriceText}>
@@ -232,7 +232,7 @@ export default function CartScreen({ navigation }: any) {
                         style={styles.stepperBtn}
                         onPress={() => updateQuantity(item.id, item.quantity + 1)}
                       >
-                        <Ionicons name="add" size={14} color="#0F172A" />
+                        <Ionicons name="add" size={14} color={COLORS.textPrimary} />
                       </TouchableOpacity>
 
                       <Text style={styles.stepperQtyText}>{item.quantity}</Text>
@@ -241,7 +241,7 @@ export default function CartScreen({ navigation }: any) {
                         style={styles.stepperBtn}
                         onPress={() => updateQuantity(item.id, item.quantity - 1)}
                       >
-                        <Ionicons name="remove" size={14} color="#0F172A" />
+                        <Ionicons name="remove" size={14} color={COLORS.textPrimary} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -277,7 +277,7 @@ export default function CartScreen({ navigation }: any) {
                       <Image source={{ uri: rec.image }} style={styles.recImg} resizeMode="cover" />
                     ) : (
                       <View style={[styles.recImg, { alignItems: 'center', justifyContent: 'center' }]}>
-                        <Ionicons name="cube-outline" size={28} color="#94A3B8" />
+                        <Ionicons name="cube-outline" size={28} color={COLORS.textMuted} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -310,7 +310,7 @@ export default function CartScreen({ navigation }: any) {
                         })
                       }
                     >
-                      <Ionicons name="add" size={16} color="#FFFFFF" />
+                      <Ionicons name="add" size={16} color={COLORS.surface} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -323,26 +323,11 @@ export default function CartScreen({ navigation }: any) {
       {/* Fixed Compact Bottom Checkout Footer Card */}
       <View style={styles.fixedBottomFooter}>
         <View style={styles.footerInnerContainer}>
-          {/* Order Totals Summary */}
           <View style={styles.orderTotalsCol}>
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>المجموع الفرعي ({totalCount} منتجات)</Text>
-              <Text style={styles.totalsVal}>{totalPrice.toLocaleString()} ر.ي</Text>
-            </View>
-
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>تكلفة التوصيل</Text>
-              <View style={styles.shippingValRow}>
-                <Text style={styles.totalsLabel}>تُحسب حسب عنوانك عند إتمام الطلب</Text>
-              </View>
-            </View>
-
-            <View style={styles.totalsDivider} />
-
-            <View style={styles.totalsRow}>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.grandTotalLabel}>الإجمالي</Text>
-                <Text style={styles.vatText}>قبل رسوم التوصيل</Text>
+            <View style={styles.totalSummaryRow}>
+              <View style={styles.totalSummaryCopy}>
+                <Text style={styles.grandTotalLabel}>المجموع ({totalCount} منتجات)</Text>
+                <Text style={styles.vatText}>تُحسب رسوم التوصيل بعد اختيار العنوان</Text>
               </View>
               <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.ي</Text>
             </View>
@@ -356,7 +341,7 @@ export default function CartScreen({ navigation }: any) {
             activeOpacity={0.88}
           >
             <View style={styles.checkoutBtnInner}>
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <Ionicons name="arrow-back" size={18} color={COLORS.surface} />
               <Text style={styles.checkoutBtnText}>
                 {activeCartItems.length === 0 ? 'حدد منتجاً للمتابعة' : 'إتمام الطلب'}
               </Text>
@@ -371,11 +356,11 @@ export default function CartScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
   },
   emptyContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -384,7 +369,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: '#F0F5FF',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -392,34 +377,34 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontFamily: FONTS.bold,
     fontSize: 22,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     marginBottom: 6,
   },
   emptySub: {
     fontFamily: FONTS.regular,
     fontSize: 14,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 26,
   },
   browseBtn: {
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 16,
   },
   browseBtnText: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
     fontSize: 15,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingTop: Platform.OS === 'ios' ? 44 : 24,
     paddingHorizontal: 16,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.border,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -430,11 +415,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   headerCenterRow: {
     flexDirection: 'row-reverse',
@@ -444,10 +429,10 @@ const styles = StyleSheet.create({
   headerTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   headerBadgePill: {
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -457,36 +442,36 @@ const styles = StyleSheet.create({
   headerBadgeText: {
     fontFamily: FONTS.bold,
     fontSize: 11,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
   editButton: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   editText: {
     fontFamily: FONTS.medium,
     fontSize: 12,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 220,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 156,
   },
   freeShippingCard: {
-    backgroundColor: '#F0F5FF',
+    backgroundColor: COLORS.primarySoft,
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.borderStrong,
   },
   freeShippingRightCol: {
     flexDirection: 'row-reverse',
@@ -497,7 +482,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -508,12 +493,12 @@ const styles = StyleSheet.create({
   freeShippingTitle: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   freeShippingSub: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
     textAlign: 'right',
   },
@@ -522,13 +507,13 @@ const styles = StyleSheet.create({
   },
   progressBarTrack: {
     height: 6,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: COLORS.borderStrong,
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     borderRadius: 3,
   },
   progressLabelsRow: {
@@ -539,18 +524,18 @@ const styles = StyleSheet.create({
   progressLabelText: {
     fontFamily: FONTS.regular,
     fontSize: 10,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   cartItemsListContainer: {
     gap: 14,
     marginBottom: 20,
   },
   cartItemCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   cartItemContentRow: {
     flexDirection: 'row-reverse',
@@ -562,7 +547,7 @@ const styles = StyleSheet.create({
     height: 86,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
   },
   productImg: {
     width: '100%',
@@ -583,13 +568,13 @@ const styles = StyleSheet.create({
   productNameText: {
     fontFamily: FONTS.bold,
     fontSize: 14,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   productVariantText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
     textAlign: 'right',
   },
@@ -614,7 +599,7 @@ const styles = StyleSheet.create({
   deliveryBadgeText: {
     fontFamily: FONTS.regular,
     fontSize: 10,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   productActionsCol: {
     alignItems: 'center',
@@ -629,11 +614,11 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   priceCheckboxRow: {
     flexDirection: 'row-reverse',
@@ -649,24 +634,24 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   checkboxSquareActive: {
-    backgroundColor: '#172554',
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   itemPriceText: {
     fontFamily: FONTS.bold,
     fontSize: 14.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
@@ -674,16 +659,16 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   stepperQtyText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     width: 24,
     textAlign: 'center',
   },
@@ -696,12 +681,12 @@ const styles = StyleSheet.create({
   recommendationsTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 16.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   viewAllText: {
     fontFamily: FONTS.bold,
     fontSize: 12.5,
-    color: '#172554',
+    color: COLORS.primary,
   },
   recommendationsScroll: {
     flexDirection: 'row-reverse',
@@ -711,11 +696,11 @@ const styles = StyleSheet.create({
   },
   recCard: {
     width: 140,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   recImgWrap: {
     width: '100%',
@@ -723,7 +708,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   recImg: {
     width: '100%',
@@ -736,14 +721,14 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recTitleText: {
     fontFamily: FONTS.medium,
     fontSize: 11.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     marginTop: 6,
     textAlign: 'right',
   },
@@ -756,19 +741,19 @@ const styles = StyleSheet.create({
   recPriceText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   recOldPriceText: {
     fontFamily: FONTS.regular,
     fontSize: 9.5,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     textDecorationLine: 'line-through',
   },
   recAddBtn: {
     width: 26,
     height: 26,
     borderRadius: 8,
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -777,19 +762,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: COLORS.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.06,
     shadowRadius: 16,
     elevation: 10,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
   },
   footerInnerContainer: {
     width: '100%',
@@ -804,8 +789,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   orderTotalsCol: {
-    flex: 1.15,
-    gap: 4,
+    flex: 1,
+  },
+  totalSummaryRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  totalSummaryCopy: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
   totalsRow: {
     flexDirection: 'row-reverse',
@@ -815,12 +809,12 @@ const styles = StyleSheet.create({
   totalsLabel: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   totalsVal: {
     fontFamily: FONTS.bold,
     fontSize: 11.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   shippingValRow: {
     flexDirection: 'row-reverse',
@@ -830,7 +824,7 @@ const styles = StyleSheet.create({
   oldShippingText: {
     fontFamily: FONTS.regular,
     fontSize: 10,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     textDecorationLine: 'line-through',
   },
   freeGreenText: {
@@ -840,40 +834,40 @@ const styles = StyleSheet.create({
   },
   totalsDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     marginVertical: 3,
   },
   grandTotalLabel: {
     fontFamily: FONTS.bold,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   vatText: {
     fontFamily: FONTS.regular,
     fontSize: 9,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
   },
   grandTotalVal: {
     fontFamily: FONTS.bold,
-    fontSize: 16.5,
-    color: '#0F172A',
+    fontSize: 19,
+    color: COLORS.primary,
   },
   couponBoxBtn: {
     flex: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     padding: 10,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     gap: 8,
   },
   couponIconCircle: {
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: '#F0F5FF',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -884,15 +878,15 @@ const styles = StyleSheet.create({
   couponTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 11.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   couponSubText: {
     fontFamily: FONTS.regular,
     fontSize: 9.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   checkoutBtn: {
-    backgroundColor: '#172554', // Dark Royal Blue
+    backgroundColor: COLORS.primary, // Dark Royal Blue
     borderRadius: 16,
     height: 48,
     justifyContent: 'center',
@@ -907,6 +901,6 @@ const styles = StyleSheet.create({
   checkoutBtnText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: COLORS.surface,
   },
 });

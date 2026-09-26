@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 
@@ -100,8 +100,8 @@ export default function OffersScreen({ navigation }: any) {
                     accessibilityRole="button"
                     accessibilityLabel={`نسخ الرمز ${item.code}`}
                   >
-                    <Ionicons name={isCopied ? 'checkmark' : 'copy-outline'} size={14} color={isCopied ? '#FFFFFF' : COLORS.primary} />
-                    <Text style={[styles.copyBtnText, isCopied && { color: '#FFFFFF' }]}>
+                    <Ionicons name={isCopied ? 'checkmark' : 'copy-outline'} size={14} color={isCopied ? COLORS.surface : COLORS.primary} />
+                    <Text style={[styles.copyBtnText, isCopied && { color: COLORS.surface }]}>
                       {isCopied ? 'تم النسخ' : 'نسخ'}
                     </Text>
                   </TouchableOpacity>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
   errorText: { color: '#991B1B', textAlign: 'center' },
   retryButton: { minHeight: 44, borderRadius: 11, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
+  retryText: { color: COLORS.surface, fontWeight: '800' },
   header: {
     paddingTop: Platform.OS === 'ios' ? 48 : 32,
   },
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   listContent: { width: '100%', maxWidth: 1320, alignSelf: 'center', paddingTop: 16, paddingBottom: 110 },
   listRow: { flexDirection: 'row-reverse' },
   card: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
     minHeight: 142, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1.5, borderColor: COLORS.border, overflow: 'hidden',
   },
   sideBar: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 4 },

@@ -12,15 +12,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '../../../theme/customerTheme';
 import { Category, getCategories, getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
-const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
+const STORE_LOGO_COLORS = ['#EDF2FC', '#EAF1FA', '#E8EFF9', '#F1F4FA', '#E8F0F7', '#EFF2F9'];
 
 function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
   const label = name.toLowerCase();
@@ -32,43 +31,7 @@ function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
   return 'grid-outline';
 }
 
-const STORE_CAROUSEL_CARDS = [
-  {
-    id: 's1',
-    title: 'تسوق من المتاجر المتاحة',
-    sub: 'تصفح المنتجات والمتاجر المتاحة وقارن قبل الطلب',
-    btnText: 'استكشف المنتجات',
-    route: 'Search',
-    img: require('../../../../assets/images/bannerstoor/delfre.png'),
-  },
-  {
-    id: 's2',
-    title: 'متاجر متاحة للتسوق 🏬',
-    sub: 'استكشف المتاجر النشطة والمنتجات المعروضة حالياً',
-    btnText: 'استكشف المنتجات',
-    route: 'Search',
-    img: require('../../../../assets/images/home/premium-hero-desktop.png'),
-  },
-  {
-    id: 's3',
-    title: 'رسوم توصيل واضحة 🚚',
-    sub: 'رسوم التوصيل تُحسب حسب منطقة الخدمة وتظهر قبل تأكيد الطلب',
-    btnText: 'ابدأ التسوق',
-    route: 'Search',
-    img: require('../../../../assets/images/bannerstoor/delfre.png'),
-  },
-  {
-    id: 's4',
-    title: 'عروض وحسومات المتاجر ⚡',
-    sub: 'شاهد العروض المتاحة من المتاجر عند توفرها',
-    btnText: 'شاهد العروض',
-    route: 'Offers',
-    img: require('../../../../assets/images/bannerstoor/add.png'),
-  },
-];
-
 export default function StoresListScreen({ navigation, route }: any) {
-  const layout = useCustomerLayout();
   const insets = useSafeAreaInsets();
   const categoryId = typeof route?.params?.categoryId === 'string' ? route.params.categoryId : '';
 
@@ -78,20 +41,6 @@ export default function StoresListScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>(categoryId);
-  const [heroIndex, setHeroIndex] = useState<number>(0);
-  const heroScrollRef = React.useRef<ScrollView>(null);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setHeroIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % STORE_CAROUSEL_CARDS.length;
-        const cardW = layout.usableWidth || 340;
-        heroScrollRef.current?.scrollTo({ x: nextIndex * cardW, animated: true });
-        return nextIndex;
-      });
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [layout.usableWidth]);
 
   const loadStores = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
@@ -148,7 +97,7 @@ export default function StoresListScreen({ navigation, route }: any) {
     logo_url: s.store_logo_url,
     logo_bg: STORE_LOGO_COLORS[idx % STORE_LOGO_COLORS.length],
     logo_text: s.store_name?.slice(0, 2) || 'متجر',
-    logo_text_color: '#172554',
+    logo_text_color: COLORS.primary,
     is_verified: s.is_approved === true,
   }));
 
@@ -179,11 +128,11 @@ export default function StoresListScreen({ navigation, route }: any) {
               </Text>
             </View>
           ) : (
-            <Ionicons name="storefront-outline" size={26} color="#172554" />
+            <Ionicons name="storefront-outline" size={26} color={COLORS.primary} />
           )}
           {item.is_verified ? (
             <View style={styles.storeRowVerifiedBadge}>
-              <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={10} color={COLORS.surface} />
             </View>
           ) : null}
         </View>
@@ -205,23 +154,9 @@ export default function StoresListScreen({ navigation, route }: any) {
           ) : null}
         </View>
 
-        {/* Stats Column: Rating & Reviews (بيانات حقيقية من القاعدة) */}
-        <View style={styles.storeRowStatsCol}>
-          <View style={styles.statSubCol}>
-            <View style={styles.statIconRow}>
-              <Ionicons name="star" size={13} color={item.rating > 0 ? '#F59E0B' : '#CBD5E1'} />
-              <Text style={styles.statValText}>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</Text>
-            </View>
-            <Text style={styles.statLabelText}>التقييم</Text>
-          </View>
-
-          <View style={styles.statSubCol}>
-            <View style={styles.statIconRow}>
-              <Ionicons name="chatbubble-ellipses-outline" size={13} color="#64748B" />
-              <Text style={styles.statValText}>{item.reviews_count}</Text>
-            </View>
-            <Text style={styles.statLabelText}>التقييمات</Text>
-          </View>
+        <View style={styles.ratingPill}>
+          <Ionicons name="star" size={13} color="#D99522" />
+          <Text style={styles.ratingValue}>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</Text>
         </View>
 
       </TouchableOpacity>
@@ -284,51 +219,16 @@ export default function StoresListScreen({ navigation, route }: any) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#172554" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
       >
-        {/* 4 Swipable Content Cards Carousel for StoresListScreen */}
-        <ScrollView
-          ref={heroScrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.heroCarouselScroll}
-          onScroll={(e) => {
-            const offsetX = e.nativeEvent.contentOffset.x;
-            const cardW = layout.usableWidth || 340;
-            const index = Math.round(offsetX / cardW);
-            setHeroIndex(Math.max(0, Math.min(STORE_CAROUSEL_CARDS.length - 1, index)));
-          }}
-          scrollEventThrottle={16}
-        >
-          {STORE_CAROUSEL_CARDS.map((card) => (
-            <View key={card.id} style={[styles.heroCardContainer, { width: layout.usableWidth || '100%' }]}>
-              <View style={styles.heroTextCol}>
-                <Text style={styles.heroTitleText}>{card.title}</Text>
-                <Text style={styles.heroSubTitleText}>{card.sub}</Text>
-
-                <TouchableOpacity
-                  style={styles.heroCtaBtn}
-                  onPress={() => navigation.navigate(card.route as any)}
-                  activeOpacity={0.88}
-                >
-                  <Text style={styles.heroCtaText}>{card.btnText}</Text>
-                  <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.heroGraphicCol}>
-                <Image source={card.img} style={styles.heroGraphicImg} resizeMode="contain" />
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* 3 Fixed Aesthetic Dots */}
-        <View style={styles.carouselDotsRow}>
-          <View style={[styles.dot, heroIndex % 3 === 0 && styles.dotActive]} />
-          <View style={[styles.dot, heroIndex % 3 === 1 && styles.dotActive]} />
-          <View style={[styles.dot, heroIndex % 3 === 2 && styles.dotActive]} />
+        <View style={styles.introCard}>
+          <View style={styles.introIcon}>
+            <Ionicons name="storefront-outline" size={24} color={COLORS.surface} />
+          </View>
+          <View style={styles.introCopy}>
+            <Text style={styles.introTitle}>متاجر تختار منها بثقة</Text>
+            <Text style={styles.introText}>استكشف المتاجر والمنتجات المتاحة الآن.</Text>
+          </View>
         </View>
 
         {/* Section Header */}
@@ -336,7 +236,7 @@ export default function StoresListScreen({ navigation, route }: any) {
           <View style={styles.sectionTitleGroup}>
             <View style={styles.sectionTitleRow}>
               <Text style={styles.sectionTitleText}>المتاجر</Text>
-              <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
+              <Ionicons name="sparkles" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
             </View>
             <Text style={styles.sectionSubTitleText}>المتاجر النشطة المتاحة حالياً</Text>
           </View>
@@ -349,7 +249,7 @@ export default function StoresListScreen({ navigation, route }: any) {
         {/* Stores List */}
         {loading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color="#172554" />
+            <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
         ) : (
           <View style={styles.storesListContainer}>
@@ -393,7 +293,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
     borderRadius: 16,
     paddingHorizontal: 14,
     height: 48,
@@ -402,7 +302,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FONTS.regular,
     fontSize: 13.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     marginHorizontal: 8,
     textAlign: 'right',
   },
@@ -410,10 +310,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#172554',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -430,14 +330,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     gap: 7,
   },
   chipPillActive: {
-    backgroundColor: '#172554',
-    borderColor: '#172554',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   chipIconWrap: {
     width: 24,
@@ -445,10 +345,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: COLORS.primarySoft,
   },
   chipIconWrapActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   chipText: {
     fontFamily: FONTS.medium,
@@ -456,100 +356,48 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
   chipTextActive: {
-    color: '#FFFFFF',
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 18,
     paddingBottom: 40,
   },
-  heroCarouselScroll: {
-    paddingBottom: 4,
-  },
-  heroCardContainer: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
+  introCard: {
+    minHeight: 106,
+    padding: 18,
+    marginBottom: 25,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'relative',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
+    gap: 14,
+    borderRadius: 22,
+    backgroundColor: COLORS.primaryDark,
   },
-  heroTextCol: {
+  introIcon: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 17,
+    backgroundColor: COLORS.primaryLight,
+  },
+  introCopy: {
     flex: 1,
     alignItems: 'flex-end',
-    zIndex: 2,
   },
-  heroTitleText: {
+  introTitle: {
+    color: COLORS.surface,
     fontFamily: FONTS.bold,
-    fontSize: 20,
-    color: '#0F172A',
+    fontSize: 17,
     textAlign: 'right',
   },
-  heroSubTitleText: {
-    fontFamily: FONTS.regular,
-    fontSize: 11.5,
-    color: '#64748B',
-    lineHeight: 18,
+  introText: {
     marginTop: 4,
+    color: '#D8E3F7',
+    fontFamily: FONTS.regular,
+    fontSize: 11,
     textAlign: 'right',
-  },
-  heroCtaBtn: {
-    backgroundColor: '#172554',
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    height: 38,
-    borderRadius: 16,
-    marginTop: 14,
-    gap: 6,
-    shadowColor: '#172554',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  heroCtaText: {
-    fontFamily: FONTS.bold,
-    fontSize: 12.5,
-    color: '#FFFFFF',
-  },
-  heroGraphicCol: {
-    width: 120,
-    height: 110,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  heroGraphicImg: {
-    width: '100%',
-    height: '100%',
-  },
-  carouselDotsRow: {
-    position: 'absolute',
-    bottom: 10,
-    left: '46%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#CBD5E1',
-  },
-  dotActive: {
-    backgroundColor: '#172554',
-    width: 16,
   },
   sectionHeaderRow: {
     flexDirection: 'row-reverse',
@@ -567,18 +415,18 @@ const styles = StyleSheet.create({
   sectionTitleText: {
     fontFamily: FONTS.bold,
     fontSize: 18,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   sectionSubTitleText: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   viewAllText: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#64748B',
+    color: COLORS.textSecondary,
   },
   emptyStoresState: {
     alignItems: 'center',
@@ -595,7 +443,7 @@ const styles = StyleSheet.create({
   },
   emptyStoresSub: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     fontFamily: FONTS.regular,
     textAlign: 'center',
     lineHeight: 20,
@@ -606,38 +454,38 @@ const styles = StyleSheet.create({
   storeRowCard: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
+    borderColor: COLORS.border,
+    shadowColor: COLORS.textPrimary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
     shadowRadius: 14,
     elevation: 2,
   },
   storeRowLogoWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#FFFFFF',
+    width: 60,
+    height: 60,
+    borderRadius: 19,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     position: 'relative',
   },
   storeRowLogo: {
     width: '100%',
     height: '100%',
-    borderRadius: 29,
+    borderRadius: 19,
     resizeMode: 'cover',
   },
   storeRowLogoFallback: {
     width: '100%',
     height: '100%',
-    borderRadius: 29,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 2,
@@ -654,11 +502,11 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#172554',
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.surface,
   },
   storeRowMainInfo: {
     flex: 1,
@@ -668,15 +516,31 @@ const styles = StyleSheet.create({
   storeRowName: {
     fontFamily: FONTS.bold,
     fontSize: 14.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   storeRowCategory: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginTop: 2,
     textAlign: 'right',
+  },
+  ratingPill: {
+    minWidth: 51,
+    height: 28,
+    paddingHorizontal: 7,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    borderRadius: 10,
+    backgroundColor: '#FFF7E8',
+  },
+  ratingValue: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.bold,
+    fontSize: 11,
   },
   freeDeliveryPill: {
     flexDirection: 'row-reverse',
@@ -710,23 +574,23 @@ const styles = StyleSheet.create({
   statValText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   statLabelText: {
     fontFamily: FONTS.regular,
     fontSize: 9.5,
-    color: '#94A3B8',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   storeRowHeartBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   loadingWrap: {
     height: 180,

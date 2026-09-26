@@ -17,7 +17,7 @@ import {
   getReferralCode,
   deleteMyAccount,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { COLORS, FONTS, RADIUS } from '../../../theme/customerTheme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AccountStackParamList } from '../../../navigation/types';
 import { Alert } from '../../../components/appAlert';
@@ -128,7 +128,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                     style={styles.avatarEditBadge}
                     onPress={() => navigation.navigate('EditProfile')}
                   >
-                    <Ionicons name="pencil" size={11} color="#FFFFFF" />
+                    <Ionicons name="pencil" size={11} color={COLORS.surface} />
                   </TouchableOpacity>
                 </View>
 
@@ -139,7 +139,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   </View>
                   <Text style={styles.userSubText} numberOfLines={1}>{userSub}</Text>
                   <View style={styles.premiumBadgePill}>
-                    <Ionicons name="star-outline" size={12} color={COLORS.primary} />
+                    <Ionicons name="star" size={12} color="#E9C886" />
                     <Text style={styles.premiumBadgeText}>{points.toLocaleString('ar-SA')} نقطة</Text>
                   </View>
                 </View>
@@ -190,9 +190,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
               </TouchableOpacity>
             )}
 
-            {/* Exact Loyalty Points Card Matching User's Image */}
             <View style={styles.loyaltyCard}>
-              {/* Header Row: Title & Sparkles Badge */}
               <View style={styles.loyaltyHeaderRow}>
                 <View style={styles.sparklesCircleWrap}>
                   <Ionicons name="diamond-outline" size={24} color={COLORS.primary} />
@@ -204,32 +202,17 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   </Text>
                 </View>
               </View>
-
-              {/* Progress Container Row */}
-              <View style={styles.progressContainer}>
-                <View style={styles.chartIconSquare}>
-                  <Ionicons name="stats-chart-outline" size={18} color="#0F172A" />
-                </View>
-                <View style={styles.progressTextCol}>
-                  <View style={styles.progressHeaderRow}>
-                    <Text style={styles.progressSubText}>باق 250 نقطة للحصول على قسيمة 50 رس</Text>
-                    <Text style={styles.progressNumText}>75%</Text>
-                  </View>
-                  <View style={styles.progressBarTrack}>
-                    <View style={[styles.progressBarFill, { width: '75%' }]} />
-                  </View>
-                </View>
-              </View>
+              <Text style={styles.loyaltyHint}>اجمع نقاطًا مع طلباتك واستكشف مزاياها عند توفرها.</Text>
 
               {/* Referral & Redeem Footer Row */}
               <View style={styles.referralBox}>
                 <TouchableOpacity
                   style={styles.redeemBtn}
                   activeOpacity={0.85}
-                  onPress={() => Alert.alert('متجر المكافآت', 'سيتم تحويل نقاطك إلى خصومات وكوبونات شرائية عند إتمام الطلبات.')}
+                  onPress={() => Alert.alert('نقاطك', 'تظهر مزايا النقاط المتاحة عند إتمام الطلبات.')}
                 >
-                  <Ionicons name="gift-outline" size={16} color="#0F172A" style={{ marginLeft: 6 }} />
-                  <Text style={styles.redeemBtnText}>استبدل النقاط</Text>
+                  <Ionicons name="gift-outline" size={16} color={COLORS.textPrimary} style={{ marginLeft: 6 }} />
+                  <Text style={styles.redeemBtnText}>كيف أستخدمها؟</Text>
                 </TouchableOpacity>
 
                 {!!referral && (
@@ -239,10 +222,10 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       style={styles.referralBadge}
                       activeOpacity={0.85}
                       onPress={() => {
-                        Alert.alert('تم نسخ الكود', `تم نسخ كود الإحالة (${referral}) بنجاح.`);
+                        Alert.alert('كود الإحالة', referral);
                       }}
                     >
-                      <Ionicons name="copy-outline" size={15} color="#0F172A" style={{ marginLeft: 6 }} />
+                      <Ionicons name="information-circle-outline" size={15} color={COLORS.primary} style={{ marginLeft: 6 }} />
                       <Text style={styles.referralCode}>{referral}</Text>
                     </TouchableOpacity>
                   </View>
@@ -269,7 +252,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       </View>
                       <Text style={styles.menuItemText}>{item.title}</Text>
                     </View>
-                    <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                    <Ionicons name="chevron-back" size={18} color={COLORS.textMuted} />
                   </TouchableOpacity>
                   {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
                 </React.Fragment>
@@ -376,12 +359,10 @@ const styles = StyleSheet.create({
   desktopSummary: { flex: 0.9 },
   desktopSettings: { flex: 1.1 },
   profileHeaderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 18,
+    backgroundColor: COLORS.primaryDark,
+    borderRadius: 24,
+    padding: 20,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   profileInfoRow: {
     flexDirection: 'row-reverse',
@@ -394,7 +375,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     borderWidth: 2,
-    borderColor: COLORS.primary, // #1E3A8A Dark Royal Blue
+    borderColor: '#8EA9DC',
   },
   avatarImg: {
     width: '100%',
@@ -418,7 +399,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.surface,
   },
   profileTextCol: {
     flex: 1,
@@ -431,13 +412,13 @@ const styles = StyleSheet.create({
   userNameText: {
     fontFamily: FONTS.bold,
     fontSize: 17,
-    color: COLORS.textPrimary, // #0F172A
+    color: COLORS.surface,
     textAlign: 'right',
   },
   userSubText: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: '#CAD6EB',
     marginTop: 2,
     textAlign: 'right',
   },
@@ -445,7 +426,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: '#243962',
     paddingHorizontal: 9,
     paddingVertical: 3,
     borderRadius: 12,
@@ -454,10 +435,10 @@ const styles = StyleSheet.create({
   premiumBadgeText: {
     fontFamily: FONTS.bold,
     fontSize: 10.5,
-    color: COLORS.primary,
+    color: COLORS.surface,
   },
   statsCardContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     paddingVertical: 14,
     flexDirection: 'row-reverse',
@@ -518,12 +499,12 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   loyaltyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 22,
+    padding: 18,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: COLORS.primarySoft,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
@@ -542,7 +523,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     backgroundColor: COLORS.primarySoft,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -553,27 +534,36 @@ const styles = StyleSheet.create({
   loyaltyLabel: {
     fontFamily: FONTS.regular,
     fontSize: 12.5,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginBottom: 4,
     textAlign: 'right',
   },
   loyaltyValue: {
     fontFamily: FONTS.bold,
     fontSize: 16,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   loyaltyNumText: {
     fontFamily: FONTS.bold,
     fontSize: 22,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
+  },
+  loyaltyHint: {
+    marginTop: 14,
+    marginBottom: 14,
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 20,
+    textAlign: 'right',
   },
   progressContainer: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: COLORS.primarySoft,
     marginTop: 14,
     marginBottom: 14,
     flexDirection: 'row-reverse',
@@ -584,9 +574,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -604,31 +594,31 @@ const styles = StyleSheet.create({
   progressSubText: {
     fontFamily: FONTS.medium,
     fontSize: 11.5,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   progressNumText: {
     fontFamily: FONTS.bold,
     fontSize: 12,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     textAlign: 'left',
   },
   progressBarTrack: {
     height: 6,
     width: '100%',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: COLORS.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#0F172A',
+    backgroundColor: COLORS.textPrimary,
     borderRadius: 3,
   },
   referralBox: {
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: COLORS.primarySoft,
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
@@ -639,40 +629,40 @@ const styles = StyleSheet.create({
   referralLabel: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#64748B',
+    color: COLORS.textSecondary,
     marginBottom: 6,
     textAlign: 'right',
   },
   referralBadge: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   referralCode: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
     letterSpacing: 1,
   },
   redeemBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
   },
   redeemBtnText: {
     fontFamily: FONTS.medium,
     fontSize: 12,
-    color: '#0F172A',
+    color: COLORS.textPrimary,
   },
   sectionTitle: {
     fontFamily: FONTS.bold,
@@ -683,7 +673,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   menuCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -722,7 +712,7 @@ const styles = StyleSheet.create({
   },
   logoutCard: {
     minHeight: 56,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 14,

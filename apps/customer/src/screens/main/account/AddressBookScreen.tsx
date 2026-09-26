@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
-import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-utils';
+import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '../../../theme/customerTheme';
 import { Card, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getAddresses, deleteAddress, setDefaultAddress, Address } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   makeDefaultBtn: { marginTop: 10, alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.primary },
   makeDefaultText: { color: COLORS.primary, fontSize: 13, fontFamily: FONTS.bold },
   retryBtn: { marginTop: 14, minHeight: 44, justifyContent: 'center', paddingHorizontal: 20, borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
-  retryText: { color: '#FFFFFF', fontSize: 14, fontFamily: FONTS.bold },
+  retryText: { color: COLORS.surface, fontSize: 14, fontFamily: FONTS.bold },
   addressBody: { gap: 6 },
   areaText: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
   streetText: { fontSize: 13, color: COLORS.textSecondary, marginLeft: 22 },
