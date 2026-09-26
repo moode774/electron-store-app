@@ -205,7 +205,7 @@ const s = StyleSheet.create({
   tabText: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textMuted },
   tabTextActive: { color: UI.primary, fontFamily: FONTS.bold },
   scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
-  card: { width: '100%', maxWidth: 960, backgroundColor: UI.card, borderRadius: RADIUS.lg, padding: 20, borderWidth: 1, borderColor: UI.border },
+  card: { width: '100%', maxWidth: 960, backgroundColor: UI.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: UI.border },
   cardTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 20 },
   divider: { height: 1, backgroundColor: UI.border, marginVertical: 16 },
   
@@ -223,15 +223,15 @@ const s = StyleSheet.create({
 
   addAreaBox: { flexDirection: 'row-reverse', gap: 12, marginBottom: 24 },
   addAreaBoxCompact: { flexDirection: 'column' },
-  areaInput: { flex: 1, minHeight: 48, borderWidth: 1, borderColor: UI.border, borderRadius: RADIUS.md, paddingHorizontal: 16, fontSize: 14, fontFamily: FONTS.regular, color: UI.text, backgroundColor: COLORS.surfaceMuted },
-  addBtn: { minWidth: 48, minHeight: 48, backgroundColor: UI.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
+  areaInput: { flex: 1, minHeight: 48, borderWidth: 1, borderColor: UI.border, borderRadius: 13, paddingHorizontal: 16, fontSize: 14, fontFamily: FONTS.regular, color: UI.text, backgroundColor: COLORS.surfaceMuted },
+  addBtn: { minWidth: 48, minHeight: 48, backgroundColor: UI.primary, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   
   areaItem: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   areaItemCompact: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   areaMeta: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
   areaCity: { fontSize: 15, fontFamily: FONTS.semiBold, color: UI.text },
   areaToggles: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
-  toggleBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1 },
+  toggleBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
   toggleActive: { backgroundColor: UI.primaryLight, borderColor: UI.primaryLight },
   toggleInactive: { backgroundColor: '#F8FAFC', borderColor: UI.border },
   toggleText: { fontSize: 12, fontFamily: FONTS.semiBold, color: UI.textMuted },
