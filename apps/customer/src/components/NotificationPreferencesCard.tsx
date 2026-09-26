@@ -48,7 +48,7 @@ function errorMessage(error: unknown): string {
     : 'تعذّر حفظ إعدادات الإشعارات.';
 }
 
-export function NotificationPreferencesCard() {
+export function NotificationPreferencesCard({ embedded = false }: { embedded?: boolean }) {
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loadError, setLoadError] = useState('');
   const [savingKey, setSavingKey] = useState<PreferenceKey | 'device' | null>(null);
@@ -112,7 +112,7 @@ export function NotificationPreferencesCard() {
   };
 
   return (
-    <View style={styles.card} accessibilityRole="summary">
+    <View style={[styles.card, embedded && styles.cardEmbedded]} accessibilityRole="summary">
       <View style={styles.headingRow}>
         <View style={styles.iconWrap}>
           <Ionicons name="options-outline" size={20} color={COLORS.primary} />
@@ -181,6 +181,7 @@ export function NotificationPreferencesCard() {
 }
 
 const styles = StyleSheet.create({
+  cardEmbedded: { borderWidth: 0, padding: 0, marginBottom: 0, backgroundColor: 'transparent' },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
