@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
-import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
 import DeliveryOffersScreen from '../screens/delivery/DeliveryOffersScreen';
 import ActiveDeliveryScreen from '../screens/delivery/ActiveDeliveryScreen';
 import EarningsScreen from '../screens/delivery/EarningsScreen';
@@ -22,7 +21,6 @@ import SupportTicketThreadScreen from '../screens/shared/SupportTicketThreadScre
 
 export type DeliveryAccountStackParamList = {
   AccountMain: undefined;
-  ApiKeys: undefined;
   DeliveryProfile: undefined;
   DeliveryZones: undefined;
   DeliveryWallet: undefined;
@@ -36,7 +34,6 @@ function AccountNavigator() {
   return (
     <AccountStack.Navigator screenOptions={{ headerShown: false }}>
       <AccountStack.Screen name="AccountMain" component={DeliveryAccountScreen} />
-      <AccountStack.Screen name="ApiKeys" component={ApiKeysScreen} />
       <AccountStack.Screen name="DeliveryProfile" component={DeliveryProfileScreen} />
       <AccountStack.Screen name="DeliveryZones" component={DeliveryZonesScreen} />
       <AccountStack.Screen name="DeliveryWallet" component={DeliveryWalletScreen} />
@@ -215,9 +212,9 @@ export default function DeliveryTabNavigator() {
           borderTopColor: COLORS.hairline,
           elevation: 0,
           shadowOpacity: 0,
-          height: 68 + bottomInset,
+          height: 70 + bottomInset,
           paddingBottom: bottomInset,
-          paddingTop: 8,
+          paddingTop: 9,
           position: 'absolute',
           ...(isTablet ? {
             left: Math.max(24, (width - 680) / 2),
@@ -263,30 +260,6 @@ export default function DeliveryTabNavigator() {
 }
 
 const styles = StyleSheet.create({
-  centerAction: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -30,
-    borderWidth: 4,
-    borderColor: COLORS.surface,
-    ...Platform.select({
-      web: { boxShadow: '0 6px 16px rgba(23,37,84,0.25)' } as any,
-      default: {
-        shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 6,
-      },
-    }),
-  },
-  centerActionIdle: {
-    backgroundColor: COLORS.primaryLight,
-  },
   tabIconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
