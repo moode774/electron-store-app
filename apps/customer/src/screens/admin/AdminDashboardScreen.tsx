@@ -130,6 +130,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= BREAKPOINTS.desktop;
   const isCompact = width < BREAKPOINTS.compact;
+  const isTablet = !isDesktop && width >= 700;
 
   const load = useCallback(async () => {
     setError(null);
@@ -200,7 +201,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // ── Responsive widths ──
   // Desktop chrome = floating rail (72 + 16) + main horizontal padding (32).
   const desktopChromeWidth = 120;
-  const screenPadding = isDesktop ? 64 : 32;
+  const screenPadding = isDesktop ? 64 : isTablet ? 40 : 32;
   const dashboardWidth = Math.min(
     isDesktop ? Math.max(width - desktopChromeWidth, 320) : width,
     BREAKPOINTS.wide,
@@ -210,7 +211,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     288,
   );
   const gap = 16;
-  const col3Width = isDesktop ? (usableWidth - (gap * 2)) / 3 : usableWidth;
+  const col3Width = isDesktop ? (usableWidth - (gap * 2)) / 3 : isTablet ? (usableWidth - gap) / 2 : usableWidth;
 
   // ── Chart data ──
   const chartPoints = stats?.chartData?.map(d => d.count) ?? [];
@@ -228,7 +229,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     return (
       <TouchableOpacity
         key={item.id}
-        style={styles.tableRow}
+        style={[styles.tableRow, !isDesktop && styles.tableRowMobile]}
         onPress={() => navigation.navigate('AdminOrders', { initialSearch: item.order_number ?? item.id })}
         accessibilityRole="button"
         accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number ?? item.id}`}
@@ -293,13 +294,13 @@ export default function AdminDashboardScreen({ navigation }: any) {
       >
 
         {/* ===== Welcome Section ===== */}
-        <View style={styles.welcomeRow}>
+        <View style={[styles.welcomeRow, !isDesktop && styles.welcomeRowMobile]}>
           <View style={styles.welcomeCopy}>
             <View style={styles.eyebrowRow}><View style={styles.liveDot} /><Text style={styles.eyebrow}>مركز العمليات</Text></View>
             <Text style={[styles.welcomeText, !isDesktop && { fontSize: 22 }]}>لوحة التحكم</Text>
             <Text style={styles.welcomeSubtitle}>ملخص سريع لأداء المنصة والعمليات اليومية</Text>
           </View>
-          <View style={styles.welcomeActions}>
+          <View style={[styles.welcomeActions, !isDesktop && styles.welcomeActionsMobile]}>
             <TouchableOpacity style={styles.exportBtn} onPress={exportReport} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
               <Ionicons name="download-outline" size={16} color={UI.primary} />
               <Text style={styles.addBtnText}>تصدير التقرير</Text>
@@ -326,23 +327,23 @@ export default function AdminDashboardScreen({ navigation }: any) {
           </View>
         ) : (
           <>
-            <View style={styles.quickActions}>
+            <View style={[styles.quickActions, !isDesktop && styles.quickActionsMobile, isTablet && styles.quickActionsTablet]}>
               {[
                 { title: 'المتاجر', icon: 'storefront-outline', route: 'AdminMerchants' },
                 { title: 'الطلبات', icon: 'receipt-outline', route: 'AdminOrders' },
                 { title: 'المستخدمون', icon: 'people-outline', route: 'AdminUsers' },
                 { title: 'كل الأدوات', icon: 'options-outline', route: 'AdminMore' },
-              ].map(action => <TouchableOpacity key={action.route} style={styles.quickAction} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
+              ].map(action => <TouchableOpacity key={action.route} style={[styles.quickAction, !isDesktop && styles.quickActionMobile, isTablet && styles.quickActionTablet]} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
                 <View style={styles.quickActionIcon}><Ionicons name={action.icon as any} size={20} color={UI.primary} /></View>
                 <Text style={styles.quickActionText}>{action.title}</Text>
                 <Ionicons name="chevron-back" size={15} color={UI.textMuted} />
               </TouchableOpacity>)}
             </View>
             {/* ===== Top Widgets Grid ===== */}
-            <View style={[styles.gridRow, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
+            <View style={[styles.gridRow, { flexDirection: isDesktop ? 'row-reverse' : isTablet ? 'row-reverse' : 'column' }, isTablet && styles.gridRowTablet]}>
 
               {/* Column 1: Hero Card + Quick Stat */}
-              <View style={[styles.column, { width: col3Width }]}>
+              <View style={[styles.column, { width: col3Width }, isTablet && styles.columnTablet]}>
                 <View style={[styles.card, styles.heroCard, !isDesktop && { minHeight: 170, padding: 18, borderRadius: 18 }]}>
 
 
@@ -443,8 +444,8 @@ export default function AdminDashboardScreen({ navigation }: any) {
             </View>
 
             {/* ===== Stat Summary Cards ===== */}
-            <View style={[styles.statCardsRow, { flexDirection: isDesktop ? 'row-reverse' : 'column' }]}>
-              <View style={styles.statSummaryCard}>
+            <View style={[styles.statCardsRow, { flexDirection: isDesktop || isTablet ? 'row-reverse' : 'row-reverse' }, !isDesktop && styles.statCardsMobile, isTablet && styles.statCardsTablet]}>
+              <View style={[styles.statSummaryCard, !isDesktop && styles.statSummaryCardMobile, isTablet && styles.statSummaryCardTablet]}>
                 <View style={[styles.statSummaryIcon, { backgroundColor: UI.coralSoft }]}>
                   <Ionicons name="flash" size={20} color={UI.coral} />
                 </View>
@@ -488,7 +489,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             </View>
 
             {/* ===== Orders Table ===== */}
-            <View style={styles.tableCard}>
+            <View style={[styles.tableCard, !isDesktop && styles.tableCardMobile]}>
               <View style={styles.tableHeader}>
                 <Text style={styles.tableTitle}>سجل الطلبات الأحدث</Text>
                 <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
@@ -528,11 +529,15 @@ export default function AdminDashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   quickActions: { flexDirection: 'row-reverse', gap: 10, marginBottom: 18 },
+  quickActionsMobile: { flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  quickActionsTablet: { flexWrap: 'nowrap', gap: 10 },
   quickAction: { flex: 1, minWidth: 0, minHeight: 68, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'flex-start', gap: 10, backgroundColor: UI.card, borderRadius: 18, borderWidth: 1, borderColor: UI.border, paddingHorizontal: 14 },
+  quickActionMobile: { flexBasis: '48%', minHeight: 58, borderRadius: 16, paddingHorizontal: 11, gap: 8 },
+  quickActionTablet: { flexBasis: 0, minHeight: 62, paddingHorizontal: 12 },
   quickActionIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   quickActionText: { flex: 1, fontFamily: FONTS.semiBold, fontSize: 12, color: UI.textDark, textAlign: 'right' },
   scrollContent: { maxWidth: BREAKPOINTS.wide, alignSelf: 'center', paddingHorizontal: 32, paddingTop: 28, paddingBottom: 40 },
-  scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
+  scrollContentCompact: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 28 },
   loadingCenter: { height: 300, alignItems: 'center', justifyContent: 'center' },
   errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
   errorText: { maxWidth: 520, color: COLORS.error, fontSize: 15, fontFamily: FONTS.semiBold, textAlign: 'center', lineHeight: 24 },
@@ -541,6 +546,7 @@ const styles = StyleSheet.create({
 
   // Welcome Section
   welcomeRow: { flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 16 },
+  welcomeRowMobile: { alignItems: 'stretch', marginBottom: 16, gap: 12 },
   welcomeCopy: { alignItems: 'flex-end', gap: 3 },
   eyebrowRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
   liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: UI.green },
@@ -549,9 +555,10 @@ const styles = StyleSheet.create({
   welcomeSubtitle: { fontSize: 11.5, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'right', marginTop: 1 },
   welcomeName: { fontFamily: FONTS.medium, color: UI.textGrey },
   welcomeActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  exportBtn: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 7, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, borderWidth: 1, borderColor: UI.border },
+  welcomeActionsMobile: { width: '100%', flexWrap: 'nowrap', gap: 8 },
+  exportBtn: { flexShrink: 1, minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 7, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, borderWidth: 1, borderColor: UI.border },
   addBtnText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark },
-  datePicker: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, borderWidth: 1, borderColor: UI.border },
+  datePicker: { flexShrink: 1, minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, borderWidth: 1, borderColor: UI.border },
   dateText: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textDark },
 
   // Trend
@@ -560,7 +567,9 @@ const styles = StyleSheet.create({
 
   // Grid
   gridRow: { gap: 16, marginBottom: 16, flexDirection: 'row-reverse' },
+  gridRowTablet: { flexWrap: 'wrap', alignItems: 'stretch' },
   column: { gap: 16 },
+  columnTablet: { minWidth: 0 },
 
   // Bento cards
   card: { backgroundColor: UI.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: UI.border },
@@ -609,23 +618,29 @@ const styles = StyleSheet.create({
 
   // Stat Summary Cards Row
   statCardsRow: { gap: 12, marginBottom: 16 },
+  statCardsMobile: { flexWrap: 'wrap', gap: 8 },
+  statCardsTablet: { flexWrap: 'wrap', gap: 10 },
   statSummaryCard: { flex: 1, minHeight: 96, flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: UI.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: UI.border },
+  statSummaryCardMobile: { flexBasis: '48%', minHeight: 82, borderRadius: 16, padding: 13, gap: 9 },
+  statSummaryCardTablet: { flexBasis: '23%', minHeight: 88, padding: 14 },
   statSummaryIcon: { width: 46, height: 46, borderRadius: RADIUS.lg, alignItems: 'center', justifyContent: 'center' },
   statSummaryValue: { fontSize: 21, fontFamily: FONTS.bold, color: UI.textDark },
   statSummaryLabel: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, marginTop: 2 },
 
   // Orders table
   tableCard: { backgroundColor: UI.card, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: UI.border },
+  tableCardMobile: { borderRadius: 18, padding: 15 },
   tableHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   tableTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.textDark },
   tableRowHeader: { flexDirection: 'row-reverse', paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: UI.border },
   th: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, flex: 1, textAlign: 'right' },
   tableRow: { minHeight: 58, flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: UI.border },
+  tableRowMobile: { minHeight: 64, paddingVertical: 10 },
   td: { fontSize: 13, color: UI.textGrey, fontFamily: FONTS.regular, textAlign: 'right' },
   tdTextBold: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark, textAlign: 'right' },
   tdSub: { fontSize: 11, color: UI.textGrey, fontFamily: FONTS.regular, marginTop: 4, textAlign: 'right' },
   avatarMiniList: { width: 34, height: 34, borderRadius: RADIUS.sm, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   tableWrapper: { width: '100%' },
 
-  mobileList: { gap: 14 },
+  mobileList: { gap: 0 },
 });
