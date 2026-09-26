@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
-import { getAdminOrders } from '@marketplace/shared-hooks';
+import { adminRequeueFailedDelivery, cancelOrder, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 
 const UI = {
@@ -30,9 +30,12 @@ const STATUS_FILTERS = [
   { key: 'assigned', label: 'تعيين سائق' },
   { key: 'picked_up', label: 'تم الاستلام' },
   { key: 'on_the_way', label: 'في الطريق' },
+  { key: 'failed_delivery', label: 'تعذّر التسليم' },
   { key: 'delivered', label: 'مسلّم' },
   { key: 'cancelled', label: 'ملغي' },
 ];
+
+const FAILED_DELIVERY_STATUSES = new Set(['failed_delivery', 'rescheduled']);
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'جديد', color: '#D97706', bg: '#FEF3C7' },
@@ -44,6 +47,9 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
   on_the_way: { label: 'في الطريق', color: '#059669', bg: '#D1FAE5' },
   delivered: { label: 'مسلّم', color: '#059669', bg: '#A7F3D0' },
   cancelled: { label: 'ملغي', color: '#DC2626', bg: '#FEE2E2' },
+  failed_delivery: { label: 'تعذّر التسليم', color: '#B91C1C', bg: '#FEE2E2' },
+  rescheduled: { label: 'معاد جدولته', color: '#7C3AED', bg: '#EDE9FE' },
+  disputed: { label: 'قيد النزاع', color: '#B45309', bg: '#FEF3C7' },
 };
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -68,6 +74,38 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
   const [selected, setSelected] = useState<any | null>(null);
   const [search, setSearch] = useState(route?.params?.initialSearch ?? '');
   const [error, setError] = useState<string | null>(null);
+  const [resolveReason, setResolveReason] = useState('');
+  const [resolving, setResolving] = useState(false);
+
+  const resolveFailedDelivery = async (action: 'cancel' | 'requeue') => {
+    if (!selected || resolving) return;
+    const reason = resolveReason.trim();
+    if (reason.length < 3) {
+      Alert.alert('السبب مطلوب', 'اكتب سبب القرار قبل المتابعة.');
+      return;
+    }
+    setResolving(true);
+    try {
+      if (action === 'cancel') {
+        await cancelOrder(selected.id, reason);
+      } else {
+        await adminRequeueFailedDelivery(selected.id, reason, selected.status);
+      }
+      setSelected(null);
+      setResolveReason('');
+      Alert.alert(
+        'تم',
+        action === 'cancel'
+          ? 'أُلغي الطلب وأُعيدت الكمية للمخزون. تأكد من إرجاع البضاعة للتاجر.'
+          : 'أُعيد طرح الطلب للمناديب وأُلغي إسناده للمندوب السابق.',
+      );
+      await load();
+    } catch (e: unknown) {
+      Alert.alert('تعذّر تنفيذ القرار', e instanceof Error && e.message ? e.message : 'حاول مجددًا.');
+    } finally {
+      setResolving(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setError(null);
@@ -264,6 +302,42 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                   </View>
                 ) : <Text style={s.noTracking}>لا توجد أحداث تتبع مسجلة لهذا الطلب.</Text>}
                 {selected.notes ? <View style={s.detailBlock}><Text style={s.detailLbl}>ملاحظات</Text><Text style={s.detailVal}>{selected.notes}</Text></View> : null}
+                {FAILED_DELIVERY_STATUSES.has(selected.status) ? (
+                  <View style={s.sectionBlock}>
+                    <Text style={s.sectionTitle}>معالجة تعذّر التسليم</Text>
+                    <Text style={s.detailLbl}>لم يُحصَّل أي مبلغ ولم تتم تسوية مالية لهذا الطلب.</Text>
+                    <TextInput
+                      style={s.resolveInput}
+                      value={resolveReason}
+                      onChangeText={setResolveReason}
+                      placeholder="سبب القرار (إلزامي)"
+                      placeholderTextColor={UI.textMuted}
+                      multiline
+                      maxLength={1000}
+                      editable={!resolving}
+                      textAlign="right"
+                      accessibilityLabel="سبب قرار معالجة تعذّر التسليم"
+                    />
+                    <View style={s.resolveRow}>
+                      <TouchableOpacity
+                        style={[s.resolveBtn, { backgroundColor: UI.primary }, resolving && { opacity: 0.6 }]}
+                        onPress={() => void resolveFailedDelivery('requeue')}
+                        disabled={resolving}
+                        accessibilityRole="button"
+                      >
+                        <Text style={s.resolveBtnText}>إعادة الطرح لمندوب آخر</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[s.resolveBtn, { backgroundColor: UI.danger }, resolving && { opacity: 0.6 }]}
+                        onPress={() => void resolveFailedDelivery('cancel')}
+                        disabled={resolving}
+                        accessibilityRole="button"
+                      >
+                        {resolving ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={s.resolveBtnText}>إلغاء الطلب وإرجاع المخزون</Text>}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : null}
               </ScrollView>
             )}
           </View>
@@ -338,5 +412,9 @@ const s = StyleSheet.create({
   trackingRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', gap: 12, borderRightWidth: 3, borderRightColor: UI.primary, paddingRight: 10 },
   trackingStatus: { color: UI.text, fontSize: 13, fontWeight: '800' },
   trackingDate: { color: UI.textMuted, fontSize: 11 },
+  resolveInput: { minHeight: 80, borderWidth: 1, borderColor: UI.border, borderRadius: 12, padding: 12, fontSize: 14, color: UI.text, textAlignVertical: 'top', backgroundColor: UI.bg },
+  resolveRow: { flexDirection: 'row-reverse', gap: 10, flexWrap: 'wrap' },
+  resolveBtn: { flexGrow: 1, minHeight: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  resolveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   noTracking: { color: UI.warning, backgroundColor: '#FFFBEB', padding: 12, borderRadius: 10, textAlign: 'right', fontWeight: '700' },
 });
