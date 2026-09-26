@@ -71,10 +71,9 @@ export default function DeliveryWalletScreen({ navigation }: any) {
               </View>
             ) : null}
             <View style={styles.balanceCard}>
-              <View style={styles.balanceIcon}><Ionicons name="wallet-outline" size={22} color="#FFFFFF" /></View>
-              <Text style={styles.balanceLabel}>أرباحك الحالية</Text>
+              <View style={styles.balanceTop}><View style={styles.balanceIcon}><Ionicons name="wallet-outline" size={20} color={COLORS.primary} /></View><Text style={styles.balanceLabel}>رصيد أرباحك</Text></View>
               <View style={styles.balanceLine}><Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text><Text style={styles.currency}>ر.ي</Text></View>
-              <Text style={styles.balanceHint}>هذا رصيد أرباح التوصيل المسجل في محفظتك</Text>
+              <View style={styles.balanceFooter}><Ionicons name="checkmark-circle" size={15} color={COLORS.success} /><Text style={styles.balanceHint}>أرباح التوصيل المسجلة لك</Text></View>
             </View>
 
             <View style={styles.explainCard}>
@@ -134,14 +133,16 @@ const styles = StyleSheet.create({
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, marginBottom: 4 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
-  balanceCard: { borderRadius: 24, padding: 22, backgroundColor: COLORS.primary, minHeight: 180 },
-  balanceIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  balanceLabel: { color: 'rgba(255,255,255,0.78)', fontSize: 12, fontFamily: FONTS.medium },
-  balanceLine: { flexDirection: 'row-reverse', alignItems: 'baseline', justifyContent: 'flex-end', gap: 7, marginTop: 3 },
-  summaryValue: { fontSize: 36, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: -0.5 },
-  currency: { color: '#FFFFFF', fontSize: 14, fontFamily: FONTS.bold },
-  balanceHint: { color: 'rgba(255,255,255,0.66)', fontSize: 10.5, marginTop: 8 },
-  explainCard: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 11, backgroundColor: COLORS.primarySoft, borderRadius: 18, padding: 15, marginTop: 12 },
+  balanceCard: { borderRadius: 24, padding: 20, backgroundColor: '#FFFFFF', minHeight: 156, borderWidth: 1, borderColor: COLORS.hairline },
+  balanceTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'flex-start', gap: 10 },
+  balanceIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  balanceLabel: { color: COLORS.inkSecondary, fontSize: 12, fontFamily: FONTS.medium },
+  balanceLine: { flexDirection: 'row-reverse', alignItems: 'baseline', justifyContent: 'flex-end', gap: 7, marginTop: 14 },
+  summaryValue: { fontSize: 36, fontFamily: FONTS.bold, color: COLORS.ink, letterSpacing: -0.5 },
+  currency: { color: COLORS.inkSecondary, fontSize: 14, fontFamily: FONTS.bold },
+  balanceFooter: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5, marginTop: 10 },
+  balanceHint: { color: COLORS.inkSecondary, fontSize: 10.5 },
+  explainCard: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 11, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginTop: 10, borderWidth: 1, borderColor: COLORS.hairline },
   explainTitle: { color: COLORS.ink, fontSize: 13, fontFamily: FONTS.bold, textAlign: 'right' },
   explainText: { color: COLORS.inkSecondary, fontSize: 11.5, lineHeight: 19, marginTop: 3, textAlign: 'right' },
   noteBox: {
