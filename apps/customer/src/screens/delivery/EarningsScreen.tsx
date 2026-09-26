@@ -109,7 +109,7 @@ export default function EarningsScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <Text style={styles.headerTitle}>أرباحي</Text>
+        <View><Text style={styles.headerTitle}>الأرباح</Text><Text style={styles.headerSubtitle}>رصيدك وسجل التوصيلات وطلبات السحب</Text></View>
       </View>
 
       {/* Withdrawal Modal */}
@@ -171,7 +171,7 @@ export default function EarningsScreen() {
             ) : null}
             {/* Summary Card */}
             <View style={[styles.summaryCard, layout.compact && styles.summaryCardCompact]}>
-              <Text style={styles.summaryLabel}>رصيد المحفظة</Text>
+              <Text style={styles.summaryLabel}>الرصيد الحالي</Text>
               <Text style={styles.summaryValue}>{balance} ر.ي</Text>
               <View style={[styles.summaryRow, layout.compact && styles.summaryRowCompact]}>
                 <View style={styles.summaryItem}>
@@ -254,22 +254,23 @@ export default function EarningsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.canvas },
   header: { paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 12, width: '100%', maxWidth: 920, alignSelf: 'center' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.ink },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.ink, textAlign: 'right' },
+  headerSubtitle: { fontSize: 12, color: COLORS.inkSecondary, marginTop: 3, textAlign: 'right' },
   listContent: { padding: 20, gap: 12, paddingBottom: 100, width: '100%', maxWidth: 920, alignSelf: 'center' },
   errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8 },
   errorText: { color: '#B91C1C', fontSize: 12.5, fontWeight: '600', textAlign: 'center' },
   retryText: { color: COLORS.primary, fontSize: 12.5, fontWeight: '800' },
   withdrawalSection: { gap: 8, marginBottom: 6 },
-  withdrawalRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  withdrawalRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: COLORS.hairline },
   withdrawalAmount: { color: COLORS.ink, fontSize: 13.5, fontWeight: '800' },
   withdrawalDate: { color: COLORS.inkTertiary, fontSize: 10.5, marginTop: 3 },
   withdrawalStatus: { maxWidth: '52%', fontSize: 11, fontWeight: '700', textAlign: 'right', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, overflow: 'hidden' },
   summaryCard: {
-    backgroundColor: COLORS.primary, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 8,
+    backgroundColor: COLORS.primary, borderRadius: 22, padding: 24, alignItems: 'center', marginBottom: 8,
   },
   summaryCardCompact: { paddingHorizontal: 16 },
   summaryLabel: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
-  summaryValue: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', marginTop: 6, marginBottom: 20 },
+  summaryValue: { fontSize: 34, fontWeight: '800', color: '#FFFFFF', marginTop: 6, marginBottom: 20 },
   summaryRow: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 14, padding: 14, width: '100%', justifyContent: 'space-around',
@@ -279,16 +280,16 @@ const styles = StyleSheet.create({
   summaryItemValue: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   summaryItemLabel: { fontSize: 10.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
   summaryDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.2)' },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.ink, marginTop: 12, marginBottom: 2 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: COLORS.ink, marginTop: 12, marginBottom: 2 },
   card: {
     flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF',
-    borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#F3F4F6',
+    borderRadius: 16, padding: 15, borderWidth: 1, borderColor: COLORS.hairline,
   },
   iconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1, marginHorizontal: 12 },
   route: { fontSize: 13.5, fontWeight: '700', color: COLORS.ink },
   meta: { fontSize: 11, color: COLORS.inkTertiary, marginTop: 3 },
-  fee: { fontSize: 14, fontWeight: '800', color: '#059669' },
+  fee: { fontSize: 14, fontWeight: '800', color: COLORS.primary },
   withdrawBtn: {
     flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, marginTop: 16, minHeight: 48,
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: COLORS.ink,
     fontWeight: '700', marginBottom: 16,
   },
-  modalBtn: { backgroundColor: '#111827', borderRadius: 12, height: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  modalBtn: { backgroundColor: COLORS.primary, borderRadius: 12, height: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   modalBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   modalCancel: { alignItems: 'center', paddingVertical: 10 },
   modalCancelText: { fontSize: 14, color: COLORS.inkTertiary, fontWeight: '700' },
