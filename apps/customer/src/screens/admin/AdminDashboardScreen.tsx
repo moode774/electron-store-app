@@ -39,9 +39,9 @@ const UI = {
 const softShadow = {
   shadowColor: COLORS.primaryDark,
   shadowOffset: { width: 0, height: 12 },
-  shadowOpacity: 0.07,
+  shadowOpacity: 0.025,
   shadowRadius: 24,
-  elevation: 4,
+  elevation: 1,
 } as const;
 
 const ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
@@ -545,9 +545,9 @@ const styles = StyleSheet.create({
   scrollContentMid: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 32 },
   scrollContentTablet: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 36 },
   loadingCenter: { height: 300, alignItems: 'center', justifyContent: 'center' },
-  errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
+  errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: 20, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
   errorText: { maxWidth: 520, color: COLORS.error, fontSize: 15, fontFamily: FONTS.semiBold, textAlign: 'center', lineHeight: 24 },
-  retryBtn: { backgroundColor: UI.primary, borderRadius: RADIUS.full, paddingHorizontal: 22, paddingVertical: 12, minHeight: 46, minWidth: 160, alignItems: 'center', justifyContent: 'center' },
+  retryBtn: { backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 12, minHeight: 46, minWidth: 160, alignItems: 'center', justifyContent: 'center' },
   retryText: { color: '#FFFFFF', fontFamily: FONTS.semiBold },
 
   // Welcome Section
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: UI.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: UI.border },
   limeCard: { backgroundColor: UI.card, borderColor: UI.border },
   mintCard: { backgroundColor: UI.card, borderColor: UI.border },
-  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primaryDark, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 4 },
+  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primaryDark, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.02, shadowRadius: 24, elevation: 1 },
   heroContent: { zIndex: 2 },
   heroOrbLime: { position: 'absolute', width: 132, height: 132, borderRadius: 66, backgroundColor: UI.lime, left: -45, top: -52, opacity: 0.92 },
   heroOrbCoral: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: UI.coral, right: -24, bottom: -24, opacity: 0.85 },
@@ -600,11 +600,11 @@ const styles = StyleSheet.create({
   iconBox: { width: 30, height: 30, borderRadius: RADIUS.sm, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 14, fontFamily: FONTS.semiBold, color: UI.textDark },
   cardTitleSoft: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textGrey, marginBottom: 12 },
-  iconBtn: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 44, height: 44, borderRadius: 13, backgroundColor: UI.card, borderWidth: 1, borderColor: UI.border, alignItems: 'center', justifyContent: 'center' },
 
-  togglePills: { flexDirection: 'row-reverse', backgroundColor: UI.cardSoft, borderRadius: RADIUS.full, padding: 4 },
+  togglePills: { flexDirection: 'row-reverse', backgroundColor: UI.cardSoft, borderRadius: 12, padding: 4 },
   togglePill: { fontSize: 11, fontFamily: FONTS.medium, color: UI.textGrey, paddingHorizontal: 12, paddingVertical: 6 },
-  togglePillActive: { fontSize: 11, fontFamily: FONTS.semiBold, color: '#FFFFFF', backgroundColor: UI.primary, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6 },
+  togglePillActive: { fontSize: 11, fontFamily: FONTS.semiBold, color: '#FFFFFF', backgroundColor: UI.primary, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
 
   chartAreaCentered: { alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   chartLabelsX: { flexDirection: 'row-reverse', justifyContent: 'space-between', width: '100%', marginTop: 12, paddingHorizontal: 10 },
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
 
   statRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   statValue: { fontSize: 27, fontFamily: FONTS.bold, color: UI.textDark },
-  badgeOrange: { backgroundColor: UI.coralSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.full },
+  badgeOrange: { backgroundColor: UI.coralSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   badgeOrangeText: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.error },
 
   // Quick Stats inside card
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
   statSummaryCardMobile: { flexBasis: '48%', minHeight: 82, borderRadius: 16, padding: 13, gap: 9 },
   statSummaryCardMid: { flexBasis: '48%', minHeight: 84, padding: 13 },
   statSummaryCardTablet: { flexBasis: 0, minHeight: 88, padding: 14 },
-  statSummaryIcon: { width: 46, height: 46, borderRadius: RADIUS.lg, alignItems: 'center', justifyContent: 'center' },
+  statSummaryIcon: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   statSummaryValue: { fontSize: 21, fontFamily: FONTS.bold, color: UI.textDark },
   statSummaryLabel: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, marginTop: 2 },
 
