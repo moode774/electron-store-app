@@ -4,7 +4,7 @@ import {
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import {
   getSupportTicketThread, replyToSupportTicket, SupportMessage, SupportTicket,
   supabase, useAuthStore,
@@ -94,7 +94,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.threadShell, layout.desktop && styles.threadShellDesktop]}>
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
@@ -186,12 +186,12 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  threadShell: { flex: 1, width: '100%', maxWidth: 960, alignSelf: 'center', backgroundColor: '#F8FAFC', overflow: 'hidden' },
+  threadShell: { flex: 1, width: '100%', maxWidth: 960, alignSelf: 'center', backgroundColor: COLORS.canvas, overflow: 'hidden' },
   threadShellDesktop: { marginVertical: 20, borderRadius: 24, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' },
+  header: { flexDirection: 'row-reverse', alignItems: 'center', paddingHorizontal: 18, paddingTop: Platform.OS === 'ios' ? 58 : 38, paddingBottom: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  backButton: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline },
   headerText: { flex: 1, alignItems: 'center', paddingHorizontal: 10 },
-  title: { color: '#111827', fontSize: 16, fontWeight: '800', maxWidth: '100%' },
+  title: { color: COLORS.ink, fontSize: 17, fontFamily: FONTS.bold, maxWidth: '100%' },
   status: { color: '#6B7280', fontSize: 11, fontWeight: '700', marginTop: 2 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   errorText: { color: '#991B1B', textAlign: 'center', lineHeight: 21 },
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   messageRow: { flexDirection: 'row' },
   mineRow: { justifyContent: 'flex-start' },
   otherRow: { justifyContent: 'flex-end' },
-  messageBubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 },
+  messageBubble: { maxWidth: '82%', paddingHorizontal: 15, paddingVertical: 11, borderRadius: 18 },
   mineBubble: { backgroundColor: COLORS.primary, borderBottomLeftRadius: 4 },
   otherBubble: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB', borderBottomRightRadius: 4 },
   senderName: { color: '#1D4ED8', fontSize: 11, fontWeight: '800', marginBottom: 4 },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   mineTime: { color: 'rgba(255,255,255,0.72)' },
   emptyText: { color: '#9CA3AF', textAlign: 'center', marginTop: 50 },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, padding: 12, paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
-  input: { flex: 1, maxHeight: 110, minHeight: 44, backgroundColor: '#F3F4F6', color: '#111827', borderRadius: 19, paddingHorizontal: 15, paddingVertical: 10, textAlign: 'right' },
+  input: { flex: 1, maxHeight: 110, minHeight: 46, backgroundColor: COLORS.canvas, color: COLORS.ink, borderRadius: 16, borderWidth: 1, borderColor: COLORS.hairline, paddingHorizontal: 15, paddingVertical: 10, textAlign: 'right' },
   sendButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.5 },
   closedBar: { padding: 14, paddingBottom: Platform.OS === 'ios' ? 28 : 14, backgroundColor: '#F3F4F6', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
