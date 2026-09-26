@@ -208,17 +208,17 @@ export default function ApiKeysScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: UI.bg },
   header: {
-    backgroundColor: UI.card, paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 16, paddingHorizontal: 24, borderBottomWidth: 1, borderColor: UI.border,
+    backgroundColor: UI.bg, paddingTop: Platform.OS === 'ios' ? 56 : 30,
+    paddingBottom: 14, paddingHorizontal: 20,
     width: '100%', maxWidth: 960, alignSelf: 'center',
   },
-  headerDesktop: { marginTop: 24, borderRadius: 22, borderWidth: 1 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: UI.text, textAlign: 'right' },
+  headerDesktop: { marginTop: 12 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: UI.text, textAlign: 'right' },
   headerSub: { fontSize: 13, color: UI.textMuted, textAlign: 'right', marginTop: 6, lineHeight: 20 },
-  createBox: { padding: 16, gap: 10, width: '100%', maxWidth: 960, alignSelf: 'center' },
+  createBox: { padding: 14, gap: 9, width: '100%', maxWidth: 960, alignSelf: 'center' },
   createBoxWide: { flexDirection: 'row-reverse', alignItems: 'center' },
   input: {
-    backgroundColor: UI.card, borderRadius: 14, borderWidth: 1, borderColor: UI.border,
+    backgroundColor: UI.card, borderRadius: 13, borderWidth: 1, borderColor: UI.border,
     paddingHorizontal: 14, height: 48, fontSize: 14, color: UI.text, fontWeight: '600', flex: 1, minWidth: 0,
   },
   createBtn: {
@@ -230,8 +230,8 @@ const s = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12, paddingHorizontal: 30 },
   emptyText: { fontSize: 14, color: UI.textMuted, fontWeight: '600', textAlign: 'center' },
   card: {
-    backgroundColor: UI.card, borderRadius: 18, padding: 14,
-    borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 4,
+    backgroundColor: UI.card, borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: UI.border, marginBottom: 2,
   },
   cardRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
   iconBox: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
@@ -242,8 +242,8 @@ const s = StyleSheet.create({
   smallBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   smallBtnText: { fontSize: 12, fontWeight: '800' },
 
-  modalOverlay: { flex: 1, backgroundColor: '#0F172A99', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  modalCard: { backgroundColor: UI.card, borderRadius: 24, padding: 22, width: '100%', maxWidth: 480 },
+  modalOverlay: { flex: 1, backgroundColor: '#0F172A73', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  modalCard: { backgroundColor: UI.card, borderRadius: 22, padding: 22, borderWidth: 1, borderColor: UI.border, width: '100%', maxWidth: 480 },
   modalCardCompact: { padding: 16, borderRadius: 20 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: UI.text, textAlign: 'center', marginTop: 8 },
   modalWarn: { fontSize: 13, color: UI.danger, fontWeight: '700', textAlign: 'center', marginTop: 8, lineHeight: 20 },
