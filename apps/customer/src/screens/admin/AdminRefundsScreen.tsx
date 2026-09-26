@@ -347,7 +347,7 @@ const s = StyleSheet.create({
   empty: { flex: 1, minHeight: 280, alignItems: 'center', justifyContent: 'center', gap: 13, padding: 24 },
   emptyText: { textAlign: 'center', color: UI.muted, fontWeight: '700' },
   errorText: { textAlign: 'center', color: UI.danger, fontWeight: '700', lineHeight: 22 },
-  retry: { backgroundColor: UI.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10 },
+  retry: { backgroundColor: UI.primary, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 8 },
   retryText: { color: '#FFF', fontWeight: '800' },
   modalOverlay: { flex: 1, backgroundColor: COLORS.overlay, alignItems: 'center', justifyContent: 'center', padding: 12 },
   modal: { maxWidth: 480, maxHeight: '90%', backgroundColor: UI.card, borderRadius: 20, padding: 22 },
