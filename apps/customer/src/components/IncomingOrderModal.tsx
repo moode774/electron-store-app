@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { OrderSummary } from '@marketplace/shared-hooks';
 
 interface Props {
@@ -117,38 +117,39 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+    flex: 1, backgroundColor: 'rgba(11,23,54,0.58)',
     alignItems: 'center', justifyContent: 'center', padding: 20,
   },
   modalCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 24, width: '100%',
-    padding: 24, alignItems: 'center', shadowColor: '#000',
+    backgroundColor: '#FFFFFF', borderRadius: 28, width: '100%',
+    padding: 26, alignItems: 'center', shadowColor: '#0B1736',
+    borderWidth: 1, borderColor: COLORS.hairline,
     shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10,
     maxWidth: 480,
   },
   modalCardShort: { padding: 16, borderRadius: 20 },
   bellRing: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary,
+    width: 76, height: 76, borderRadius: 38, backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center', marginTop: -60,
-    borderWidth: 4, borderColor: '#FFFFFF', marginBottom: 16,
+    borderWidth: 5, borderColor: '#FFFFFF', marginBottom: 18,
     shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
   },
   bellRingShort: { width: 58, height: 58, borderRadius: 29, marginTop: -44, marginBottom: 8 },
-  title: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  subtitle: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 20 },
+  title: { fontSize: 21, fontFamily: FONTS.bold, color: COLORS.ink, marginBottom: 7, textAlign: 'center' },
+  subtitle: { fontSize: 13, fontFamily: FONTS.regular, color: COLORS.inkSecondary, textAlign: 'center', marginBottom: 22, lineHeight: 19 },
   detailsBox: {
-    width: '100%', backgroundColor: '#F9FAFB', borderRadius: 16,
-    padding: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 20,
+    width: '100%', backgroundColor: COLORS.canvas, borderRadius: 18,
+    padding: 17, borderWidth: 1, borderColor: COLORS.hairline, marginBottom: 18,
   },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  detailText: { flex: 1, fontSize: 13, color: '#374151', fontWeight: '600', lineHeight: 20 },
-  amountLabel: { flex: 1, fontSize: 13, color: '#111827', fontWeight: '700' },
-  amountValue: { fontSize: 16, color: '#059669', fontWeight: '800' },
-  timerText: { fontSize: 13, color: '#6B7280', fontWeight: '600', marginBottom: 20 },
-  actions: { flexDirection: 'row', gap: 12, width: '100%' },
-  rejectBtn: { flex: 1, height: 50, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  rejectText: { color: '#4B5563', fontSize: 15, fontWeight: '700' },
-  acceptBtn: { flex: 2, height: 50, borderRadius: 14, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  acceptText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  detailRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginBottom: 9 },
+  detailText: { flex: 1, fontSize: 13, fontFamily: FONTS.medium, color: COLORS.ink, lineHeight: 20, textAlign: 'right' },
+  amountLabel: { flex: 1, fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.ink, textAlign: 'right' },
+  amountValue: { fontSize: 18, color: COLORS.primary, fontFamily: FONTS.bold },
+  timerText: { fontSize: 12.5, color: COLORS.inkSecondary, fontFamily: FONTS.medium, marginBottom: 20 },
+  actions: { flexDirection: 'row-reverse', gap: 10, width: '100%' },
+  rejectBtn: { flex: 1, height: 52, borderRadius: 15, backgroundColor: COLORS.surfaceMuted, borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  rejectText: { color: COLORS.inkSecondary, fontSize: 14, fontFamily: FONTS.semiBold },
+  acceptBtn: { flex: 2, height: 52, borderRadius: 15, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  acceptText: { color: '#FFFFFF', fontSize: 15, fontFamily: FONTS.bold },
   disabledBtn: { opacity: 0.6 },
 });
