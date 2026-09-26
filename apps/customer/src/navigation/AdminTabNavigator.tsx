@@ -335,17 +335,17 @@ function DesktopTopHeader() {
 }
 
 const topHeaderStyles = StyleSheet.create({
-  topHeader: { minHeight: 56, flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', marginBottom: 14, position: 'relative' },
-  navLinks: { flexDirection: 'row-reverse', backgroundColor: COLORS.surface, borderRadius: RADIUS.full, paddingHorizontal: 7, paddingVertical: 6, borderWidth: 1, borderColor: COLORS.border, ...softShadow },
-  navLink: { fontSize: 13, fontFamily: FONTS.medium, color: COLORS.textSecondary, paddingHorizontal: 14, paddingVertical: 8 },
-  navLinkActive: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.primarySoft, borderRadius: RADIUS.full },
-  currentContext: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 16, borderRadius: RADIUS.full, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, ...softShadow },
+  topHeader: { minHeight: 52, flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', marginBottom: 10, position: 'relative' },
+  navLinks: { flexDirection: 'row-reverse', backgroundColor: COLORS.surface, borderRadius: 14, paddingHorizontal: 6, paddingVertical: 5, borderWidth: 1, borderColor: COLORS.border },
+  navLink: { fontSize: 12.5, fontFamily: FONTS.medium, color: COLORS.textSecondary, paddingHorizontal: 12, paddingVertical: 7 },
+  navLinkActive: { fontSize: 12.5, fontFamily: FONTS.semiBold, color: COLORS.primary, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: COLORS.primarySoft, borderRadius: 10 },
+  currentContext: { minHeight: 40, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, paddingHorizontal: 14, borderRadius: 12, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
   currentContextDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
   currentContextText: { color: COLORS.textPrimary, fontSize: 13, fontFamily: FONTS.semiBold },
   headerRight: { position: 'absolute', left: 0, flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
-  headerIconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', position: 'relative', ...softShadow },
+  headerIconBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   notificationDot: { position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.accentCoral, top: 7, right: 7, borderWidth: 2, borderColor: COLORS.surface },
-  avatarMini: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#B5DB55' },
+  avatarMini: { width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
 });
 
 // ---- Main Navigator ----
@@ -366,7 +366,9 @@ export default function AdminTabNavigator() {
           borderTopColor: COLORS.border,
           elevation: 0,
           shadowOpacity: 0,
-          paddingTop: 8,
+          paddingTop: 6,
+          paddingBottom: Platform.OS === 'ios' ? 18 : 8,
+          height: Platform.OS === 'ios' ? 78 : 64,
 
         },
         tabBarLabelStyle: { fontSize: 11.5, fontFamily: FONTS.semiBold },
@@ -410,12 +412,12 @@ const layoutStyles = StyleSheet.create({
   },
   desktopMain: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 14,
+    paddingTop: 14,
   },
   desktopFrame: {
     flex: 1,
-    borderRadius: RADIUS.xl,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: COLORS.background,
     borderWidth: 1,
