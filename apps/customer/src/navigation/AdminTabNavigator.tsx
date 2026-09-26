@@ -130,7 +130,7 @@ function DesktopSidebar() {
   return (
     <View style={sidebarStyles.container}>
       <View style={sidebarStyles.logoArea}>
-        <Ionicons name="shield-checkmark" size={28} color="#FFFFFF" />
+        <Ionicons name="shield-checkmark" size={24} color="#FFFFFF" />
         <View style={sidebarStyles.logoAccent} />
       </View>
 
@@ -139,7 +139,6 @@ function DesktopSidebar() {
           const isActive = routeName === tab.name || (tab.name === 'AdminMore' && routeName === 'AdminMoreMain');
           return (
             <React.Fragment key={tab.name}>
-            {(index === 4 || index === 9) ? <View style={sidebarStyles.sectionDivider} /> : null}
             <TouchableOpacity
               style={[sidebarStyles.menuItem, isActive && sidebarStyles.menuItemActive]}
               onPress={() => handleNavigate(tab)}
@@ -148,7 +147,7 @@ function DesktopSidebar() {
               accessibilityLabel={tab.label}
               accessibilityState={{ selected: isActive }}
             >
-              <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={22} color={isActive ? '#FFFFFF' : '#9CA3AF'} />
+              <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={20} color={isActive ? '#FFFFFF' : '#94A3B8'} />
               {isActive ? <View style={sidebarStyles.activeDot} /> : null}
             </TouchableOpacity>
             </React.Fragment>
@@ -158,7 +157,7 @@ function DesktopSidebar() {
 
       <View style={sidebarStyles.footer}>
         <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
-          <Ionicons name="log-out-outline" size={22} color="#9CA3AF" />
+          <Ionicons name="log-out-outline" size={20} color="#94A3B8" />
         </TouchableOpacity>
       </View>
     </View>
@@ -167,16 +166,16 @@ function DesktopSidebar() {
 
 const sidebarStyles = StyleSheet.create({
   container: {
-    width: 68,
-    marginVertical: 14,
-    marginRight: 14,
+    width: 64,
+    marginVertical: 16,
+    marginRight: 16,
     backgroundColor: COLORS.surface,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 22,
+    borderRadius: 20,
     zIndex: 10,
     shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 10 },
@@ -185,18 +184,18 @@ const sidebarStyles = StyleSheet.create({
     elevation: 3,
   },
   logoArea: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOpacity: 0.14,
+    shadowRadius: 9,
+    elevation: 3,
     position: 'relative',
   },
   logoAccent: {
@@ -214,13 +213,12 @@ const sidebarStyles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    gap: 3,
+    gap: 2,
   },
-  sectionDivider: { width: 28, height: 1, backgroundColor: COLORS.border, marginVertical: 5 },
   menuItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
@@ -230,24 +228,24 @@ const sidebarStyles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.16,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 2,
   },
   activeDot: {
     position: 'absolute',
-    left: -4,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    left: -3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: COLORS.secondary,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: COLORS.surface,
   },
   footer: {
     width: '100%',
     alignItems: 'center',
-    gap: 6,
+    marginTop: 6,
   },
 });
 
