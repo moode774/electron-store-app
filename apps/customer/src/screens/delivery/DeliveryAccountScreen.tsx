@@ -1,4 +1,4 @@
-import { COLORS } from '@marketplace/shared-utils';
+import { COLORS, FONTS } from '@marketplace/shared-utils';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -7,12 +7,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
-import { Alert } from '../../components/appAlert';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 const MENU_ITEMS = [
@@ -143,16 +141,6 @@ export default function DeliveryAccountScreen({ navigation }: any) {
           <Ionicons name="log-out-outline" size={24} color={COLORS.primary} />
           <Text style={styles.logoutText}>تسجيل الخروج</Text>
         </TouchableOpacity>
-
-        {/* Promo Banner */}
-        <TouchableOpacity activeOpacity={0.9} style={styles.promoBannerWrapper} onPress={() => Alert.alert('قريبًا', 'سيتم نشر برامج ومزايا المندوبين المعتمدة هنا.')} accessibilityRole="button" accessibilityLabel="برامج ومزايا المندوبين">
-          <Image
-            source={require('../../../assets/images/account_promo.png')}
-            style={styles.promoBannerFullImage}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
-
       </ScrollView>
     </View>
   );
