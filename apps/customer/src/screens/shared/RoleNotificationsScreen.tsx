@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
-import { NotificationPreferencesCard } from '../../components/NotificationPreferencesCard';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 export default function RoleNotificationsScreen({ navigation, route }: any) {
@@ -78,8 +77,10 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>الإشعارات</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerCopy}><Text style={styles.headerTitle}>الإشعارات</Text><Text style={styles.headerSubtitle}>آخر التحديثات والتنبيهات المهمة</Text></View>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('NotificationSettings')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="إعدادات الإشعارات">
+          <Ionicons name="options-outline" size={20} color={COLORS.ink} />
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -97,10 +98,11 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
           data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter }]}
-          ListHeaderComponent={<NotificationPreferencesCard />}
           ListEmptyComponent={
-            <View style={{ alignItems: 'center', marginTop: 60 }}>
-              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد إشعارات</Text>
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}><Ionicons name="notifications-off-outline" size={27} color={COLORS.primary} /></View>
+              <Text style={styles.emptyTitle}>لا توجد إشعارات جديدة</Text>
+              <Text style={styles.emptyText}>أي تحديث مهم سيظهر لك هنا</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -112,8 +114,8 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
               accessibilityLabel={`${item.title ?? 'إشعار'}. ${item.body ?? ''}`}
               accessibilityState={{ selected: !item.is_read }}
             >
-              <View style={[styles.iconWrap, { backgroundColor: `${COLORS.primary}15` }]}>
-                <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+              <View style={[styles.iconWrap, !item.is_read && styles.iconWrapUnread]}>
+                <Ionicons name={item.is_read ? 'notifications-outline' : 'notifications'} size={20} color={COLORS.primary} />
               </View>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
                 <View style={styles.titleRow}>
@@ -140,19 +142,27 @@ const styles = StyleSheet.create({
   },
   headerDesktop: { paddingTop: 28 },
   backBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: FONTS.bold, color: COLORS.ink },
-  listContent: { padding: 20, gap: 12, width: '100%', maxWidth: 960, alignSelf: 'center', paddingBottom: 80 },
+  headerCopy: { flex: 1, alignItems: 'flex-end', paddingHorizontal: 12 },
+  headerTitle: { fontSize: 21, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right' },
+  headerSubtitle: { fontSize: 10.5, color: COLORS.inkSecondary, marginTop: 2, textAlign: 'right' },
+  settingsBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.hairline, alignItems: 'center', justifyContent: 'center' },
+  listContent: { paddingTop: 4, paddingBottom: 90, gap: 9, width: '100%', maxWidth: 960, alignSelf: 'center' },
   card: {
-    flexDirection: 'row-reverse', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16,
+    flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15,
     borderWidth: 1, borderColor: COLORS.hairline,
   },
-  cardUnread: { borderColor: `${COLORS.primary}30`, backgroundColor: '#FDFDFF' },
-  iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  cardUnread: { borderColor: `${COLORS.primary}24`, backgroundColor: '#FFFFFF' },
+  iconWrap: { width: 42, height: 42, borderRadius: 13, backgroundColor: COLORS.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  iconWrapUnread: { backgroundColor: COLORS.primarySoft },
   titleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
-  title: { fontSize: 14, fontWeight: '800', color: '#111827' },
+  title: { fontSize: 13.5, fontFamily: FONTS.bold, color: COLORS.ink, textAlign: 'right', flexShrink: 1 },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
-  body: { fontSize: 12.5, color: '#6B7280', lineHeight: 19, marginTop: 4 },
-  time: { fontSize: 11, color: '#9CA3AF', marginTop: 8 },
+  body: { fontSize: 11.5, color: COLORS.inkSecondary, lineHeight: 18, marginTop: 3, textAlign: 'right' },
+  time: { fontSize: 9.5, color: COLORS.inkTertiary, marginTop: 7, textAlign: 'right' },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingTop: 72 },
+  emptyIcon: { width: 58, height: 58, borderRadius: 20, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
+  emptyTitle: { color: COLORS.ink, fontSize: 14, fontFamily: FONTS.bold },
+  emptyText: { color: COLORS.inkSecondary, fontSize: 11, marginTop: 4 },
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   errorText: { color: '#991B1B', textAlign: 'center' },
   retryButton: { backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 17, paddingVertical: 10 },
