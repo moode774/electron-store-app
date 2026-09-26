@@ -200,7 +200,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // ── Responsive widths ──
   // Desktop chrome = floating rail (72 + 16) + main horizontal padding (32).
   const desktopChromeWidth = 120;
-  const screenPadding = isDesktop ? 48 : 32;
+  const screenPadding = isDesktop ? 64 : 32;
   const dashboardWidth = Math.min(
     isDesktop ? Math.max(width - desktopChromeWidth, 320) : width,
     BREAKPOINTS.wide,
@@ -209,7 +209,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     dashboardWidth - screenPadding,
     288,
   );
-  const gap = 20;
+  const gap = 16;
   const col3Width = isDesktop ? (usableWidth - (gap * 2)) / 3 : usableWidth;
 
   // ── Chart data ──
@@ -295,8 +295,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
         {/* ===== Welcome Section ===== */}
         <View style={styles.welcomeRow}>
           <View style={styles.welcomeCopy}>
-            <Text style={styles.eyebrow}>مركز العمليات</Text>
-            <Text style={[styles.welcomeText, !isDesktop && { fontSize: 22 }]}>إدارة التطبيق</Text>
+            <View style={styles.eyebrowRow}><View style={styles.liveDot} /><Text style={styles.eyebrow}>مركز العمليات</Text></View>
+            <Text style={[styles.welcomeText, !isDesktop && { fontSize: 22 }]}>لوحة التحكم</Text>
+            <Text style={styles.welcomeSubtitle}>ملخص سريع لأداء المنصة والعمليات اليومية</Text>
           </View>
           <View style={styles.welcomeActions}>
             <TouchableOpacity style={styles.exportBtn} onPress={exportReport} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
@@ -332,8 +333,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 { title: 'المستخدمون', icon: 'people-outline', route: 'AdminUsers' },
                 { title: 'كل الأدوات', icon: 'options-outline', route: 'AdminMore' },
               ].map(action => <TouchableOpacity key={action.route} style={styles.quickAction} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
-                <Ionicons name={action.icon as any} size={21} color={UI.primary} />
+                <View style={styles.quickActionIcon}><Ionicons name={action.icon as any} size={20} color={UI.primary} /></View>
                 <Text style={styles.quickActionText}>{action.title}</Text>
+                <Ionicons name="chevron-back" size={15} color={UI.textMuted} />
               </TouchableOpacity>)}
             </View>
             {/* ===== Top Widgets Grid ===== */}
@@ -525,10 +527,11 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  quickActions: { flexDirection: 'row-reverse', gap: 8, marginBottom: 16 },
-  quickAction: { flex: 1, minWidth: 0, minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: UI.card, borderRadius: 14, borderWidth: 1, borderColor: UI.border },
-  quickActionText: { fontFamily: FONTS.medium, fontSize: 11, color: UI.primary },
-  scrollContent: { maxWidth: BREAKPOINTS.wide, alignSelf: 'center', padding: 24, paddingBottom: 28 },
+  quickActions: { flexDirection: 'row-reverse', gap: 10, marginBottom: 18 },
+  quickAction: { flex: 1, minWidth: 0, minHeight: 68, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'flex-start', gap: 10, backgroundColor: UI.card, borderRadius: 18, borderWidth: 1, borderColor: UI.border, paddingHorizontal: 14 },
+  quickActionIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: UI.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  quickActionText: { flex: 1, fontFamily: FONTS.semiBold, fontSize: 12, color: UI.textDark, textAlign: 'right' },
+  scrollContent: { maxWidth: BREAKPOINTS.wide, alignSelf: 'center', paddingHorizontal: 32, paddingTop: 28, paddingBottom: 40 },
   scrollContentCompact: { paddingHorizontal: 16, paddingTop: 18 },
   loadingCenter: { height: 300, alignItems: 'center', justifyContent: 'center' },
   errorCard: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: UI.coralSoft, padding: 24, ...softShadow },
@@ -537,15 +540,18 @@ const styles = StyleSheet.create({
   retryText: { color: '#FFFFFF', fontFamily: FONTS.semiBold },
 
   // Welcome Section
-  welcomeRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 },
+  welcomeRow: { flexDirection: 'row-reverse', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 16 },
   welcomeCopy: { alignItems: 'flex-end', gap: 3 },
-  eyebrow: { fontSize: 11, fontFamily: FONTS.semiBold, color: UI.primary, textAlign: 'right', letterSpacing: 0.8 },
-  welcomeText: { fontSize: 27, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right' },
+  eyebrowRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: UI.green },
+  eyebrow: { fontSize: 10.5, fontFamily: FONTS.semiBold, color: UI.textGrey, textAlign: 'right' },
+  welcomeText: { fontSize: 29, fontFamily: FONTS.bold, color: UI.textDark, textAlign: 'right', letterSpacing: -0.5 },
+  welcomeSubtitle: { fontSize: 11.5, fontFamily: FONTS.regular, color: UI.textMuted, textAlign: 'right', marginTop: 1 },
   welcomeName: { fontFamily: FONTS.medium, color: UI.textGrey },
   welcomeActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  exportBtn: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 7, backgroundColor: UI.card, paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.full, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  exportBtn: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 7, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, borderWidth: 1, borderColor: UI.border },
   addBtnText: { fontSize: 13, fontFamily: FONTS.semiBold, color: UI.textDark },
-  datePicker: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: UI.card, paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.full, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  datePicker: { minHeight: 42, flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: UI.card, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, borderWidth: 1, borderColor: UI.border },
   dateText: { fontSize: 13, fontFamily: FONTS.medium, color: UI.textDark },
 
   // Trend
@@ -553,14 +559,14 @@ const styles = StyleSheet.create({
   trendText: { fontSize: 11, fontFamily: FONTS.semiBold },
 
   // Grid
-  gridRow: { gap: 20, marginBottom: 20, flexDirection: 'row-reverse' },
-  column: { gap: 20 },
+  gridRow: { gap: 16, marginBottom: 16, flexDirection: 'row-reverse' },
+  column: { gap: 16 },
 
   // Bento cards
-  card: { backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  card: { backgroundColor: UI.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: UI.border },
   limeCard: { backgroundColor: UI.card, borderColor: UI.border },
   mintCard: { backgroundColor: UI.card, borderColor: UI.border },
-  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary },
+  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primaryDark, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 4 },
   heroContent: { zIndex: 2 },
   heroOrbLime: { position: 'absolute', width: 132, height: 132, borderRadius: 66, backgroundColor: UI.lime, left: -45, top: -52, opacity: 0.92 },
   heroOrbCoral: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: UI.coral, right: -24, bottom: -24, opacity: 0.85 },
@@ -602,14 +608,14 @@ const styles = StyleSheet.create({
   progressFill: { height: 5, borderRadius: 3, backgroundColor: UI.mint },
 
   // Stat Summary Cards Row
-  statCardsRow: { gap: 16, marginBottom: 20 },
-  statSummaryCard: { flex: 1, minHeight: 104, flexDirection: 'row-reverse', alignItems: 'center', gap: 14, backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 18, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  statCardsRow: { gap: 12, marginBottom: 16 },
+  statSummaryCard: { flex: 1, minHeight: 96, flexDirection: 'row-reverse', alignItems: 'center', gap: 12, backgroundColor: UI.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: UI.border },
   statSummaryIcon: { width: 46, height: 46, borderRadius: RADIUS.lg, alignItems: 'center', justifyContent: 'center' },
   statSummaryValue: { fontSize: 21, fontFamily: FONTS.bold, color: UI.textDark },
   statSummaryLabel: { fontSize: 12, color: UI.textGrey, fontFamily: FONTS.medium, marginTop: 2 },
 
   // Orders table
-  tableCard: { backgroundColor: UI.card, borderRadius: RADIUS.xl, padding: 24, borderWidth: 1, borderColor: UI.border, ...softShadow },
+  tableCard: { backgroundColor: UI.card, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: UI.border },
   tableHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   tableTitle: { fontSize: 16, fontFamily: FONTS.bold, color: UI.textDark },
   tableRowHeader: { flexDirection: 'row-reverse', paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: UI.border },
