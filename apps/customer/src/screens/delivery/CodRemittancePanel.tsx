@@ -377,8 +377,8 @@ export default function CodRemittancePanel() {
             <Ionicons name="cash-outline" size={19} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.sectionTitle}>كاش استلمته من العملاء</Text>
-            <Text style={styles.sectionSubtitle}>هذا ليس من أرباحك — سلّمه للإدارة ثم أرسل الإثبات هنا</Text>
+            <Text style={styles.sectionTitle}>تحصيلات الكاش</Text>
+            <Text style={styles.sectionSubtitle}>المبالغ التي استلمتها من العملاء</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -422,9 +422,9 @@ export default function CodRemittancePanel() {
       {collections.length > 0 ? (
         <>
           <View style={styles.actionSummary}>
-            <Text style={styles.actionEyebrow}>المطلوب منك الآن</Text>
+            <View style={styles.actionTop}><View style={styles.actionIcon}><Ionicons name="arrow-up-circle-outline" size={20} color={COLORS.primary} /></View><Text style={styles.actionEyebrow}>المبلغ المطلوب تسليمه</Text></View>
             <Text style={styles.actionAmount}>{money(Math.max(totalOutstanding - totalPending, 0))} <Text style={styles.actionCurrency}>ر.ي</Text></Text>
-            <Text style={styles.actionText}>{Math.max(totalOutstanding - totalPending, 0) > 0 ? 'سلّم هذا المبلغ للإدارة وارفع صورة الإثبات' : totalPending > 0 ? 'لا تحتاج تعمل شيء الآن — انتظر مراجعة الإدارة' : 'ممتاز، لا يوجد عليك كاش مطلوب تسليمه'}</Text>
+            <Text style={styles.actionText}>{Math.max(totalOutstanding - totalPending, 0) > 0 ? 'بعد التسليم اضغط على الطلب وارفع الإثبات' : totalPending > 0 ? 'تم الإرسال، انتظر مراجعة الإدارة' : 'لا يوجد عليك مبلغ حاليًا'}</Text>
           </View>
           {totalPending > 0 ? <View style={styles.simpleStatus}><Ionicons name="time-outline" size={18} color={COLORS.primary} /><Text style={styles.simpleStatusText}>{money(totalPending)} ر.ي أرسلته بالفعل والإدارة تراجعه الآن</Text></View> : null}
 
@@ -671,11 +671,13 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: 'center', borderRadius: 16, padding: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
   emptyTitle: { color: COLORS.ink, fontSize: 13, fontWeight: '800', marginTop: 7 },
   emptyText: { color: COLORS.inkTertiary, fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center' },
-  actionSummary: { backgroundColor: COLORS.primary, borderRadius: 22, padding: 20, alignItems: 'flex-end' },
-  actionEyebrow: { color: 'rgba(255,255,255,0.72)', fontSize: 11, fontWeight: '700' },
-  actionAmount: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', marginTop: 4 },
-  actionCurrency: { fontSize: 13, color: 'rgba(255,255,255,0.72)' },
-  actionText: { color: 'rgba(255,255,255,0.78)', fontSize: 11.5, lineHeight: 19, marginTop: 5, textAlign: 'right' },
+  actionSummary: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, alignItems: 'flex-end', borderWidth: 1, borderColor: COLORS.hairline },
+  actionTop: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  actionIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  actionEyebrow: { color: COLORS.inkSecondary, fontSize: 11, fontWeight: '700' },
+  actionAmount: { color: COLORS.ink, fontSize: 32, fontWeight: '900', marginTop: 10 },
+  actionCurrency: { fontSize: 13, color: COLORS.inkSecondary },
+  actionText: { color: COLORS.inkSecondary, fontSize: 11, lineHeight: 18, marginTop: 4, textAlign: 'right' },
   simpleStatus: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, backgroundColor: COLORS.primarySoft, borderRadius: 14, padding: 12 },
   simpleStatusText: { flex: 1, color: COLORS.primary, fontSize: 11, fontWeight: '700', textAlign: 'right' },
   summaryCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
@@ -684,7 +686,7 @@ const styles = StyleSheet.create({
   summaryDivider: { width: 1, height: 30, backgroundColor: '#E5E7EB' },
   holdNotice: { flexDirection: 'row-reverse', alignItems: 'flex-end', gap: 7, padding: 11, borderRadius: 12, backgroundColor: '#FFFBEB' },
   holdNoticeText: { flex: 1, color: '#92400E', fontSize: 10.5, fontWeight: '600', lineHeight: 17, textAlign: 'right' },
-  collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: COLORS.hairline, gap: 11, marginTop: 2 },
+  collectionCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, borderWidth: 1, borderColor: COLORS.hairline, gap: 10, marginTop: 2 },
   collectionTopRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   collectionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   orderNumber: { color: COLORS.ink, fontSize: 13, fontWeight: '800', textAlign: 'right' },
@@ -704,11 +706,11 @@ const styles = StyleSheet.create({
   submissionDate: { color: COLORS.inkTertiary, fontSize: 9.5, marginTop: 2, textAlign: 'right' },
   reviewNote: { color: COLORS.inkSecondary, fontSize: 9.5, lineHeight: 14, marginTop: 3, textAlign: 'right' },
   submissionBadge: { fontSize: 9, fontWeight: '800', paddingHorizontal: 7, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
-  submitButton: { minHeight: 52, borderRadius: 15, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
+  submitButton: { minHeight: 48, borderRadius: 14, backgroundColor: COLORS.primary, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 10 },
   submitButtonDisabled: { backgroundColor: '#E5E7EB' },
   submitButtonText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '800', textAlign: 'center' },
   submitButtonTextDisabled: { color: COLORS.inkSecondary },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(17,24,39,0.58)' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.44)' },
   modalScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 26, padding: 22, borderWidth: 1, borderColor: COLORS.hairline },
   modalHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, marginBottom: 14 },
