@@ -154,7 +154,7 @@ const s = StyleSheet.create({
   headerContent: { maxWidth: 920, alignSelf: 'center', flexDirection: 'row-reverse', alignItems: 'center', gap: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: UI.bg, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 20, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right' },
-  scroll: { alignItems: 'center', paddingTop: 20, paddingBottom: 112 },
+  scroll: { alignItems: 'center', paddingTop: 14, paddingBottom: 96 },
   
   card: { maxWidth: 920, backgroundColor: UI.card, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: UI.border },
   cardTitle: { fontSize: 18, fontFamily: FONTS.bold, color: UI.text, textAlign: 'right', marginBottom: 8 },
