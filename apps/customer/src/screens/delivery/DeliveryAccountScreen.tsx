@@ -46,7 +46,6 @@ export default function DeliveryAccountScreen({ navigation }: any) {
     { id: '1', title: 'إجمالي التوصيلات', value: `${info.totalDeliveries}`, icon: 'cube-outline' },
     { id: '2', title: 'توصيلات مسجّلة', value: `${info.count}`, icon: 'checkmark-done-outline' },
     { id: '3', title: 'الرصيد', value: `${info.balance}`, icon: 'wallet-outline' },
-    { id: '4', title: 'العملة', value: 'ر.ي', icon: 'cash-outline' },
   ];
 
   return (
@@ -112,7 +111,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>حساب المندوب</Text>
+        <Text style={styles.sectionTitle}>الإعدادات والخدمات</Text>
 
         {/* Menu List */}
         <View style={styles.menuCard}>
@@ -183,18 +182,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     overflow: 'hidden',
-    borderRadius: 24,
-    padding: 24,
-    minHeight: 140,
+    borderRadius: 22,
+    padding: 20,
+    minHeight: 116,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 2,
   },
   profileZoneRight: {
     justifyContent: 'center',
@@ -237,7 +236,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -245,8 +244,10 @@ const styles = StyleSheet.create({
   },
   statsCardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 12,
+    borderRadius: 20,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: COLORS.hairline,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 20,
@@ -321,8 +322,10 @@ const styles = StyleSheet.create({
   },
   menuCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 20,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: COLORS.hairline,
     paddingVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -335,7 +338,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 17,
   },
   menuItemRight: {
     flexDirection: 'row-reverse',
@@ -359,8 +362,10 @@ const styles = StyleSheet.create({
   },
   logoutCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 24,
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: COLORS.hairline,
     paddingVertical: 20,
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
