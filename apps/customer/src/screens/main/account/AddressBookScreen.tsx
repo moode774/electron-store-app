@@ -7,7 +7,8 @@ import { useCustomerLayout } from '../../../components/customer/CustomerResponsi
 import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
 
-export default function AddressBookScreen({ navigation }: any) {
+export default function AddressBookScreen({
+  const { t } = useTranslation(); navigation }: any) {
   const layout = useCustomerLayout(1040);
   const columns = layout.tablet ? 2 : 1;
   const gap = layout.compact ? 12 : 16;
