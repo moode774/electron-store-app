@@ -21,23 +21,25 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation, translate } from '../../i18n';
 
 type Filter = ProductApprovalStatus | 'all';
 
-const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: 'pending', label: 'قيد المراجعة' },
-  { value: 'approved', label: 'المعتمدة' },
-  { value: 'rejected', label: 'المرفوضة' },
-  { value: 'all', label: 'الكل' },
+const FILTERS: Array<{ value: Filter; labelKey: string }> = [
+  { value: 'pending', labelKey: 'adminUi.productPending' },
+  { value: 'approved', labelKey: 'adminUi.productApprovedPlural' },
+  { value: 'rejected', labelKey: 'adminUi.productRejectedPlural' },
+  { value: 'all', labelKey: 'adminUi.all' },
 ];
 
-const STATUS_META: Record<ProductApprovalStatus, { label: string; color: string; background: string }> = {
-  pending: { label: 'قيد المراجعة', color: '#92400E', background: '#FEF3C7' },
-  approved: { label: 'معتمد', color: '#166534', background: '#DCFCE7' },
-  rejected: { label: 'مرفوض', color: '#991B1B', background: '#FEE2E2' },
+const STATUS_META: Record<ProductApprovalStatus, { labelKey: string; color: string; background: string }> = {
+  pending: { labelKey: 'adminUi.productPending', color: '#92400E', background: '#FEF3C7' },
+  approved: { labelKey: 'adminUi.productApproved', color: '#166534', background: '#DCFCE7' },
+  rejected: { labelKey: 'adminUi.productRejected', color: '#991B1B', background: '#FEE2E2' },
 };
 
 export default function AdminProductsScreen({ navigation }: any) {
+  const { t, language } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.tablet ? 2 : 1;
@@ -59,7 +61,7 @@ export default function AdminProductsScreen({ navigation }: any) {
     try {
       setProducts(await getAdminProducts(filter));
     } catch (error: any) {
-      setLoadError(error?.message ?? 'تعذر تحميل قائمة المنتجات.');
+      setLoadError(error?.message ?? t('adminUi.productsLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -70,19 +72,19 @@ export default function AdminProductsScreen({ navigation }: any) {
 
   const approve = (product: AdminProductReview) => {
     Alert.alert(
-      'اعتماد المنتج',
-      `سيظهر «${product.name_ar || product.name}» للعملاء ويصبح قابلاً للطلب.`,
+      t('adminUi.approveProduct'),
+      `${t('adminUi.approveProductText')} ${product.name_ar || product.name}`,
       [
-        { text: 'تراجع', style: 'cancel' },
+        { text: t('adminUi.undo'), style: 'cancel' },
         {
-          text: 'اعتماد',
+          text: t('adminUi.approve'),
           onPress: async () => {
             setProcessingId(product.id);
             try {
               await reviewAdminProduct(product.id, 'approved');
               await load(true);
             } catch (error: any) {
-              Alert.alert('تعذر الاعتماد', error?.message ?? 'حاول مرة أخرى.');
+              Alert.alert(t('adminUi.approveFailed'), error?.message ?? t('adminUi.tryAgain'));
             } finally {
               setProcessingId(null);
             }
@@ -95,7 +97,7 @@ export default function AdminProductsScreen({ navigation }: any) {
   const reject = async (productId: string) => {
     const reason = rejectionReason.trim();
     if (reason.length < 3) {
-      Alert.alert('سبب الرفض مطلوب', 'اكتب سببًا واضحًا ليعرف التاجر ما الذي يحتاج إلى تعديل.');
+      Alert.alert(t('adminUi.rejectionReasonRequired'), t('adminUi.rejectionReasonText'));
       return;
     }
     setProcessingId(productId);
@@ -105,7 +107,7 @@ export default function AdminProductsScreen({ navigation }: any) {
       setRejectionReason('');
       await load(true);
     } catch (error: any) {
-      Alert.alert('تعذر رفض المنتج', error?.message ?? 'حاول مرة أخرى.');
+      Alert.alert(t('adminUi.rejectProductFailed'), error?.message ?? t('adminUi.tryAgain'));
     } finally {
       setProcessingId(null);
     }
@@ -114,12 +116,12 @@ export default function AdminProductsScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel="العودة">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel={t('adminUi.back')}>
           <Ionicons name="arrow-forward" size={22} color="#0F172A" />
         </TouchableOpacity>
         <View style={s.headerCopy}>
-          <Text style={s.title}>مراجعة المنتجات</Text>
-          <Text style={s.subtitle}>لا يظهر المنتج الجديد قبل قرار الإدارة</Text>
+          <Text style={s.title}>{t('adminUi.productReviewTitle')}</Text>
+          <Text style={s.subtitle}>{t('adminUi.productReviewSubtitle')}</Text>
         </View>
         <View style={s.headerButton} />
       </View>
@@ -133,7 +135,7 @@ export default function AdminProductsScreen({ navigation }: any) {
             accessibilityRole="button"
             accessibilityState={{ selected: filter === item.value }}
           >
-            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
+            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{t(item.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -145,7 +147,7 @@ export default function AdminProductsScreen({ navigation }: any) {
           <Ionicons name="alert-circle-outline" size={42} color="#DC2626" />
           <Text style={s.errorText}>{loadError}</Text>
           <TouchableOpacity style={s.retryButton} onPress={() => void load()}>
-            <Text style={s.retryText}>إعادة المحاولة</Text>
+            <Text style={s.retryText}>{t('adminUi.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -156,8 +158,8 @@ export default function AdminProductsScreen({ navigation }: any) {
           {products.length === 0 ? (
             <View style={s.empty}>
               <Ionicons name="checkmark-done-circle-outline" size={48} color="#16A34A" />
-              <Text style={s.emptyTitle}>لا توجد منتجات في هذه القائمة</Text>
-              <Text style={s.emptyText}>ستظهر المنتجات هنا فور إرسالها أو تغيير حالتها.</Text>
+              <Text style={s.emptyTitle}>{t('adminUi.noProducts')}</Text>
+              <Text style={s.emptyText}>{t('adminUi.noProductsText')}</Text>
             </View>
           ) : products.map((product) => {
             const status = STATUS_META[product.approval_status] ?? STATUS_META.pending;
@@ -176,13 +178,13 @@ export default function AdminProductsScreen({ navigation }: any) {
                   <View style={s.productCopy}>
                     <View style={s.statusRow}>
                       <View style={[s.statusBadge, { backgroundColor: status.background }]}>
-                        <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
+                        <Text style={[s.statusText, { color: status.color }]}>{t(status.labelKey)}</Text>
                       </View>
-                      <Text style={s.storeName}>{product.merchant_profiles?.store_name ?? 'متجر غير معروف'}</Text>
+                      <Text style={s.storeName}>{product.merchant_profiles?.store_name ?? t('adminUi.unknownStore')}</Text>
                     </View>
                     <Text style={s.productName}>{product.name_ar || product.name}</Text>
-                    <Text style={s.price}>{Number(product.sale_price ?? product.base_price).toFixed(2)} ر.ي</Text>
-                    <Text style={s.meta}>المخزون: {product.stock_quantity ?? 0} · أضيف {new Date(product.created_at).toLocaleDateString('ar-SA')}</Text>
+                    <Text style={s.price}>{Number(product.sale_price ?? product.base_price).toFixed(2)} {t('merchant.currencyYER')}</Text>
+                    <Text style={s.meta}>{t('adminUi.stock')}: {product.stock_quantity ?? 0} · {t('adminUi.added')} {new Date(product.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text>
                   </View>
                 </View>
 
@@ -190,7 +192,7 @@ export default function AdminProductsScreen({ navigation }: any) {
                   <Text style={s.description} numberOfLines={3}>{product.description_ar || product.description}</Text>
                 ) : null}
                 {product.approval_note ? (
-                  <View style={s.noteBox}><Text style={s.noteText}>سبب القرار: {product.approval_note}</Text></View>
+                  <View style={s.noteBox}><Text style={s.noteText}>{t('adminUi.decisionReason')}: {product.approval_note}</Text></View>
                 ) : null}
 
                 {rejecting ? (
@@ -198,7 +200,7 @@ export default function AdminProductsScreen({ navigation }: any) {
                     <TextInput
                       value={rejectionReason}
                       onChangeText={setRejectionReason}
-                      placeholder="اذكر التعديل المطلوب من التاجر..."
+                      placeholder={t('adminUi.rejectionPlaceholder')}
                       placeholderTextColor="#94A3B8"
                       multiline
                       maxLength={1000}
@@ -211,14 +213,14 @@ export default function AdminProductsScreen({ navigation }: any) {
                         disabled={busy}
                         onPress={() => void reject(product.id)}
                       >
-                        {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.rejectButtonText}>تأكيد الرفض</Text>}
+                        {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.rejectButtonText}>{t('adminUi.confirmReject')}</Text>}
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[s.actionButton, s.cancelButton]}
                         disabled={busy}
                         onPress={() => { setRejectingId(null); setRejectionReason(''); }}
                       >
-                        <Text style={s.cancelButtonText}>تراجع</Text>
+                        <Text style={s.cancelButtonText}>{t('adminUi.undo')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -229,14 +231,14 @@ export default function AdminProductsScreen({ navigation }: any) {
                       disabled={busy || product.approval_status === 'approved'}
                       onPress={() => approve(product)}
                     >
-                      {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.approveButtonText}>اعتماد</Text>}
+                      {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.approveButtonText}>{t('adminUi.approve')}</Text>}
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[s.actionButton, s.outlineRejectButton, busy && s.disabled]}
                       disabled={busy}
                       onPress={() => { setRejectingId(product.id); setRejectionReason(product.approval_note ?? ''); }}
                     >
-                      <Text style={s.outlineRejectText}>رفض مع السبب</Text>
+                      <Text style={s.outlineRejectText}>{t('adminUi.rejectWithReason')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
