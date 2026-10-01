@@ -33,6 +33,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 type Recommendation = 'approve' | 'reject';
 type Disposition = 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected';
@@ -53,9 +54,9 @@ interface MerchantPhysicalReturnsScreenProps {
 
 const STATUS: Record<string, { label: string; color: string; background: string }> = {
   requested: { label: 'بانتظار مراجعة التاجر', color: '#B45309', background: '#FFFBEB' },
-  approved: { label: 'معتمد', color: '#1D4ED8', background: '#EFF6FF' },
-  rejected: { label: 'مرفوض', color: '#B91C1C', background: '#FEF2F2' },
-  cancelled: { label: 'ملغي', color: '#64748B', background: '#F1F5F9' },
+  approved: { label: t('merchant.approved'), color: '#1D4ED8', background: '#EFF6FF' },
+  rejected: { label: t('merchant.rejected'), color: '#B91C1C', background: '#FEF2F2' },
+  cancelled: { label: t('merchant.cancelled'), color: '#64748B', background: '#F1F5F9' },
   pickup_scheduled: { label: 'تم تحديد الاستلام', color: '#6D28D9', background: '#F5F3FF' },
   picked_up: { label: 'استلمه المندوب', color: '#0369A1', background: '#F0F9FF' },
   received: { label: 'وصل إلى المتجر', color: '#047857', background: '#ECFDF5' },
@@ -80,8 +81,8 @@ const DISPOSITIONS: Array<{ value: Disposition; label: string }> = [
 ];
 
 const FILTERS = [
-  { key: '', label: 'الكل' },
-  { key: 'actionable', label: 'تحتاج إجراء' },
+  { key: '', label: t('merchant.all') },
+  { key: 'actionable', label: t('merchant.needsAction') },
   { key: 'requested', label: 'جديدة' },
   { key: 'pickup_scheduled', label: 'موعد استلام' },
   { key: 'received', label: 'وصلت المتجر' },
@@ -552,7 +553,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 
         <View style={[styles.infoGrid, isCompact && styles.infoGridCompact]}>
           <View style={styles.infoBlock}>
-            <Text style={styles.infoLabel}>العميل</Text>
+            <Text style={styles.infoLabel}>{t('merchant.customerLabel')}</Text>
             <Text style={styles.infoValue}>{item.users?.full_name ?? 'عميل الطلب'}</Text>
             {item.users?.phone ? <Text style={styles.secondaryValue}>{item.users.phone}</Text> : null}
           </View>
@@ -654,7 +655,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 
   return (
     <View style={styles.page}>
-      <ScreenHeader title="المرتجعات الفعلية" subtitle="أكّد وصول المنتجات وسجّل نتيجة الفحص" onBack={() => navigation.goBack()} />
+      <ScreenHeader title=t('merchant.returnsTitle') subtitle=t('merchant.returnsSubtitle') onBack={() => navigation.goBack()} />
 
       <View style={[styles.filters, isDesktop && styles.filtersWide]}>
         {FILTERS.map((option) => (
@@ -677,7 +678,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           <Ionicons name="cloud-offline-outline" size={44} color="#B91C1C" />
           <Text style={styles.errorText}>{loadError}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -705,7 +706,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           ListEmptyComponent={(
             <View style={styles.center}>
               <Ionicons name="return-down-back-outline" size={42} color="#94A3B8" />
-              <Text style={styles.emptyText}>لا توجد مرتجعات ضمن هذا التصنيف.</Text>
+              <Text style={styles.emptyText}>{t('merchant.noReturns')}</Text>
             </View>
           )}
         />
@@ -752,7 +753,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeResponse} disabled={Boolean(actionId)}>
-                <Text style={styles.secondaryButtonText}>إلغاء</Text>
+                <Text style={styles.secondaryButtonText}>{t('customer.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitButton, (!response.trim() || actionId) && styles.disabled]} onPress={submitResponse} disabled={!response.trim() || Boolean(actionId)}>
                 {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>إرسال التوصية</Text>}
@@ -807,7 +808,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             <Text style={styles.modalHint}>الروابط خاصة ومؤقتة. افتح الملف لمراجعته بالحجم الكامل.</Text>
             {renderEvidencePanel()}
             <TouchableOpacity style={styles.secondaryButton} onPress={closeEvidence} accessibilityRole="button">
-              <Text style={styles.secondaryButtonText}>إغلاق</Text>
+              <Text style={styles.secondaryButtonText}>{t('merchant.close')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
