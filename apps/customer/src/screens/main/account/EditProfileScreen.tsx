@@ -9,7 +9,8 @@ import { Input } from '@marketplace/shared-ui';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
 
-export default function EditProfileScreen({ navigation }: any) {
+export default function EditProfileScreen({
+  const { t } = useTranslation(); navigation }: any) {
   const layout = useCustomerLayout(720);
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
