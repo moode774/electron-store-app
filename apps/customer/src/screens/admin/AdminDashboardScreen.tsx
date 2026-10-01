@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect, Line } from 'react-native-svg';
 import { getAdminStats, AdminStats, useAuthStore, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 // Admin semantic aliases keep the operational data contract separate from presentation.
 const UI = {
@@ -44,19 +45,19 @@ const softShadow = {
   elevation: 1,
 } as const;
 
-const ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
-  pending: { label: 'جديد', color: '#F59E0B' },
-  confirmed: { label: 'مؤكد', color: '#3B82F6' },
-  preparing: { label: 'قيد التجهيز', color: '#8B5CF6' },
-  ready: { label: 'جاهز للمندوب', color: '#0EA5E9' },
-  assigned: { label: 'تم تعيين مندوب', color: '#6366F1' },
-  picked_up: { label: 'استلمه المندوب', color: '#0891B2' },
-  on_the_way: { label: 'في الطريق', color: '#2563EB' },
-  rescheduled: { label: 'أعيدت الجدولة', color: '#D97706' },
-  failed_delivery: { label: 'تعذّر التسليم', color: '#DC2626' },
-  delivered: { label: 'مكتمل', color: UI.green },
-  cancelled: { label: 'ملغي', color: '#EF4444' },
-  returned: { label: 'مرتجع', color: '#64748B' },
+const ORDER_STATUS_META: Record<string, { labelKey: string; color: string }> = {
+  pending: { labelKey: 'adminUi.orderNew', color: '#F59E0B' },
+  confirmed: { labelKey: 'adminUi.orderConfirmed', color: '#3B82F6' },
+  preparing: { labelKey: 'adminUi.orderPreparing', color: '#8B5CF6' },
+  ready: { labelKey: 'adminUi.orderReadyCourier', color: '#0EA5E9' },
+  assigned: { labelKey: 'adminUi.orderDriverAssigned', color: '#6366F1' },
+  picked_up: { labelKey: 'adminUi.orderPickedUp', color: '#0891B2' },
+  on_the_way: { labelKey: 'adminUi.orderOnWay', color: '#2563EB' },
+  rescheduled: { labelKey: 'adminUi.orderRescheduled', color: '#D97706' },
+  failed_delivery: { labelKey: 'adminUi.orderFailedDelivery', color: '#DC2626' },
+  delivered: { labelKey: 'adminUi.orderCompleted', color: UI.green },
+  cancelled: { labelKey: 'adminUi.orderCancelled', color: '#EF4444' },
+  returned: { labelKey: 'adminUi.orderReturned', color: '#64748B' },
 };
 
 // ---- SVG Line Chart (matching Merchant) ----
@@ -145,7 +146,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       setRecentOrders(orders.slice(0, 5));
     } catch (e) {
       console.error('Failed to load the admin dashboard:', e);
-      setError('تعذر تحميل بيانات لوحة الإدارة. تحقق من الاتصال ثم أعد المحاولة.');
+      setError(t('adminUi.dashboardLoadFailed'));
     }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
@@ -156,7 +157,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
   const exportReport = async () => {
     if (!stats || !orders.length) {
-      Alert.alert('خطأ', 'لا توجد بيانات كافية للتصدير');
+      Alert.alert(t('adminUi.error'), t('adminUi.exportNotEnoughData'));
       return;
     }
     try {
@@ -191,11 +192,11 @@ export default function AdminDashboardScreen({ navigation }: any) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { UTI: 'public.comma-separated-values-text', mimeType: 'text/csv' });
       } else {
-        Alert.alert('تم', 'تم إنشاء الملف، ولكن لا يمكن مشاركته على هذا الجهاز');
+        Alert.alert(t('adminUi.done'), t('adminUi.exportCreatedCannotShare'));
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('خطأ', 'حدث خطأ أثناء إنشاء التقرير');
+      Alert.alert(t('adminUi.error'), t('adminUi.exportReportFailed'));
     }
   };
 
@@ -224,7 +225,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
   // ── Order row render ──
   const renderOrderRow = (item: any, index: number) => {
-    const statusMeta = ORDER_STATUS_META[item.status] ?? { label: item.status || 'حالة غير معروفة', color: UI.textMuted };
+    const statusMeta = ORDER_STATUS_META[item.status] ?? { labelKey: '', color: UI.textMuted };
     const statusLabel = statusMeta.label;
     const statusColor = statusMeta.color;
     const d = new Date(item.created_at);
@@ -234,7 +235,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
         style={[styles.tableRow, !isDesktop && styles.tableRowMobile]}
         onPress={() => navigation.navigate('AdminOrders', { initialSearch: item.order_number ?? item.id })}
         accessibilityRole="button"
-        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number ?? item.id}`}
+        accessibilityLabel={`${t('adminUi.openOrderDetails')} ${item.order_number ?? item.id}`}
       >
         {isDesktop ? (
           <>
@@ -242,18 +243,18 @@ export default function AdminDashboardScreen({ navigation }: any) {
               <View style={styles.avatarMiniList}><Ionicons name="receipt" size={14} color={UI.textDark} /></View>
               <View>
                 <Text style={styles.tdTextBold}>#{item.order_number ?? item.id.slice(0, 8)}</Text>
-                <Text style={styles.tdSub}>طلب جديد</Text>
+                <Text style={styles.tdSub}>{t('adminUi.orderNew')}</Text>
               </View>
             </View>
             <Text style={[styles.td, { flex: 2 }]}>{d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
             <Text style={[styles.td, { flex: 2 }]}>{d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</Text>
             <Text style={[styles.td, { flex: 2 }]}>{item.merchant_profiles?.store_name ?? '—'}</Text>
-            <Text style={[styles.td, { flex: 2 }]}>{item.customer?.full_name ?? item.users?.full_name ?? 'عميل جديد'}</Text>
+            <Text style={[styles.td, { flex: 2 }]}>{item.customer?.full_name ?? item.users?.full_name ?? t('adminUi.newCustomer')}</Text>
             <View style={[{ flex: 2, flexDirection: 'row-reverse', alignItems: 'center', gap: 6 }]}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
               <Text style={[styles.tdTextBold, { color: UI.textDark }]}>{statusLabel}</Text>
             </View>
-            <Text style={[styles.td, styles.tdTextBold, { flex: 2, textAlign: 'left' }]}>{item.total_amount?.toLocaleString()} ر.ي</Text>
+            <Text style={[styles.td, styles.tdTextBold, { flex: 2, textAlign: 'left' }]}>{item.total_amount?.toLocaleString()} {t('adminUi.yer')}</Text>
           </>
         ) : (
           <>
@@ -263,7 +264,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
               <Text style={styles.tdSub}>{d.toLocaleDateString('en-GB')} • {item.merchant_profiles?.store_name ?? '—'}</Text>
             </View>
             <View style={{ alignItems: 'flex-start' }}>
-              <Text style={styles.tdTextBold}>{item.total_amount?.toLocaleString()} ر.ي</Text>
+              <Text style={styles.tdTextBold}>{item.total_amount?.toLocaleString()} {t('adminUi.yer')}</Text>
               <Text style={[styles.tdSub, { color: statusColor }]}>{statusLabel}</Text>
             </View>
           </>
@@ -280,7 +281,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     return (
       <View style={styles.trendRow}>
         <Ionicons name={icon} size={14} color={color} />
-        <Text style={[styles.trendText, { color }]}>{Math.abs(val).toFixed(1)}% عن الأسبوع السابق</Text>
+        <Text style={[styles.trendText, { color }]}>{Math.abs(val).toFixed(1)}% {t('adminUi.vsPreviousWeek')}</Text>
       </View>
     );
   };
@@ -298,14 +299,14 @@ export default function AdminDashboardScreen({ navigation }: any) {
         {/* ===== Welcome Section ===== */}
         <View style={[styles.welcomeRow, !isDesktop && styles.welcomeRowMobile, isMid && styles.welcomeRowMid]}>
           <View style={styles.welcomeCopy}>
-            <View style={styles.eyebrowRow}><View style={styles.liveDot} /><Text style={styles.eyebrow}>مركز العمليات</Text></View>
-            <Text style={[styles.welcomeText, !isDesktop && { fontSize: 22 }]}>لوحة التحكم</Text>
-            <Text style={styles.welcomeSubtitle}>ملخص سريع لأداء المنصة والعمليات اليومية</Text>
+            <View style={styles.eyebrowRow}><View style={styles.liveDot} /><Text style={styles.eyebrow}>{t('adminUi.operationsCenter')}</Text></View>
+            <Text style={[styles.welcomeText, !isDesktop && { fontSize: 22 }]}>{t('adminUi.dashboardTitle')}</Text>
+            <Text style={styles.welcomeSubtitle}>{t('adminUi.dashboardSubtitle')}</Text>
           </View>
           <View style={[styles.welcomeActions, !isDesktop && styles.welcomeActionsMobile, isMid && styles.welcomeActionsMid]}>
-            <TouchableOpacity style={styles.exportBtn} onPress={exportReport} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تصدير جميع الطلبات إلى ملف CSV">
+            <TouchableOpacity style={styles.exportBtn} onPress={exportReport} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('adminUi.exportOrdersCsvA11y')}>
               <Ionicons name="download-outline" size={16} color={UI.primary} />
-              <Text style={styles.addBtnText}>تصدير التقرير</Text>
+              <Text style={styles.addBtnText}>{t('adminUi.exportReport')}</Text>
             </TouchableOpacity>
             <View style={styles.datePicker}>
               <Ionicons name="calendar-outline" size={16} color={UI.textDark} />
@@ -317,24 +318,24 @@ export default function AdminDashboardScreen({ navigation }: any) {
         {loading ? (
           <View style={styles.loadingCenter}>
             <ActivityIndicator size="large" color={UI.primary} />
-            <Text style={{ color: UI.textMuted, marginTop: 12, fontWeight: '600' }}>جاري تحميل البيانات...</Text>
+            <Text style={{ color: UI.textMuted, marginTop: 12, fontWeight: '600' }}>{t('adminUi.loadingData')}</Text>
           </View>
         ) : error ? (
           <View style={styles.errorCard} accessibilityRole="alert">
             <Ionicons name="cloud-offline-outline" size={36} color="#DC2626" />
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <Text style={styles.retryText}>{t('adminUi.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
             <View style={[styles.quickActions, !isDesktop && styles.quickActionsMobile, isMid && styles.quickActionsMid, isTablet && styles.quickActionsTablet]}>
               {[
-                { title: 'المتاجر', icon: 'storefront-outline', route: 'AdminMerchants' },
-                { title: 'الطلبات', icon: 'receipt-outline', route: 'AdminOrders' },
-                { title: 'المستخدمون', icon: 'people-outline', route: 'AdminUsers' },
-                { title: 'كل الأدوات', icon: 'options-outline', route: 'AdminMore' },
+                { title: t('adminUi.stores'), icon: 'storefront-outline', route: 'AdminMerchants' },
+                { title: t('adminUi.orders'), icon: 'receipt-outline', route: 'AdminOrders' },
+                { title: t('adminUi.users'), icon: 'people-outline', route: 'AdminUsers' },
+                { title: t('adminUi.allTools'), icon: 'options-outline', route: 'AdminMore' },
               ].map(action => <TouchableOpacity key={action.route} style={[styles.quickAction, !isDesktop && styles.quickActionMobile, isMid && styles.quickActionMid, isTablet && styles.quickActionTablet]} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
                 <View style={styles.quickActionIcon}><Ionicons name={action.icon as any} size={20} color={UI.primary} /></View>
                 <Text style={styles.quickActionText}>{action.title}</Text>
@@ -351,26 +352,26 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
                   <View style={styles.heroContent}>
                     <View style={[styles.heroTop, !isDesktop && { marginBottom: 12 }]}>
-                      <Text style={styles.heroLogo}>لوحة الإدارة</Text>
+                      <Text style={styles.heroLogo}>{t('adminUi.adminDashboard')}</Text>
                       <View style={styles.heroIconWrap}>
                         <Ionicons name="shield-checkmark" size={20} color={UI.primary} />
                       </View>
                     </View>
-                    <Text style={styles.heroSubtitle}>إجمالي صافي قيمة الطلبات المسدّدة</Text>
-                    <Text style={[styles.heroBalance, !isDesktop && { fontSize: 30, marginBottom: 12 }]}>{stats?.netSettledGmv.toLocaleString() ?? 0} ر.ي</Text>
+                    <Text style={styles.heroSubtitle}>{t('adminUi.netSettledGmv')}</Text>
+                    <Text style={[styles.heroBalance, !isDesktop && { fontSize: 30, marginBottom: 12 }]}>{stats?.netSettledGmv.toLocaleString() ?? 0} {t('adminUi.yer')}</Text>
                     <View style={styles.heroBottom}>
-                      <Text style={styles.heroText}>المستخدمين: {stats?.totalUsers.toLocaleString()}</Text>
-                      <Text style={styles.heroText}>الطلبات: {stats?.totalOrders.toLocaleString()}</Text>
+                      <Text style={styles.heroText}>{t('adminUi.users')}: {stats?.totalUsers.toLocaleString()}</Text>
+                      <Text style={styles.heroText}>{t('adminUi.orders')}: {stats?.totalOrders.toLocaleString()}</Text>
                     </View>
                   </View>
                 </View>
 
                 <View style={[styles.card, styles.limeCard]}>
-                  <Text style={styles.cardTitleSoft}>تجار قيد الانتظار</Text>
+                  <Text style={styles.cardTitleSoft}>{t('adminUi.pendingMerchants')}</Text>
                   <View style={styles.statRow}>
                     <Text style={styles.statValue}>+{stats?.pendingMerchants ?? 0}</Text>
                     <View style={styles.badgeOrange}>
-                      <Text style={styles.badgeOrangeText}>بانتظار المراجعة</Text>
+                      <Text style={styles.badgeOrangeText}>{t('adminUi.awaitingReview')}</Text>
                     </View>
                   </View>
                 </View>
@@ -382,9 +383,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
                   <View style={styles.cardHeader}>
                     <View style={styles.cardHeaderLeft}>
                       <View style={styles.iconBox}><Ionicons name="bar-chart" size={16} color={UI.textDark} /></View>
-                      <Text style={styles.cardTitle}>طلبات آخر 7 أيام</Text>
+                      <Text style={styles.cardTitle}>{t('adminUi.ordersLast7Days')}</Text>
                     </View>
-                    <Text style={styles.chartLabel}>أسبوعي</Text>
+                    <Text style={styles.chartLabel}>{t('adminUi.weekly')}</Text>
                   </View>
                   <View style={styles.chartAreaCentered}>
                     <BarChart w={chartWidth} h={160} points={chartPoints} color={UI.primary} />
@@ -402,11 +403,11 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <View style={[styles.card, styles.mintCard]}>
                   <View style={styles.cardHeader}>
                     <View style={styles.cardHeaderLeft}>
-                      <Text style={styles.cardTitle}>اتجاه الطلبات</Text>
+                      <Text style={styles.cardTitle}>{t('adminUi.ordersTrend')}</Text>
                     </View>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel={t('adminUi.openAllOrders')}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
                   </View>
-                  <Text style={styles.chartTotalValue}>{chartTotal.toLocaleString()} طلب</Text>
+                  <Text style={styles.chartTotalValue}>{chartTotal.toLocaleString()} {t('adminUi.ordersCount')}</Text>
                   <View style={{ marginTop: 20, alignItems: 'center' }}>
                     <LineChart w={chartWidth} h={80} points={chartPoints} color={UI.primary} />
                   </View>
@@ -415,23 +416,23 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <View style={styles.card}>
                   <View style={styles.cardHeaderLeft}>
                     <View style={styles.iconBox}><Ionicons name="analytics-outline" size={16} color={UI.textDark} /></View>
-                    <Text style={styles.cardTitleSoft}>نظرة سريعة</Text>
+                    <Text style={styles.cardTitleSoft}>{t('adminUi.quickOverview')}</Text>
                   </View>
                   <View style={{ marginTop: 14, gap: 10 }}>
                     <View style={styles.quickStatRow}>
-                      <Text style={styles.quickStatLabel}>طلبات نشطة</Text>
+                      <Text style={styles.quickStatLabel}>{t('adminUi.activeOrders')}</Text>
                       <Text style={styles.quickStatValue}>{stats?.activeOrders ?? 0}</Text>
                     </View>
                     <View style={styles.quickStatRow}>
-                      <Text style={styles.quickStatLabel}>سائقين متصلين</Text>
+                      <Text style={styles.quickStatLabel}>{t('adminUi.onlineDrivers')}</Text>
                       <Text style={styles.quickStatValue}>{stats?.onlineDrivers ?? 0}</Text>
                     </View>
                     <View style={styles.quickStatRow}>
-                      <Text style={styles.quickStatLabel}>متوسط صافي التسوية</Text>
-                      <Text style={styles.quickStatValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} ر.ي</Text>
+                      <Text style={styles.quickStatLabel}>{t('adminUi.averageNetSettlement')}</Text>
+                      <Text style={styles.quickStatValue}>{stats?.averageOrderValue?.toFixed(2) ?? '0.00'} {t('adminUi.yer')}</Text>
                     </View>
                     <View style={styles.quickStatRow}>
-                      <Text style={styles.quickStatLabel}>معدل إتمام الطلبات</Text>
+                      <Text style={styles.quickStatLabel}>{t('adminUi.orderCompletionRate')}</Text>
                       <View style={styles.completionWrap}>
                         <Text style={styles.quickStatValue}>{stats?.completionRate?.toFixed(1) ?? '0.0'}%</Text>
                         <View style={styles.progressBar}>
@@ -453,7 +454,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                   <Text style={styles.statSummaryValue}>{stats?.activeOrders ?? 0}</Text>
-                  <Text style={styles.statSummaryLabel}>طلبات نشطة</Text>
+                  <Text style={styles.statSummaryLabel}>{t('adminUi.activeOrders')}</Text>
                 </View>
               </View>
 
@@ -463,7 +464,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                   <Text style={styles.statSummaryValue}>{stats?.totalOrders.toLocaleString() ?? 0}</Text>
-                  <Text style={styles.statSummaryLabel}>إجمالي الطلبات</Text>
+                  <Text style={styles.statSummaryLabel}>{t('adminUi.totalOrders')}</Text>
                 </View>
                 {renderTrend(stats?.trends?.orders)}
               </View>
@@ -474,7 +475,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                   <Text style={styles.statSummaryValue}>{stats?.totalUsers.toLocaleString() ?? 0}</Text>
-                  <Text style={styles.statSummaryLabel}>إجمالي المستخدمين</Text>
+                  <Text style={styles.statSummaryLabel}>{t('adminUi.totalUsers')}</Text>
                 </View>
                 {renderTrend(stats?.trends?.users)}
               </View>
@@ -485,7 +486,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                   <Text style={styles.statSummaryValue}>{stats?.onlineDrivers ?? 0}</Text>
-                  <Text style={styles.statSummaryLabel}>سائقين متصلين</Text>
+                  <Text style={styles.statSummaryLabel}>{t('adminUi.onlineDrivers')}</Text>
                 </View>
               </View>
             </View>
@@ -493,20 +494,20 @@ export default function AdminDashboardScreen({ navigation }: any) {
             {/* ===== Orders Table ===== */}
             <View style={[styles.tableCard, !isDesktop && styles.tableCardMobile]}>
               <View style={styles.tableHeader}>
-                <Text style={styles.tableTitle}>سجل الطلبات الأحدث</Text>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+                <Text style={styles.tableTitle}>{t('adminUi.latestOrdersLog')}</Text>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel={t('adminUi.openAllOrders')}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
               </View>
 
               {isDesktop ? (
                 <View style={styles.tableWrapper}>
                   <View style={styles.tableRowHeader}>
-                    <Text style={[styles.th, { flex: 2 }]}>رقم الطلب</Text>
-                    <Text style={[styles.th, { flex: 2 }]}>التاريخ</Text>
-                    <Text style={[styles.th, { flex: 2 }]}>الوقت</Text>
-                    <Text style={[styles.th, { flex: 2 }]}>المتجر</Text>
-                    <Text style={[styles.th, { flex: 2 }]}>العميل</Text>
-                    <Text style={[styles.th, { flex: 2 }]}>الحالة</Text>
-                    <Text style={[styles.th, { flex: 2, textAlign: 'left' }]}>المبلغ</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>{t('adminUi.orderNumber')}</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>{t('adminUi.date')}</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>{t('adminUi.time')}</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>{t('adminUi.store')}</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>{t('adminUi.customer')}</Text>
+                    <Text style={[styles.th, { flex: 2 }]}>{t('adminUi.status')}</Text>
+                    <Text style={[styles.th, { flex: 2, textAlign: 'left' }]}>{t('adminUi.amount')}</Text>
                   </View>
                   {recentOrders.map(renderOrderRow)}
                 </View>
@@ -517,7 +518,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
               )}
 
               {recentOrders.length === 0 && (
-                <Text style={{ textAlign: 'center', color: UI.textMuted, padding: 30 }}>لا يوجد طلبات بعد</Text>
+                <Text style={{ textAlign: 'center', color: UI.textMuted, padding: 30 }}>{t('adminUi.noOrdersYet')}</Text>
               )}
             </View>
           </>
