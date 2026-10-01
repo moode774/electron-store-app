@@ -30,17 +30,17 @@ interface Props {
   navigation: AccountScreenNavigationProp;
 }
 
-const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof AccountStackParamList | null; params?: object }[] = [
-  { id: '1', title: translate('customer.accountInfo'), icon: 'person-outline', route: 'EditProfile' },
-  { id: '2', title: translate('customer.favorites'), icon: 'heart-outline', route: 'Favorites' },
-  { id: '3', title: translate('customer.paymentMethods'), icon: 'card-outline', route: 'PaymentMethods' },
-  { id: '4', title: translate('customer.savedAddresses'), icon: 'location-outline', route: 'AddressBook' },
-  { id: '5', title: translate('merchant.notifications'), icon: 'notifications-outline', route: 'Notifications' },
-  { id: '6', title: translate('customer.reviews'), icon: 'star-outline', route: 'Reviews' },
-  { id: '7', title: translate('customer.helpCenter'), icon: 'headset-outline', route: 'HelpCenter' },
-  { id: '10', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', route: 'ApiKeys' },
-  { id: '8', title: translate('customer.privacy'), icon: 'shield-checkmark-outline', route: 'Legal', params: { type: 'privacy' } },
-  { id: '9', title: translate('customer.terms'), icon: 'document-text-outline', route: 'Legal', params: { type: 'terms' } },
+const MENU_ITEMS: { id: string; titleKey: string; icon: string; route: keyof AccountStackParamList | null; params?: object }[] = [
+  { id: '1', titleKey: 'customer.accountInfo', icon: 'person-outline', route: 'EditProfile' },
+  { id: '2', titleKey: 'customer.favorites', icon: 'heart-outline', route: 'Favorites' },
+  { id: '3', titleKey: 'customer.paymentMethods', icon: 'card-outline', route: 'PaymentMethods' },
+  { id: '4', titleKey: 'customer.savedAddresses', icon: 'location-outline', route: 'AddressBook' },
+  { id: '5', titleKey: 'merchant.notifications', icon: 'notifications-outline', route: 'Notifications' },
+  { id: '6', titleKey: 'customer.reviews', icon: 'star-outline', route: 'Reviews' },
+  { id: '7', titleKey: 'customer.helpCenter', icon: 'headset-outline', route: 'HelpCenter' },
+  { id: '10', titleKey: 'customer.apiKeysAi', icon: 'key-outline', route: 'ApiKeys' },
+  { id: '8', titleKey: 'customer.privacy', icon: 'shield-checkmark-outline', route: 'Legal', params: { type: 'privacy' } },
+  { id: '9', titleKey: 'customer.terms', icon: 'document-text-outline', route: 'Legal', params: { type: 'terms' } },
 ];
 
 export default function AccountScreen({ navigation }: Props): React.JSX.Element {
@@ -72,7 +72,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
     const rejected = results.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
     if (rejected) {
       const msg = rejected.reason?.message || String(rejected.reason || '');
-      setStatsError('تعذّر تحديث بعض بيانات الحساب.');
+      setStatsError(t('customer.accountStatsFailed'));
       setStatsErrorDetail(msg);
     }
   }, [user?.id]);
@@ -142,7 +142,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   <Text style={styles.userSubText} numberOfLines={1}>{userSub}</Text>
                   <View style={styles.premiumBadgePill}>
                     <Ionicons name="star-outline" size={12} color={COLORS.primary} />
-                    <Text style={styles.premiumBadgeText}>{points.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} نقطة</Text>
+                    <Text style={styles.premiumBadgeText}>{points.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} {t('customer.points')}</Text>
                   </View>
                 </View>
               </View>
@@ -177,18 +177,18 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 style={styles.statsError}
                 onPress={() => {
                   Alert.alert(
-                    'تفاصيل مشكلة الاتصال',
-                    statsErrorDetail ? `سبب الخطأ: ${statsErrorDetail}` : 'تعذّر الاتصال بالخادم مؤقتاً.',
+                    t('customer.connectionIssueDetails'),
+                    statsErrorDetail ? `${t('customer.errorReason')}: ${statsErrorDetail}` : t('customer.serverUnavailable'),
                     [
                       { text: t('customer.cancel'), style: 'cancel' },
-                      { text: 'إعادة المحاولة الأن', onPress: () => void loadStats() },
+                      { text: t('customer.retryNow'), onPress: () => void loadStats() },
                     ],
                   );
                 }}
                 accessibilityRole="button"
               >
                 <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
-                <Text style={styles.statsErrorText}>{statsError} اضغط للتعرف على السبب وإعادة المحاولة.</Text>
+                <Text style={styles.statsErrorText}>{statsError} {t('customer.tapForReason')}</Text>
               </TouchableOpacity>
             )}
 
@@ -214,7 +214,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 </View>
                 <View style={styles.progressTextCol}>
                   <View style={styles.progressHeaderRow}>
-                    <Text style={styles.progressSubText}>باق 250 نقطة للحصول على قسيمة 50 رس</Text>
+                    <Text style={styles.progressSubText}>{t('customer.pointsRemaining')}</Text>
                     <Text style={styles.progressNumText}>75%</Text>
                   </View>
                   <View style={styles.progressBarTrack}>
@@ -228,7 +228,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 <TouchableOpacity
                   style={styles.redeemBtn}
                   activeOpacity={0.85}
-                  onPress={() => Alert.alert('متجر المكافآت', 'سيتم تحويل نقاطك إلى خصومات وكوبونات شرائية عند إتمام الطلبات.')}
+                  onPress={() => Alert.alert(t('customer.rewardsStore'), t('customer.rewardsInfo'))}
                 >
                   <Ionicons name="gift-outline" size={16} color="#0F172A" style={{ marginLeft: 6 }} />
                   <Text style={styles.redeemBtnText}>{t('merchant.redeemPoints')}</Text>
@@ -241,7 +241,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       style={styles.referralBadge}
                       activeOpacity={0.85}
                       onPress={() => {
-                        Alert.alert('تم نسخ الكود', `تم نسخ كود الإحالة (${referral}) بنجاح.`);
+                        Alert.alert(t('customer.codeCopied'), `${t('customer.referralCopied')} (${referral})`);
                       }}
                     >
                       <Ionicons name="copy-outline" size={15} color="#0F172A" style={{ marginLeft: 6 }} />
@@ -269,7 +269,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       <View style={styles.menuIconBox}>
                         <Ionicons name={item.icon as any} size={20} color={COLORS.primary} />
                       </View>
-                      <Text style={styles.menuItemText}>{item.title}</Text>
+                      <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                     </View>
                     <Ionicons name="chevron-back" size={18} color="#94A3B8" />
                   </TouchableOpacity>
@@ -296,18 +296,18 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
               onPress={() =>
                 Alert.alert(
                   t('merchant.deleteAccount'),
-                  'سيتم حذف حسابك وكل بياناتك (الطلبات، العناوين، المفضلة...) ولا يمكن التراجع. هل أنت متأكد؟',
+                  t('customer.deleteAccountConfirm'),
                   [
-                    { text: 'تراجع', style: 'cancel' },
+                    { text: t('merchant.undo'), style: 'cancel' },
                     {
-                      text: 'حذف نهائي',
+                      text: t('customer.deleteFinal'),
                       style: 'destructive',
                       onPress: async () => {
                         try {
                           await deleteMyAccount();
                           await signOut();
                         } catch (e: any) {
-                          Alert.alert(t('merchant.saveFailed'), e?.message ?? 'تعذّر حذف الحساب، حاول لاحقاً');
+                          Alert.alert(t('merchant.saveFailed'), e?.message ?? t('customer.deleteAccountFailed'));
                         }
                       },
                     },
