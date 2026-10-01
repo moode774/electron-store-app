@@ -295,7 +295,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         <View style={styles.finalNote}>
           <Ionicons name="time-outline" size={20} color="#D97706" />
           <Text style={styles.finalNoteText}>
-            بعد الإرسال سيراجع فريقنا بياناتك خلال 24 ساعة ويمكنك البدء باستقبال الطلبات فور القبول
+            {t('delivery.onboardingReviewNote')}
           </Text>
         </View>
 
