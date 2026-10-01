@@ -21,7 +21,7 @@ export default function OffersScreen({ navigation }: any) {
     setLoading(true);
     setLoadError('');
     try { setOffers(await getActiveCoupons()); }
-    catch (error: any) { setLoadError(error?.message ?? 'تعذّر تحميل العروض.'); }
+    catch (error: any) { setLoadError(error?.message ?? t('customer.loadOffersFailed')); }
     finally { setLoading(false); }
   }, []);
 
@@ -38,19 +38,19 @@ export default function OffersScreen({ navigation }: any) {
   };
 
   const offerTitle = (c: Coupon) =>
-    c.type === 'percentage' ? `خصم ${c.value}%`
-    : c.type === 'fixed' ? `خصم ${c.value} ر.ي`
-    : `عرض ${c.value}`;
+    c.type === 'percentage' ? `${t('customer.discount')} ${c.value}%`
+    : c.type === 'fixed' ? `${t('customer.discount')} ${c.value} ${t('merchant.currencyYER')}`
+    : `${t('customer.offer')} ${c.value}`;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>العروض والكوبونات</Text>
+          <Text style={styles.headerTitle}>{t('merchant.offersCoupons')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -64,7 +64,7 @@ export default function OffersScreen({ navigation }: any) {
           <Ionicons name="cloud-offline-outline" size={48} color="#B91C1C" />
           <Text style={styles.errorText}>{loadError}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -78,8 +78,8 @@ export default function OffersScreen({ navigation }: any) {
         renderItem={({ item, index }) => {
           const isCopied = copiedId === item.id;
           const color = CARD_COLORS[index % CARD_COLORS.length];
-          const expires = item.end_date ? `حتى ${new Date(item.end_date).toLocaleDateString('ar-SA')}` : 'بدون انتهاء';
-          const store = item.merchant_profiles?.store_name ?? 'كل المتاجر';
+          const expires = item.end_date ? `${t('customer.until')} ${new Date(item.end_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}` : t('customer.noExpiry');
+          const store = item.merchant_profiles?.store_name ?? t('customer.allStores');
           return (
             <View style={[styles.card, { width: cardWidth }]}>
               <View style={[styles.sideBar, { backgroundColor: color }]} />
@@ -98,11 +98,11 @@ export default function OffersScreen({ navigation }: any) {
                     onPress={() => handleCopy(item.id, item.code)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
-                    accessibilityLabel={`نسخ الرمز ${item.code}`}
+                    accessibilityLabel={`${t('customer.copyCodeA11y')} ${item.code}`}
                   >
                     <Ionicons name={isCopied ? 'checkmark' : 'copy-outline'} size={14} color={isCopied ? '#FFFFFF' : COLORS.primary} />
                     <Text style={[styles.copyBtnText, isCopied && { color: '#FFFFFF' }]}>
-                      {isCopied ? 'تم النسخ' : 'نسخ'}
+                      {isCopied ? t('merchant.copied') : t('merchant.copy')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -113,7 +113,7 @@ export default function OffersScreen({ navigation }: any) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="pricetag-outline" size={48} color="#D1D5DB" />
-            <Text style={styles.emptyText}>لا توجد عروض حالياً</Text>
+            <Text style={styles.emptyText}>{t('merchant.noOffers')}</Text>
           </View>
         }
       />
