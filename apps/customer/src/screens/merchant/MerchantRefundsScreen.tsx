@@ -14,11 +14,11 @@ import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
 
 const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'بانتظار المراجعة', color: '#B45309', bg: '#FFFBEB' },
-  approved: { label: 'مقبول', color: '#1D4ED8', bg: '#EFF6FF' },
-  processing: { label: 'قيد التنفيذ المالي', color: '#7C3AED', bg: '#F5F3FF' },
-  completed: { label: 'مكتمل', color: '#047857', bg: '#ECFDF5' },
-  rejected: { label: 'مرفوض', color: '#B91C1C', bg: '#FEF2F2' },
+  pending: { label: t('merchant.refundPending'), color: '#B45309', bg: '#FFFBEB' },
+  approved: { label: t('merchant.refundApproved'), color: '#1D4ED8', bg: '#EFF6FF' },
+  processing: { label: t('merchant.refundProcessing'), color: '#7C3AED', bg: '#F5F3FF' },
+  completed: { label: t('merchant.refundCompleted'), color: '#047857', bg: '#ECFDF5' },
+  rejected: { label: t('merchant.refundRejected'), color: '#B91C1C', bg: '#FEF2F2' },
 };
 
 export default function MerchantRefundsScreen({ navigation }: any) {
@@ -41,10 +41,10 @@ export default function MerchantRefundsScreen({ navigation }: any) {
     setError('');
     try {
       const profile = await getMerchantProfile(user.id);
-      if (!profile?.id) throw new Error('تعذّر العثور على ملف المتجر.');
+      if (!profile?.id) throw new Error(t('merchant.storeProfileMissing'));
       setItems(await getMerchantRefundRequests(profile.id));
     } catch (loadError: any) {
-      setError(loadError?.message ?? 'تعذّر تحميل طلبات الاسترداد.');
+      setError(loadError?.message ?? t('merchant.loadRefundsFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,9 +75,9 @@ export default function MerchantRefundsScreen({ navigation }: any) {
       await respondToRefundRequest(selected.id, response);
       setItems((current) => current.map((item) => item.id === selected.id ? { ...item, merchant_response: response.trim() } : item));
       setSelected(null);
-      Alert.alert('تم حفظ الرد', 'أضيف ردك إلى ملف الاسترداد دون تغيير قرار الإدارة.');
+      Alert.alert(t('merchant.responseSaved'), t('merchant.responseSavedText'));
     } catch (sendError: any) {
-      Alert.alert('تعذّر حفظ الرد', sendError?.message ?? 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert(t('merchant.responseSaveFailed'), sendError?.message ?? 'تحقق من الاتصال وحاول مجددًا.');
     } finally {
       setSending(false);
     }
@@ -89,9 +89,9 @@ export default function MerchantRefundsScreen({ navigation }: any) {
 
       <View style={[styles.filters, isTablet && styles.filtersWide]}>
         {[
-          { key: '', label: 'الكل' }, { key: 'pending', label: 'قيد المراجعة' },
-          { key: 'approved', label: 'مقبول' }, { key: 'processing', label: 'قيد التنفيذ' },
-          { key: 'completed', label: 'مكتمل' }, { key: 'rejected', label: 'مرفوض' },
+          { key: '', label: 'الكل' }, { key: 'pending', label: t('merchant.refundPending') },
+          { key: 'approved', label: t('merchant.refundApproved') }, { key: 'processing', label: t('merchant.refundProcessing') },
+          { key: 'completed', label: t('merchant.refundCompleted') }, { key: 'rejected', label: t('merchant.refundRejected') },
         ].map((option) => (
           <TouchableOpacity key={option.key} style={[styles.filter, filter === option.key && styles.filterActive]} onPress={() => setFilter(option.key)} accessibilityRole="button" accessibilityState={{ selected: filter === option.key }}>
             <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{option.label}</Text>
@@ -129,21 +129,21 @@ export default function MerchantRefundsScreen({ navigation }: any) {
                 </View>
                 <View style={[styles.amountRow, isCompact && styles.amountRowCompact]}>
                   <Text style={styles.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} ر.ي</Text>
-                  <Text style={styles.amountLabel}>المبلغ المحسوب للاسترداد</Text>
+                  <Text style={styles.amountLabel}>{t('merchant.calculatedRefund')}</Text>
                 </View>
                 <Text style={styles.label}>{t('merchant.reason')}</Text>
                 <Text style={styles.body}>{item.reason ?? '—'}</Text>
                 {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
                 {orderItems.length ? (
                   <View style={styles.itemsBox}>
-                    <Text style={styles.label}>عناصر الطلب</Text>
-                    {orderItems.map((orderItem: any, index: number) => <Text key={`${orderItem.product_name}-${index}`} style={styles.itemLine}>{orderItem.product_name ?? 'منتج'} × {orderItem.quantity ?? 0}</Text>)}
+                    <Text style={styles.label}>{t('merchant.orderItems')}</Text>
+                    {orderItems.map((orderItem: any, index: number) => <Text key={`${orderItem.product_name}-${index}`} style={styles.itemLine}>{orderItem.product_name ?? t('common.products')} × {orderItem.quantity ?? 0}</Text>)}
                   </View>
                 ) : null}
                 {item.merchant_response ? <View style={styles.responseBox}><Text style={styles.label}>{t('merchant.merchantResponse')}</Text><Text style={styles.body}>{item.merchant_response}</Text></View> : null}
-                {item.decision_reason ? <View style={styles.adminBox}><Text style={styles.label}>سبب القرار</Text><Text style={styles.body}>{item.decision_reason}</Text></View> : null}
+                {item.decision_reason ? <View style={styles.adminBox}><Text style={styles.label}>{t('merchant.decisionReason')}</Text><Text style={styles.body}>{item.decision_reason}</Text></View> : null}
                 {item.status === 'pending' ? (
-                  <TouchableOpacity style={styles.responseButton} onPress={() => openResponse(item)} accessibilityRole="button" accessibilityLabel="إضافة رد التاجر">
+                  <TouchableOpacity style={styles.responseButton} onPress={() => openResponse(item)} accessibilityRole="button" accessibilityLabel=t('merchant.addMerchantResponse')>
                     <Text style={styles.responseButtonText}>{item.merchant_response ? t('merchant.updateResponse') : t('merchant.addAdminInfo')}</Text>
                   </TouchableOpacity>
                 ) : null}
@@ -156,9 +156,9 @@ export default function MerchantRefundsScreen({ navigation }: any) {
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => !sending && setSelected(null)} accessibilityViewIsModal>
         <View style={styles.modalOverlay}>
           <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalTitle}>رد المتجر على طلب الاسترداد</Text>
-            <Text style={styles.modalHint}>اكتب حالة تجهيز الطلب أو أي معلومة تساعد الإدارة. هذا الرد لا يرفض الطلب ولا يغير حالته.</Text>
-            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder="تفاصيل رد المتجر..." placeholderTextColor="#94A3B8" accessibilityLabel={t('merchant.merchantResponse')} />
+            <Text style={styles.modalTitle}>{t('merchant.refundResponseTitle')}</Text>
+            <Text style={styles.modalHint}>{t('merchant.refundResponseHint')}</Text>
+            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder=t('merchant.responseDetails') placeholderTextColor="#94A3B8" accessibilityLabel={t('merchant.merchantResponse')} />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.cancel} onPress={() => setSelected(null)} disabled={sending}><Text style={styles.cancelText}>{t('customer.cancel')}</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.confirm, (!response.trim() || sending) && { opacity: 0.5 }]} onPress={sendResponse} disabled={!response.trim() || sending}>
