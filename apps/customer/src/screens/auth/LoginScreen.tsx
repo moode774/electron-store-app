@@ -20,6 +20,7 @@ import { COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
 import { useTranslation } from '../../i18n';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -91,6 +92,7 @@ export default function LoginScreen(): React.JSX.Element {
         bounces={false}
       >
         <View style={styles.mainContainer}>
+          <LanguageSwitcher />
 
           {/* Header */}
           <View style={styles.header}>
