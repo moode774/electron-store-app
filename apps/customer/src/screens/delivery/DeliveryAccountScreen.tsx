@@ -12,16 +12,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation } from '../../i18n';
 
 const MENU_ITEMS = [
-  { id: '1', title: 'بياناتي ومركبتي', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
-  { id: '2', title: 'المحفظة والتحصيلات', icon: 'wallet-outline', screen: 'DeliveryWallet', params: undefined },
-  { id: '4', title: 'مناطق العمل', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
-  { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
-  { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
+  { id: '1', titleKey: 'delivery.profileVehicle', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
+  { id: '2', titleKey: 'delivery.walletCollections', icon: 'wallet-outline', screen: 'DeliveryWallet', params: undefined },
+  { id: '4', titleKey: 'delivery.workZones', icon: 'map-outline', screen: 'DeliveryZones', params: undefined },
+  { id: '5', titleKey: 'shared.notifications', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'delivery' } },
+  { id: '6', titleKey: 'delivery.helpCenter', icon: 'headset-outline', screen: 'DeliverySupport', params: undefined },
 ];
 
 export default function DeliveryAccountScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(960);
   const { user, signOut } = useAuthStore();
   const [info, setInfo] = useState({ balance: 0, totalDeliveries: 0, count: 0 });
@@ -34,7 +36,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
       const result = await getDeliveryEarnings(user.id);
       setInfo({ balance: result.balance, totalDeliveries: result.totalDeliveries, count: result.recordedCount });
     } catch (error) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحديث ملخص الحساب.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('delivery.accountSummaryFailed'));
     }
   }, [user?.id]);
 
@@ -43,20 +45,20 @@ export default function DeliveryAccountScreen({ navigation }: any) {
   }, [loadInfo]));
 
   const STATS = [
-    { id: '1', title: 'إجمالي التوصيلات', value: `${info.totalDeliveries}`, icon: 'cube-outline' },
-    { id: '2', title: 'توصيلات مسجّلة', value: `${info.count}`, icon: 'checkmark-done-outline' },
-    { id: '3', title: 'الرصيد', value: `${info.balance}`, icon: 'wallet-outline' },
+    { id: '1', title: t('delivery.totalDeliveries'), value: `${info.totalDeliveries}`, icon: 'cube-outline' },
+    { id: '2', title: t('delivery.recordedDeliveries'), value: `${info.count}`, icon: 'checkmark-done-outline' },
+    { id: '3', title: t('delivery.balance'), value: `${info.balance}`, icon: 'wallet-outline' },
   ];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')} accessibilityRole="button" accessibilityLabel="إعدادات بيانات المندوب">
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('DeliveryProfile')} accessibilityRole="button" accessibilityLabel={t('delivery.courierSettings')}>
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>حساب المندوب</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })} accessibilityRole="button" accessibilityLabel="إشعارات المندوب">
+        <Text style={styles.headerTitle}>{t('delivery.courierAccount')}</Text>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'delivery' })} accessibilityRole="button" accessibilityLabel={t('delivery.courierNotifications')}>
           <Ionicons name="notifications-outline" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
@@ -68,7 +70,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
 
           {/* Center Zone: Info */}
           <View style={styles.profileZoneCenter}>
-            <Text style={styles.userName}>{user?.full_name ?? 'مندوب التوصيل'}</Text>
+            <Text style={styles.userName}>{user?.full_name ?? t('delivery.courierFallback')}</Text>
           </View>
 
           {/* Right Zone: Avatar */}
@@ -79,7 +81,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
               </View>
               <View style={styles.premiumBadge}>
                 <Ionicons name="bicycle" size={10} color={COLORS.primary} />
-                <Text style={styles.premiumText}>مندوب توصيل</Text>
+                <Text style={styles.premiumText}>{t('delivery.courierRole')}</Text>
               </View>
             </View>
           </View>
@@ -89,8 +91,8 @@ export default function DeliveryAccountScreen({ navigation }: any) {
         {loadError ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorText}>{loadError}</Text>
-            <TouchableOpacity onPress={() => void loadInfo()} accessibilityRole="button" accessibilityLabel="إعادة تحميل ملخص الحساب">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <TouchableOpacity onPress={() => void loadInfo()} accessibilityRole="button" accessibilityLabel={t('delivery.reloadAccount')}>
+              <Text style={styles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -111,7 +113,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>الإعدادات والخدمات</Text>
+        <Text style={styles.sectionTitle}>{t('delivery.settingsServices')}</Text>
 
         {/* Menu List */}
         <View style={styles.menuCard}>
@@ -122,11 +124,11 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                 activeOpacity={0.7}
                 onPress={() => item.screen && navigation.navigate(item.screen as any, item.params as any)}
                 accessibilityRole="button"
-                accessibilityLabel={item.title}
+                accessibilityLabel={t(item.titleKey)}
               >
                 <View style={styles.menuItemRight}>
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                 </View>
                 <Ionicons name="chevron-back" size={20} color="#9CA3AF" />
               </TouchableOpacity>
@@ -136,9 +138,9 @@ export default function DeliveryAccountScreen({ navigation }: any) {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={styles.logoutCard} onPress={signOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.signOut')}>
           <Ionicons name="log-out-outline" size={24} color={COLORS.primary} />
-          <Text style={styles.logoutText}>تسجيل الخروج</Text>
+          <Text style={styles.logoutText}>{t('delivery.signOut')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
