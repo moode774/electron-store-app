@@ -101,7 +101,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
   const [periodIndex, setPeriodIndex] = useState(1);
   const period = PERIODS[periodIndex];
-  const periodLabel = t(periodLabelKey);
+  const periodLabel = t(period.labelKey);
 
   const [chartData, setChartData] = useState<number[]>([]);
   const [chartLabels, setChartLabels] = useState<string[]>([]);
