@@ -8,6 +8,7 @@ import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, getReviews, ProductDetail } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
@@ -21,7 +22,8 @@ interface Props {
 
 // بيانات افتراضية عند التحميل
 
-export default function ProductDetailsScreen({ navigation, route }: Props) {
+export default function ProductDetailsScreen({
+  const { t } = useTranslation(); navigation, route }: Props) {
   const layout = useCustomerLayout(1180);
   const { productId } = route.params;
   const [product, setProduct] = useState<ProductDetail | null>(null);
@@ -40,7 +42,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     setLoadError('');
     try {
       const data = await getProductById(productId);
-      if (!data) throw new Error('المنتج غير موجود أو لم يعد متاحًا.');
+      if (!data) throw new Error(t('merchant.productUnavailable'));
       setProduct(data);
       const nextVariants = (data.product_variants ?? []).filter((item) => item.is_active);
       setVariants(nextVariants);
@@ -70,7 +72,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       else await removeFromWishlist(user.id, productId);
     } catch {
       setWished(!next);
-      Alert.alert('تعذّر تحديث المفضلة', 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert(t('merchant.wishlistFailed'), t('merchant.connectionRetry'));
     }
   };
 
@@ -86,13 +88,13 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     return (
       <View style={styles.errorState} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={52} color="#B91C1C" />
-        <Text style={styles.errorTitle}>تعذّر فتح المنتج</Text>
-        <Text style={styles.errorMessage}>{loadError || 'المنتج غير موجود أو لم يعد متاحًا.'}</Text>
+        <Text style={styles.errorTitle}>{t('merchant.loadProductFailed')}</Text>
+        <Text style={styles.errorMessage}>{loadError || t('merchant.productUnavailable')}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => void loadProduct()} accessibilityRole="button">
-          <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
+          <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backLinkButton} onPress={() => navigation.goBack()} accessibilityRole="button">
-          <Text style={styles.backLink}>العودة</Text>
+          <Text style={styles.backLink}>{t('merchant.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -109,7 +111,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
     description: product?.description ?? '',
     store: {
       id: product?.merchant_profiles?.id ?? '',
-      name: product?.merchant_profiles?.store_name ?? 'المتجر',
+      name: product?.merchant_profiles?.store_name ?? t('customer.store'),
     },
     rating: product?.rating ?? 0,
     reviews: reviewsCount,
@@ -133,11 +135,11 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         <View style={[styles.mediaPanel, layout.desktop && styles.mediaPanelDesktop]}>
         {/* Header Options */}
         <View style={[styles.header, layout.desktop && styles.headerDesktop]}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel="مشاركة المنتج">
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel=t('merchant.shareProduct')>
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? 'إزالة المنتج من المفضلة' : 'إضافة المنتج إلى المفضلة'} accessibilityState={{ selected: wished }}>
@@ -205,7 +207,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <View style={[styles.stockBadge, !PRODUCT.hasStock && styles.stockBadgeOut]}>
               <Ionicons name={PRODUCT.hasStock ? 'cube-outline' : 'close-circle-outline'} size={14} color={PRODUCT.hasStock ? '#059669' : '#DC2626'} />
               <Text style={[styles.stockText, !PRODUCT.hasStock && { color: '#DC2626' }]}>
-                {PRODUCT.hasStock ? `متبقي ${PRODUCT.stock} قطعة` : 'نفد المخزون'}
+                {PRODUCT.hasStock ? `متبقي ${PRODUCT.stock} قطعة` : t('customer.outOfStock')}
               </Text>
             </View>
           </View>
@@ -215,7 +217,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           {/* Variants (خيارات حقيقية) */}
           {variants.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>الخيارات المتاحة</Text>
+              <Text style={styles.sectionTitle}>{t('customer.availableOptions')}</Text>
               <View style={styles.variantsRow}>
                 {variants.map((v) => {
                   const isActive = selectedVariant?.id === v.id;
@@ -242,7 +244,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           )}
 
           {/* Description */}
-          <Text style={styles.sectionTitle}>تفاصيل المنتج</Text>
+          <Text style={styles.sectionTitle}>{t('customer.productDetails')}</Text>
           <Text style={styles.description}>{PRODUCT.description}</Text>
           
         </View>
@@ -259,7 +261,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             onPress={() => setQuantity(Math.max(1, quantity - 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="تقليل الكمية"
+            accessibilityLabel=t('merchant.decreaseQuantity')
             accessibilityState={{ disabled: quantity <= 1 }}
             disabled={quantity <= 1}
           >
@@ -271,7 +273,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             onPress={() => setQuantity(Math.min(PRODUCT.stock > 0 ? PRODUCT.stock : 1, quantity + 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="زيادة الكمية"
+            accessibilityLabel=t('merchant.increaseQuantity')
             accessibilityState={{ disabled: quantity >= PRODUCT.stock }}
             disabled={quantity >= PRODUCT.stock}
           >
@@ -308,7 +310,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             navigation.navigate('Cart', { screen: 'CartMain' });
           }}
         >
-          <Text style={styles.addToCartText}>{PRODUCT.hasStock ? 'إضافة للسلة' : 'نفد المخزون'}</Text>
+          <Text style={styles.addToCartText}>{PRODUCT.hasStock ? t('customer.addToCart') : t('customer.outOfStock')}</Text>
           <View style={styles.addToCartPriceBox}>
             <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.ي</Text>
           </View>
