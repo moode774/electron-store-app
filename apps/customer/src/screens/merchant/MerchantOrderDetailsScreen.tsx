@@ -12,8 +12,10 @@ import {
   merchantOrderProgress,
 } from './merchantOrderState';
 import { Banner, EmptyState, ScreenHeader, StatusPill, card, formatDate, formatMoney, paymentLabel, ui, useIsDesktop } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const orderId: string = route?.params?.orderId ?? route?.params?.order?.id;
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,13 +148,13 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   if (!order) {
     return (
       <View style={ui.screen}>
-        <ScreenHeader title="تفاصيل الطلب" onBack={() => navigation.goBack()} />
+        <ScreenHeader title=t('merchant.orderDetails') onBack={() => navigation.goBack()} />
         <View style={ui.content}>
           <EmptyState
             icon="cloud-offline-outline"
-            title="تعذر فتح الطلب"
+            title=t('customer.openOrderFailed')
             text={loadError ?? 'لم يتم العثور على الطلب.'}
-            action={{ label: 'إعادة المحاولة', onPress: () => void load(true) }}
+            action={{ label: t('common.retry'), onPress: () => void load(true) }}
           />
         </View>
       </View>
@@ -204,9 +206,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       onPress={openCancel}
       disabled={updating || cancelling}
       accessibilityRole="button"
-      accessibilityLabel="إلغاء الطلب"
+      accessibilityLabel=t('merchant.cancelOrder')
     >
-      <Text style={styles.cancelBtnText}>إلغاء</Text>
+      <Text style={styles.cancelBtnText}>{t('customer.cancel')}</Text>
     </TouchableOpacity>
   ) : null;
 
@@ -214,7 +216,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
     <View style={styles.pickup}>
       <View style={styles.pickupIcon}><Ionicons name="key-outline" size={20} color={COLORS.primary} /></View>
       <View style={styles.flexEnd}>
-        <Text style={styles.pickupTitle}>كود التسليم للمندوب</Text>
+        <Text style={styles.pickupTitle}>{t('merchant.pickupCode')}</Text>
         <Text style={styles.pickupHint}>أعطه للمندوب فقط عند تسليم الطلب فعلياً.</Text>
       </View>
       <Text style={styles.pickupCode} selectable>{pickupCode}</Text>
@@ -223,7 +225,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
   const cancelReasonsCard = canCancel && showCancel ? (
     <View style={ui.card}>
-      <Text style={[ui.cardTitle, styles.mb8]}>سبب الإلغاء</Text>
+      <Text style={[ui.cardTitle, styles.mb8]}>{t('merchant.cancellationReason')}</Text>
       <Text style={[ui.muted, styles.mb8]}>سيُعاد المخزون تلقائياً ويُشعَر العميل.</Text>
       {(cancelReasons.length > 0
         ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? 'سبب آخر' }))
@@ -238,15 +240,15 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           {cancelling ? <ActivityIndicator size="small" color={COLORS.error} /> : <Ionicons name="chevron-back" size={16} color={COLORS.inkTertiary} />}
         </TouchableOpacity>
       ))}
-      <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.reasonBack} accessibilityRole="button" accessibilityLabel="تراجع">
-        <Text style={styles.reasonBackText}>تراجع</Text>
+      <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.reasonBack} accessibilityRole="button" accessibilityLabel=t('merchant.undo')>
+        <Text style={styles.reasonBackText}>{t('merchant.undo')}</Text>
       </TouchableOpacity>
     </View>
   ) : null;
 
   const timeline = (
     <View style={ui.card}>
-      <Text style={[ui.cardTitle, styles.mb12]}>مسار الطلب</Text>
+      <Text style={[ui.cardTitle, styles.mb12]}>{t('merchant.orderPath')}</Text>
       <View style={styles.steps}>
         {steps.map((label, i) => {
           const done = progress >= i + 1;
@@ -269,7 +271,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const itemsCard = (
     <View style={ui.card}>
       <View style={[ui.row, styles.between, styles.mb8]}>
-        <Text style={ui.cardTitle}>المنتجات</Text>
+        <Text style={ui.cardTitle}>{t('merchant.productsCount')}</Text>
         <Text style={ui.muted}>{itemsCount} قطعة</Text>
       </View>
       {items.map((item, i) => (
@@ -287,7 +289,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
 
   const customerCard = (
     <View style={ui.card}>
-      <Text style={[ui.cardTitle, styles.mb12]}>العميل</Text>
+      <Text style={[ui.cardTitle, styles.mb12]}>{t('merchant.customerLabel')}</Text>
       <View style={[ui.row, styles.mb12]}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{customerName.substring(0, 1)}</Text></View>
         <View style={styles.flexEnd}>
@@ -310,17 +312,17 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const paymentCard = (
     <View style={ui.card}>
       <View style={[ui.row, styles.between, styles.mb12]}>
-        <Text style={ui.cardTitle}>الدفع</Text>
+        <Text style={ui.cardTitle}>{t('merchant.payment')}</Text>
         <StatusPill
-          label={order.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع بعد'}
+          label={order.payment_status === 'paid' ? t('merchant.paid') : t('merchant.unpaid')}
           color={order.payment_status === 'paid' ? '#15803D' : '#B45309'}
           background={order.payment_status === 'paid' ? '#DCFCE7' : COLORS.warningSoft}
         />
       </View>
       <Text style={[ui.text, styles.mb12]}>{paymentMethod}</Text>
       {[
-        { label: 'المجموع الفرعي', value: subtotal },
-        { label: 'رسوم التوصيل', value: deliveryFee },
+        { label: t('customer.subtotal'), value: subtotal },
+        { label: t('customer.deliveryFee'), value: deliveryFee },
         ...(discountAmount > 0 ? [{ label: 'الخصم', value: -discountAmount }] : []),
         ...(taxAmount > 0 ? [{ label: 'الضريبة', value: taxAmount }] : []),
       ].map((line) => (
@@ -330,7 +332,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
         </View>
       ))}
       <View style={styles.totalLine}>
-        <Text style={styles.totalLabel}>الإجمالي</Text>
+        <Text style={styles.totalLabel}>{t('customer.total')}</Text>
         <Text style={styles.totalValue}>{formatMoney(order.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount))} <Text style={styles.totalCurrency}>ر.ي</Text></Text>
       </View>
     </View>
