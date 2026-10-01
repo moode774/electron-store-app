@@ -108,7 +108,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title=t('merchant.orderHistoryTitle') subtitle={loading ? t('merchant.loading') : `${orders.length} طلب منتهٍ`} />
+      <ScreenHeader title={t('merchant.orderHistoryTitle')} subtitle={loading ? t('merchant.loading') : `${orders.length} طلب منتهٍ`} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
@@ -122,7 +122,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           onRefresh={() => void refresh()}
           ListHeaderComponent={
             <View style={styles.toolbar}>
-              {realtimeError || error ? <Banner text={(realtimeError ?? error) as string} tone="warning" actionLabel=t('merchant.refresh') onAction={() => void refresh()} /> : null}
+              {realtimeError || error ? <Banner text={(realtimeError ?? error) as string} tone="warning" actionLabel={t('merchant.refresh')} onAction={() => void refresh()} /> : null}
               <View style={styles.summary}>
                 <Text style={styles.summaryLabel}>{t('merchant.deliveredOrderValue')}</Text>
                 <Text style={styles.summaryValue}>{formatMoney(deliveredValue)} <Text style={styles.summaryCurrency}>ر.ي</Text></Text>
