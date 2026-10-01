@@ -32,12 +32,12 @@ const STATUS_META: Record<string, { titleKey: string; detailKey: string; color: 
   completed: { titleKey: 'physicalReturn.completedTitle', detailKey: 'physicalReturn.completedDetail', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
 };
 
-const RETURN_REASONS: Array<{ value: PhysicalReturnRequest['reason']; label: string }> = [
-  { value: 'damaged', label: 'المنتج تالف' },
-  { value: 'not_as_described', label: 'المنتج مختلف عن الوصف' },
-  { value: 'wrong_item', label: 'وصل منتج خاطئ' },
-  { value: 'changed_mind', label: 'تغيير الرأي' },
-  { value: 'other', label: 'سبب مادي آخر' },
+const RETURN_REASONS: Array<{ value: PhysicalReturnRequest['reason']; labelKey: string }> = [
+  { value: 'damaged', labelKey: 'physicalReturn.damaged' },
+  { value: 'not_as_described', labelKey: 'physicalReturn.notDescribed' },
+  { value: 'wrong_item', labelKey: 'physicalReturn.wrongItem' },
+  { value: 'changed_mind', labelKey: 'physicalReturn.changedMind' },
+  { value: 'other', labelKey: 'physicalReturn.other' },
 ];
 
 type Props = { order: OrderDetail; userId: string };
