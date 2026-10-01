@@ -13,29 +13,30 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary, bg: COLORS.background, card: COLORS.surface, text: COLORS.textPrimary,
   muted: COLORS.textMuted, border: COLORS.border, success: COLORS.success, danger: COLORS.error, warning: COLORS.warning,
 };
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'قيد المراجعة', color: UI.warning, bg: '#FFFBEB' },
-  approved: { label: 'مقبول بانتظار التنفيذ المالي', color: '#2563EB', bg: '#EFF6FF' },
-  processing: { label: 'قيد التنفيذ المالي', color: '#7C3AED', bg: '#F5F3FF' },
-  completed: { label: 'تم الاسترداد', color: UI.success, bg: '#ECFDF5' },
-  rejected: { label: 'مرفوض', color: UI.danger, bg: '#FEF2F2' },
+const STATUS_META: Record<string, { labelKey: string; color: string; bg: string }> = {
+  pending: { labelKey: 'adminUi.refundPending', color: UI.warning, bg: '#FFFBEB' },
+  approved: { labelKey: 'adminUi.refundApprovedAwaiting', color: '#2563EB', bg: '#EFF6FF' },
+  processing: { labelKey: 'adminUi.refundProcessingFinancial', color: '#7C3AED', bg: '#F5F3FF' },
+  completed: { labelKey: 'adminUi.refundCompleted', color: UI.success, bg: '#ECFDF5' },
+  rejected: { labelKey: 'adminUi.productRejected', color: UI.danger, bg: '#FEF2F2' },
 };
 
 type Decision = RefundDecisionStatus;
 
-const REFUND_FILTERS: Array<{ key: RefundRequestStatus | ''; label: string }> = [
-  { key: 'pending', label: 'قيد المراجعة' },
-  { key: 'approved', label: 'مقبول' },
-  { key: 'processing', label: 'قيد التنفيذ' },
-  { key: 'completed', label: 'مكتمل' },
-  { key: 'rejected', label: 'مرفوض' },
-  { key: '', label: 'الكل' },
+const REFUND_FILTERS: Array<{ key: RefundRequestStatus | ''; labelKey: string }> = [
+  { key: 'pending', labelKey: 'adminUi.refundPending' },
+  { key: 'approved', labelKey: 'adminUi.refundApproved' },
+  { key: 'processing', labelKey: 'adminUi.refundProcessing' },
+  { key: 'completed', labelKey: 'adminUi.refundCompleteShort' },
+  { key: 'rejected', labelKey: 'adminUi.productRejected' },
+  { key: '', labelKey: 'adminUi.all' },
 ];
 
 function isSafeEvidenceUrl(value: string): boolean {
@@ -49,14 +50,15 @@ function isSafeEvidenceUrl(value: string): boolean {
   }
 }
 
-const DECISION_COPY: Record<Decision, { title: string; detail: string; placeholder: string }> = {
-  approved: { title: 'قبول طلب الاسترداد', detail: 'سيُنقل الطلب إلى المسار المالي، ولن تُعرض حالة «تم الاسترداد» إلا بعد نجاح القيود المالية.', placeholder: 'ملاحظة القرار (اختياري)' },
-  rejected: { title: 'رفض طلب الاسترداد', detail: 'اكتب سبب الرفض. سيظهر هذا التوضيح للأطراف المعنية.', placeholder: 'سبب الرفض (مطلوب)' },
-  processing: { title: 'بدء التنفيذ المالي', detail: 'استخدم هذه المرحلة عندما بدأ رد المبلغ أو المعالجة الفعلية، لكنه لم يكتمل بعد.', placeholder: 'ملاحظة أو مرجع بدء التنفيذ (اختياري)' },
-  completed: { title: 'تأكيد اكتمال الاسترداد', detail: 'لن ينجح التأكيد إلا إذا أكمل الخادم التسوية العكسية وتحديث الرصيد والمخزون وحالة الطلب مرة واحدة.', placeholder: 'ملاحظة إدارية إضافية (اختياري)' },
+const DECISION_COPY: Record<Decision, { titleKey: string; detailKey: string; placeholderKey: string }> = {
+  approved: { titleKey: 'adminUi.refundApproveTitle', detailKey: 'adminUi.refundApproveDetail', placeholderKey: 'adminUi.refundDecisionNoteOptional' },
+  rejected: { titleKey: 'adminUi.refundRejectTitle', detailKey: 'adminUi.refundRejectDetail', placeholderKey: 'adminUi.refundRejectReasonRequired' },
+  processing: { titleKey: 'adminUi.refundStartProcessingTitle', detailKey: 'adminUi.refundStartProcessingDetail', placeholderKey: 'adminUi.refundProcessingNoteOptional' },
+  completed: { titleKey: 'adminUi.refundConfirmCompleteTitle', detailKey: 'adminUi.refundConfirmCompleteDetail', placeholderKey: 'adminUi.refundAdminNoteOptional' },
 };
 
 export default function AdminRefundsScreen() {
+  const { t, language } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -78,7 +80,7 @@ export default function AdminRefundsScreen() {
       setItems(await getAdminRefundRequests());
     } catch (e) {
       console.error('Failed to load refund requests:', e);
-      setError('تعذر تحميل طلبات الاسترداد. تحقق من الاتصال ثم أعد المحاولة.');
+      setError(t('adminUi.refundLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -101,11 +103,11 @@ export default function AdminRefundsScreen() {
   const submitDecision = async () => {
     if (!decision || processingId) return;
     if (decision.status === 'rejected' && !notes.trim()) {
-      Alert.alert('سبب الرفض مطلوب', 'اكتب سبباً واضحاً ليظهر للعميل والتاجر.');
+      Alert.alert(t('adminUi.rejectionReasonRequired'), t('adminUi.refundRejectReasonText'));
       return;
     }
     if (decision.status === 'completed' && decision.item.refund_method === 'original_payment' && !externalReference.trim()) {
-      Alert.alert('مرجع التنفيذ مطلوب', 'اكتب مرجع عملية رد المبلغ قبل تأكيد اكتمال الاسترداد الأصلي.');
+      Alert.alert(t('adminUi.refundExecutionReferenceRequired'), t('adminUi.refundExecutionReferenceText'));
       return;
     }
     const { item, status } = decision;
@@ -122,85 +124,85 @@ export default function AdminRefundsScreen() {
         : row));
       setDecision(null);
       const messages: Record<Decision, string> = {
-        approved: 'تم قبول الطلب للمسار المالي. لا يُعد المبلغ مسترداً حتى تظهر الحالة «تم الاسترداد».',
-        rejected: 'تم رفض طلب الاسترداد وتسجيل السبب.',
-        processing: 'تم تسجيل بدء التنفيذ المالي، ولم يُسجل الاسترداد كمكتمل بعد.',
-        completed: 'أكد الخادم اكتمال قيود الاسترداد وتحديث حالة الطلب.',
+        approved: t('adminUi.refundSuccessApproved'),
+        rejected: t('adminUi.refundSuccessRejected'),
+        processing: t('adminUi.refundSuccessProcessing'),
+        completed: t('adminUi.refundSuccessCompleted'),
       };
-      Alert.alert('تم تسجيل المرحلة', messages[status]);
+      Alert.alert(t('adminUi.refundStageRecorded'), messages[status]);
     } catch (e) {
       console.error('Failed to process refund request:', e);
-      Alert.alert('تعذر حفظ القرار', e instanceof Error ? e.message : 'لم تتغير حالة الطلب. أعد المحاولة.');
+      Alert.alert(t('adminUi.refundDecisionSaveFailed'), e instanceof Error ? e.message : t('adminUi.withdrawNoChange'));
     } finally {
       setProcessingId(null);
     }
   };
 
   const renderItem = ({ item }: { item: AdminRefundRequest }) => {
-    const meta = STATUS_META[item.status] ?? { label: item.status, color: UI.muted, bg: '#F1F5F9' };
+    const meta = STATUS_META[item.status] ?? { labelKey: '', color: UI.muted, bg: '#F1F5F9' };
     const evidenceImages = Array.isArray(item.evidence_images) ? item.evidence_images.filter(isSafeEvidenceUrl) : [];
     const orderItems = Array.isArray(item.orders?.order_items) ? item.orders.order_items : [];
     return (
       <View style={s.card}>
         <View style={s.cardHeader}>
           <View style={[s.statusBadge, { backgroundColor: meta.bg }]}>
-            <Text style={[s.statusText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[s.statusText, { color: meta.color }]}>{meta.labelKey ? t(meta.labelKey) : item.status}</Text>
           </View>
           <View style={s.headingWrap}>
-            <Text style={s.name}>طلب #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8) ?? '—'}</Text>
-            <Text style={s.store}>{item.orders?.merchant_profiles?.store_name ?? 'متجر غير متوفر'}</Text>
+            <Text style={s.name}>{t('adminUi.order')} #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8) ?? '—'}</Text>
+            <Text style={s.store}>{item.orders?.merchant_profiles?.store_name ?? t('adminUi.storeUnavailable')}</Text>
           </View>
         </View>
 
         <View style={s.infoGrid}>
-          <View style={s.infoBox}><Text style={s.infoLabel}>العميل</Text><Text style={s.infoValue}>{item.users?.full_name ?? '—'}</Text></View>
-          <View style={s.infoBox}><Text style={s.infoLabel}>المبلغ المطلوب</Text><Text style={s.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} ر.ي</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('adminUi.customer')}</Text><Text style={s.infoValue}>{item.users?.full_name ?? '—'}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('adminUi.requestedAmount')}</Text><Text style={s.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} {t('adminUi.yer')}</Text></View>
         </View>
         <View style={s.infoGrid}>
-          <View style={s.infoBox}><Text style={s.infoLabel}>الدفع الأصلي</Text><Text style={s.infoValue}>{item.orders?.payment_method ?? '—'} / {item.orders?.payment_status ?? '—'}</Text></View>
-          <View style={s.infoBox}><Text style={s.infoLabel}>طريقة الاسترداد</Text><Text style={s.infoValue}>{item.refund_method === 'original_payment' ? 'وسيلة الدفع الأصلية' : 'المحفظة'}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('adminUi.originalPayment')}</Text><Text style={s.infoValue}>{item.orders?.payment_method ?? '—'} / {item.orders?.payment_status ?? '—'}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('adminUi.refundMethod')}</Text><Text style={s.infoValue}>{item.refund_method === 'original_payment' ? t('adminUi.originalPaymentMethod') : t('adminUi.wallet')}</Text></View>
         </View>
         <View style={s.infoGrid}>
-          <View style={s.infoBox}><Text style={s.infoLabel}>إجمالي الطلب</Text><Text style={s.infoValue}>{Number(item.orders?.total_amount ?? 0).toFixed(2)} ر.ي</Text></View>
-          <View style={s.infoBox}><Text style={s.infoLabel}>وقت التسليم المسجل</Text><Text style={s.infoValue}>{item.orders?.delivered_at ? new Date(item.orders.delivered_at).toLocaleString('ar-SA') : 'غير مسجل'}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('adminUi.orderTotal')}</Text><Text style={s.infoValue}>{Number(item.orders?.total_amount ?? 0).toFixed(2)} {t('adminUi.yer')}</Text></View>
+          <View style={s.infoBox}><Text style={s.infoLabel}>{t('adminUi.recordedDeliveryTime')}</Text><Text style={s.infoValue}>{item.orders?.delivered_at ? new Date(item.orders.delivered_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US') : t('adminUi.notRecorded')}</Text></View>
         </View>
-        <Text style={s.label}>السبب</Text>
-        <Text style={s.reason}>{item.reason || 'لم يذكر سبب'}</Text>
+        <Text style={s.label}>{t('adminUi.reason')}</Text>
+        <Text style={s.reason}>{item.reason || t('adminUi.noReasonProvided')}</Text>
         {!!item.description && <Text style={s.description}>{item.description}</Text>}
         {orderItems.length ? (
           <View style={s.detailSection}>
-            <Text style={s.noteTitle}>عناصر الطلب</Text>
+            <Text style={s.noteTitle}>{t('adminUi.orderItems')}</Text>
             {orderItems.map((orderItem: any, index: number) => (
               <Text key={`${orderItem.product_name ?? 'item'}-${index}`} style={s.itemLine}>
-                {orderItem.product_name ?? 'منتج'} × {orderItem.quantity ?? 0} — {Number(orderItem.total_price ?? 0).toFixed(2)} ر.ي
+                {orderItem.product_name ?? t('adminUi.product')} × {orderItem.quantity ?? 0} — {Number(orderItem.total_price ?? 0).toFixed(2)} {t('adminUi.yer')}
               </Text>
             ))}
           </View>
         ) : null}
         {evidenceImages.length ? (
           <View style={s.detailSection}>
-            <Text style={s.noteTitle}>أدلة العميل ({evidenceImages.length})</Text>
+            <Text style={s.noteTitle}>{t('adminUi.customerEvidence')} ({evidenceImages.length})</Text>
             <ScrollView horizontal contentContainerStyle={s.evidenceRow} showsHorizontalScrollIndicator={false}>
               {evidenceImages.map((url: string, index: number) => (
-                <TouchableOpacity key={`${url}-${index}`} onPress={() => void Linking.openURL(url)} accessibilityRole="link" accessibilityLabel={`فتح صورة الدليل ${index + 1}`}>
+                <TouchableOpacity key={`${url}-${index}`} onPress={() => void Linking.openURL(url)} accessibilityRole="link" accessibilityLabel={`${t('adminUi.openEvidenceImage')} ${index + 1}`}>
                   <Image source={{ uri: url }} style={s.evidenceImage} />
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
         ) : null}
-        {!!item.merchant_response && <View style={s.noteBox}><Text style={s.noteTitle}>رد التاجر</Text><Text style={s.noteText}>{item.merchant_response}</Text></View>}
-        {!!item.admin_notes && <View style={s.noteBox}><Text style={s.noteTitle}>ملاحظة الإدارة</Text><Text style={s.noteText}>{item.admin_notes}</Text></View>}
-        <Text style={s.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+        {!!item.merchant_response && <View style={s.noteBox}><Text style={s.noteTitle}>{t('adminUi.merchantReply')}</Text><Text style={s.noteText}>{item.merchant_response}</Text></View>}
+        {!!item.admin_notes && <View style={s.noteBox}><Text style={s.noteTitle}>{t('adminUi.adminNote')}</Text><Text style={s.noteText}>{item.admin_notes}</Text></View>}
+        <Text style={s.date}>{new Date(item.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text>
 
         {item.status === 'pending' && (
           processingId === item.id ? <ActivityIndicator color={UI.primary} style={{ marginTop: 16 }} /> : (
             <View style={s.actions}>
-              <TouchableOpacity style={s.reject} onPress={() => openDecision(item, 'rejected')} accessibilityRole="button" accessibilityLabel="رفض طلب الاسترداد">
-                <Text style={s.rejectText}>رفض</Text>
+              <TouchableOpacity style={s.reject} onPress={() => openDecision(item, 'rejected')} accessibilityRole="button" accessibilityLabel={t('adminUi.refundRejectTitle')}>
+                <Text style={s.rejectText}>{t('adminUi.reject')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'approved')} accessibilityRole="button" accessibilityLabel="قبول طلب الاسترداد للمسار المالي">
-                <Text style={s.approveText}>قبول للمسار المالي</Text>
+              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'approved')} accessibilityRole="button" accessibilityLabel={t('adminUi.refundApproveA11y')}>
+                <Text style={s.approveText}>{t('adminUi.refundApproveFinancial')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -208,8 +210,8 @@ export default function AdminRefundsScreen() {
         {item.status === 'approved' && (
           processingId === item.id ? <ActivityIndicator color={UI.primary} style={{ marginTop: 16 }} /> : (
             <View style={s.actions}>
-              <TouchableOpacity style={s.secondaryAction} onPress={() => openDecision(item, 'processing')} accessibilityRole="button" accessibilityLabel="بدء تنفيذ الاسترداد المالي">
-                <Text style={s.processingText}>بدء التنفيذ</Text>
+              <TouchableOpacity style={s.secondaryAction} onPress={() => openDecision(item, 'processing')} accessibilityRole="button" accessibilityLabel={t('adminUi.refundStartA11y')}>
+                <Text style={s.processingText}>{t('adminUi.startProcessing')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -217,8 +219,8 @@ export default function AdminRefundsScreen() {
         {item.status === 'processing' && (
           processingId === item.id ? <ActivityIndicator color={UI.primary} style={{ marginTop: 16 }} /> : (
             <View style={s.actions}>
-              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'completed')} accessibilityRole="button" accessibilityLabel="تأكيد اكتمال الاسترداد">
-                <Text style={s.approveText}>تأكيد اكتمال القيود المالية</Text>
+              <TouchableOpacity style={s.approve} onPress={() => openDecision(item, 'completed')} accessibilityRole="button" accessibilityLabel={t('adminUi.refundConfirmCompleteTitle')}>
+                <Text style={s.approveText}>{t('adminUi.confirmFinancialCompletion')}</Text>
               </TouchableOpacity>
             </View>
           )
@@ -230,13 +232,13 @@ export default function AdminRefundsScreen() {
   return (
     <View style={s.page}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
-        <Text style={s.title}>طلبات الاسترداد</Text>
-        <Text style={s.sub}>قرار القبول منفصل عن تنفيذ رد المبلغ، وتظهر كل مرحلة بحالتها الفعلية.</Text>
+        <Text style={s.title}>{t('adminUi.refunds')}</Text>
+        <Text style={s.sub}>{t('adminUi.refundsSubtitle')}</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>
         {REFUND_FILTERS.map((option) => (
           <TouchableOpacity key={option.key} style={[s.filter, filter === option.key && s.filterActive]} onPress={() => setFilter(option.key)} accessibilityRole="button" accessibilityState={{ selected: filter === option.key }}>
-            <Text style={[s.filterText, filter === option.key && s.filterTextActive]}>{option.label}</Text>
+            <Text style={[s.filterText, filter === option.key && s.filterTextActive]}>{t(option.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -245,7 +247,7 @@ export default function AdminRefundsScreen() {
         <View style={s.empty} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={46} color={UI.danger} />
           <Text style={s.errorText}>{error}</Text>
-          <TouchableOpacity style={s.retry} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={s.retry} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('adminUi.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -257,42 +259,42 @@ export default function AdminRefundsScreen() {
           renderItem={renderItem}
           contentContainerStyle={[s.list, { paddingHorizontal: pagePadding, width: contentWidth }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={UI.primary} />}
-          ListEmptyComponent={<View style={s.empty}><Ionicons name="refresh-circle-outline" size={48} color={UI.border} /><Text style={s.emptyText}>لا توجد طلبات بهذه الحالة</Text></View>}
+          ListEmptyComponent={<View style={s.empty}><Ionicons name="refresh-circle-outline" size={48} color={UI.border} /><Text style={s.emptyText}>{t('adminUi.noRefundsInStatus')}</Text></View>}
         />
       )}
 
       <Modal visible={!!decision} transparent animationType="fade" onRequestClose={() => !processingId && setDecision(null)} accessibilityViewIsModal>
         <View style={s.modalOverlay}>
           <View style={[s.modal, { width: Math.min(Math.max(width - 24, 280), 480) }]}>
-            <Text style={s.modalTitle}>{decision ? DECISION_COPY[decision.status].title : ''}</Text>
-            <Text style={s.modalText}>{decision ? DECISION_COPY[decision.status].detail : ''}</Text>
+            <Text style={s.modalTitle}>{decision ? t(DECISION_COPY[decision.status].titleKey) : ''}</Text>
+            <Text style={s.modalText}>{decision ? t(DECISION_COPY[decision.status].detailKey) : ''}</Text>
             <TextInput
               style={s.input}
               value={notes}
               onChangeText={setNotes}
-              placeholder={decision ? DECISION_COPY[decision.status].placeholder : ''}
+              placeholder={decision ? t(DECISION_COPY[decision.status].placeholderKey) : ''}
               placeholderTextColor={UI.muted}
               multiline
               maxLength={2000}
-              textAlign="right"
-              accessibilityLabel="ملاحظات قرار الاسترداد"
+              textAlign={language === 'ar' ? 'right' : 'left'}
+              accessibilityLabel={t('adminUi.refundDecisionNotesA11y')}
             />
             {decision?.status === 'completed' && decision.item.refund_method === 'original_payment' && (
               <TextInput
                 style={s.referenceInput}
                 value={externalReference}
                 onChangeText={setExternalReference}
-                placeholder="مرجع عملية رد المبلغ (مطلوب)"
+                placeholder={t('adminUi.refundReferencePlaceholder')}
                 placeholderTextColor={UI.muted}
                 maxLength={200}
-                textAlign="right"
-                accessibilityLabel="مرجع عملية رد المبلغ"
+                textAlign={language === 'ar' ? 'right' : 'left'}
+                accessibilityLabel={t('adminUi.refundReferenceA11y')}
               />
             )}
             <View style={s.modalActions}>
-              <TouchableOpacity style={s.cancel} onPress={() => setDecision(null)} disabled={!!processingId}><Text style={s.cancelText}>تراجع</Text></TouchableOpacity>
+              <TouchableOpacity style={s.cancel} onPress={() => setDecision(null)} disabled={!!processingId}><Text style={s.cancelText}>{t('adminUi.undo')}</Text></TouchableOpacity>
               <TouchableOpacity style={[s.confirm, decision?.status === 'rejected' && s.confirmDanger]} onPress={submitDecision} disabled={!!processingId}>
-                {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmText}>تأكيد القرار</Text>}
+                {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmText}>{t('adminUi.confirmDecision')}</Text>}
               </TouchableOpacity>
             </View>
           </View>
