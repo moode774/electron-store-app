@@ -49,7 +49,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
         { id: ALL_CATEGORY_ID, name: t('merchant.all') },
         ...items.map((item) => ({ id: item.id, name: item.name_ar ?? item.name })),
       ]))
-      .catch(() => setCategoriesError('تعذّر تحميل التصنيفات؛ البحث العام ما زال متاحاً.'));
+      .catch(() => setCategoriesError(t('customer.categoriesLoadSearchFailed')));
   }, []);
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
         setResults(list);
         setSearchError('');
       } catch (error) {
-        setSearchError(error instanceof Error && error.message ? error.message : 'تعذّر تنفيذ البحث.');
+        setSearchError(error instanceof Error && error.message ? error.message : t('customer.searchFailed'));
       } finally {
         setIsSearching(false);
       }
@@ -89,8 +89,8 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <View style={styles.titleCopy}>
-              <Text style={styles.title}>اكتشف ما يناسبك</Text>
-              <Text style={styles.subtitle}>ابحث بين المنتجات والمتاجر المتاحة</Text>
+              <Text style={styles.title}>{t('customer.discoverFits')}</Text>
+              <Text style={styles.subtitle}>{t('customer.searchProductsStores')}</Text>
             </View>
             <View style={styles.titleSpacer} />
           </View>
@@ -120,7 +120,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
                   onPress={() => setCategory(item.id)}
                   activeOpacity={0.72}
                   accessibilityRole="button"
-                  accessibilityLabel={`تصفية حسب ${item.name}`}
+                  accessibilityLabel={`${t('customer.filterBy')} ${item.name}`}
                   accessibilityState={{ selected }}
                 >
                   <Text style={[styles.filterText, selected && styles.filterTextSelected]}>{item.name}</Text>
@@ -163,10 +163,10 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               style={styles.errorBanner}
               onPress={() => setRetryVersion((version) => version + 1)}
               accessibilityRole="button"
-              accessibilityLabel="إعادة البحث"
+              accessibilityLabel={t('customer.retrySearch')}
             >
               <Ionicons name="cloud-offline-outline" size={18} color={COLORS.error} />
-              <Text style={styles.errorText}>{searchError} اضغط لإعادة المحاولة.</Text>
+              <Text style={styles.errorText}>{searchError} {t('customer.tapRetry')}</Text>
             </TouchableOpacity>
           ) : null}
         </CustomerResponsiveShell>
@@ -183,7 +183,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
             <Ionicons name="search-outline" size={36} color={COLORS.primary} />
           </View>
           <Text style={styles.emptyTitle}>{t('merchant.noMatchingResults')}</Text>
-          <Text style={styles.emptyText}>جرّب كلمات مختلفة أو اختر تصنيفاً آخر.</Text>
+          <Text style={styles.emptyText}>{t('customer.differentWords')}</Text>
         </View>
       ) : (
         <FlatList
@@ -204,8 +204,8 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
           columnWrapperStyle={columns > 1 ? [styles.resultsRow, { gap }] : undefined}
           ListHeaderComponent={(
             <View style={styles.resultsHeader}>
-              <Text style={styles.resultsCount}>{results.length} نتيجة</Text>
-              <Text style={styles.resultsLabel}>نتائج البحث</Text>
+              <Text style={styles.resultsCount}>{results.length} {t('customer.result')}</Text>
+              <Text style={styles.resultsLabel}>{t('customer.searchResults')}</Text>
             </View>
           )}
           renderItem={({ item }) => (
