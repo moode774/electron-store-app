@@ -275,8 +275,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     codAmount: order?.total_amount ?? 0,
     // وجهات التوجيه في خرائط جوجل (نص العنوان — يعمل بدون إحداثيات)
     storeMapsQuery: [order?.merchant_profiles?.store_name, order?.merchant_profiles?.address, order?.merchant_profiles?.city]
-      .filter(Boolean).join('، '),
-    dropoffMapsQuery: [order?.addresses?.full_address, order?.addresses?.city].filter(Boolean).join('، '),
+      .filter(Boolean).join(', '),
+    dropoffMapsQuery: [order?.addresses?.full_address, order?.addresses?.city].filter(Boolean).join(', '),
   };
 
   const openInMaps = (destination: string) => {
@@ -833,7 +833,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   onPress={() => void captureProofPhoto()}
                   disabled={completingDelivery || Boolean(uploadedProofPath)}
                   accessibilityRole="button"
-                  accessibilityLabel={proofPhoto ? 'إعادة التقاط صورة التسليم' : 'التقاط صورة التسليم'}
+                  accessibilityLabel={proofPhoto ? t('delivery.activeRetakePhoto') : t('delivery.activeTakePhoto')}
                   accessibilityState={{ disabled: completingDelivery || Boolean(uploadedProofPath) }}
                 >
                   <Ionicons name="camera" size={18} color="#111827" />
@@ -858,7 +858,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
                 {location && (
                   <Text style={styles.proofCoordinates}>
-                    {location.coords.latitude.toFixed(5)}، {location.coords.longitude.toFixed(5)}
+                    {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
                   </Text>
                 )}
 
