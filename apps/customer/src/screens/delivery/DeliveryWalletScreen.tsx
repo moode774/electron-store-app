@@ -7,8 +7,10 @@ import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransac
 
 import CodRemittancePanel from './CodRemittancePanel';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation } from '../../i18n';
 
 export default function DeliveryWalletScreen({ navigation }: any) {
+  const { t, language } = useTranslation();
   const layout = useResponsiveLayout(960);
   const user = useAuthStore((s) => s.user);
   const [earnings, setEarnings] = useState(0);
@@ -27,7 +29,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
       setEarnings(earningsResult.balance);
       setTransactions(transactionResult);
     } catch (error) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل المحفظة.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('delivery.walletLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -44,10 +46,10 @@ export default function DeliveryWalletScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.back')}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <View style={styles.headerCopy}><Text style={styles.headerTitle}>فلوسي</Text><Text style={styles.headerSubtitle}>أرباحك والمبالغ التي استلمتها من العملاء</Text></View>
+        <View style={styles.headerCopy}><Text style={styles.headerTitle}>{t('delivery.myMoney')}</Text><Text style={styles.headerSubtitle}>{t('delivery.walletSubtitle')}</Text></View>
         <View style={{ width: 40 }} />
       </View>
 
@@ -65,34 +67,34 @@ export default function DeliveryWalletScreen({ navigation }: any) {
             {loadError ? (
               <View style={styles.errorCard}>
                 <Text style={styles.errorText}>{loadError}</Text>
-                <TouchableOpacity onPress={() => void loadWallet()} accessibilityRole="button" accessibilityLabel="إعادة تحميل المحفظة">
-                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                <TouchableOpacity onPress={() => void loadWallet()} accessibilityRole="button" accessibilityLabel={t('delivery.reloadWallet')}>
+                  <Text style={styles.retryText}>{t('common.retry')}</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
             <View style={styles.balanceCard}>
               <View style={styles.balanceTop}>
-                <Text style={styles.balanceLabel}>رصيد أرباحك</Text>
+                <Text style={styles.balanceLabel}>{t('delivery.earningsBalance')}</Text>
                 <View style={styles.balanceIcon}><Ionicons name="wallet-outline" size={19} color="#FFFFFF" /></View>
               </View>
-              <View style={styles.balanceLine}><Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text><Text style={styles.currency}>ر.ي</Text></View>
-              <View style={styles.balanceFooter}><View style={styles.liveDot} /><Text style={styles.balanceHint}>أرباح التوصيل المتاحة لك</Text></View>
+              <View style={styles.balanceLine}><Text style={styles.summaryValue}>{earnings.toLocaleString()}</Text><Text style={styles.currency}>{t('merchant.currencyYER')}</Text></View>
+              <View style={styles.balanceFooter}><View style={styles.liveDot} /><Text style={styles.balanceHint}>{t('delivery.earningsAvailable')}</Text></View>
             </View>
 
             <View style={styles.guideRow}>
-              <View style={styles.guideItem}><View style={styles.guideIcon}><Ionicons name="wallet-outline" size={18} color={COLORS.primary} /></View><View><Text style={styles.guideTitle}>أرباحك</Text><Text style={styles.guideText}>هذه فلوسك</Text></View></View>
+              <View style={styles.guideItem}><View style={styles.guideIcon}><Ionicons name="wallet-outline" size={18} color={COLORS.primary} /></View><View><Text style={styles.guideTitle}>{t('delivery.yourEarnings')}</Text><Text style={styles.guideText}>{t('delivery.yourMoney')}</Text></View></View>
               <View style={styles.guideDivider} />
-              <View style={styles.guideItem}><View style={styles.guideIcon}><Ionicons name="cash-outline" size={18} color={COLORS.primary} /></View><View><Text style={styles.guideTitle}>كاش الطلبات</Text><Text style={styles.guideText}>تسلّمه للإدارة</Text></View></View>
+              <View style={styles.guideItem}><View style={styles.guideIcon}><Ionicons name="cash-outline" size={18} color={COLORS.primary} /></View><View><Text style={styles.guideTitle}>{t('delivery.orderCash')}</Text><Text style={styles.guideText}>{t('delivery.handToAdmin')}</Text></View></View>
             </View>
 
             <CodRemittancePanel />
 
-            <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>حركة أرباحك</Text><Text style={styles.sectionCaption}>كل مبلغ دخل أو خرج من محفظتك</Text></View>
+            <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{t('delivery.earningsMovement')}</Text><Text style={styles.sectionCaption}>{t('delivery.earningsMovementSub')}</Text></View>
           </>
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: COLORS.inkTertiary, fontSize: 13 }}>لا توجد معاملات بعد</Text>
+            <Text style={{ color: COLORS.inkTertiary, fontSize: 13 }}>{t('delivery.noTransactions')}</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -105,7 +107,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
             </View>
             <View style={{ flex: 1, marginHorizontal: 12 }}>
               <Text style={styles.txTitle}>{item.notes ?? item.source ?? item.type}</Text>
-              <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</Text>
+              <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US')}</Text>
             </View>
             <Text style={[styles.txAmount, { color: income ? '#059669' : '#B45309' }]}>
               {income ? '+' : '-'}{absoluteAmount.toLocaleString()}
