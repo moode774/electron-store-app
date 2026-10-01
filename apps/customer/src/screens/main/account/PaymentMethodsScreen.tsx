@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getPaymentMethods, PaymentMethod } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 const METHODS = [
   { id: 'cod', title: 'الدفع عند الاستلام', sub: 'ادفع نقداً عند وصول طلبك', icon: 'cash-outline', color: '#059669', available: true },
@@ -40,10 +41,10 @@ export default function PaymentMethodsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>طرق الدفع</Text>
+          <Text style={styles.headerTitle}>{t('customer.paymentMethodsTitle')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -61,31 +62,31 @@ export default function PaymentMethodsScreen({ navigation }: any) {
             {m.available ? (
               <View style={styles.activeBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                <Text style={styles.activeText}>مفعّل</Text>
+                <Text style={styles.activeText}>{t('customer.enabled')}</Text>
               </View>
             ) : (
               <View style={styles.soonBadge}>
-                <Text style={styles.soonText}>قريباً</Text>
+                <Text style={styles.soonText}>{t('merchant.comingSoon')}</Text>
               </View>
             )}
           </View>
         ))}
 
         {/* البطاقات المحفوظة (بيانات حقيقية) */}
-        <Text style={styles.savedTitle}>بطاقاتي المحفوظة</Text>
+        <Text style={styles.savedTitle}>{t('customer.savedCards')}</Text>
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />
         ) : loadError ? (
           <View style={styles.loadError} accessibilityRole="alert">
             <Text style={styles.loadErrorText}>{loadError}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <Text style={styles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : saved.length === 0 ? (
           <View style={styles.emptySaved}>
             <Ionicons name="card-outline" size={28} color="#D1D5DB" />
-            <Text style={styles.emptySavedText}>لا توجد بطاقات محفوظة</Text>
+            <Text style={styles.emptySavedText}>{t('customer.noSavedCards')}</Text>
           </View>
         ) : (
           saved.map((m) => (
@@ -99,7 +100,7 @@ export default function PaymentMethodsScreen({ navigation }: any) {
               </View>
               {m.is_default && (
                 <View style={styles.activeBadge}>
-                  <Text style={styles.activeText}>افتراضي</Text>
+                  <Text style={styles.activeText}>{t('customer.default')}</Text>
                 </View>
               )}
             </View>
