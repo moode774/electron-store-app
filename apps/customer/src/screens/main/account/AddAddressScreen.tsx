@@ -55,7 +55,7 @@ export default function AddAddressScreen({ navigation }: any) {
       }
 
       if (!street) {
-        setStreet((prev) => prev || `موقعي الحالي (${current.latitude.toFixed(4)}, ${current.longitude.toFixed(4)})`);
+        setStreet((prev) => prev || `${t('customer.currentLocationPrefix')} (${current.latitude.toFixed(4)}, ${current.longitude.toFixed(4)})`);
       }
       Alert.alert(t('customer.locationFound'), t('customer.locationFoundText'));
     } catch {
@@ -66,8 +66,8 @@ export default function AddAddressScreen({ navigation }: any) {
   };
 
   const handleSave = async () => {
-    if (!user?.id) { Alert.alert('خطأ', t('customer.loginFirst')); return; }
-    if (!street.trim()) { Alert.alert('تنبيه', t('customer.enterStreet')); return; }
+    if (!user?.id) { Alert.alert(t('common.error'), t('customer.loginFirst')); return; }
+    if (!street.trim()) { Alert.alert(t('auth.alert'), t('customer.enterStreet')); return; }
     setSaving(true);
     try {
       await createAddress({
@@ -80,7 +80,7 @@ export default function AddAddressScreen({ navigation }: any) {
       });
       navigation.goBack();
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر حفظ العنوان');
+      Alert.alert(t('common.error'), e?.message ?? t('customer.saveAddressFailed'));
     } finally {
       setSaving(false);
     }
@@ -109,7 +109,7 @@ export default function AddAddressScreen({ navigation }: any) {
           <Text style={styles.mapEmoji}>{coords ? '📍' : '🗺️'}</Text>
           <Text style={styles.mapText}>
             {coords
-              ? `تم تحديد موقعك (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+              ? `${t('customer.locationSelectedPrefix')} (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
               : t('customer.locationAutoHint')}
           </Text>
           <Button
@@ -147,10 +147,10 @@ export default function AddAddressScreen({ navigation }: any) {
                 onPress={() => setSelectedArea(area)}
               >
                 <Text style={[styles.areaChipText, selectedArea === area && styles.areaChipTextActive]}>
-                  {area === SERVICE_AREAS.SANAA ? 'صنعاء' :
-                   area === SERVICE_AREAS.ADEN ? 'عدن' :
-                   area === SERVICE_AREAS.IBB ? 'إب' :
-                   area === SERVICE_AREAS.TAIZ ? 'تعز' : area}
+                  {area === SERVICE_AREAS.SANAA ? t('customer.sanaa') :
+                   area === SERVICE_AREAS.ADEN ? t('customer.aden') :
+                   area === SERVICE_AREAS.IBB ? t('customer.ibb') :
+                   area === SERVICE_AREAS.TAIZ ? t('customer.taiz') : area}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -158,14 +158,14 @@ export default function AddAddressScreen({ navigation }: any) {
 
           <Input
             label={t('customer.street')}
-            placeholder="مثال: شارع حدة، خلف المول"
+            placeholder={t('customer.streetExample')}
             value={street}
             onChangeText={setStreet}
             containerStyle={{ marginBottom: 16 }}
           />
           <Input
             label={t('customer.landmark')}
-            placeholder="مسجد، مدرسة، مستشفى..."
+            placeholder={t('customer.landmarkExample')}
             value={landmark}
             onChangeText={setLandmark}
             containerStyle={{ marginBottom: 16 }}
