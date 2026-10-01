@@ -23,10 +23,10 @@ const UI = {
 const softShadow = {};
 
 const CATEGORIES = [
-  { value: 'technical', label: 'مشكلة تقنية' },
-  { value: 'payment', label: 'المدفوعات والمحفظة' },
-  { value: 'order', label: 'الطلبات' },
-  { value: 'account', label: 'حساب المتجر' },
+  { value: 'technical', label: t('merchant.technicalIssue') },
+  { value: 'payment', label: t('merchant.paymentsWallet') },
+  { value: 'order', label: t('common.orders') },
+  { value: 'account', label: t('merchant.storeAccount') },
   { value: 'other', label: t('customer.other') },
 ];
 
@@ -80,13 +80,13 @@ export default function MerchantSupportScreen({ navigation }: any) {
   }, [loadTickets, user?.id]));
 
   const submitTicket = async () => {
-    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), 'الرجاء إدخال الموضوع والتفاصيل'); return; }
+    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), t('merchant.supportSubjectRequired')); return; }
     if (!user?.id) return;
     setSending(true);
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح التذكرة، ويمكنك متابعة حالتها من هذه الشاشة.');
+      Alert.alert(t('merchant.ticketSent'), t('merchant.ticketSentText'));
       loadTickets();
     } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
     finally { setSending(false); }
