@@ -654,6 +654,19 @@ export const resources = {
       reloadTicket: "إعادة تحميل التذكرة",
     },
 
+
+    delivery: {
+      newDelivery: 'طلب توصيل جديد!', nearbyOrder: 'يوجد طلب قريب منك، هل تود قبوله؟', storeFallback: 'مطعم/متجر',
+      addressAfterAccept: 'يظهر عنوان العميل بالتفصيل بعد قبول الطلب', expectedFee: 'أجر التوصيل المتوقع:', expiresIn: 'يختفي الطلب خلال',
+      seconds: 'ثانية', skip: 'تخطي', acceptOrder: 'قبول الطلب', skipOffer: 'تخطي عرض التوصيل الحالي', acceptDelivery: 'قبول طلب التوصيل',
+      openReceiving: 'فتح استقبال طلبات التوصيل',
+    },
+    admin: {
+      dashboard: 'لوحة التحكم', merchants: 'المتاجر', orders: 'الطلبات', users: 'المستخدمون', drivers: 'السائقون',
+      withdrawals: 'طلبات السحب', returns: 'الإرجاعات', collections: 'التحصيلات', reconciliation: 'المطابقة', allTools: 'كل الأدوات',
+      settings: 'الإعدادات', support: 'الدعم', technicalSupport: 'الدعم الفني', search: 'البحث', notifications: 'الإشعارات', adminAccount: 'حساب المدير',
+      signOut: 'تسجيل الخروج',
+    },
     onboarding: {
       luxuryWorld: 'عالم من الفخامة', luxuryBody: 'تسوّق أرقى المنتجات من أفضل المتاجر بلمسة من الفخامة والتميز.',
       clearTracking: 'متابعة واضحة للطلب', clearTrackingBody: 'تابع حالة طلبك من التجهيز حتى التسليم من داخل التطبيق.',
@@ -1307,6 +1320,19 @@ export const resources = {
       back: "Back",
     },
 
+
+    delivery: {
+      newDelivery: 'New Delivery Request!', nearbyOrder: 'There is a nearby order. Would you like to accept it?', storeFallback: 'Restaurant / Store',
+      addressAfterAccept: 'The customer address will appear in detail after accepting the order', expectedFee: 'Expected delivery fee:', expiresIn: 'Offer expires in',
+      seconds: 'seconds', skip: 'Skip', acceptOrder: 'Accept Order', skipOffer: 'Skip current delivery offer', acceptDelivery: 'Accept delivery request',
+      openReceiving: 'Open delivery request reception',
+    },
+    admin: {
+      dashboard: 'Dashboard', merchants: 'Stores', orders: 'Orders', users: 'Users', drivers: 'Drivers',
+      withdrawals: 'Withdrawal Requests', returns: 'Returns', collections: 'Collections', reconciliation: 'Reconciliation', allTools: 'All Tools',
+      settings: 'Settings', support: 'Support', technicalSupport: 'Technical Support', search: 'Search', notifications: 'Notifications', adminAccount: 'Admin Account',
+      signOut: 'Sign Out',
+    },
     onboarding: {
       luxuryWorld: 'A World of Luxury', luxuryBody: 'Shop premium products from top stores with a refined experience.',
       clearTracking: 'Clear Order Tracking', clearTrackingBody: 'Follow your order from preparation through delivery inside the app.',
