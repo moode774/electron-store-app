@@ -1,17 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Switch, ActivityIndicator, Image, TextInput, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Switch, ActivityIndicator, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getMerchantProducts, getMerchantProfile, updateProduct } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 import { Banner, Chips, EmptyState, IconButton, ScreenHeader, StatusPill, card, formatMoney, ui, useIsDesktop } from './merchantUi';
-
-const APPROVAL_META = {
-  pending: { label: 'بانتظار المراجعة', color: '#B45309', background: COLORS.warningSoft, icon: 'time-outline' },
-  approved: { label: 'معتمد', color: '#15803D', background: '#DCFCE7', icon: 'checkmark-circle-outline' },
-  rejected: { label: 'مرفوض', color: '#B91C1C', background: '#FEE2E2', icon: 'close-circle-outline' },
-};
+import { useTranslation } from '../../i18n';
 
 const LOW_STOCK = 5;
 
@@ -24,6 +19,12 @@ const stockOf = (item: any): number =>
 
 export default function MerchantProductsScreen({ navigation }: any) {
   const user = useAuthStore((s) => s.user);
+  const { t, isRTL, textAlign, rowDirection } = useTranslation();
+  const approvalMeta = {
+    pending: { label: t('merchant.pendingReview'), color: '#B45309', background: COLORS.warningSoft, icon: 'time-outline' },
+    approved: { label: t('merchant.approved'), color: '#15803D', background: '#DCFCE7', icon: 'checkmark-circle-outline' },
+    rejected: { label: t('merchant.rejected'), color: '#B91C1C', background: '#FEE2E2', icon: 'close-circle-outline' },
+  };
   const isDesktop = useIsDesktop();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
       setProducts((await getMerchantProducts(merchant.id)) || []);
       setError(null);
     } catch {
-      setError('تعذر تحميل المنتجات. تحقق من الاتصال ثم أعد المحاولة.');
+      setError(t('merchant.noResultsText'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -61,7 +62,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
       await updateProduct(id, { is_active: !current });
       await load(false);
     } catch {
-      Alert.alert('لم يتم التحديث', 'تعذر تغيير ظهور المنتج. لم تتغير الحالة المعروضة.');
+      Alert.alert(t('common.retry'), t('merchant.noResultsText'));
       await load(false);
     } finally {
       setUpdatingId(null);
@@ -91,23 +92,23 @@ export default function MerchantProductsScreen({ navigation }: any) {
   }, [products, filter, query]);
 
   const filters: { key: Filter; label: string; count: number }[] = [
-    { key: 'all', label: 'الكل', count: counts.all },
-    { key: 'active', label: 'معروض', count: counts.active },
-    { key: 'hidden', label: 'مخفي', count: counts.hidden },
-    { key: 'pending', label: 'قيد المراجعة', count: counts.pending },
-    { key: 'rejected', label: 'مرفوض', count: counts.rejected },
-    { key: 'out', label: 'نفد المخزون', count: counts.out },
+    { key: 'all', label: t('merchant.all'), count: counts.all },
+    { key: 'active', label: t('merchant.visible'), count: counts.active },
+    { key: 'hidden', label: t('merchant.hidden'), count: counts.hidden },
+    { key: 'pending', label: t('merchant.pendingReview'), count: counts.pending },
+    { key: 'rejected', label: t('merchant.rejected'), count: counts.rejected },
+    { key: 'out', label: t('merchant.outOfStock'), count: counts.out },
   ];
 
   const renderItem = ({ item }: { item: any }) => {
-    const approval = APPROVAL_META[item.approval_status as keyof typeof APPROVAL_META] ?? APPROVAL_META.pending;
+    const approval = approvalMeta[item.approval_status as keyof typeof approvalMeta] ?? approvalMeta.pending;
     const stock = stockOf(item);
     const onSale = item.sale_price != null && Number(item.sale_price) < Number(item.base_price);
     const stockTone = stock <= 0
-      ? { label: 'نفد المخزون', color: '#B91C1C', bg: '#FEE2E2' }
+      ? { label: t('merchant.outOfStock'), color: '#B91C1C', bg: '#FEE2E2' }
       : stock <= LOW_STOCK
-        ? { label: `متبقي ${stock}`, color: '#B45309', bg: COLORS.warningSoft }
-        : { label: `المخزون ${stock}`, color: COLORS.inkSecondary, bg: COLORS.canvas };
+        ? { label: `${t('merchant.remaining')} ${stock}`, color: '#B45309', bg: COLORS.warningSoft }
+        : { label: `${t('merchant.stock')} ${stock}`, color: COLORS.inkSecondary, bg: COLORS.canvas };
     return (
       <View style={[styles.item, isDesktop && styles.itemDesktop, !item.is_active && styles.itemHidden]}>
         <View style={styles.thumb}>
@@ -128,7 +129,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
             <StatusPill label={stockTone.label} color={stockTone.color} background={stockTone.bg} />
           </View>
           {item.approval_status === 'rejected' && item.approval_note ? (
-            <Text style={styles.rejection} numberOfLines={3}>سبب الرفض: {item.approval_note}</Text>
+            <Text style={styles.rejection} numberOfLines={3}>{t('merchant.rejectionReason')}: {item.approval_note}</Text>
           ) : null}
         </View>
         <View style={styles.visibility}>
@@ -136,14 +137,14 @@ export default function MerchantProductsScreen({ navigation }: any) {
             value={item.is_active}
             onValueChange={() => toggleActive(item.id, item.is_active)}
             disabled={!!updatingId}
-            accessibilityLabel={`${item.is_active ? 'إخفاء' : 'إظهار'} المنتج ${item.name}`}
+            accessibilityLabel={`${item.is_active ? t('merchant.hidden') : t('merchant.visible')} ${item.name}`}
             trackColor={{ false: COLORS.hairline, true: COLORS.primaryLight }}
             thumbColor={COLORS.surface}
             {...({ activeThumbColor: COLORS.surface } as any)}
-            style={{ transform: [{ scaleX: I18nManager?.isRTL ? -0.9 : 0.9 }, { scaleY: 0.9 }] }}
+            style={{ transform: [{ scaleX: isRTL ? -0.9 : 0.9 }, { scaleY: 0.9 }] }}
           />
           <Text style={[styles.visibilityText, item.is_active && styles.visibilityTextOn]}>
-            {updatingId === item.id ? '...' : item.is_active ? 'معروض' : 'مخفي'}
+            {updatingId === item.id ? '...' : item.is_active ? t('merchant.visible') : t('merchant.hidden')}
           </Text>
         </View>
       </View>
@@ -154,9 +155,9 @@ export default function MerchantProductsScreen({ navigation }: any) {
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
-        title="منتجاتي"
-        subtitle={loading ? 'جاري التحميل...' : `${products.length} منتج · ${counts.active ?? 0} معروض`}
-        right={<IconButton icon="add" label="إضافة منتج" primary onPress={() => navigation.navigate('AddProduct')} />}
+        title={t('merchant.products')}
+        subtitle={loading ? t('merchant.loading') : `${products.length} منتج · ${counts.active ?? 0} معروض`}
+        right={<IconButton icon="add" label={t('merchant.addProduct')} primary onPress={() => navigation.navigate('AddProduct')} />}
       />
 
       {loading ? (
@@ -173,21 +174,21 @@ export default function MerchantProductsScreen({ navigation }: any) {
           onRefresh={() => void load(false)}
           ListHeaderComponent={
             <View style={styles.toolbar}>
-              {error ? <Banner text={error} tone="error" actionLabel="إعادة المحاولة" onAction={() => void load(true)} /> : null}
+              {error ? <Banner text={error} tone="error" actionLabel={t('common.retry')} onAction={() => void load(true)} /> : null}
               {products.length ? (
                 <>
-                  <View style={styles.search}>
+                  <View style={[styles.search, { flexDirection: rowDirection }]}>
                     <Ionicons name="search" size={18} color={COLORS.inkTertiary} />
                     <TextInput
-                      style={styles.searchInput}
+                      style={[styles.searchInput, { textAlign }]}
                       value={query}
                       onChangeText={setQuery}
-                      placeholder="ابحث باسم المنتج"
+                      placeholder={t('merchant.searchProduct')}
                       placeholderTextColor={COLORS.inkTertiary}
-                      accessibilityLabel="البحث في المنتجات"
+                      accessibilityLabel={t('merchant.searchProducts')}
                     />
                     {query ? (
-                      <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="مسح البحث">
+                      <TouchableOpacity onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel={t('merchant.clearSearch')}>
                         <Ionicons name="close-circle" size={18} color={COLORS.inkTertiary} />
                       </TouchableOpacity>
                     ) : null}
@@ -199,13 +200,13 @@ export default function MerchantProductsScreen({ navigation }: any) {
           }
           ListEmptyComponent={
             products.length ? (
-              <EmptyState icon="search-outline" title="لا توجد نتائج" text="جرّب كلمة أخرى أو اختر تصفية مختلفة." />
+              <EmptyState icon="search-outline" title={t('merchant.noResults')} text={t('merchant.noResultsText')} />
             ) : error ? null : (
               <EmptyState
                 icon="cube-outline"
-                title="ابدأ بإضافة أول منتج"
-                text="أضف صوراً واضحة وسعراً ووصفاً مختصراً، وسيظهر للعملاء بعد المراجعة."
-                action={{ label: 'إضافة منتج', onPress: () => navigation.navigate('AddProduct') }}
+                title={t('merchant.firstProduct')}
+                text={t('merchant.firstProductText')}
+                action={{ label: t('merchant.addProduct'), onPress: () => navigation.navigate('AddProduct') }}
               />
             )
           }
