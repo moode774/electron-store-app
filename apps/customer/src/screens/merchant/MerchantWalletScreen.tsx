@@ -21,13 +21,13 @@ const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'processing',
 ]);
 
-const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: string; backgroundColor: string }> = {
-  pending: { label: 'قيد المراجعة', color: '#92400E', backgroundColor: '#FEF3C7' },
-  approved: { label: 'معتمد — لم يُثبت التحويل بعد', color: '#1D4ED8', backgroundColor: '#DBEAFE' },
-  processing: { label: 'جاري التحويل', color: '#6D28D9', backgroundColor: '#EDE9FE' },
-  paid: { label: 'مدفوع', color: '#047857', backgroundColor: '#D1FAE5' },
-  rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
-  failed: { label: 'فشل التحويل', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { labelKey: string; color: string; backgroundColor: string }> = {
+  pending: { labelKey: 'merchant.withdrawalPending', color: '#92400E', backgroundColor: '#FEF3C7' },
+  approved: { labelKey: 'merchant.withdrawalApprovedUnpaid', color: '#1D4ED8', backgroundColor: '#DBEAFE' },
+  processing: { labelKey: 'merchant.withdrawalProcessing', color: '#6D28D9', backgroundColor: '#EDE9FE' },
+  paid: { labelKey: 'merchant.withdrawalPaid', color: '#047857', backgroundColor: '#D1FAE5' },
+  rejected: { labelKey: 'merchant.withdrawalRejected', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+  failed: { labelKey: 'merchant.withdrawalFailedStatus', color: '#B91C1C', backgroundColor: '#FEE2E2' },
 };
 
 export default function MerchantWalletScreen({ navigation }: any) {
@@ -64,7 +64,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
       setTransactions(nextTransactions);
       setWithdrawals(requests);
     } catch (error: unknown) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل بيانات المحفظة.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('merchant.walletLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -81,10 +81,10 @@ export default function MerchantWalletScreen({ navigation }: any) {
   const openWithdraw = () => {
     if (blockingWithdrawal) {
       Alert.alert(
-        blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
+        blockingWithdrawal.status === 'failed' ? t('merchant.withdrawalNeedsReview') : t('merchant.withdrawalInProgress'),
         blockingWithdrawal.status === 'failed'
-          ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
-          : 'لديك طلب سحب قائم. انتظر اكتماله أو رفضه قبل إنشاء طلب آخر.',
+          ? t('merchant.failedWithdrawalReview')
+          : t('merchant.existingWithdrawalWait'),
       );
       return;
     }
@@ -100,23 +100,23 @@ export default function MerchantWalletScreen({ navigation }: any) {
         blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
         blockingWithdrawal.status === 'failed'
           ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
-          : 'لديك طلب سحب قائم بالفعل.',
+          : t('merchant.existingWithdrawal'),
       );
       return;
     }
     const amount = parseFloat(withdrawAmount.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[٫,]/g, '.'));
     if (!Number.isFinite(amount) || amount <= 0) {
-      Alert.alert('تنبيه', 'أدخل مبلغاً صحيحاً أكبر من صفر');
+      Alert.alert(t('auth.alert'), t('merchant.enterValidWithdrawal'));
       return;
     }
     if (amount > withdrawable) {
-      Alert.alert('المبلغ غير متاح للسحب', codHeld > 0
+      Alert.alert(t('merchant.amountUnavailable'), codHeld > 0
         ? `المتاح للسحب الآن ${withdrawable.toLocaleString()} ر.ي. يوجد ${codHeld.toLocaleString()} ر.ي محجوزة من مبالغ الدفع عند الاستلام حتى يتم توريدها وتسويتها.`
         : `المبلغ المطلوب يتجاوز المتاح للسحب (${withdrawable.toLocaleString()} ر.ي)`);
       return;
     }
     if (amount < 50) {
-      Alert.alert('تنبيه', 'الحد الأدنى للسحب 50 ر.ي');
+      Alert.alert(t('auth.alert'), t('merchant.minimumWithdrawal'));
       return;
     }
     if (!user?.id) return;
@@ -128,16 +128,16 @@ export default function MerchantWalletScreen({ navigation }: any) {
       await loadData();
       Alert.alert(
         t('merchant.withdrawalSent'),
-        `تم إرسال طلب بقيمة ${amount.toLocaleString()} ر.ي للمراجعة. لا يُعد المبلغ محولاً حتى تعتمد الإدارة الطلب.`,
-        [{ text: 'حسناً' }]
+        `${t('merchant.withdrawalSubmittedPrefix')} ${amount.toLocaleString()} ${t('merchant.currencyYER')} ${t('merchant.withdrawalSubmittedSuffix')}`,
+        [{ text: t('common.ok') }]
       );
     } catch (e: any) {
       const message = String(e?.message ?? '');
       Alert.alert(
         t('merchant.withdrawalFailed'),
         message.includes('COD_FUNDS_NOT_YET_REMITTED')
-          ? 'جزء من الرصيد ناتج عن طلبات دفع عند الاستلام ولم يتم توريده وتسويته بعد. يمكنك السحب بعد اكتمال التسوية.'
-          : (message || 'تعذّر إرسال طلب السحب، يرجى المحاولة لاحقاً'),
+          ? t('merchant.codFundsLocked')
+          : (message || t('merchant.withdrawalSendGenericFailed')),
       );
     } finally {
       withdrawLock.current = false;
@@ -149,14 +149,14 @@ export default function MerchantWalletScreen({ navigation }: any) {
   const outgoing = transactions.filter((t) => !isIncome(t)).reduce((sum, t) => sum + Math.abs(t.amount ?? 0), 0);
   const canWithdraw = withdrawable >= 50 && !hasBlockingWithdrawal && !submitting;
   const quickAmounts = [0.25, 0.5, 1].map((ratio) => ({
-    label: ratio === 1 ? 'كامل الرصيد' : `${ratio * 100}%`,
+    label: ratio === 1 ? t('merchant.fullBalance') : `${ratio * 100}%`,
     value: Math.floor(withdrawable * ratio),
   })).filter((q) => q.value >= 50);
 
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title={t('merchant.wallet')} subtitle="الرصيد والتسويات وطلبات السحب" onBack={() => navigation.goBack()} />
+      <ScreenHeader title={t('merchant.wallet')} subtitle={t('merchant.walletSubtitle')} onBack={() => navigation.goBack()} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
@@ -173,7 +173,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                 <View style={styles.balanceTop}>
                   <View style={styles.balanceCopy}>
                     <Text style={styles.balanceLabel}>{t('merchant.availableToWithdraw')}</Text>
-                    <Text style={styles.balanceValue}>{formatMoney(withdrawable)} <Text style={styles.balanceCurrency}>ر.ي</Text></Text>
+                    <Text style={styles.balanceValue}>{formatMoney(withdrawable)} <Text style={styles.balanceCurrency}>{t('merchant.currencyYER')}</Text></Text>
                   </View>
                   <View style={styles.balanceIcon}><Ionicons name="wallet" size={22} color={COLORS.primary} /></View>
                 </View>
@@ -189,7 +189,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.withdrawText}>{t('merchant.withdraw')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.balanceNote}>
-                  {hasBlockingWithdrawal ? 'لديك طلب سحب قيد المعالجة.' : codHeld > 0 ? `${formatMoney(codHeld)} ر.ي محجوزة مؤقتاً من الدفع عند الاستلام حتى التوريد والتسوية.` : withdrawable < 50 ? 'الحد الأدنى للسحب 50 ر.ي' : 'يُحوَّل المبلغ بعد اعتماد الإدارة.'}
+                  {hasBlockingWithdrawal ? t('merchant.existingWithdrawalShort') : codHeld > 0 ? `${formatMoney(codHeld)} ر.ي محجوزة مؤقتاً من الدفع عند الاستلام حتى التوريد والتسوية.` : withdrawable < 50 ? t('merchant.minimumWithdrawal') : t('merchant.administrationTransferHint')}
                 </Text>
               </View>
 
@@ -214,7 +214,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                     return (
                       <View key={request.id} style={[styles.withdrawal, index < Math.min(withdrawals.length, 5) - 1 && styles.divider]}>
                         <View style={styles.flexEnd}>
-                          <Text style={styles.withdrawalAmount}>{formatMoney(request.amount)} ر.ي</Text>
+                          <Text style={styles.withdrawalAmount}>{formatMoney(request.amount)} {t('merchant.currencyYER')}</Text>
                           <Text style={ui.muted}>{formatDate(request.created_at)}</Text>
                         </View>
                         <StatusPill label={statusInfo.label} color={statusInfo.color} background={statusInfo.backgroundColor} />
@@ -265,8 +265,8 @@ export default function MerchantWalletScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             <View style={styles.sheetBalance}>
-              <View style={styles.flexEnd}><Text style={ui.text}>{t('merchant.availableToWithdraw')}</Text>{codHeld > 0 ? <Text style={styles.heldHint}>محجوز COD: {formatMoney(codHeld)} ر.ي</Text> : null}</View>
-              <Text style={styles.sheetBalanceValue}>{formatMoney(withdrawable)} ر.ي</Text>
+              <View style={styles.flexEnd}><Text style={ui.text}>{t('merchant.availableToWithdraw')}</Text>{codHeld > 0 ? <Text style={styles.heldHint}>{t('merchant.codHeldPrefix')}: {formatMoney(codHeld)} {t('merchant.currencyYER')}</Text> : null}</View>
+              <Text style={styles.sheetBalanceValue}>{formatMoney(withdrawable)} {t('merchant.currencyYER')}</Text>
             </View>
 
             <Text style={ui.label}>{t('merchant.amount')}</Text>
@@ -279,9 +279,9 @@ export default function MerchantWalletScreen({ navigation }: any) {
                 value={withdrawAmount}
                 onChangeText={setWithdrawAmount}
                 editable={!submitting}
-                accessibilityLabel="مبلغ السحب"
+                accessibilityLabel={t('merchant.withdrawalAmountA11y')}
               />
-              <Text style={styles.amountSuffix}>ر.ي</Text>
+              <Text style={styles.amountSuffix}>{t('merchant.currencyYER')}</Text>
             </View>
             {quickAmounts.length ? (
               <View style={styles.quick}>
@@ -296,16 +296,16 @@ export default function MerchantWalletScreen({ navigation }: any) {
             <Text style={[ui.label, styles.mt12]}>{t('merchant.notesOptional')}</Text>
             <TextInput
               style={[ui.input, styles.notes]}
-              placeholder="أي تعليمات إضافية"
+              placeholder={t('merchant.extraInstructions')}
               placeholderTextColor={COLORS.inkTertiary}
               value={withdrawNotes}
               onChangeText={setWithdrawNotes}
               multiline
               editable={!submitting}
-              accessibilityLabel="ملاحظات السحب"
+              accessibilityLabel={t('merchant.withdrawalNotesA11y')}
             />
 
-            <Banner text="يُرسل الطلب للمراجعة على الحساب البنكي المسجّل في بيانات المتجر." tone="info" />
+            <Banner text={t('merchant.withdrawalReviewBanner')} tone="info" />
 
             <TouchableOpacity
               style={[ui.primaryBtn, styles.mt12, (submitting || hasBlockingWithdrawal) && styles.busy]}
