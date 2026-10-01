@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -23,20 +24,14 @@ const UI = {
 };
 
 const AUDIENCE_OPTIONS = [
-  { key: '', label: 'الجميع', icon: 'people', color: '#2563EB', bg: '#EFF6FF' },
-  { key: 'customer', label: 'العملاء', icon: 'person', color: '#059669', bg: '#ECFDF5' },
-  { key: 'merchant', label: 'التجار', icon: 'storefront', color: '#7C3AED', bg: '#F5F3FF' },
-  { key: 'delivery', label: 'السائقون', icon: 'bicycle', color: '#D97706', bg: '#FFFBEB' },
+  { key: '', labelKey: 'adminUi.audienceAll', icon: 'people', color: '#2563EB', bg: '#EFF6FF' },
+  { key: 'customer', labelKey: 'adminUi.audienceCustomersShort', icon: 'person', color: '#059669', bg: '#ECFDF5' },
+  { key: 'merchant', labelKey: 'adminUi.audienceMerchantsShort', icon: 'storefront', color: '#7C3AED', bg: '#F5F3FF' },
+  { key: 'delivery', labelKey: 'adminUi.audienceDriversShort', icon: 'bicycle', color: '#D97706', bg: '#FFFBEB' },
 ] as const;
 
-const QUICK_TEMPLATES = [
-  { title: 'تحديث النظام', body: 'تم تحديث التطبيق بميزات جديدة. يُرجى التحديث للاستمتاع بأفضل تجربة.' },
-  { title: 'عروض خاصة', body: 'استمتع بعروض حصرية اليوم فقط! تفضل بزيارة التطبيق الآن لتفقدها.' },
-  { title: 'تنبيه مهم', body: 'هناك تحديث مهم يتعلق بحسابك. يُرجى مراجعة التطبيق.' },
-  { title: 'شكر وتقدير', body: 'شكراً لثقتكم بنا. نحن نسعى دائماً لتحسين تجربتكم معنا.' },
-];
-
 export default function AdminNotificationsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const desktop = width >= BREAKPOINTS.desktop;
@@ -51,17 +46,18 @@ export default function AdminNotificationsScreen({ navigation }: any) {
   const pendingCampaign = useRef<{ fingerprint: string; idempotencyKey: string } | null>(null);
 
   const handleSend = async () => {
-    if (!title.trim()) { Alert.alert('تنبيه', 'أدخل عنوان الإشعار'); return; }
-    if (!body.trim()) { Alert.alert('تنبيه', 'أدخل نص الإشعار'); return; }
+    if (!title.trim()) { Alert.alert(t('adminUi.alert'), t('adminUi.titleRequired')); return; }
+    if (!body.trim()) { Alert.alert(t('adminUi.alert'), t('adminUi.bodyRequired')); return; }
 
-    const targetLabel = AUDIENCE_OPTIONS.find(a => a.key === audience)?.label ?? 'الجميع';
+    const targetOption = AUDIENCE_OPTIONS.find(a => a.key === audience);
+    const targetLabel = targetOption ? t(targetOption.labelKey) : t('adminUi.audienceAll');
     Alert.alert(
-      'تأكيد الإرسال',
-      `إرسال إشعار إلى: ${targetLabel}\nالعنوان: ${title}`,
+      t('adminUi.sendConfirm'),
+      `${t('adminUi.sendTo')}: ${targetLabel}\n${t('adminUi.titleLabel')}: ${title}`,
       [
-        { text: 'إلغاء', style: 'cancel' },
+        { text: t('adminUi.cancel'), style: 'cancel' },
         {
-          text: 'تأكيد وإرسال',
+          text: t('adminUi.confirmAndSend'),
           onPress: async () => {
             setSending(true);
             setSentCount(null);
@@ -79,11 +75,11 @@ export default function AdminNotificationsScreen({ navigation }: any) {
               });
               pendingCampaign.current = null;
               setSentCount(result.sent);
-              if (result.sent === 0) Alert.alert('لا يوجد مستلمون', 'لم يوجد مستخدمون مطابقون للجمهور المحدد.');
+              if (result.sent === 0) Alert.alert(t('adminUi.noRecipients'), t('adminUi.noMatchingRecipients'));
               setTitle('');
               setBody('');
             } catch {
-              Alert.alert('خطأ', 'فشل إرسال الإشعارات');
+              Alert.alert(t('adminUi.error'), t('adminUi.notificationSendFailed'));
             } finally { setSending(false); }
           },
         },
@@ -106,7 +102,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>إرسال الإشعارات</Text>
+            <Text style={s.headerTitle}>{t('adminUi.sendNotifications')}</Text>
           </View>
           <View style={s.headerIcon}>
             <Ionicons name="notifications" size={20} color={UI.primary} />
@@ -119,12 +115,12 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         {sentCount !== null && (
           <View style={s.successBanner}>
             <Ionicons name="checkmark-circle" size={22} color={UI.success} />
-            <Text style={s.successText}>تم إنشاء {sentCount} إشعار داخل التطبيق.</Text>
+            <Text style={s.successText}>تم إنشاء {sentCount} {t('adminUi.createdCount')}</Text>
           </View>
         )}
 
         <View style={s.card}>
-          <Text style={s.sectionTitle}>الجمهور المستهدف</Text>
+          <Text style={s.sectionTitle}>{t('adminUi.targetAudience')}</Text>
           <View style={s.audienceGrid}>
             {AUDIENCE_OPTIONS.map(opt => (
               <TouchableOpacity
@@ -143,7 +139,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         </View>
 
         <View style={s.card}>
-          <Text style={s.sectionTitle}>قوالب الإشعارات الجاهزة</Text>
+          <Text style={s.sectionTitle}>{t('adminUi.readyTemplates')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.templatesRow}>
             {QUICK_TEMPLATES.map((t, idx) => (
               <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(t)} activeOpacity={0.8}>
@@ -155,11 +151,11 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         </View>
 
         <View style={s.card}>
-          <Text style={s.sectionTitle}>محتوى الإشعار</Text>
+          <Text style={s.sectionTitle}>{t('adminUi.notificationContent')}</Text>
           <View style={s.inputWrapper}>
              <TextInput
                style={s.input}
-               placeholder="عنوان الإشعار (مثال: خصم جديد!)"
+               placeholder={t('adminUi.titlePlaceholder')}
                placeholderTextColor={UI.textMuted}
                value={title}
                onChangeText={setTitle}
@@ -172,7 +168,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
           <View style={s.inputWrapper}>
              <TextInput
                style={[s.input, s.textArea]}
-               placeholder="اكتب نص وتفاصيل الإشعار هنا..."
+               placeholder={t('adminUi.bodyPlaceholder')}
                placeholderTextColor={UI.textMuted}
                value={body}
                onChangeText={setBody}
@@ -187,14 +183,14 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         </View>
 
         <View style={s.previewBox}>
-          <Text style={s.previewLabel}>شكل الإشعار على هواتف المستخدمين</Text>
+          <Text style={s.previewLabel}>{t('adminUi.phonePreview')}</Text>
           <View style={s.previewCard}>
             <View style={s.previewIconCircle}>
               <Ionicons name="notifications" size={20} color={UI.primary} />
             </View>
             <View style={s.previewContent}>
-              <Text style={s.previewTitle}>{title || 'عنوان الإشعار'}</Text>
-              <Text style={s.previewBody} numberOfLines={2}>{body || 'نص الإشعار سيظهر هنا...'}</Text>
+              <Text style={s.previewTitle}>{title || t('adminUi.titleFallback')}</Text>
+              <Text style={s.previewBody} numberOfLines={2}>{body || t('adminUi.bodyFallback')}</Text>
             </View>
           </View>
         </View>
@@ -209,7 +205,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
-              <Text style={s.sendBtnText}>إرسال الآن</Text>
+              <Text style={s.sendBtnText}>{t('adminUi.sendNowShort')}</Text>
               <Ionicons name="send" size={20} color="#FFFFFF" />
             </>
           )}
