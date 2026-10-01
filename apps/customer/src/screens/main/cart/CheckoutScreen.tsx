@@ -301,7 +301,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         payment_method: selectedPayment,
         notes: [
           paramAltPhone ? `${t('customer.checkoutExtraContact')}: ${paramAltPhone}` : null,
-          needTaxInvoice ? 'طلب فاتورة ضريبية' : null,
+          needTaxInvoice ? t('customer.checkoutTaxInvoiceRequested') : null,
         ].filter(Boolean).join(' | ') || undefined,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
         idempotency_key: checkoutAttempt.current.key,
@@ -405,8 +405,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
               </Text>
               <Text style={styles.addressBannerSub} numberOfLines={1}>
                 {loadingAddress
-                  ? 'جاري تحميل العنوان...'
-                  : selectedAddress?.full_address || 'انقر لاختيار وتعديل عنوان التوصيل'}
+                  ? t('customer.checkoutLoadingAddress')
+                  : selectedAddress?.full_address || t('customer.checkoutChooseAddress')}
               </Text>
             </View>
           </View>
@@ -459,7 +459,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                 {/* Left Side: Summary Costs */}
                 <View style={styles.costsCol}>
                   <View style={styles.costItemRow}>
-                    <Text style={styles.costValueText}>{cartTotal.toLocaleString()} ر.ي</Text>
+                    <Text style={styles.costValueText}>{cartTotal.toLocaleString()} {t('merchant.currencyYER')}</Text>
                     <Text style={styles.costLabelText}>{t('customer.subtotal')}</Text>
                   </View>
 
@@ -471,7 +471,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     ) : feeError ? (
                       <Text style={styles.costValueText}>{t('customer.checkoutCalcFailed')}</Text>
                     ) : deliveryFee > 0 ? (
-                      <Text style={styles.costValueText}>{deliveryFee.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.costValueText}>{deliveryFee.toLocaleString()} {t('merchant.currencyYER')}</Text>
                     ) : feeMatched ? (
                       <Text style={styles.freeGreenText}>{t('customer.checkoutFree')}</Text>
                     ) : (
@@ -484,21 +484,21 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
                   {couponApplied && (
                     <View style={styles.costItemRow}>
-                      <Text style={styles.discountGreenText}>{discount.toLocaleString()}- ر.ي</Text>
+                      <Text style={styles.discountGreenText}>{discount.toLocaleString()}- {t('merchant.currencyYER')}</Text>
                       <Text style={styles.costLabelText}>{t('customer.discountCoupon')}</Text>
                     </View>
                   )}
 
                   <View style={styles.costItemRow}>
                     <Text style={[styles.costValueText, taxError && { color: '#DC2626' }]}>
-                      {taxLoading ? '...' : taxError ? 'تعذّر الحساب' : `${taxAmount.toLocaleString()} ر.ي`}
+                      {taxLoading ? '...' : taxError ? t('customer.checkoutCalcFailed') : `${taxAmount.toLocaleString()} ${t('merchant.currencyYER')}`}
                     </Text>
                     <Text style={styles.costLabelText}>{t('customer.checkoutTax')} ({taxRate.toLocaleString()}%)</Text>
                   </View>
 
                   <View style={styles.totalCostRow}>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} {t('merchant.currencyYER')}</Text>
                       <Text style={styles.vatSubText}>
                         {feeError || taxError || (!feeLoading && !feeMatched)
                           ? t('customer.checkoutEstimate')
@@ -513,7 +513,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               {/* Savings Highlight Pill */}
               {couponApplied && discount > 0 && (
                 <View style={styles.savingsPillCard}>
-                  <Text style={styles.savingsPillText}>🎉 توفير {discount.toLocaleString()} ر.ي على هذا الطلب</Text>
+                  <Text style={styles.savingsPillText}>🎉 {t('customer.checkoutSavings')} {discount.toLocaleString()} {t('merchant.currencyYER')} {t('customer.checkoutOnThisOrder')}</Text>
                 </View>
               )}
             </View>
@@ -715,7 +715,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         </View>
 
         <Text style={styles.termsSubText}>
-          بالضغط على إتمام الدفع أنت توافق على الشروط والأحكام
+          {t('customer.checkoutTermsText')}
         </Text>
 
         {/* Trust Benefits Footer Bar */}
