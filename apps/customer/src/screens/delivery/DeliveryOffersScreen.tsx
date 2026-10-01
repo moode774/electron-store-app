@@ -75,6 +75,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const [onlineUpdating, setOnlineUpdating] = useState(false);
   const [todayEarnings, setTodayEarnings] = useState(0);
   const [earningsFailed, setEarningsFailed] = useState(false);
@@ -89,6 +90,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const [showIncomingModal, setShowIncomingModal] = useState(false);
   const dismissedOrderIds = useRef(new Set<string>());
   const acceptLock = useRef(false);
+  const rejectLock = useRef(false);
   const onlineLock = useRef(false);
 
   const readCurrentLocation = useCallback(async (): Promise<Location.LocationObject | null> => {
@@ -149,11 +151,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       setProfile(runtimeProfile);
 
       if (earningsResult) {
-        const today = new Date().toDateString();
-        const todays = earningsResult.earnings
-          .filter((earning) => new Date(earning.created_at).toDateString() === today);
-        setTodayEarnings(todays.reduce((sum, earning) => sum + (earning.total_earning ?? 0), 0));
-        setTodayDeliveries(todays.length);
+        setTodayEarnings(earningsResult.todayEarnings);
+        setTodayDeliveries(earningsResult.todayDeliveries);
         setTotalDeliveries(earningsResult.totalDeliveries ?? 0);
         setWalletBalance(earningsResult.balance ?? 0);
       }
@@ -273,7 +272,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   }, [isApproved, isOnline, loadData, location, readCurrentLocation, user?.id]);
 
   const handleAccept = useCallback(async () => {
-    if (!current || !user?.id || acceptLock.current) return;
+    if (!current || !user?.id || acceptLock.current || rejectLock.current) return;
     if (!isOnline || !isApproved) {
       Alert.alert('غير متاح', 'يجب أن يكون حسابك معتمدًا ومتصلًا قبل قبول الطلب.');
       return;
@@ -303,15 +302,23 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     }
   }, [current, isApproved, isOnline, loadData, navigation, user?.id]);
 
-  const handleReject = useCallback(() => {
-    if (!current || accepting) return;
+  const handleReject = useCallback(async () => {
+    if (!current || acceptLock.current || rejectLock.current) return;
     const rejectedId = current.id;
-    dismissedOrderIds.current.add(rejectedId);
-    setShowIncomingModal(false);
-    setOrders((previous) => previous.filter((order) => order.id !== rejectedId));
-    // يُسجَّل في السيرفر ليبقى مرفوضاً بعد إعادة التشغيل وليتوفر سجل للرفض
-    void rejectDeliveryOffer(rejectedId).catch(() => { /* الإخفاء المحلي يبقى ساريًا */ });
-  }, [accepting, current]);
+    rejectLock.current = true;
+    setRejecting(true);
+    try {
+      await rejectDeliveryOffer(rejectedId);
+      dismissedOrderIds.current.add(rejectedId);
+      setShowIncomingModal(false);
+      setOrders((previous) => previous.filter((order) => order.id !== rejectedId));
+    } catch (error) {
+      Alert.alert('تعذّر رفض الطلب', errorMessage(error, 'لم يُحفظ الرفض. تحقق من الاتصال وحاول مجددًا.'));
+    } finally {
+      rejectLock.current = false;
+      setRejecting(false);
+    }
+  }, [current]);
 
   const openNotifications = useCallback(() => {
     navigation.getParent()?.navigate('DeliveryMore', {
@@ -508,7 +515,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       <IncomingOrderModal
         visible={showIncomingModal}
         order={current}
-        accepting={accepting}
+        accepting={accepting || rejecting}
         onAccept={handleAccept}
         onReject={handleReject}
       />

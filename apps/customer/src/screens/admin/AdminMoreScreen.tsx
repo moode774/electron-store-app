@@ -10,6 +10,7 @@ import { BREAKPOINTS, COLORS, FONTS } from '@marketplace/shared-utils';
 
 type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
 const MENU_ITEMS = [
+  { title: 'مناطق ورسوم التوصيل', description: 'رسوم المدن وحدود التوصيل المجاني', icon: 'map-outline', screen: 'AdminDeliveryZones' as keyof AdminMoreStackParamList },
   { title: 'إعدادات المنصة', description: 'العمولات ورسوم التوصيل ومناطق الخدمة', icon: 'settings-outline', screen: 'AdminSettings' as keyof AdminMoreStackParamList },
   { title: 'مركز الإشعارات', description: 'متابعة تنبيهات المنصة', icon: 'notifications-outline', screen: 'AdminNotifications' as keyof AdminMoreStackParamList },
   {
@@ -91,7 +92,7 @@ const GROUPS = [
   { title: 'التشغيل وخدمة العملاء', screens: ['AdminProducts', 'AdminDelivery', 'AdminSupport'] },
   { title: 'المالية والاسترجاع', screens: ['AdminWallet', 'AdminRefunds', 'AdminPhysicalReturns', 'AdminCodCollections', 'AdminFinancialReconciliation'] },
   { title: 'التسويق والتواصل', screens: ['AdminBanners', 'AdminCoupons', 'AdminBroadcast', 'AdminNotifications'] },
-  { title: 'إعدادات المنصة والتكاملات', screens: ['AdminSettings', 'ApiKeys'] },
+  { title: 'إعدادات المنصة والتكاملات', screens: ['AdminSettings', 'AdminDeliveryZones', 'ApiKeys'] },
 ];
 export default function AdminMoreScreen() {
   const navigation = useNavigation<Nav>();

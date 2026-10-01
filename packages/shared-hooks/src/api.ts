@@ -651,11 +651,12 @@ export async function createOrderGroup(data: {
 }
 
 // تقدير رسوم التوصيل محليًا بنفس منطق place_order في السيرفر:
-// منطقة التاجر المطابقة لمدينة العنوان أولاً، وإلا منطقة المنصة العامة، وإلا 0.
+// منطقة التاجر المطابقة لمدينة العنوان أولاً، وإلا منطقة المنصة العامة.
 // الرسوم تُحسب لكل طلب متجر على حدة ثم تُجمع.
 export interface DeliveryFeeEstimate {
   total: number;
   perStore: Record<string, number>;
+  perStoreRules: Record<string, { threshold: number | null; netSubtotal: number; free: boolean }>;
   /** false إذا لم تُطابق أي منطقة توصيل مدينة العنوان (السيرفر سيقرر) */
   matched: boolean;
   /** true إذا كانت المنطقة المختارة لأي متجر موقوفة — السيرفر سيرفض الطلب */
@@ -667,53 +668,59 @@ export interface DeliveryFeeEstimate {
 export async function estimateDeliveryFees(
   city: string | null | undefined,
   merchantIds: string[],
+  netSubtotals: Record<string, number> = {},
 ): Promise<DeliveryFeeEstimate> {
-  const empty: DeliveryFeeEstimate = { total: 0, perStore: {}, matched: false, unavailable: false, unavailableStores: [] };
+  const empty: DeliveryFeeEstimate = { total: 0, perStore: {}, perStoreRules: {}, matched: false, unavailable: false, unavailableStores: [] };
   if (!city || !merchantIds.length) return empty;
 
-  // مطابق حرفياً لاختيار المنطقة في place_order بالسيرفر:
-  //   ORDER BY (dz.merchant_id = p_merchant_id) DESC, dz.id LIMIT 1
-  // لصف المنصة تكون المقارنة NULL، و DESC في Postgres يضع NULL أولاً، لذا
-  // **منطقة المنصة تفوز متى وُجدت**، ومنطقة التاجر تُستخدم فقط عند غيابها.
-  // ثم يرفض السيرفر إن كانت المنطقة المختارة متوقفة (is_active/delivery_available).
-  // لا نُصفّي is_active في الاستعلام لأن السيرفر لا يفعل — التصفية كانت تُخفي
-  // منطقة تاجر متوقفة فيظهر التوصيل متاحاً ثم يرفض السيرفر الطلب.
+  // لا نخفي المناطق الموقوفة: المنطقة الخاصة بالتاجر تتقدم على العامة،
+  // ويُرفض الطلب إن كانت المنطقة المختارة موقوفة أو غير موجودة.
   const { data, error } = await supabase
     .from(TABLES.DELIVERY_ZONES)
-    .select('merchant_id, city, delivery_fee, delivery_available, is_active')
-    .ilike('city', city.trim());
-  if (error || !data?.length) return empty;
+    .select('merchant_id, city, delivery_fee, free_delivery_threshold, delivery_available, is_active')
+    .ilike('city', city.trim().replace(/[\\%_]/g, '\\$&'))
+    .order('id');
+  if (error) throw error;
 
   const zones = data as {
     merchant_id: string | null;
     delivery_fee: number;
+    free_delivery_threshold: number | null;
     delivery_available: boolean;
     is_active: boolean;
-  }[];
-  const platformZone = zones.find((z) => z.merchant_id === null);
+  }[] | null;
+  const platformZone = zones?.find((z) => z.merchant_id === null);
   const perStore: Record<string, number> = {};
+  const perStoreRules: DeliveryFeeEstimate['perStoreRules'] = {};
   const unavailableStores: string[] = [];
   let total = 0;
-  let matchedAny = false;
+  let matchedCount = 0;
 
   for (const merchantId of merchantIds) {
-    // المنصة أولاً ثم منطقة التاجر — نفس ما يختاره السيرفر فعلياً
-    const zone = platformZone ?? zones.find((z) => z.merchant_id === merchantId);
-    if (!zone) continue;
-    matchedAny = true;
+    const zone = zones?.find((z) => z.merchant_id === merchantId) ?? platformZone;
+    if (!zone) {
+      unavailableStores.push(merchantId);
+      continue;
+    }
+    matchedCount++;
     if (!zone.is_active || !zone.delivery_available) {
       unavailableStores.push(merchantId);
       continue;
     }
-    const fee = Math.max(0, Number(zone.delivery_fee) || 0);
+    const threshold = zone.free_delivery_threshold == null ? null : Number(zone.free_delivery_threshold);
+    const netSubtotal = Math.max(0, Number(netSubtotals[merchantId]) || 0);
+    const free = threshold !== null && Number.isFinite(threshold) && netSubtotal > threshold;
+    const fee = free ? 0 : Math.max(0, Number(zone.delivery_fee) || 0);
     perStore[merchantId] = fee;
+    perStoreRules[merchantId] = { threshold, netSubtotal, free };
     total += fee;
   }
 
   return {
     total,
     perStore,
-    matched: matchedAny,
+    perStoreRules,
+    matched: matchedCount === merchantIds.length,
     unavailable: unavailableStores.length > 0,
     unavailableStores,
   };
@@ -1980,29 +1987,11 @@ export async function getMerchantTopProducts(merchantId: string, limit = 5, days
 
 // مبيعات التاجر اليومية لآخر N أيام (لرسم بياني حقيقي)
 export async function getMerchantSalesChart(merchantId: string, days = 8): Promise<number[]> {
-  const since = new Date();
-  since.setDate(since.getDate() - (days - 1));
-  since.setHours(0, 0, 0, 0);
-
-  // ترقيم الصفحات لتجاوز حد الصفوف (1000) عند كثرة الطلبات
-  const data = await fetchAllRows<{ total_amount: number | null; created_at: string }>(() =>
-    supabase
-      .from(TABLES.ORDERS)
-      .select('total_amount, created_at')
-      .eq('merchant_id', merchantId)
-      .eq('status', 'delivered')
-      .gte('created_at', since.toISOString())
-      .order('created_at'),
-  );
-
-  const buckets = new Array(days).fill(0);
-  data.forEach((o: { total_amount: number | null; created_at: string }) => {
-    const d = new Date(o.created_at);
-    d.setHours(0, 0, 0, 0);
-    const idx = Math.floor((d.getTime() - since.getTime()) / 86400000);
-    if (idx >= 0 && idx < days) buckets[idx] += o.total_amount ?? 0;
-  });
-  return buckets;
+  const { data, error } = await supabase.rpc('merchant_sales_report', { p_days: days });
+  if (error) throw error;
+  const report = data as { merchant_id?: string; chart?: unknown[] } | null;
+  if (report?.merchant_id !== merchantId) throw new Error('MERCHANT_PROFILE_MISMATCH');
+  return (report.chart ?? []).map((value) => Number(value) || 0);
 }
 
 // ============================================================
@@ -2014,44 +2003,20 @@ export async function getMerchantStats(merchantId: string): Promise<{
   totalProducts: number;
   pendingOrders: number;
 }> {
-  const now = new Date();
-  const adenDate = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Aden', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(now);
-  const todayStart = new Date(`${adenDate}T00:00:00+03:00`).toISOString();
-
-  const [ordersRes, productsRes, pendingRes] = await Promise.all([
-    supabase
-      .from(TABLES.ORDERS)
-      .select('total_amount, status')
-      .eq('merchant_id', merchantId)
-      .gte('created_at', todayStart),
-    supabase
-      .from(TABLES.PRODUCTS)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantId)
-      .eq('is_active', true),
-    supabase
-      .from(TABLES.ORDERS)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantId)
-      .eq('status', 'pending'),
-  ]);
-
-  if (ordersRes.error) throw ordersRes.error;
-  if (productsRes.error) throw productsRes.error;
-  if (pendingRes.error) throw pendingRes.error;
-
-  const todayOrders = ordersRes.data?.length ?? 0;
-  const todayRevenue = ordersRes.data
-    ?.filter((order) => order.status === 'delivered')
-    .reduce((sum, order) => sum + (order.total_amount ?? 0), 0) ?? 0;
-
+  const { data, error } = await supabase.rpc('merchant_sales_report', { p_days: 1 });
+  if (error) throw error;
+  const report = data as {
+    merchant_id?: string;
+    dashboard?: { today_orders?: number; today_revenue?: number; total_products?: number; pending_orders?: number };
+  } | null;
+  if (report?.merchant_id !== merchantId || !report.dashboard) {
+    throw new Error('MERCHANT_DASHBOARD_UNAVAILABLE');
+  }
   return {
-    todayOrders,
-    todayRevenue,
-    totalProducts: productsRes.count ?? 0,
-    pendingOrders: pendingRes.count ?? 0,
+    todayOrders: Number(report.dashboard.today_orders ?? 0),
+    todayRevenue: Number(report.dashboard.today_revenue ?? 0),
+    totalProducts: Number(report.dashboard.total_products ?? 0),
+    pendingOrders: Number(report.dashboard.pending_orders ?? 0),
   };
 }
 
@@ -2319,33 +2284,31 @@ export interface DeliveryEarning {
 export async function getDeliveryEarnings(deliveryUserId: string): Promise<{
   balance: number;
   totalDeliveries: number;
-  /** العدد الحقيقي الكامل لسجلات الأرباح (وليس طول القائمة المحدودة بـ50) */
   recordedCount: number;
+  todayEarnings: number;
+  todayDeliveries: number;
   earnings: DeliveryEarning[];
 }> {
-  void deliveryUserId;
-  const { data: profile, error: profileError } = await supabase.rpc('get_my_delivery_profile');
-  if (profileError) throw profileError;
-  if (!profile) throw new Error('تعذّر العثور على ملف المندوب المرتبط بهذا الحساب.');
-
-  const p = profile as { id: string; wallet_balance?: number; total_deliveries?: number };
-  const [{ data, error }, countRes] = await Promise.all([
-    supabase
-      .from('delivery_earnings')
-      .select('id, base_earning, bonus_earning, tip_amount, total_earning, created_at')
-      .eq('delivery_id', p.id)
-      .order('created_at', { ascending: false })
-      .limit(50),
-    supabase
-      .from('delivery_earnings')
-      .select('id', { count: 'exact', head: true })
-      .eq('delivery_id', p.id),
-  ]);
+  const { data: summary, error: summaryError } = await supabase.rpc('get_delivery_wallet_summary');
+  if (summaryError) throw summaryError;
+  const s = summary as {
+    user_id: string; delivery_id: string; balance?: number; total_deliveries?: number;
+    recorded_count?: number; today_earnings?: number; today_deliveries?: number;
+  } | null;
+  if (!s || s.user_id !== deliveryUserId) throw new Error('DELIVERY_PROFILE_MISMATCH');
+  const { data, error } = await supabase
+    .from('delivery_earnings')
+    .select('id, base_earning, bonus_earning, tip_amount, total_earning, created_at')
+    .eq('delivery_id', s.delivery_id)
+    .order('created_at', { ascending: false })
+    .limit(50);
   if (error) throw error;
   return {
-    balance: Number(p.wallet_balance ?? 0),
-    totalDeliveries: Number(p.total_deliveries ?? 0),
-    recordedCount: countRes.count ?? (data?.length ?? 0),
+    balance: Number(s.balance ?? 0),
+    totalDeliveries: Number(s.total_deliveries ?? 0),
+    recordedCount: Number(s.recorded_count ?? 0),
+    todayEarnings: Number(s.today_earnings ?? 0),
+    todayDeliveries: Number(s.today_deliveries ?? 0),
     earnings: (data ?? []) as DeliveryEarning[],
   };
 }
@@ -2959,14 +2922,14 @@ export async function updateSupportTicketStatus(ticketId: string, status: string
 }
 
 export async function getAdminOrders(status?: string): Promise<any[]> {
-  let q = supabase.from(TABLES.ORDERS)
+  return fetchAllRows<any>(() => {
+    let q = supabase.from(TABLES.ORDERS)
     .select('id, order_number, customer_id, merchant_id, delivery_id, address_id, status, subtotal, delivery_fee, discount_amount, platform_commission, tax_amount, total_amount, payment_method, payment_status, notes, cancel_reason, delivered_at, cancelled_at, created_at, updated_at, customer:users!orders_customer_id_fkey(full_name, phone), merchant_profiles!orders_merchant_id_fkey(store_name, address, city), delivery_profiles!orders_delivery_id_fkey(user_id, vehicle_type, vehicle_plate, users:users!delivery_profiles_user_id_fkey(full_name, phone)), addresses!orders_address_id_fkey(full_address, city), order_items(id, product_name, quantity, unit_price, total_price), order_tracking(id, status, notes, latitude, longitude, created_at)')
-    .order('created_at', { ascending: false })
-    .limit(100);
-  if (status) q = (q as any).eq('status', status);
-  const { data, error } = await q;
-  if (error) throw error;
-  return data;
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
+    if (status) q = q.eq('status', status);
+    return q;
+  });
 }
 
 export interface AdminUser {
@@ -3518,5 +3481,39 @@ export async function broadcastNotification(data: {
   const campaign = result as BroadcastCampaignResult | null;
   if (!campaign?.campaign_id) throw new Error('لم يُرجع الخادم نتيجة حملة الإشعارات.');
   return { ...campaign, sent: Number(campaign.created ?? 0) };
+}
+
+export interface AdminDeliveryZone {
+  id: string;
+  city: string;
+  delivery_fee: number;
+  free_delivery_threshold: number | null;
+  is_active: boolean;
+  min_order_amount: number;
+  delivery_available: boolean;
+}
+
+export async function getAdminDeliveryZones(): Promise<AdminDeliveryZone[]> {
+  const { data, error } = await supabase.rpc('admin_list_delivery_zones');
+  if (error) throw error;
+  return ((data ?? []) as AdminDeliveryZone[]).map((zone) => ({
+    ...zone,
+    delivery_fee: Number(zone.delivery_fee),
+    free_delivery_threshold: zone.free_delivery_threshold == null ? null : Number(zone.free_delivery_threshold),
+    min_order_amount: Number(zone.min_order_amount),
+  }));
+}
+
+export async function saveAdminDeliveryZone(zone: Omit<AdminDeliveryZone, 'id'> & { id?: string }): Promise<void> {
+  const { error } = await supabase.rpc('admin_save_delivery_zone', {
+    p_id: zone.id ?? null,
+    p_city: zone.city.trim(),
+    p_delivery_fee: zone.delivery_fee,
+    p_free_delivery_threshold: zone.free_delivery_threshold,
+    p_is_active: zone.is_active,
+    p_min_order_amount: zone.min_order_amount,
+    p_delivery_available: zone.delivery_available,
+  });
+  if (error) throw error;
 }
 

@@ -24,6 +24,7 @@ import {
   validateCoupon,
   appStorage,
   estimateDeliveryFees,
+  DeliveryFeeEstimate,
   getSystemSettings,
   isCartItemSelected,
 } from '@marketplace/shared-hooks';
@@ -118,6 +119,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
   const [feeMatched, setFeeMatched] = useState(false);
   const [feeError, setFeeError] = useState(false);
   const [deliveryUnavailable, setDeliveryUnavailable] = useState(false);
+  const [deliveryRules, setDeliveryRules] = useState<DeliveryFeeEstimate['perStoreRules']>({});
   const [taxRate, setTaxRate] = useState(0);
   const [taxLoading, setTaxLoading] = useState(true);
   const [taxError, setTaxError] = useState(false);
@@ -126,32 +128,45 @@ export default function CheckoutScreen({ navigation, route }: any) {
   const taxAmount = Math.round(taxableSubtotal * taxRate) / 100;
   const finalTotal = Math.max(0, taxableSubtotal + deliveryFee + taxAmount);
   const totalCount = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
+  const selectedStores = getSelectedByStore();
+  const feeSubtotals = Object.fromEntries(Object.entries(selectedStores).map(([id, storeItems]) => [
+    id,
+    Math.max(0, storeItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+      - (storeCount === 1 && couponApplied ? discount : 0)),
+  ]));
+  const feeSubtotalKey = JSON.stringify(feeSubtotals);
 
   useEffect(() => {
     let active = true;
     const city = selectedAddress?.city;
-    const merchantIds = Object.keys(getSelectedByStore());
+    const netSubtotals: Record<string, number> = JSON.parse(feeSubtotalKey);
+    const merchantIds = Object.keys(netSubtotals);
     if (!city || merchantIds.length === 0) {
       setDeliveryFee(0);
       setFeeMatched(false);
+      setDeliveryRules({});
+      setDeliveryUnavailable(false);
+      setFeeError(false);
       setFeeLoading(false);
       return;
     }
     setFeeLoading(true);
     setFeeError(false);
     setDeliveryUnavailable(false);
-    estimateDeliveryFees(city, merchantIds)
+    estimateDeliveryFees(city, merchantIds, netSubtotals)
       .then((est) => {
         if (!active) return;
         setDeliveryFee(est.total);
         setFeeMatched(est.matched);
         setDeliveryUnavailable(est.unavailable);
+        setDeliveryRules(est.perStoreRules);
       })
       .catch(() => {
         if (!active) return;
         setDeliveryFee(0);
         setFeeMatched(false);
         setFeeError(true);
+        setDeliveryRules({});
       })
       .finally(() => {
         if (active) setFeeLoading(false);
@@ -159,7 +174,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
     return () => {
       active = false;
     };
-  }, [selectedAddress?.city, selectedItems.length]);
+  }, [selectedAddress?.city, feeSubtotalKey]);
 
   useEffect(() => {
     let active = true;
@@ -512,6 +527,25 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     </Text>
                   </View>
 
+                  {!feeLoading && !feeError && Object.entries(deliveryRules).map(([merchantId, rule]) => (
+                    rule.threshold !== null && rule.threshold > 0 ? (
+                      <View key={merchantId} style={styles.deliveryOfferHint}>
+                        <Text style={styles.deliveryOfferTitle}>
+                          {storeCount > 1 ? `${selectedStores[merchantId]?.[0]?.storeName || 'المتجر'}: ` : ''}
+                          {rule.free ? 'استحققت التوصيل المجاني' : 'اقترب من التوصيل المجاني'}
+                        </Text>
+                        <Text style={styles.deliveryOfferText}>
+                          {rule.free
+                            ? `قيمة منتجات هذا المتجر بعد الخصم تجاوزت ${rule.threshold.toLocaleString()} ر.ي.`
+                            : `التوصيل مجاني عند تجاوز ${rule.threshold.toLocaleString()} ر.ي بعد الخصم لكل متجر. القيمة الحالية ${rule.netSubtotal.toLocaleString()} ر.ي؛ عند ${rule.threshold.toLocaleString()} ر.ي تبقى رسوم التوصيل.`}
+                        </Text>
+                        <View style={styles.deliveryProgressTrack}>
+                          <View style={[styles.deliveryProgressFill, { width: `${Math.min(100, rule.netSubtotal / rule.threshold * 100)}%` }]} />
+                        </View>
+                      </View>
+                    ) : null
+                  ))}
+
                   {couponApplied && (
                     <View style={styles.costItemRow}>
                       <Text style={styles.discountGreenText}>{discount.toLocaleString()}- ر.ي</Text>
@@ -792,6 +826,11 @@ export default function CheckoutScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
+  deliveryOfferHint: { backgroundColor: '#F0FDF4', borderRadius: 12, padding: 12, marginVertical: 8, alignSelf: 'stretch' },
+  deliveryOfferTitle: { fontFamily: FONTS.bold, fontSize: 13, color: '#166534', textAlign: 'right' },
+  deliveryOfferText: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 20, color: '#166534', textAlign: 'right', marginTop: 4 },
+  deliveryProgressTrack: { height: 5, backgroundColor: '#DCFCE7', borderRadius: 3, marginTop: 8, alignItems: 'flex-end', overflow: 'hidden' },
+  deliveryProgressFill: { height: 5, backgroundColor: '#16A34A', borderRadius: 3 },
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
