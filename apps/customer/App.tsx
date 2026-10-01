@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { I18nManager, Platform, View, ActivityIndicator, AppState, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Platform, View, ActivityIndicator, AppState, Text, TextInput, TouchableOpacity } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -334,7 +334,7 @@ export default function App(): React.JSX.Element | null {
       }
     });
     return () => sub.remove();
-  }, [initialize, initializeLanguage]);
+  }, []);
 
   useEffect(() => {
     const prepare = async () => {
@@ -351,7 +351,7 @@ export default function App(): React.JSX.Element | null {
       }
     };
     prepare();
-  }, []);
+  }, [initialize, initializeLanguage]);
 
   const handleSplashFinish = useCallback(() => {
     setShowSplash(false);
