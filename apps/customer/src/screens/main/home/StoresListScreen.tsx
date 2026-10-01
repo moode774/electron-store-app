@@ -18,6 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '../../../i18n';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
@@ -35,9 +36,9 @@ function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
 const STORE_CAROUSEL_CARDS = [
   {
     id: 's1',
-    title: 'تسوق من المتاجر المتاحة',
+    title: t('customer.browseStores'),
     sub: 'تصفح المنتجات والمتاجر المتاحة وقارن قبل الطلب',
-    btnText: 'استكشف المنتجات',
+    btnText: t('customer.exploreProducts'),
     route: 'Search',
     img: require('../../../../assets/images/bannerstoor/delfre.png'),
   },
@@ -45,7 +46,7 @@ const STORE_CAROUSEL_CARDS = [
     id: 's2',
     title: 'متاجر متاحة للتسوق 🏬',
     sub: 'استكشف المتاجر النشطة والمنتجات المعروضة حالياً',
-    btnText: 'استكشف المنتجات',
+    btnText: t('customer.exploreProducts'),
     route: 'Search',
     img: require('../../../../assets/images/home/premium-hero-desktop.png'),
   },
@@ -141,7 +142,7 @@ export default function StoresListScreen({ navigation, route }: any) {
   const displayStoresList = stores.map((s, idx) => ({
     id: s.id,
     store_name: s.store_name,
-    store_category: s.store_category || 'متجر عام',
+    store_category: s.store_category || t('customer.generalStore'),
     city: s.city ?? '',
     rating: Number(s.rating ?? 0),
     reviews_count: Number(s.total_reviews ?? 0),
@@ -212,7 +213,7 @@ export default function StoresListScreen({ navigation, route }: any) {
               <Ionicons name="star" size={13} color={item.rating > 0 ? '#F59E0B' : '#CBD5E1'} />
               <Text style={styles.statValText}>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</Text>
             </View>
-            <Text style={styles.statLabelText}>التقييم</Text>
+            <Text style={styles.statLabelText}>{t('customer.rating')}</Text>
           </View>
 
           <View style={styles.statSubCol}>
@@ -220,7 +221,7 @@ export default function StoresListScreen({ navigation, route }: any) {
               <Ionicons name="chatbubble-ellipses-outline" size={13} color="#64748B" />
               <Text style={styles.statValText}>{item.reviews_count}</Text>
             </View>
-            <Text style={styles.statLabelText}>التقييمات</Text>
+            <Text style={styles.statLabelText}>{t('customer.reviews')}</Text>
           </View>
         </View>
 
@@ -238,7 +239,7 @@ export default function StoresListScreen({ navigation, route }: any) {
           value={search}
           onChangeText={setSearch}
           onClear={() => setSearch('')}
-          placeholder="ابحث عن متجر"
+          placeholder=t('customer.searchStore')
           returnKeyType="search"
         />
 
@@ -255,7 +256,7 @@ export default function StoresListScreen({ navigation, route }: any) {
             <View style={[styles.chipIconWrap, !activeCategory && styles.chipIconWrapActive]}>
               <Ionicons name="grid-outline" size={14} color={!activeCategory ? COLORS.primary : COLORS.textMuted} />
             </View>
-            <Text style={[styles.chipText, !activeCategory && styles.chipTextActive]}>الكل</Text>
+            <Text style={[styles.chipText, !activeCategory && styles.chipTextActive]}>{t('merchant.all')}</Text>
           </TouchableOpacity>
           {categories.map((category) => {
             const label = category.name_ar ?? category.name;
@@ -335,14 +336,14 @@ export default function StoresListScreen({ navigation, route }: any) {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleGroup}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleText}>المتاجر</Text>
+              <Text style={styles.sectionTitleText}>{t('customer.stores')}</Text>
               <Ionicons name="sparkles" size={16} color="#172554" style={{ marginRight: 6 }} />
             </View>
-            <Text style={styles.sectionSubTitleText}>المتاجر النشطة المتاحة حالياً</Text>
+            <Text style={styles.sectionSubTitleText}>{t('customer.activeStores')}</Text>
           </View>
 
           <TouchableOpacity onPress={() => setActiveCategory('')} activeOpacity={0.75}>
-            <Text style={styles.viewAllText}>عرض الكل ›</Text>
+            <Text style={styles.viewAllText}>{t('customer.viewAll')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -356,7 +357,7 @@ export default function StoresListScreen({ navigation, route }: any) {
             {filteredStores.length === 0 ? (
               <View style={styles.emptyStoresState}>
                 <Ionicons name="storefront-outline" size={44} color="#CBD5E1" />
-                <Text style={styles.emptyStoresTitle}>لا توجد متاجر متاحة حالياً</Text>
+                <Text style={styles.emptyStoresTitle}>{t('customer.noStores')}</Text>
                 <Text style={styles.emptyStoresSub}>
                   لا توجد نتائج مطابقة الآن. جرّب تغيير البحث أو التصنيف.
                 </Text>
