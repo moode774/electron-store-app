@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
 export default function RoleNotificationsScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(960);
   const user = useAuthStore((s) => s.user);
   const role: 'merchant' | 'delivery' = route?.params?.role === 'delivery' ? 'delivery' : 'merchant';
@@ -17,7 +19,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
     if (!user?.id) { setLoading(false); return; }
     setLoadError('');
     try { setItems(await getNotifications(user.id)); }
-    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل الإشعارات.'); }
+    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : t('shared.loadNotificationsFailed')); }
     finally { setLoading(false); }
   }, [user?.id]);
 
@@ -77,8 +79,8 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <View style={styles.headerCopy}><Text style={styles.headerTitle}>الإشعارات</Text><Text style={styles.headerSubtitle}>آخر التحديثات والتنبيهات المهمة</Text></View>
-        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('NotificationSettings')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="إعدادات الإشعارات">
+        <View style={styles.headerCopy}><Text style={styles.headerTitle}>{t('shared.notifications')}</Text><Text style={styles.headerSubtitle}>{t('shared.importantUpdates')}</Text></View>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('NotificationSettings')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('shared.notificationSettings')}>
           <Ionicons name="options-outline" size={20} color={COLORS.ink} />
         </TouchableOpacity>
       </View>
@@ -91,7 +93,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
         <View style={styles.errorState} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={46} color="#B91C1C" />
           <Text style={styles.errorText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>{t('shared.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -101,8 +103,8 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}><Ionicons name="notifications-off-outline" size={27} color={COLORS.primary} /></View>
-              <Text style={styles.emptyTitle}>لا توجد إشعارات جديدة</Text>
-              <Text style={styles.emptyText}>أي تحديث مهم سيظهر لك هنا</Text>
+              <Text style={styles.emptyTitle}>{t('shared.noNewNotifications')}</Text>
+              <Text style={styles.emptyText}>{t('shared.updatesAppear')}</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -111,7 +113,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
               activeOpacity={0.7}
               onPress={() => openNotification(item)}
               accessibilityRole="button"
-              accessibilityLabel={`${item.title ?? 'إشعار'}. ${item.body ?? ''}`}
+              accessibilityLabel={`${item.title ?? t('shared.notification')}. ${item.body ?? ''}`}
               accessibilityState={{ selected: !item.is_read }}
             >
               <View style={[styles.iconWrap, !item.is_read && styles.iconWrapUnread]}>
