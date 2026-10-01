@@ -18,15 +18,25 @@ import {
   useAuthStore,
 } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation, translate } from '../../i18n';
 
 const VEHICLE_TYPES = [
-  { key: 'motorcycle', label: 'دراجة نارية', icon: 'bicycle-outline' },
-  { key: 'car', label: 'سيارة', icon: 'car-outline' },
-  { key: 'bicycle', label: 'دراجة هوائية', icon: 'bicycle' },
-  { key: 'pickup', label: 'بيك أب', icon: 'car-sport-outline' },
-];
+  { key: 'motorcycle', labelKey: 'delivery.motorcycle', icon: 'bicycle-outline' },
+  { key: 'car', labelKey: 'delivery.car', icon: 'car-outline' },
+  { key: 'bicycle', labelKey: 'delivery.bicycle', icon: 'bicycle' },
+  { key: 'pickup', labelKey: 'delivery.pickup', icon: 'car-sport-outline' },
+] as const;
 
-const CITIES = ['صنعاء', 'عدن', 'تعز', 'إب', 'الحديدة', 'مأرب', 'حضرموت', 'أخرى'];
+const CITIES = [
+  { value: 'صنعاء', labelKey: 'customer.sanaa' },
+  { value: 'عدن', labelKey: 'customer.aden' },
+  { value: 'تعز', labelKey: 'customer.taiz' },
+  { value: 'إب', labelKey: 'customer.ibb' },
+  { value: 'الحديدة', labelKey: 'delivery.cityHodeidah' },
+  { value: 'مأرب', labelKey: 'delivery.cityMarib' },
+  { value: 'حضرموت', labelKey: 'delivery.cityHadramout' },
+  { value: 'أخرى', labelKey: 'delivery.otherCity' },
+] as const;
 
 interface Props {
   onComplete: () => void;
@@ -38,6 +48,7 @@ type OnboardingImage = {
 };
 
 export default function DeliveryOnboardingScreen({ onComplete }: Props) {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(820);
   const user = useAuthStore((s) => s.user);
 
@@ -58,7 +69,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
   const pickImage = async (): Promise<OnboardingImage | null> => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('تنبيه', 'يجب السماح بالوصول إلى معرض الصور');
+      Alert.alert(t('auth.alert'), t('delivery.onboardingGalleryPermission'));
       return null;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -76,12 +87,12 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (fullName.trim().length < 2) { Alert.alert('تنبيه', 'الاسم الكامل مطلوب'); return; }
-    if (!nationalId.trim()) { Alert.alert('تنبيه', 'رقم الهوية مطلوب'); return; }
-    if (!vehicleType) { Alert.alert('تنبيه', 'اختر نوع المركبة'); return; }
-    if (!vehiclePlate.trim()) { Alert.alert('تنبيه', 'رقم لوحة المركبة مطلوب'); return; }
-    if (!city) { Alert.alert('تنبيه', 'اختر مدينة العمل'); return; }
-    if (!agreedToTerms) { Alert.alert('تنبيه', 'يجب الموافقة على الشروط والأحكام لإكمال التسجيل'); return; }
+    if (fullName.trim().length < 2) { Alert.alert(t('auth.alert'), t('delivery.onboardingFullNameRequired')); return; }
+    if (!nationalId.trim()) { Alert.alert(t('auth.alert'), t('delivery.onboardingNationalIdRequired')); return; }
+    if (!vehicleType) { Alert.alert(t('auth.alert'), t('delivery.onboardingVehicleRequired')); return; }
+    if (!vehiclePlate.trim()) { Alert.alert(t('auth.alert'), t('delivery.onboardingPlateRequired')); return; }
+    if (!city) { Alert.alert(t('auth.alert'), t('delivery.onboardingCityRequired')); return; }
+    if (!agreedToTerms) { Alert.alert(t('auth.alert'), t('delivery.onboardingTermsRequired')); return; }
     if (!user?.id) return;
 
     setSaving(true);
@@ -134,9 +145,9 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
       });
 
       Alert.alert(
-        'تم التسجيل ✅',
-        'تم إرسال بياناتك بنجاح! سيتم مراجعة طلبك خلال 24 ساعة وستصلك رسالة بالقبول.',
-        [{ text: 'ابدأ الآن', onPress: onComplete }],
+        t('delivery.onboardingSuccess'),
+        t('delivery.onboardingSuccessText'),
+        [{ text: t('delivery.onboardingStart'), onPress: onComplete }],
       );
     } catch (e: any) {
       // Object keys are immutable. If a response is lost after an upload, the
@@ -145,7 +156,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         nationalId: createIdempotencyKey(),
         license: createIdempotencyKey(),
       };
-      Alert.alert('خطأ', e?.message ?? 'فشل حفظ البيانات، حاول مرة أخرى');
+      Alert.alert(t('shared.error'), e?.message ?? t('delivery.onboardingSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -160,17 +171,17 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
           style={[styles.logoutButton, { left: layout.gutter }, layout.desktop && styles.logoutButtonDesktop]}
           onPress={() => useAuthStore.getState().signOut()}
           accessibilityRole="button"
-          accessibilityLabel="تسجيل الخروج"
+          accessibilityLabel={t('delivery.signOut')}
         >
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
-          <Text style={[styles.logoutText, layout.compact && styles.logoutTextCompact]}>خروج</Text>
+          <Text style={[styles.logoutText, layout.compact && styles.logoutTextCompact]}>{t('delivery.onboardingLogout')}</Text>
         </TouchableOpacity>
 
         <View style={styles.headerIcon}>
           <Ionicons name="bicycle" size={28} color={COLORS.primary} />
         </View>
-        <Text style={styles.headerTitle}>إعداد حساب التوصيل</Text>
-        <Text style={styles.headerSub}>أدخل بياناتك للبدء في استقبال الطلبات</Text>
+        <Text style={styles.headerTitle}>{t('delivery.onboardingTitle')}</Text>
+        <Text style={styles.headerSub}>{t('delivery.onboardingSubtitle')}</Text>
       </View>
 
       <ScrollView
@@ -181,23 +192,23 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         {/* Info banner */}
         <View style={styles.infoBanner}>
           <Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" />
-          <Text style={styles.infoBannerText}>بياناتك آمنة ومحمية — تُستخدم فقط للتحقق من هويتك</Text>
+          <Text style={styles.infoBannerText}>{t('delivery.onboardingSafeData')}</Text>
         </View>
 
         {/* Personal */}
-        <Text style={styles.groupTitle}>المعلومات الشخصية</Text>
+        <Text style={styles.groupTitle}>{t('delivery.onboardingPersonalInfo')}</Text>
 
-        <Field label="الاسم الكامل" icon="person-outline">
+        <Field label={t('delivery.fullName')} icon="person-outline">
           <TextInput
             style={styles.input}
-            placeholder="الاسم الأول والأخير"
+            placeholder={t('delivery.onboardingFirstLast')}
             placeholderTextColor="#9CA3AF"
             value={fullName}
             onChangeText={setFullName}
           />
         </Field>
 
-        <Field label="رقم الهوية الوطنية *" icon="card-outline">
+        <Field label={t('delivery.onboardingNationalId')} icon="card-outline">
           <TextInput
             style={styles.input}
             placeholder="0000000000"
@@ -210,9 +221,9 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         </Field>
 
         {/* Vehicle */}
-        <Text style={styles.groupTitle}>معلومات المركبة</Text>
+        <Text style={styles.groupTitle}>{t('delivery.onboardingVehicleInfo')}</Text>
 
-        <Text style={styles.fieldLabel}>نوع المركبة *</Text>
+        <Text style={styles.fieldLabel}>{t('delivery.onboardingVehicleType')}</Text>
         <View style={styles.vehicleGrid}>
           {VEHICLE_TYPES.map((v) => (
             <TouchableOpacity
@@ -226,15 +237,15 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
               activeOpacity={0.8}
             >
               <Ionicons name={v.icon as any} size={26} color={vehicleType === v.key ? '#fff' : '#6B7280'} />
-              <Text style={[styles.vehicleLabel, vehicleType === v.key && styles.vehicleLabelActive]}>{v.label}</Text>
+              <Text style={[styles.vehicleLabel, vehicleType === v.key && styles.vehicleLabelActive]}>{t(v.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Field label="رقم اللوحة *" icon="barcode-outline">
+        <Field label={t('delivery.onboardingPlate')} icon="barcode-outline">
           <TextInput
             style={styles.input}
-            placeholder="مثال: ABC 1234"
+            placeholder={t('delivery.onboardingPlateExample')}
             placeholderTextColor="#9CA3AF"
             value={vehiclePlate}
             onChangeText={setVehiclePlate}
@@ -243,27 +254,27 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
         </Field>
 
         {/* City */}
-        <Text style={styles.groupTitle}>منطقة العمل</Text>
-        <Text style={styles.fieldLabel}>المدينة *</Text>
+        <Text style={styles.groupTitle}>{t('delivery.onboardingWorkArea')}</Text>
+        <Text style={styles.fieldLabel}>{t('delivery.onboardingCity')}</Text>
         <View style={styles.chipGrid}>
-          {CITIES.map((c) => (
+          {CITIES.map((cityOption) => (
             <TouchableOpacity
-              key={c}
-              style={[styles.chip, city === c && styles.chipActive]}
-              onPress={() => setCity(c)}
+              key={cityOption.value}
+              style={[styles.chip, city === cityOption.value && styles.chipActive]}
+              onPress={() => setCity(cityOption.value)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.chipText, city === c && styles.chipTextActive]}>{c}</Text>
+              <Text style={[styles.chipText, city === cityOption.value && styles.chipTextActive]}>{t(cityOption.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Document uploads */}
-        <Text style={styles.groupTitle}>صور المستندات (اختياري)</Text>
-        <Text style={styles.groupSub}>تسريع عملية المراجعة بإرفاق المستندات</Text>
+        <Text style={styles.groupTitle}>{t('delivery.onboardingDocs')}</Text>
+        <Text style={styles.groupSub}>{t('delivery.onboardingDocsSub')}</Text>
 
         <DocPicker
-          label="صورة الهوية الوطنية"
+          label={t('delivery.onboardingIdPhoto')}
           icon="card"
           picked={!!idImage}
           onPick={async () => {
@@ -272,7 +283,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
           }}
         />
         <DocPicker
-          label="صورة رخصة القيادة"
+          label={t('delivery.onboardingLicensePhoto')}
           icon="document-text"
           picked={!!licenseImage}
           onPick={async () => {
@@ -293,7 +304,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
             {agreedToTerms && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
           </View>
           <Text style={styles.termsText}>
-            أوافق على <Text style={styles.termsLink}>الشروط والأحكام</Text> و <Text style={styles.termsLink}>سياسة الخصوصية</Text>
+            {t('delivery.onboardingAgree')} <Text style={styles.termsLink}>{t('delivery.onboardingTerms')}</Text> & <Text style={styles.termsLink}>{t('delivery.onboardingPrivacy')}</Text>
           </Text>
         </TouchableOpacity>
 
@@ -311,7 +322,7 @@ export default function DeliveryOnboardingScreen({ onComplete }: Props) {
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <>
-              <Text style={styles.submitBtnText}>إرسال البيانات</Text>
+              <Text style={styles.submitBtnText}>{t('delivery.onboardingSubmit')}</Text>
               <Ionicons name="send" size={18} color="#fff" />
             </>
           )}
@@ -341,7 +352,7 @@ function DocPicker({ label, icon, picked, onPick }: { label: string; icon: strin
       </View>
       <View style={styles.docInfo}>
         <Text style={[styles.docLabel, picked && styles.docLabelPicked]}>{label}</Text>
-        <Text style={styles.docSub}>{picked ? 'تم الاختيار ✅ — اضغط للتغيير' : 'اضغط للاختيار من معرض الصور'}</Text>
+        <Text style={styles.docSub}>{picked ? translate('delivery.onboardingPicked') : translate('delivery.onboardingPickGallery')}</Text>
       </View>
       <Ionicons name="camera-outline" size={20} color="#9CA3AF" />
     </TouchableOpacity>
