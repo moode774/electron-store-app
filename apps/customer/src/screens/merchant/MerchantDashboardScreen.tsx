@@ -376,7 +376,7 @@ export default function MerchantDashboardScreen() {
         <View style={styles.welcomeRow}>
           <View style={styles.welcomeCopy}>
             <Text style={styles.welcomeOverline}>{t('merchant.dashboard')}</Text>
-            <Text style={styles.welcomeText}>{t('merchant.welcome')}، <Text style={styles.welcomeName}>{user?.full_name ?? t('merchant.merchant')}</Text></Text>
+            <Text style={styles.welcomeText}>{t('merchant.welcome')}, <Text style={styles.welcomeName}>{user?.full_name ?? t('merchant.merchant')}</Text></Text>
             <Text style={styles.welcomeSubtitle}>{t('merchant.dashboardSubtitle')}</Text>
           </View>
           <View style={styles.welcomeActions}>
@@ -537,7 +537,7 @@ export default function MerchantDashboardScreen() {
                       <Text style={styles.tdSub}>{d.toLocaleDateString('en-GB')}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-start' }}>
-                      <Text style={styles.tdTextBold}>{order.total_amount} ر.ي</Text>
+                      <Text style={styles.tdTextBold}>{order.total_amount} {t('merchant.currencyYER')}</Text>
                       <Text style={[styles.tdSub, { color: st.color }]}>{st.label}</Text>
                     </View>
                   </TouchableOpacity>
