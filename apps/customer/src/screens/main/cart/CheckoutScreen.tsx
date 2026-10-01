@@ -192,7 +192,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
     if (storeCount > 1) {
       setDiscount(0);
       setCouponApplied(false);
-      setCouponMsg('كود الخصم متاح فقط عند الطلب من متجر واحد. قسّم طلبك أو احذف منتجات المتاجر الأخرى.');
+      setCouponMsg(t('customer.checkoutCouponSingleStore'));
       return;
     }
     setCheckingCoupon(true);
@@ -202,16 +202,16 @@ export default function CheckoutScreen({ navigation, route }: any) {
       if (res.valid) {
         setDiscount(res.discount);
         setCouponApplied(true);
-        setCouponMsg(res.message || 'تم تطبيق الكوبون بنجاح');
+        setCouponMsg(res.message || t('customer.checkoutCouponApplied'));
       } else {
         setDiscount(0);
         setCouponApplied(false);
-        setCouponMsg(res.message || 'كود الخصم غير صالح أو انتهت صلاحيته');
+        setCouponMsg(res.message || t('customer.checkoutCouponInvalid'));
       }
     } catch {
       setDiscount(0);
       setCouponApplied(false);
-      setCouponMsg('تعذّر التحقق من الكود');
+      setCouponMsg(t('customer.checkoutCouponCheckFailed'));
     } finally {
       setCheckingCoupon(false);
     }
@@ -222,12 +222,12 @@ export default function CheckoutScreen({ navigation, route }: any) {
     setSubmitError('');
 
     if (!user?.id) {
-      Alert.alert(t('auth.alert'), 'يجب تسجيل الدخول لطلب المنتجات');
+      Alert.alert(t('auth.alert'), t('customer.checkoutLoginRequired'));
       return;
     }
 
     if (!selectedAddress) {
-      Alert.alert(t('auth.alert'), 'يرجى تحديد عنوان التوصيل أولاً', [
+      Alert.alert(t('auth.alert'), t('customer.checkoutAddressRequired'), [
         {
           text: t('merchant.chooseAddress'),
           onPress: () => navigation.navigate('AddressSelection'),
@@ -237,12 +237,12 @@ export default function CheckoutScreen({ navigation, route }: any) {
     }
 
     if (selectedItems.length === 0) {
-      Alert.alert(t('auth.alert'), 'لم تحدد أي منتج للطلب. ارجع للسلة وحدد المنتجات المطلوبة.');
+      Alert.alert(t('auth.alert'), t('customer.checkoutNoProducts'));
       return;
     }
 
     if (selectedPayment !== 'cash') {
-      Alert.alert('طريقة الدفع غير متاحة', 'اختر الدفع عند الاستلام لإكمال الطلب حالياً.');
+      Alert.alert(t('customer.checkoutPaymentUnavailable'), t('customer.checkoutUseCod'));
       return;
     }
 
@@ -265,8 +265,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
         payment_method: selectedPayment,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : null,
         notes: [
-          paramAltPhone ? `هاتف إضافي: ${paramAltPhone}` : null,
-          needTaxInvoice ? 'طلب فاتورة ضريبية' : null,
+          paramAltPhone ? `${t('customer.checkoutExtraPhone')}: ${paramAltPhone}` : null,
+          needTaxInvoice ? t('customer.checkoutTaxInvoiceRequested') : null,
         ].filter(Boolean).join(' | ') || null,
         stores,
       });
@@ -300,7 +300,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         address_id: selectedAddress.id,
         payment_method: selectedPayment,
         notes: [
-          paramAltPhone ? `رقم تواصل إضافي: ${paramAltPhone}` : null,
+          paramAltPhone ? `${t('customer.checkoutExtraContact')}: ${paramAltPhone}` : null,
           needTaxInvoice ? 'طلب فاتورة ضريبية' : null,
         ].filter(Boolean).join(' | ') || undefined,
         coupon_code: couponApplied && couponCode.trim() ? couponCode.trim() : undefined,
@@ -318,9 +318,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
       checkoutAttempt.current = { fingerprint: '', key: createIdempotencyKey() };
       setOrderSucceeded(true);
     } catch (e: any) {
-      const message = e?.message ?? 'تعذّر إكمال الدفع، يرجى المحاولة مرة أخرى.';
+      const message = e?.message ?? t('customer.checkoutFailedText');
       setSubmitError(message);
-      Alert.alert('تعذّر إكمال الطلب', message);
+      Alert.alert(t('customer.checkoutFailed'), message);
     } finally {
       submitLock.current = false;
       setPlacing(false);
@@ -362,7 +362,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
               <Ionicons name="checkmark" size={14} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelDone]}>العنوان</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelDone]}>{t('customer.addressStepAddress')}</Text>
           </View>
           <View style={[styles.stepLine, styles.stepLineDone]} />
 
@@ -380,7 +380,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={styles.stepCircle}>
               <Ionicons name="checkmark-done-outline" size={15} color="#94A3B8" />
             </View>
-            <Text style={styles.stepLabel}>تأكيد الطلب</Text>
+            <Text style={styles.stepLabel}>{t('customer.addressStepConfirm')}</Text>
           </View>
         </View>
       </View>
@@ -401,7 +401,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             </View>
             <View style={styles.addressTextCol}>
               <Text style={styles.addressBannerTitle}>
-                عنوان التوصيل المساعد: {selectedAddress?.label || 'المنزل'}
+                {t('customer.checkoutHelperAddress')}: {selectedAddress?.label || t('customer.homeLabel')}
               </Text>
               <Text style={styles.addressBannerSub} numberOfLines={1}>
                 {loadingAddress
@@ -429,7 +429,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             />
             <View style={styles.summaryTitleWrap}>
               <Text style={styles.cardTitle}>{t('customer.orderSummary')}</Text>
-              <Text style={styles.itemsCountBadge}>{totalCount} منتجات</Text>
+              <Text style={styles.itemsCountBadge}>{totalCount} {t('customer.checkoutProductsCount')}</Text>
             </View>
           </TouchableOpacity>
 
@@ -467,18 +467,18 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     {feeLoading ? (
                       <Text style={styles.costValueText}>...</Text>
                     ) : deliveryUnavailable ? (
-                      <Text style={[styles.costValueText, { color: '#DC2626' }]}>غير متاح</Text>
+                      <Text style={[styles.costValueText, { color: '#DC2626' }]}>{t('customer.checkoutUnavailable')}</Text>
                     ) : feeError ? (
-                      <Text style={styles.costValueText}>تعذّر الحساب</Text>
+                      <Text style={styles.costValueText}>{t('customer.checkoutCalcFailed')}</Text>
                     ) : deliveryFee > 0 ? (
                       <Text style={styles.costValueText}>{deliveryFee.toLocaleString()} ر.ي</Text>
                     ) : feeMatched ? (
-                      <Text style={styles.freeGreenText}>مجاني</Text>
+                      <Text style={styles.freeGreenText}>{t('customer.checkoutFree')}</Text>
                     ) : (
-                      <Text style={styles.costValueText}>تُحدَّد عند التأكيد</Text>
+                      <Text style={styles.costValueText}>{t('customer.checkoutAtConfirmation')}</Text>
                     )}
                     <Text style={styles.costLabelText}>
-                      تكلفة التوصيل{storeCount > 1 ? ` (${storeCount} متاجر)` : ''}
+                      {t('customer.checkoutDeliveryCost')}{storeCount > 1 ? ` (${storeCount} ${t('customer.checkoutStores')})` : ''}
                     </Text>
                   </View>
 
@@ -493,7 +493,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     <Text style={[styles.costValueText, taxError && { color: '#DC2626' }]}>
                       {taxLoading ? '...' : taxError ? 'تعذّر الحساب' : `${taxAmount.toLocaleString()} ر.ي`}
                     </Text>
-                    <Text style={styles.costLabelText}>الضريبة ({taxRate.toLocaleString()}%)</Text>
+                    <Text style={styles.costLabelText}>{t('customer.checkoutTax')} ({taxRate.toLocaleString()}%)</Text>
                   </View>
 
                   <View style={styles.totalCostRow}>
@@ -501,8 +501,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
                       <Text style={styles.totalCostVal}>{finalTotal.toLocaleString()} ر.ي</Text>
                       <Text style={styles.vatSubText}>
                         {feeError || taxError || (!feeLoading && !feeMatched)
-                          ? 'المبلغ تقديري — يُحتسب النهائي عند تأكيد الطلب'
-                          : 'المبلغ النهائي يُحتسب عند تأكيد الطلب'}
+                          ? t('customer.checkoutEstimate')
+                          : t('customer.checkoutFinalAtConfirm')}
                       </Text>
                     </View>
                     <Text style={styles.totalCostLabel}>{t('customer.total')}</Text>
@@ -525,7 +525,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           <View style={styles.cardHeaderRow}>
             <View style={styles.secureBadgeRow}>
               <Ionicons name="information-circle-outline" size={13} color="#64748B" />
-              <Text style={styles.secureBadgeText}>المتاح حالياً: الدفع عند الاستلام</Text>
+              <Text style={styles.secureBadgeText}>{t('customer.checkoutCodOnly')}</Text>
             </View>
             <Text style={styles.cardTitle}>{t('merchant.paymentMethod')}</Text>
           </View>
@@ -576,7 +576,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             onPress={() => setShowAllPaymentMethods(!showAllPaymentMethods)}
           >
             <Text style={styles.expandPaymentText}>
-              {showAllPaymentMethods ? 'عرض أقل ∧' : 'عرض جميع طرق الدفع ∨'}
+              {showAllPaymentMethods ? t('customer.checkoutShowLess') : t('customer.checkoutShowAllPayments')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -605,7 +605,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                 <Ionicons name="checkmark-circle" size={18} color="#059669" />
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={styles.appliedCouponCode}>{couponCode}</Text>
-                  <Text style={styles.appliedCouponSub}>تم تطبيق الكوبون بنجاح</Text>
+                  <Text style={styles.appliedCouponSub}>{t('customer.checkoutCouponApplied')}</Text>
                 </View>
               </View>
             </View>
@@ -626,7 +626,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
                 <TextInput
                   style={styles.couponTextInput}
-                  placeholder="أدخل كود الخصم (مثال: WELCOME15)"
+                  placeholder={t('customer.checkoutCouponPlaceholder')}
                   placeholderTextColor="#94A3B8"
                   value={couponCode}
                   onChangeText={(t: string) => {
@@ -671,8 +671,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
           <View style={styles.errorCard}>
             <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
             <Text style={styles.errorText}>
-              التوصيل غير متاح إلى {selectedAddress?.city || 'هذه المدينة'} من أحد المتاجر في سلتك.
-              غيّر عنوان التوصيل أو احذف منتجات ذلك المتجر.
+              {t('customer.checkoutDeliveryUnavailableTo')} {selectedAddress?.city || t('customer.checkoutThisCity')} {t('customer.checkoutFromStore')}
+              {t('customer.checkoutChangeOrRemove')}
             </Text>
           </View>
         )}
@@ -693,7 +693,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           <View style={styles.bottomTotalCol}>
             <Text style={styles.bottomTotalLabel}>{t('customer.total')}</Text>
             <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} ر.ي</Text>
-            <Text style={styles.bottomVatSub}>شامل رسوم التوصيل — يُحتسب النهائي عند التأكيد</Text>
+            <Text style={styles.bottomVatSub}>{t('customer.checkoutIncludesDelivery')}</Text>
           </View>
 
           {/* Right Column: Complete Payment CTA Button */}
@@ -732,7 +732,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
             <Ionicons name="ribbon-outline" size={13} color="#64748B" />
-            <Text style={styles.trustText}>تجربة موثوقة</Text>
+            <Text style={styles.trustText}>{t('customer.checkoutTrusted')}</Text>
           </View>
         </View>
       </View>
@@ -742,8 +742,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.overlay}>
           <View style={styles.overlayCard}>
             <Ionicons name="checkmark-circle" size={68} color="#059669" style={{ marginBottom: 14 }} />
-            <Text style={styles.overlayTitle}>تم إرسال طلبك بنجاح! 🎉</Text>
-            <Text style={styles.overlaySub}>سيتم توصيل طلبك في أقرب وقت. متابعة الحالة مريحة من صفحة طلباتي.</Text>
+            <Text style={styles.overlayTitle}>{t('customer.checkoutSuccessTitle')}</Text>
+            <Text style={styles.overlaySub}>{t('customer.checkoutSuccessSub')}</Text>
             <TouchableOpacity
               style={styles.successBtn}
               onPress={() => {
@@ -752,7 +752,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               }}
               activeOpacity={0.85}
             >
-              <Text style={styles.successBtnText}>عرض طلباتي</Text>
+              <Text style={styles.successBtnText}>{t('customer.checkoutViewOrders')}</Text>
             </TouchableOpacity>
           </View>
         </View>
