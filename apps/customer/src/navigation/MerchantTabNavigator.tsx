@@ -442,7 +442,7 @@ function DesktopTopHeader() {
   return (
     <View style={topHeaderStyles.topHeader}>
       <View style={topHeaderStyles.workspaceIdentity}>
-        <View style={topHeaderStyles.workspaceMark}><Text style={topHeaderStyles.workspaceMarkText}>م</Text></View>
+        <View style={topHeaderStyles.workspaceMark}><Text style={topHeaderStyles.workspaceMarkText}>{t('navigation.merchantSpace').charAt(0)}</Text></View>
         <View style={topHeaderStyles.workspaceCopy}>
           <Text style={topHeaderStyles.workspaceTitle}>{t('navigation.merchantSpace')}</Text>
           <Text style={topHeaderStyles.workspaceSubtitle}>{t('navigation.manageStore')}</Text>
