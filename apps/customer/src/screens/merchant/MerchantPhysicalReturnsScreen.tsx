@@ -141,6 +141,7 @@ function isActionable(item: MerchantPhysicalReturn): boolean {
 }
 
 export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPhysicalReturnsScreenProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { width } = useWindowDimensions();
   const isCompact = width < BREAKPOINTS.compact;
