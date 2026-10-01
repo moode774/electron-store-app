@@ -157,7 +157,7 @@ export default function AdminSettingsScreen({ navigation }: any) {
             <View style={s.divider} />
             {renderSettingRow('tax_percent', t('adminUi.vat'), 'receipt', '%')}
             <View style={s.divider} />
-            {renderSettingRow('min_order_amount', t('adminUi.minimumOrder'), 'cart', 'ر.ي')}
+            {renderSettingRow('min_order_amount', t('adminUi.minimumOrder'), 'cart', t('merchant.currencyYER'))}
           </View>
         ) : (
           areasLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
