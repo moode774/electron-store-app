@@ -425,13 +425,13 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         return;
       }
       if (!draft.acceptedQuantity.trim()) {
-        Alert.alert(t('merchant.inspectionRequired'), `${t('merchant.enterAcceptedQtyFor')} ${itemName(item)}، ${t('merchant.evenZero')}`);
+        Alert.alert(t('merchant.inspectionRequired'), `${t('merchant.enterAcceptedQtyFor')} ${itemName(item)}, ${t('merchant.evenZero')}`);
         return;
       }
       const accepted = Number(draft.acceptedQuantity);
       const approved = Number(item.approved_quantity ?? 0);
       if (!Number.isInteger(accepted) || accepted < 0 || accepted > approved) {
-        Alert.alert(t('merchant.invalidQuantity'), `${t('merchant.acceptedQtyFor')} ${itemName(item)} ${t('merchant.mustBeBetween')} 0 و${approved}.`);
+        Alert.alert(t('merchant.invalidQuantity'), `${t('merchant.acceptedQtyFor')} ${itemName(item)} ${t('merchant.mustBeBetween')} 0 - ${approved}.`);
         return;
       }
       if (!draft.disposition) {
