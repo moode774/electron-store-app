@@ -78,8 +78,8 @@ const HERO_BANNERS = [
   ...DYNAMIC_BANNER_IMAGES,
 ];
 
-export default function HomeScreen({
-  const { t } = useTranslation(); navigation }: Props): React.JSX.Element {
+export default function HomeScreen({ navigation }: Props): React.JSX.Element {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const layout = useCustomerLayout();
   const user = useAuthStore((state) => state.user);
