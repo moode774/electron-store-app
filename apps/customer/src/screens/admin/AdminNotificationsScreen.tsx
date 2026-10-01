@@ -115,7 +115,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         {sentCount !== null && (
           <View style={s.successBanner}>
             <Ionicons name="checkmark-circle" size={22} color={UI.success} />
-            <Text style={s.successText}>تم إنشاء {sentCount} {t('adminUi.createdCount')}</Text>
+            <Text style={s.successText}>{sentCount} {t('adminUi.createdCount')}</Text>
           </View>
         )}
 
