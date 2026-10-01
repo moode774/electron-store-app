@@ -26,7 +26,7 @@ export default function AddressBookScreen({
       setAddresses(await getAddresses(user.id));
     } catch (e: any) {
       // لا نعرض قائمة فارغة عند فشل الشبكة — ذلك يوهم بعدم وجود عناوين
-      setLoadError(e?.message ?? 'تعذّر تحميل العناوين. تحقق من الاتصال.');
+      setLoadError(e?.message ?? t('customer.loadAddressesFailed'));
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export default function AddressBookScreen({
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = (item: Address) => {
-    Alert.alert('حذف العنوان', `هل تريد حذف "${item.full_address}"؟`, [
+    Alert.alert(t('customer.deleteAddress'), `${t('customer.deleteAddressConfirm')}\n${item.full_address}`, [
       { text: t('merchant.undo'), style: 'cancel' },
       {
         text: 'حذف',
@@ -43,7 +43,7 @@ export default function AddressBookScreen({
         onPress: async () => {
           setBusyId(item.id);
           try { await deleteAddress(item.id); await load(); }
-          catch (e: any) { Alert.alert('تعذّر الحذف', e?.message ?? 'أعد المحاولة.'); }
+          catch (e: any) { Alert.alert(t('customer.deleteFailed'), e?.message ?? t('customer.tryAgain')); }
           finally { setBusyId(null); }
         },
       },
@@ -54,7 +54,7 @@ export default function AddressBookScreen({
     if (!user?.id || item.is_default) return;
     setBusyId(item.id);
     try { await setDefaultAddress(user.id, item.id); await load(); }
-    catch (e: any) { Alert.alert('تعذّر التعيين', e?.message ?? 'أعد المحاولة.'); }
+    catch (e: any) { Alert.alert(t('customer.setDefaultFailed'), e?.message ?? t('customer.tryAgain')); }
     finally { setBusyId(null); }
   };
 
@@ -73,7 +73,7 @@ export default function AddressBookScreen({
             style={styles.editButton}
             onPress={() => handleDelete(item)}
             accessibilityRole="button"
-            accessibilityLabel="حذف العنوان"
+            accessibilityLabel={t('customer.deleteAddressAccessibility')}
           >
             <Text style={styles.editIcon}>🗑️</Text>
           </TouchableOpacity>
@@ -89,7 +89,7 @@ export default function AddressBookScreen({
           onPress={() => handleSetDefault(item)}
           disabled={busyId === item.id}
           accessibilityRole="button"
-          accessibilityLabel="تعيين كعنوان افتراضي"
+          accessibilityLabel={t('customer.setDefaultAccessibility')}
         >
           <Text style={styles.makeDefaultText}>{t('customer.makeDefault')}</Text>
         </TouchableOpacity>
