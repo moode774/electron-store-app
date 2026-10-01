@@ -27,6 +27,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { IconButton, ScreenHeader } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -55,6 +56,7 @@ function isExpired(end_date: string | null) {
 }
 
 export default function MerchantCouponsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isCompact = width < BREAKPOINTS.compact;
@@ -155,9 +157,9 @@ export default function MerchantCouponsScreen({ navigation }: any) {
       'حذف الكوبون',
       `هل أنت متأكد من حذف كوبون "${coupon.code}"؟`,
       [
-        { text: 'تراجع', style: 'cancel' },
+        { text: t('merchant.undo'), style: 'cancel' },
         {
-          text: 'حذف',
+          text: t('merchant.deleteAccount'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -250,10 +252,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
       <ScreenHeader
-        title="كوبونات المتجر"
-        subtitle="خصومات تجذب العملاء وتزيد الطلبات"
+        title=t('merchant.couponsTitle')
+        subtitle=t('merchant.couponsSubtitle')
         onBack={() => navigation.goBack()}
-        right={<IconButton icon="add" label="كوبون جديد" primary onPress={openModal} />}
+        right={<IconButton icon="add" label=t('merchant.newCoupon') primary onPress={openModal} />}
       />
 
       <View style={[styles.pageContent, isTablet && styles.pageContentWide]}>
@@ -289,7 +291,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
             <Ionicons name="cloud-offline-outline" size={48} color={UI.red} />
             <Text style={styles.errorText}>{loadError}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <Text style={styles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -304,10 +306,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
                 <Ionicons name="pricetag-outline" size={52} color={UI.textMuted} />
-                <Text style={styles.emptyTitle}>لا توجد كوبونات بعد</Text>
-                <Text style={styles.emptySubtitle}>أنشئ أول كوبون خصم لجذب المزيد من العملاء</Text>
+                <Text style={styles.emptyTitle}>{t('merchant.noCoupons')}</Text>
+                <Text style={styles.emptySubtitle}>{t('merchant.noCouponsText')}</Text>
                 <TouchableOpacity style={styles.emptyBtn} onPress={openModal} activeOpacity={0.85}>
-                  <Text style={styles.emptyBtnText}>إنشاء كوبون</Text>
+                  <Text style={styles.emptyBtnText}>{t('merchant.createCoupon')}</Text>
                 </TouchableOpacity>
               </View>
             }
@@ -322,7 +324,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <View style={[styles.modalSheet, isTablet && styles.modalSheetWide, isCompact && styles.modalSheetCompact]}>
             {/* Handle */}
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>كوبون جديد</Text>
+            <Text style={styles.sheetTitle}>{t('merchant.newCoupon')}</Text>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {/* Code */}
