@@ -17,38 +17,24 @@ import {
 } from '@marketplace/shared-hooks';
 import { configurePushNotifications } from '../services/pushNotifications';
 import { Alert } from './appAlert';
+import { useTranslation, translate } from '../i18n';
 
 type PreferenceKey = keyof NotificationPreferences;
 
-const preferenceRows: Array<{
-  key: PreferenceKey;
-  title: string;
-  description: string;
-}> = [
-  {
-    key: 'notifications_enabled',
-    title: 'إشعارات الجهاز',
-    description: 'السماح بإرسال Push إلى أجهزتك المسجلة.',
-  },
-  {
-    key: 'order_notifications',
-    title: 'تحديثات الطلبات',
-    description: 'حالة الطلب والعروض المتاحة للمندوب.',
-  },
-  {
-    key: 'promo_notifications',
-    title: 'العروض والحملات',
-    description: 'الإعلانات والعروض التي ترسلها الإدارة.',
-  },
+const preferenceRows: Array<{ key: PreferenceKey; titleKey: string; descriptionKey: string }> = [
+  { key: 'notifications_enabled', titleKey: 'shared.deviceNotifications', descriptionKey: 'shared.deviceNotificationsDesc' },
+  { key: 'order_notifications', titleKey: 'shared.orderUpdates', descriptionKey: 'shared.orderUpdatesDesc' },
+  { key: 'promo_notifications', titleKey: 'shared.offersCampaigns', descriptionKey: 'shared.offersCampaignsDesc' },
 ];
 
 function errorMessage(error: unknown): string {
   return error instanceof Error && error.message
     ? error.message
-    : 'تعذّر حفظ إعدادات الإشعارات.';
+    : translate('shared.saveSettingFailed');
 }
 
 export function NotificationPreferencesCard({ embedded = false }: { embedded?: boolean }) {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loadError, setLoadError] = useState('');
   const [savingKey, setSavingKey] = useState<PreferenceKey | 'device' | null>(null);
@@ -86,7 +72,7 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
       setPreferences(await updateNotificationPreferences(next));
     } catch (error) {
       setPreferences(previous);
-      Alert.alert('تعذّر حفظ الإعداد', errorMessage(error));
+      Alert.alert(t('shared.saveSettingFailed'), errorMessage(error));
     } finally {
       savingRef.current = false;
       setSavingKey(null);
@@ -102,9 +88,9 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
       if (registration.status !== 'registered') throw new Error(registration.message);
       const next = { ...preferences, notifications_enabled: true };
       setPreferences(await updateNotificationPreferences(next));
-      Alert.alert('تم التفعيل', 'تم ربط هذا الجهاز بإشعارات حسابك.');
+      Alert.alert(t('shared.enabledTitle'), t('shared.enabledText'));
     } catch (error) {
-      Alert.alert('تعذّر تفعيل الإشعارات', errorMessage(error));
+      Alert.alert(t('shared.enableNotificationsFailed'), errorMessage(error));
     } finally {
       savingRef.current = false;
       setSavingKey(null);
@@ -118,21 +104,21 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
           <Ionicons name="options-outline" size={20} color={COLORS.primary} />
         </View>
         <View style={styles.headingText}>
-          <Text style={styles.title}>إعدادات الإشعارات</Text>
-          <Text style={styles.subtitle}>تُحفظ على حسابك وتُطبق على كل الأجهزة.</Text>
+          <Text style={styles.title}>{t('shared.notificationSettings')}</Text>
+          <Text style={styles.subtitle}>{t('shared.settingsSavedAllDevices')}</Text>
         </View>
       </View>
 
       {!preferences && !loadError ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={COLORS.primary} />
-          <Text style={styles.muted}>جاري تحميل الإعدادات…</Text>
+          <Text style={styles.muted}>{t('shared.loadingSettings')}</Text>
         </View>
       ) : loadError ? (
         <View style={styles.errorBox} accessibilityRole="alert">
           <Text style={styles.errorText}>{loadError}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : preferences ? (
@@ -140,8 +126,8 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
           {preferenceRows.map((row) => (
             <View key={row.key} style={styles.preferenceRow}>
               <View style={styles.preferenceText}>
-                <Text style={styles.preferenceTitle}>{row.title}</Text>
-                <Text style={styles.preferenceDescription}>{row.description}</Text>
+                <Text style={styles.preferenceTitle}>{t(row.titleKey)}</Text>
+                <Text style={styles.preferenceDescription}>{t(row.descriptionKey)}</Text>
               </View>
               <Switch
                 value={preferences[row.key]}
@@ -149,7 +135,7 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
                 disabled={savingKey !== null}
                 trackColor={{ false: '#D1D5DB', true: `${COLORS.primary}70` }}
                 thumbColor={preferences[row.key] ? COLORS.primary : '#F9FAFB'}
-                accessibilityLabel={row.title}
+                accessibilityLabel={t(row.titleKey)}
                 accessibilityState={{ checked: preferences[row.key], disabled: savingKey !== null }}
               />
             </View>
@@ -161,7 +147,7 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
               onPress={() => void connectDevice()}
               disabled={savingKey !== null}
               accessibilityRole="button"
-              accessibilityLabel="ربط هذا الجهاز بإشعارات الحساب"
+              accessibilityLabel={t('shared.connectDeviceAccessibility')}
               accessibilityState={{ busy: savingKey === 'device', disabled: savingKey !== null }}
             >
               {savingKey === 'device' ? (
@@ -169,7 +155,7 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
               ) : (
                 <>
                   <Ionicons name="phone-portrait-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.deviceButtonText}>ربط أو تحديث هذا الجهاز</Text>
+                  <Text style={styles.deviceButtonText}>{t('shared.connectDevice')}</Text>
                 </>
               )}
             </TouchableOpacity>
