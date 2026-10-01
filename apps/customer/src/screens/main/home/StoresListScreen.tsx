@@ -69,6 +69,7 @@ const STORE_CAROUSEL_CARDS = [
 ];
 
 export default function StoresListScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout();
   const insets = useSafeAreaInsets();
   const categoryId = typeof route?.params?.categoryId === 'string' ? route.params.categoryId : '';
