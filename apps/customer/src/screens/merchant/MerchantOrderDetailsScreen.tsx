@@ -148,11 +148,11 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   if (!order) {
     return (
       <View style={ui.screen}>
-        <ScreenHeader title=t('merchant.orderDetails') onBack={() => navigation.goBack()} />
+        <ScreenHeader title={t('merchant.orderDetails')} onBack={() => navigation.goBack()} />
         <View style={ui.content}>
           <EmptyState
             icon="cloud-offline-outline"
-            title=t('customer.openOrderFailed')
+            title={t('customer.openOrderFailed')}
             text={loadError ?? 'لم يتم العثور على الطلب.'}
             action={{ label: t('common.retry'), onPress: () => void load(true) }}
           />
@@ -206,7 +206,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       onPress={openCancel}
       disabled={updating || cancelling}
       accessibilityRole="button"
-      accessibilityLabel=t('merchant.cancelOrder')
+      accessibilityLabel={t('merchant.cancelOrder')}
     >
       <Text style={styles.cancelBtnText}>{t('customer.cancel')}</Text>
     </TouchableOpacity>
@@ -240,7 +240,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           {cancelling ? <ActivityIndicator size="small" color={COLORS.error} /> : <Ionicons name="chevron-back" size={16} color={COLORS.inkTertiary} />}
         </TouchableOpacity>
       ))}
-      <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.reasonBack} accessibilityRole="button" accessibilityLabel=t('merchant.undo')>
+      <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.reasonBack} accessibilityRole="button" accessibilityLabel={t('merchant.undo')}>
         <Text style={styles.reasonBackText}>{t('merchant.undo')}</Text>
       </TouchableOpacity>
     </View>
