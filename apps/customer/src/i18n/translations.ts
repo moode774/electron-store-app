@@ -977,6 +977,10 @@ export const resources = {
       rejectProductFailed: 'تعذر رفض المنتج', productReviewTitle: 'مراجعة المنتجات', productReviewSubtitle: 'لا يظهر المنتج الجديد قبل قرار الإدارة',
       noProducts: 'لا توجد منتجات في هذه القائمة', noProductsText: 'ستظهر المنتجات هنا فور إرسالها أو تغيير حالتها.', unknownStore: 'متجر غير معروف', stock: 'المخزون', added: 'أضيف',
       decisionReason: 'سبب القرار', rejectionPlaceholder: 'اذكر التعديل المطلوب من التاجر...', confirmReject: 'تأكيد الرفض', rejectWithReason: 'رفض مع السبب',
+      couponsLoadFailed: 'فشل تحميل الكوبونات', couponCodeValueRequired: 'يرجى إدخال كود الخصم والقيمة', couponCreated: 'تمت إضافة الكوبون العام بنجاح', couponCreateFailed: 'فشل إضافة الكوبون',
+      couponGlobal: 'عام (التطبيق)', couponStoreSpecific: 'متجر خاص', discount: 'الخصم', yer: 'ر.ي', minimum: 'الحد الأدنى', storeSpecific: 'خاص بمتجر', unknown: 'غير معروف',
+      couponsTitle: 'إدارة الكوبونات', createGlobalCoupon: 'إنشاء كوبون خصم عام للتطبيق', couponCode: 'كود الخصم', couponCodeExample: 'مثال: EID50', discountType: 'نوع الخصم',
+      fixedAmount: 'مبلغ', percentage: 'نسبة %', minimumOrderAmount: 'الحد الأدنى للطلب', discountValue: 'قيمة الخصم', discountValueExample: 'مثال: 20', issueCoupon: 'إصدار الكوبون', noCoupons: 'لا توجد كوبونات حالياً',
     },
     workspace: {
       openFailed: 'تعذّر فتح مساحة العمل',
@@ -1930,6 +1934,10 @@ export const resources = {
       rejectProductFailed: 'Could Not Reject Product', productReviewTitle: 'Product Review', productReviewSubtitle: 'New products are not visible until administration decides',
       noProducts: 'No Products in This List', noProductsText: 'Products will appear here as soon as they are submitted or their status changes.', unknownStore: 'Unknown Store', stock: 'Stock', added: 'Added',
       decisionReason: 'Decision Reason', rejectionPlaceholder: 'Describe the change required from the merchant...', confirmReject: 'Confirm Rejection', rejectWithReason: 'Reject with Reason',
+      couponsLoadFailed: 'Could not load coupons', couponCodeValueRequired: 'Enter the coupon code and value', couponCreated: 'The global coupon was added successfully', couponCreateFailed: 'Could not add coupon',
+      couponGlobal: 'Global (App)', couponStoreSpecific: 'Store Specific', discount: 'Discount', yer: 'YER', minimum: 'Minimum', storeSpecific: 'Store', unknown: 'Unknown',
+      couponsTitle: 'Coupon Management', createGlobalCoupon: 'Create a Global App Coupon', couponCode: 'Coupon Code', couponCodeExample: 'Example: EID50', discountType: 'Discount Type',
+      fixedAmount: 'Fixed Amount', percentage: 'Percentage %', minimumOrderAmount: 'Minimum Order Amount', discountValue: 'Discount Value', discountValueExample: 'Example: 20', issueCoupon: 'Issue Coupon', noCoupons: 'No Coupons Right Now',
     },
     workspace: {
       openFailed: 'Could not open workspace',
