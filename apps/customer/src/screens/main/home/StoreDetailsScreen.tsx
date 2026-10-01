@@ -9,6 +9,7 @@ import { useAuthStore, useCartStore, getStoreById, getProductsByStore, getWishli
 import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -20,7 +21,8 @@ interface Props {
 
 const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-export default function StoreDetailsScreen({ navigation, route }: Props) {
+export default function StoreDetailsScreen({
+  const { t } = useTranslation(); navigation, route }: Props) {
   const layout = useCustomerLayout(1120);
   const productGutter = layout.gutter;
   const productGap = layout.compact ? 10 : 16;
@@ -44,9 +46,9 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     if (!user?.id) return;
     try {
       const convId = await getOrCreateConversation(user.id, storeId);
-      navigation.navigate('Chat', { conversationId: convId, title: store?.store_name ?? 'المتجر' });
+      navigation.navigate('Chat', { conversationId: convId, title: store?.store_name ?? t('customer.store') });
     } catch (error: any) {
-      Alert.alert('تعذّر فتح المحادثة', error?.message ?? 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert('تعذّر فتح المحادثة', error?.message ?? t('merchant.connectionRetry'));
     }
   };
   const addToCart = useCartStore((s) => s.addToCart);
@@ -62,7 +64,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     } catch {
       setFollowing(!next);
       setFollowers((count) => Math.max(0, count + (next ? -1 : 1)));
-      Alert.alert('تعذّر تحديث المتابعة', 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert(t('merchant.followFailed'), t('merchant.connectionRetry'));
     }
   };
 
@@ -72,7 +74,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
       return;
     }
     if (Number(product.stock_quantity ?? 0) <= 0) {
-      Alert.alert('نفد المخزون', 'هذا المنتج غير متاح للإضافة حاليًا.');
+      Alert.alert(t('customer.outOfStock'), 'هذا المنتج غير متاح للإضافة حاليًا.');
       return;
     }
     addToCart({
@@ -84,7 +86,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
       quantity: 1,
       maxQuantity: product.stock_quantity ?? undefined,
       storeId: product.merchant_id,
-      storeName: store?.store_name ?? 'المتجر',
+      storeName: store?.store_name ?? t('customer.store'),
     });
   };
 
@@ -92,7 +94,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     setLoadError('');
     try {
       const [nextStore, nextProducts] = await Promise.all([getStoreById(storeId), getProductsByStore(storeId)]);
-      if (!nextStore) throw new Error('المتجر غير موجود أو غير متاح حاليًا.');
+      if (!nextStore) throw new Error(t('merchant.storeUnavailable'));
       setStore(nextStore);
       setProducts(nextProducts);
     } catch (error: any) {
@@ -148,7 +150,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         if (isWished) restored.add(productId); else restored.delete(productId);
         return restored;
       });
-      Alert.alert('تعذّر تحديث المفضلة', 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert(t('merchant.wishlistFailed'), t('merchant.connectionRetry'));
     }
   };
 
@@ -164,20 +166,20 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     return (
       <View style={styles.errorState} accessibilityRole="alert">
         <Ionicons name="storefront-outline" size={52} color="#B91C1C" />
-        <Text style={styles.errorTitle}>تعذّر فتح المتجر</Text>
-        <Text style={styles.errorMessage}>{loadError || 'المتجر غير موجود أو غير متاح حاليًا.'}</Text>
+        <Text style={styles.errorTitle}>{t('merchant.loadStoreFailed')}</Text>
+        <Text style={styles.errorMessage}>{loadError || t('merchant.storeUnavailable')}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void loadData(); }} accessibilityRole="button">
-          <Text style={styles.retryText}>إعادة المحاولة</Text>
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backLinkButton} onPress={() => navigation.goBack()} accessibilityRole="button">
-          <Text style={styles.backLink}>العودة</Text>
+          <Text style={styles.backLink}>{t('merchant.back')}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   const STORE = {
-    name: store?.store_name ?? 'المتجر',
+    name: store?.store_name ?? t('customer.store'),
     iconName: 'storefront-outline' as const,
     coverColor: '#111827',
     rating: store?.rating ?? 0,
@@ -195,7 +197,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         <View style={[styles.page, layout.tablet && styles.pageWide]}>
         {/* Cover & Header */}
         <View style={[styles.cover, layout.desktop && styles.coverDesktop, { backgroundColor: STORE.coverColor }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.coverContent}>
@@ -226,7 +228,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{followers}</Text>
-              <Text style={styles.statLabel}>متابع</Text>
+              <Text style={styles.statLabel}>{t('customer.followers')}</Text>
             </View>
             <View style={styles.statDivider} />
             <TouchableOpacity
@@ -251,14 +253,14 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
             onPress={() => setActiveTab('products')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>المنتجات</Text>
+            <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>{t('common.products')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.tab, activeTab === 'about' && styles.activeTab]}
             onPress={() => setActiveTab('about')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>عن المتجر</Text>
+            <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>{t('customer.aboutStore')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -267,7 +269,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
           <View style={[styles.productsGrid, { paddingHorizontal: productGutter, paddingVertical: 24, gap: productGap }]}>
             {products.length === 0 ? (
               <View style={{ width: '100%', alignItems: 'center', paddingVertical: 40 }}>
-                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد منتجات حتى الآن</Text>
+                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>{t('customer.noProductsYet')}</Text>
               </View>
             ) : products.map((product) => {
               const needsOptions = (product.product_variants ?? []).some((variant) => variant.is_active !== false);
@@ -297,8 +299,8 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                 <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.primary} />
               </View>
               <View style={styles.aboutContent}>
-                <Text style={styles.aboutTitle}>سياسة الاسترجاع</Text>
-                <Text style={styles.aboutText}>يقبل المتجر إرجاع المنتجات خلال 3 أيام من تاريخ الاستلام بشرط أن تكون بحالتها الأصلية.</Text>
+                <Text style={styles.aboutTitle}>{t('customer.returnPolicy')}</Text>
+                <Text style={styles.aboutText}>{t('merchant.returnPolicyText')}</Text>
               </View>
             </View>
             
@@ -309,8 +311,8 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                 <Ionicons name="location-outline" size={20} color={COLORS.primary} />
               </View>
               <View style={styles.aboutContent}>
-                <Text style={styles.aboutTitle}>موقع المتجر</Text>
-                <Text style={styles.aboutText}>{store?.city ?? 'غير محدد'}</Text>
+                <Text style={styles.aboutTitle}>{t('customer.storeLocation')}</Text>
+                <Text style={styles.aboutText}>{store?.city ?? t('customer.unspecified')}</Text>
               </View>
             </View>
 
@@ -322,12 +324,12 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                     <Ionicons name="time-outline" size={20} color={COLORS.primary} />
                   </View>
                   <View style={styles.aboutContent}>
-                    <Text style={styles.aboutTitle}>ساعات العمل</Text>
+                    <Text style={styles.aboutTitle}>{t('customer.workingHours')}</Text>
                     {hours.map((h) => (
                       <View key={h.id} style={styles.hourRow}>
                         <Text style={styles.hourDay}>{DAY_NAMES[h.day_of_week]}</Text>
                         <Text style={[styles.hourTime, h.is_closed && { color: '#EF4444' }]}>
-                          {h.is_closed ? 'مغلق' : `${(h.open_time ?? '').slice(0,5)} - ${(h.close_time ?? '').slice(0,5)}`}
+                          {h.is_closed ? t('customer.closed') : `${(h.open_time ?? '').slice(0,5)} - ${(h.close_time ?? '').slice(0,5)}`}
                         </Text>
                       </View>
                     ))}
@@ -358,7 +360,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
 
             <TouchableOpacity style={styles.chatStoreBtn} onPress={openChat} activeOpacity={0.85}>
               <Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.chatStoreBtnText}>مراسلة المتجر</Text>
+              <Text style={styles.chatStoreBtnText}>{t('customer.messageStore')}</Text>
             </TouchableOpacity>
           </View>
         )}
