@@ -103,7 +103,7 @@ function MerchantMoreScreen({ navigation }: any) {
             style={more.headerBtn}
             onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })}
             accessibilityRole="button"
-            accessibilityLabel=t('merchant.notifications')
+            accessibilityLabel={t('merchant.notifications')}
           >
             <Ionicons name="notifications-outline" size={20} color={COLORS.ink} />
           </TouchableOpacity>
@@ -120,7 +120,7 @@ function MerchantMoreScreen({ navigation }: any) {
           activeOpacity={0.85}
           onPress={() => navigation.navigate('StoreSettings')}
           accessibilityRole="button"
-          accessibilityLabel=t('merchant.storeData')
+          accessibilityLabel={t('merchant.storeData')}
         >
           <View style={more.storeAvatar}>
             <Ionicons name="storefront" size={24} color={COLORS.primary} />
@@ -165,7 +165,7 @@ function MerchantMoreScreen({ navigation }: any) {
           </View>
         ))}
 
-        <TouchableOpacity style={more.logout} onPress={confirmSignOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('common.signOut')>
+        <TouchableOpacity style={more.logout} onPress={confirmSignOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('common.signOut')}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={more.logoutText}>{t('common.signOut')}</Text>
         </TouchableOpacity>
@@ -360,7 +360,7 @@ function MerchantAccountDesktop({ navigation }: any) {
           }
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel=t('common.signOut')
+          accessibilityLabel={t('common.signOut')}
         >
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
           <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('common.signOut')}</Text>
