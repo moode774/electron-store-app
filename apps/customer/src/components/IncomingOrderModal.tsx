@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { useTranslation } from '../i18n';
 import { OrderSummary } from '@marketplace/shared-hooks';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function IncomingOrderModal({ visible, order, onAccept, onReject, accepting = false }: Props) {
+  const { t } = useTranslation();
   const { height } = useWindowDimensions();
   const isShort = height < 600;
   const [timeLeft, setTimeLeft] = useState(30);
@@ -55,13 +57,13 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
             <Ionicons name="notifications-outline" size={40} color="#FFFFFF" />
           </View>
           
-          <Text style={styles.title}>طلب توصيل جديد!</Text>
-          <Text style={styles.subtitle}>يوجد طلب قريب منك، هل تود قبوله؟</Text>
+          <Text style={styles.title}>{t('delivery.newDelivery')}</Text>
+          <Text style={styles.subtitle}>{t('delivery.nearbyOrder')}</Text>
           
           <View style={styles.detailsBox}>
             <View style={styles.detailRow}>
               <Ionicons name="storefront-outline" size={18} color="#6B7280" />
-              <Text style={styles.detailText}>{order.merchant_profiles?.store_name ?? 'مطعم/متجر'}</Text>
+              <Text style={styles.detailText}>{order.merchant_profiles?.store_name ?? t('delivery.storeFallback')}</Text>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={18} color="#6B7280" />
@@ -70,12 +72,12 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
               </Text>
             </View>
             <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }]}>
-              <Text style={styles.amountLabel}>أجر التوصيل المتوقع:</Text>
-              <Text style={styles.amountValue}>{order.delivery_fee ?? 0} ر.ي</Text>
+              <Text style={styles.amountLabel}>{t('delivery.expectedFee')}</Text>
+              <Text style={styles.amountValue}>{order.delivery_fee ?? 0} {t('merchant.currencyYER')}</Text>
             </View>
           </View>
 
-          <Text style={styles.timerText}>يختفي الطلب خلال <Text style={{ color: '#DC2626' }}>{timeLeft}</Text> ثانية</Text>
+          <Text style={styles.timerText}>{t('delivery.expiresIn')} <Text style={{ color: '#DC2626' }}>{timeLeft}</Text> {t('delivery.seconds')}</Text>
 
           <View style={styles.actions}>
             <TouchableOpacity
@@ -84,10 +86,10 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
               activeOpacity={0.7}
               disabled={accepting}
               accessibilityRole="button"
-              accessibilityLabel="تخطي عرض التوصيل الحالي"
+              accessibilityLabel={t('delivery.skipOffer')}
               accessibilityState={{ disabled: accepting }}
             >
-              <Text style={styles.rejectText}>تخطي</Text>
+              <Text style={styles.rejectText}>{t('delivery.skip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.acceptBtn, accepting && styles.disabledBtn]}
@@ -95,14 +97,14 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
               activeOpacity={0.7}
               disabled={accepting}
               accessibilityRole="button"
-              accessibilityLabel="قبول طلب التوصيل"
+              accessibilityLabel={t('delivery.acceptDelivery')}
               accessibilityState={{ disabled: accepting, busy: accepting }}
             >
               {accepting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Text style={styles.acceptText}>قبول الطلب</Text>
+                  <Text style={styles.acceptText}>{t('delivery.acceptOrder')}</Text>
                   <Ionicons name="bicycle" size={20} color="#FFFFFF" />
                 </>
               )}
