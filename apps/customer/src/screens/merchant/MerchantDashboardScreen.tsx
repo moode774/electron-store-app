@@ -95,7 +95,7 @@ function MobileDashboard({
             style={mobile.headerBtn}
             onPress={() => navigation.navigate('MerchantAccount', { screen: 'RoleNotifications', params: { role: 'merchant' } })}
             accessibilityRole="button"
-            accessibilityLabel=t('merchant.notifications')
+            accessibilityLabel={t('merchant.notifications')}
           >
             <Ionicons name="notifications-outline" size={20} color={COLORS.ink} />
           </TouchableOpacity>
@@ -115,7 +115,7 @@ function MobileDashboard({
           <View style={styles.errorBanner}>
             <Ionicons name="cloud-offline-outline" size={20} color="#B45309" />
             <Text style={styles.errorBannerText}>{error}</Text>
-            <TouchableOpacity onPress={onRetry} accessibilityRole="button" accessibilityLabel=t('common.retry')>
+            <TouchableOpacity onPress={onRetry} accessibilityRole="button" accessibilityLabel={t('common.retry')}>
               <Text style={styles.errorRetryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
@@ -148,7 +148,7 @@ function MobileDashboard({
             <Text style={mobile.sectionTitle}>{t('merchant.needsAction')}</Text>
             {needsAction.length ? <View style={mobile.countBadge}><Text style={mobile.countBadgeText}>{needsAction.length}</Text></View> : null}
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel=t('merchant.activeOrders')>
+          <TouchableOpacity onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel={t('merchant.activeOrders')}>
             <Text style={mobile.sectionLink}>{t('merchant.allOrders')}</Text>
           </TouchableOpacity>
         </View>
@@ -177,7 +177,7 @@ function MobileDashboard({
 
         <View style={mobile.sectionHeader}>
           <Text style={mobile.sectionTitle}>{t('merchant.latestOrders')}</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel=t('merchant.orderHistory')>
+          <TouchableOpacity onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel={t('merchant.orderHistory')}>
             <Text style={mobile.sectionLink}>السجل</Text>
           </TouchableOpacity>
         </View>
