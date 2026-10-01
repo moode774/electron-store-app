@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS, USER_ROLES, type UserRole } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -35,25 +36,16 @@ interface RoleOption {
   description: string;
 }
 
-const ROLE_OPTIONS: RoleOption[] = [
-  {
-    role: USER_ROLES.DELIVERY,
-    image: require('../../../assets/images/delivery-role.png'),
-    title: 'توصيل',
-    description: 'مندوب توصيل طلبات',
-  },
-  {
-    role: USER_ROLES.MERCHANT,
-    image: require('../../../assets/images/merchant-role.png'),
-    title: 'تاجر',
-    description: 'مدير متجر أو مطعم',
-  },
-];
+const ROLE_OPTIONS = [
+  { role: USER_ROLES.DELIVERY, image: require('../../../assets/images/delivery-role.png'), titleKey: 'onboarding.delivery', descriptionKey: 'onboarding.deliveryDesc' },
+  { role: USER_ROLES.MERCHANT, image: require('../../../assets/images/merchant-role.png'), titleKey: 'onboarding.merchant', descriptionKey: 'onboarding.merchantDesc' },
+] as const;
 
 
 import { useNavigation } from '@react-navigation/native';
 
 export default function RegisterScreen(): React.JSX.Element {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [fullName, setFullName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -65,12 +57,12 @@ export default function RegisterScreen(): React.JSX.Element {
 
   const handleRegister = async (): Promise<void> => {
     if (!fullName.trim()) {
-      Alert.alert('تنبيه', 'الرجاء إدخال اسمك الكامل');
+      Alert.alert(t('auth.alert'), t('onboarding.enterFullName'));
       return;
     }
     const cleaned = phone.trim().replace(/\s/g, '');
     if (cleaned.length < 9) {
-      Alert.alert('تنبيه', 'الرجاء إدخال رقم جوال صحيح');
+      Alert.alert(t('auth.alert'), t('onboarding.invalidPhone'));
       return;
     }
     const formatted = cleaned.startsWith('+') ? cleaned : `+967${cleaned.replace(/^0/, '')}`;
@@ -86,7 +78,7 @@ export default function RegisterScreen(): React.JSX.Element {
     setIsLoading(false);
 
     if (error) {
-      Alert.alert('خطأ', error);
+      Alert.alert(t('workspace.openFailed'), error);
       return;
     }
 
@@ -106,8 +98,8 @@ export default function RegisterScreen(): React.JSX.Element {
             source={require('../../../assets/images/logo.png')}
             style={styles.desktopCoverLogo}
           />
-          <Text style={styles.desktopCoverTitle}>انضم إلينا كشريك نجاح</Text>
-          <Text style={styles.desktopCoverSub}>ابدأ رحلتك معنا اليوم وحقق أهدافك.</Text>
+          <Text style={styles.desktopCoverTitle}>{t('onboarding.joinPartners')}</Text>
+          <Text style={styles.desktopCoverSub}>{t('onboarding.joinPartnersSub')}</Text>
         </View>
       )}
 
@@ -153,12 +145,12 @@ export default function RegisterScreen(): React.JSX.Element {
 
                 {/* Welcome Text */}
                 <View style={styles.welcomeTextContainer}>
-                  <Text style={styles.welcomeTitle}>مرحباً بك!</Text>
-                  <Text style={styles.welcomeSub}>اختر نوع الحساب الذي يناسبك للبدء</Text>
+                  <Text style={styles.welcomeTitle}>{t('onboarding.welcome')}</Text>
+                  <Text style={styles.welcomeSub}>{t('onboarding.chooseAccount')}</Text>
                 </View>
                 <View style={styles.sectionTitleRow}>
                   <View style={styles.sectionTitleDot} />
-                  <Text style={styles.sectionTitleSmall}>اختر نوع الحساب</Text>
+                  <Text style={styles.sectionTitleSmall}>{t('onboarding.chooseAccountType')}</Text>
                 </View>
                 <View style={styles.rolesRow}>
                   {ROLE_OPTIONS.map((opt) => {
@@ -192,10 +184,10 @@ export default function RegisterScreen(): React.JSX.Element {
                           )}
                         </View>
                         <Text style={[styles.roleTitle, isActive && styles.roleTitleActive]}>
-                          {opt.title}
+                          {t(opt.titleKey)}
                         </Text>
                         <Text style={[styles.roleDesc, isActive && styles.roleDescActive]}>
-                          {opt.description}
+                          {t(opt.descriptionKey)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -208,19 +200,19 @@ export default function RegisterScreen(): React.JSX.Element {
                     <View style={styles.featureIconBox}>
                       <Ionicons name="headset-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>دعم 24/7</Text>
+                    <Text style={styles.featureText}>{t('onboarding.support247')}</Text>
                   </View>
                   <View style={styles.featureItem}>
                     <View style={styles.featureIconBox}>
                       <Ionicons name="flash-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>سهولة وسرعة</Text>
+                    <Text style={styles.featureText}>{t('onboarding.easyFast')}</Text>
                   </View>
                   <View style={styles.featureItem}>
                     <View style={styles.featureIconBox}>
                       <Ionicons name="shield-checkmark-outline" size={22} color="#111827" />
                     </View>
-                    <Text style={styles.featureText}>حساب موثّق بالهاتف</Text>
+                    <Text style={styles.featureText}>{t('onboarding.verifiedPhone')}</Text>
                   </View>
                 </View>
 
@@ -229,13 +221,13 @@ export default function RegisterScreen(): React.JSX.Element {
                   onPress={() => setStep(2)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.submitBtnText}>التالي</Text>
+                  <Text style={styles.submitBtnText}>{t('onboarding.next')}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.loginHintRow}>
-                  <Text style={styles.loginHintText}>لديك حساب بالفعل؟</Text>
+                  <Text style={styles.loginHintText}>{t('onboarding.haveAccount')}</Text>
                   <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-                    <Text style={styles.loginHintLink}>تسجيل الدخول</Text>
+                    <Text style={styles.loginHintLink}>{t('onboarding.signIn')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -258,29 +250,29 @@ export default function RegisterScreen(): React.JSX.Element {
                   )}
                   <Text style={styles.roleHeaderTitle}>
                     {selectedRole === USER_ROLES.DELIVERY
-                      ? 'انضم لفريق التوصيل'
+                      ? t('onboarding.joinDeliveryTeam')
                       : selectedRole === USER_ROLES.MERCHANT
-                        ? 'انضم كشريك تجاري'
-                        : 'أنشئ حسابك'}
+                        ? t('onboarding.joinMerchantPartner')
+                        : t('onboarding.createAccount')}
                   </Text>
                   <Text style={styles.roleHeaderSub}>
                     {selectedRole === USER_ROLES.DELIVERY
-                      ? 'سجل بياناتك كمندوب للبدء في استقبال طلبات التوصيل بعد اعتماد حسابك'
+                      ? t('onboarding.deliveryJoinSub')
                       : selectedRole === USER_ROLES.MERCHANT
-                        ? 'سجل بيانات متجرك للبدء في عرض منتجاتك بعد مراجعة واعتماد الحساب'
-                        : 'أدخل بياناتك للبدء في التسوّق وتتبّع طلباتك بسهولة'}
+                        ? t('onboarding.merchantJoinSub')
+                        : t('onboarding.customerJoinSub')}
                   </Text>
                 </View>
 
                 {/* Input Fields */}
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>الاسم الكامل</Text>
+                  <Text style={styles.fieldLabel}>{t('onboarding.fullName')}</Text>
                   <View style={styles.inputWrapper}>
                     <Ionicons name="person-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                     <View style={styles.verticalDivider} />
                     <TextInput
                       style={styles.input}
-                      placeholder="الاسم الأول والأخير"
+                      placeholder={t('onboarding.firstLastName')}
                       placeholderTextColor="#9CA3AF"
                       value={fullName}
                       onChangeText={setFullName}
@@ -291,7 +283,7 @@ export default function RegisterScreen(): React.JSX.Element {
                 </View>
 
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>رقم الجوال</Text>
+                  <Text style={styles.fieldLabel}>{t('onboarding.phone')}</Text>
                   <View style={styles.inputWrapper}>
                     <View style={styles.countryCodeBox}>
                       <Text style={styles.flagEmoji}>🇾🇪</Text>
@@ -321,7 +313,7 @@ export default function RegisterScreen(): React.JSX.Element {
                   {isLoading ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
-                    <Text style={styles.submitBtnText}>إرسال رمز التحقق</Text>
+                    <Text style={styles.submitBtnText}>{t('onboarding.sendCode')}</Text>
                   )}
                 </TouchableOpacity>
               </View>
