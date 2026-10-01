@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { useTranslation, translate } from '../../i18n';
 import {
   getSupportTicketThread, replyToSupportTicket, SupportMessage, SupportTicket,
   supabase, useAuthStore,
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function SupportTicketThreadScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(960);
   const ticketId: string | undefined = route?.params?.ticketId;
   const user = useAuthStore((state) => state.user);
@@ -33,7 +35,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
 
   const load = useCallback(async () => {
     if (!ticketId) {
-      setError('لم يتم تحديد تذكرة الدعم.');
+      setError(t('shared.ticketMissing'));
       setLoading(false);
       return;
     }
@@ -43,7 +45,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
       setMessages(thread.messages);
       setError('');
     } catch (loadError: any) {
-      setError(loadError?.message ?? 'تعذّر تحميل محادثة الدعم.');
+      setError(loadError?.message ?? t('shared.ticketLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
     const body = reply.trim();
     if (!ticketId || !body || sending) return;
     if (body.length > 4000) {
-      Alert.alert('الرد طويل جداً', 'الحد الأقصى 4000 حرف.');
+      Alert.alert(t('shared.replyTooLong'), t('shared.replyMax'));
       return;
     }
     setSending(true);
@@ -84,7 +86,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
       setReply('');
       await load();
     } catch (sendError: any) {
-      Alert.alert('تعذّر إرسال الرد', sendError?.message ?? 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert(t('shared.replyFailed'), sendError?.message ?? t('shared.connectionRetry'));
     } finally {
       setSending(false);
     }
@@ -97,12 +99,12 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.threadShell, layout.desktop && styles.threadShellDesktop]}>
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('shared.back')}>
           <Ionicons name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.title} numberOfLines={1}>{ticket?.subject ?? 'تذكرة الدعم'}</Text>
-          {ticket ? <Text style={styles.status}>{STATUS_LABELS[ticket.status] ?? ticket.status}</Text> : null}
+          <Text style={styles.title} numberOfLines={1}>{ticket?.subject ?? t('shared.supportTicketFallback')}</Text>
+          {ticket ? <Text style={styles.status}>{t(STATUS_KEYS[ticket.status as keyof typeof STATUS_KEYS]) ?? ticket.status}</Text> : null}
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -113,21 +115,21 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={42} color="#B91C1C" />
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button" accessibilityLabel="إعادة تحميل التذكرة">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => void load()} accessibilityRole="button" accessibilityLabel={t('shared.reloadTicket')}>
+            <Text style={styles.retryText}>{t('shared.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           {error ? (
             <TouchableOpacity style={styles.inlineError} onPress={() => void load()} accessibilityRole="button">
-              <Text style={styles.inlineErrorText}>{error} — اضغط لإعادة المحاولة</Text>
+              <Text style={styles.inlineErrorText}>{error} — {t('shared.tapRetry')}</Text>
             </TouchableOpacity>
           ) : null}
           {ticket?.order_id ? (
             <View style={styles.orderReference}>
               <Ionicons name="receipt-outline" size={17} color="#1D4ED8" />
-              <Text style={styles.orderReferenceText}>هذه التذكرة مرتبطة بطلب</Text>
+              <Text style={styles.orderReferenceText}>{t('shared.linkedOrder')}</Text>
             </View>
           ) : null}
           <FlatList
@@ -139,39 +141,39 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
               return (
                 <View style={[styles.messageRow, mine ? styles.mineRow : styles.otherRow]}>
                   <View style={[styles.messageBubble, mine ? styles.mineBubble : styles.otherBubble]}>
-                    {!mine ? <Text style={styles.senderName}>{item.users?.full_name ?? 'فريق الدعم'}</Text> : null}
+                    {!mine ? <Text style={styles.senderName}>{item.users?.full_name ?? t('shared.supportTeam')}</Text> : null}
                     <Text style={[styles.messageText, mine && styles.mineText]}>{item.message}</Text>
                     <Text style={[styles.messageTime, mine && styles.mineTime]}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
                   </View>
                 </View>
               );
             }}
-            ListEmptyComponent={<Text style={styles.emptyText}>لا توجد رسائل ظاهرة في هذه التذكرة.</Text>}
+            ListEmptyComponent={<Text style={styles.emptyText}>{t('shared.noMessages')}</Text>}
           />
         </>
       )}
 
       {!loading && ticket ? (
         isClosed ? (
-          <View style={styles.closedBar}><Text style={styles.closedText}>هذه التذكرة مغلقة. افتح تذكرة جديدة إذا احتجت متابعة أخرى.</Text></View>
+          <View style={styles.closedBar}><Text style={styles.closedText}>{t('shared.closedTicket')}</Text></View>
         ) : (
           <View style={styles.inputBar}>
             <TextInput
               style={styles.input}
               value={reply}
               onChangeText={setReply}
-              placeholder="اكتب ردك..."
+              placeholder={t('shared.reply')}
               placeholderTextColor="#9CA3AF"
               multiline
               maxLength={4000}
-              accessibilityLabel="رد تذكرة الدعم"
+              accessibilityLabel={t('shared.reply')}
             />
             <TouchableOpacity
               style={[styles.sendButton, (!reply.trim() || sending) && styles.disabled]}
               onPress={sendReply}
               disabled={!reply.trim() || sending}
               accessibilityRole="button"
-              accessibilityLabel="إرسال الرد"
+              accessibilityLabel={t('shared.sendReply')}
               accessibilityState={{ disabled: !reply.trim() || sending, busy: sending }}
             >
               {sending ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons name="send" size={19} color="#FFFFFF" />}
