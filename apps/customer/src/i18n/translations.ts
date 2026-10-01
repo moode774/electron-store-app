@@ -665,6 +665,7 @@ export const resources = {
       support247: 'دعم 24/7', easyFast: 'سهولة وسرعة', verifiedPhone: 'حساب موثّق بالهاتف', haveAccount: 'لديك حساب بالفعل؟',
       fullName: 'الاسم الكامل', firstLastName: 'الاسم الأول والأخير', phone: 'رقم الجوال', sendCode: 'إرسال رمز التحقق',
       verificationCode: 'رمز التحقق', enterSixDigits: 'أدخل الرمز المكون من 6 أرقام المرسل إلى', verifyCode: 'تأكيد الرمز',
+      enterFullName: 'الرجاء إدخال اسمك الكامل', invalidPhone: 'الرجاء إدخال رقم جوال صحيح', joinDeliveryTeam: 'انضم لفريق التوصيل', joinMerchantPartner: 'انضم كشريك تجاري', createAccount: 'أنشئ حسابك', deliveryJoinSub: 'سجل بياناتك كمندوب للبدء في استقبال طلبات التوصيل بعد اعتماد حسابك', merchantJoinSub: 'سجل بيانات متجرك للبدء في عرض منتجاتك بعد مراجعة واعتماد الحساب', customerJoinSub: 'أدخل بياناتك للبدء في التسوّق وتتبّع طلباتك بسهولة', signIn: 'تسجيل الدخول',
       noCode: 'لم يصلك الرمز؟', resend: 'إعادة إرسال', resendAfter: 'إعادة الإرسال متاح بعد', betterShopping: 'تجربة تسوق أفضل',
     },
     navigation: {
@@ -1304,6 +1305,7 @@ export const resources = {
       support247: '24/7 Support', easyFast: 'Easy & Fast', verifiedPhone: 'Phone-Verified Account', haveAccount: 'Already have an account?',
       fullName: 'Full Name', firstLastName: 'First and Last Name', phone: 'Phone Number', sendCode: 'Send Verification Code',
       verificationCode: 'Verification Code', enterSixDigits: 'Enter the 6-digit code sent to', verifyCode: 'Verify Code',
+      enterFullName: 'Please enter your full name', invalidPhone: 'Please enter a valid phone number', joinDeliveryTeam: 'Join the Delivery Team', joinMerchantPartner: 'Join as a Merchant Partner', createAccount: 'Create Your Account', deliveryJoinSub: 'Enter your courier information to start receiving delivery orders after approval', merchantJoinSub: 'Enter your store information to start listing products after account review and approval', customerJoinSub: 'Enter your information to start shopping and tracking orders easily', signIn: 'Sign In',
       noCode: 'Didn’t receive the code?', resend: 'Resend', resendAfter: 'Resend available after', betterShopping: 'A Better Shopping Experience',
     },
     navigation: {
