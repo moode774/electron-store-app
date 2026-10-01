@@ -8,11 +8,13 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 export default function ChatScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(960);
   const conversationId: string = route?.params?.conversationId;
-  const title: string = route?.params?.title ?? 'المحادثة';
+  const title: string = route?.params?.title ?? t('customer.conversation');
   const asMerchant: boolean = route?.params?.asMerchant ?? false;
   const user = useAuthStore((s) => s.user);
 
@@ -25,7 +27,7 @@ export default function ChatScreen({ navigation, route }: any) {
 
   const load = useCallback(async () => {
     if (!conversationId) {
-      setLoadError('تعذّر تحديد المحادثة المطلوبة.');
+      setLoadError(t('customer.conversationMissing'));
       setLoading(false);
       return;
     }
@@ -35,7 +37,7 @@ export default function ChatScreen({ navigation, route }: any) {
       setLoadError('');
       markConversationRead(conversationId, asMerchant).catch(() => {});
     } catch (error: any) {
-      setLoadError(error?.message ?? 'تعذّر تحميل الرسائل. تحقق من الاتصال وحاول مجددًا.');
+      setLoadError(error?.message ?? t('customer.messagesLoadFailed'));
     }
     finally { setLoading(false); }
   }, [conversationId, asMerchant]);
@@ -76,7 +78,7 @@ export default function ChatScreen({ navigation, route }: any) {
     } catch (error: any) {
       setMessages((current) => current.filter((item) => item.id !== optimistic.id));
       setText((current) => current || msg);
-      Alert.alert('تعذّر إرسال الرسالة', error?.message ?? 'تحقق من الاتصال وحاول مجددًا. لم تُرسل الرسالة.');
+      Alert.alert(t('customer.messageSendFailed'), error?.message ?? t('customer.messageSendFailedText'));
     }
     finally { setSending(false); }
   };
@@ -100,7 +102,7 @@ export default function ChatScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
@@ -115,9 +117,9 @@ export default function ChatScreen({ navigation, route }: any) {
       ) : (
         <>
           {loadError ? (
-            <TouchableOpacity style={[styles.errorBanner, { width: layout.usableWidth }]} onPress={load} accessibilityRole="button" accessibilityLabel="إعادة تحميل الرسائل">
+            <TouchableOpacity style={[styles.errorBanner, { width: layout.usableWidth }]} onPress={load} accessibilityRole="button" accessibilityLabel={t('customer.reloadMessages')}>
               <Ionicons name="cloud-offline-outline" size={18} color="#B91C1C" />
-              <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+              <Text style={styles.errorText}>{loadError} {t('customer.tapRetry')}</Text>
             </TouchableOpacity>
           ) : null}
           <FlatList
@@ -131,7 +133,7 @@ export default function ChatScreen({ navigation, route }: any) {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="chatbubbles-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.emptyText}>ابدأ المحادثة الآن</Text>
+                <Text style={styles.emptyText}>{t('customer.startConversation')}</Text>
               </View>
             }
           />
@@ -142,15 +144,15 @@ export default function ChatScreen({ navigation, route }: any) {
         <View style={[styles.inputBar, { paddingHorizontal: layout.gutter }]}>
           <TextInput
             style={styles.input}
-            placeholder="اكتب رسالة..."
+            placeholder={t('customer.writeMessage')}
             placeholderTextColor={COLORS.textMuted}
             value={text}
             onChangeText={setText}
             multiline
             maxLength={2000}
-            accessibilityLabel="نص الرسالة"
+            accessibilityLabel={t('customer.messageTextA11y')}
           />
-          <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="إرسال الرسالة">
+          <TouchableOpacity style={[styles.sendBtn, (!text.trim() || sending) && { opacity: 0.5 }]} onPress={handleSend} disabled={!text.trim() || sending} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('customer.sendMessageA11y')}>
             <Ionicons name="send" size={20} color={COLORS.surface} />
           </TouchableOpacity>
         </View>
