@@ -12,6 +12,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Banner, IconButton, ScreenHeader, formatMoney, ui } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 const PERIODS = [
   { label: 'اليوم', days: 1 },
@@ -91,6 +92,7 @@ function MiniBarChart({ w, h, points, color }: { w: number; h: number; points: n
 }
 
 export default function MerchantReportsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isCompact = width < BREAKPOINTS.compact;
@@ -242,10 +244,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
-        title="التقارير"
-        subtitle="قيمة الطلبات المسجلة، وليست رصيداً مسوّى"
+        title=t('merchant.reportsTitle')
+        subtitle=t('merchant.reportsSubtitle')
         onBack={() => navigation.goBack()}
-        right={<IconButton icon={exporting ? 'hourglass-outline' : 'download-outline'} label="تصدير التقرير CSV" onPress={() => void handleExportCSV()} />}
+        right={<IconButton icon={exporting ? 'hourglass-outline' : 'download-outline'} label=t('merchant.exportReport') onPress={() => void handleExportCSV()} />}
       />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isTablet && styles.scrollContentWide]} showsVerticalScrollIndicator={false}>
@@ -269,7 +271,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         {loading && <ActivityIndicator size="large" color={UI.primary} style={{ marginVertical: 24 }} />}
         {!!error && (
           <View style={styles.bannerWrap}>
-            <Banner text={error} tone="error" actionLabel="إعادة المحاولة" onAction={() => void load(period.days)} />
+            <Banner text={error} tone="error" actionLabel=t('common.retry') onAction={() => void load(period.days)} />
           </View>
         )}
 
@@ -277,7 +279,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={[styles.row, styles.kpiGrid]}>
           <View style={styles.kpiColumn}>
             <KPICard
-              title="إجمالي قيمة الطلبات"
+              title=t('merchant.totalOrderValue')
               value={`${formatMoney(periodStats.currentRevenue)} ر.ي`}
               icon="wallet-outline"
               trend={revenueTrend.text}
@@ -287,7 +289,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.kpiColumn}>
             <KPICard
-              title="إجمالي الطلبات"
+              title=t('merchant.totalOrders')
               value={periodStats.currentOrders.toString()}
               icon="cube-outline"
               trend={ordersTrend.text}
@@ -297,7 +299,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.kpiColumn}>
             <KPICard
-              title="متوسط قيمة الطلب"
+              title=t('merchant.avgOrderValue')
               value={`${formatMoney(avgValue)} ر.ي`}
               icon="bar-chart-outline"
               trend={avgTrend.text}
@@ -307,7 +309,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.kpiColumn}>
             <KPICard
-              title="معدل الإتمام"
+              title=t('merchant.completionRate')
               value={`${deliveredPct}%`}
               icon="pie-chart-outline"
               trend={total > 0 ? `${total} طلب` : 'لا يوجد بيانات'}
@@ -347,13 +349,13 @@ export default function MerchantReportsScreen({ navigation }: any) {
           <View style={[styles.card, { flex: 6 }]}>
             <View style={styles.cardHeader}>
               <View>
-                <Text style={styles.cardTitle}>المنتجات الأعلى أداءً</Text>
+                <Text style={styles.cardTitle}>{t('merchant.topProducts')}</Text>
                 <Text style={styles.cardSubtitle}>أفضل المنتجات حسب المبيعات والإيرادات</Text>
               </View>
             </View>
 
             {topProducts.length === 0 ? (
-              <Text style={styles.emptyText}>لا توجد مبيعات في هذه الفترة</Text>
+              <Text style={styles.emptyText}>{t('merchant.noSales')}</Text>
             ) : topProducts.map((p, i) => {
               const rev = Number(p.revenue ?? 0);
               const maxRev = Number(topProducts[0]?.revenue ?? 0);
