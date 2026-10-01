@@ -26,6 +26,7 @@ const SORTS = [
 ];
 
 export default function SearchScreen({ navigation, route }: any): React.JSX.Element {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const layout = useCustomerLayout();
   const columns = layout.width < 680 ? 1 : layout.width < 1024 ? 2 : layout.width < 1380 ? 3 : 4;
