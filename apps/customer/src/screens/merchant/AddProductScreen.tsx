@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, createProductWithImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
-import { useTranslation } from '../../i18n';
+import { useTranslation, translate } from '../../i18n';
 
 const MAX_IMAGES = 10;
 const NAME_MAX = 80;
@@ -17,7 +17,7 @@ const DESCRIPTION_MAX = 1200;
 
 // Buyers most often ask about these before ordering; one tap drops the
 // heading into the description so the merchant only fills the value.
-const DESCRIPTION_PROMPTS = ['المقاس', 'الخامة', 'اللون', 'الوزن', 'الضمان', 'محتويات العلبة'];
+const DESCRIPTION_PROMPT_KEYS = ['merchant.sizePrompt','merchant.materialPrompt','merchant.colorPrompt','merchant.weightPrompt','merchant.warrantyPrompt','merchant.boxContentsPrompt'] as const;
 const STOCK_PRESETS = [5, 10, 25, 50];
 
 // Yemeni keyboards often type Arabic-Indic digits and the Arabic decimal mark.
@@ -76,7 +76,7 @@ function Field({
 function ReadinessRing({ score }: { score: number }) {
   const color = score >= 80 ? COLORS.statusOnline : score >= 50 ? '#F59E0B' : COLORS.inkTertiary;
   return (
-    <View style={[styles.ring, { borderColor: color }]} accessibilityLabel={`جاهزية المنتج ${score}%`}>
+    <View style={[styles.ring, { borderColor: color }]} accessibilityLabel={`${translate('merchant.productReadiness')} ${score}%`}>
       <Text style={[styles.ringText, { color }]}>{score}%</Text>
     </View>
   );
@@ -102,11 +102,11 @@ function PreviewCard({ image, name, category, price, salePrice, store }: {
       <View style={styles.previewBody}>
         {category ? <Text style={styles.previewCategory} numberOfLines={1}>{category}</Text> : null}
         <Text style={[styles.previewName, !name && styles.previewPlaceholder]} numberOfLines={2}>
-          {name || 'اسم المنتج يظهر هنا'}
+          {name || translate('merchant.productPlaceholder')}
         </Text>
         <View style={styles.previewPriceRow}>
           <Text style={styles.previewPrice}>
-            {price == null ? '—' : formatMoney(hasSale ? salePrice! : price)} <Text style={styles.previewCurrency}>ر.ي</Text>
+            {price == null ? '—' : formatMoney(hasSale ? salePrice! : price)} <Text style={styles.previewCurrency}>{translate('merchant.currencyYER')}</Text>
           </Text>
           {hasSale ? <Text style={styles.previewOldPrice}>{formatMoney(price!)}</Text> : null}
         </View>
@@ -136,14 +136,14 @@ export default function AddProductScreen({ navigation }: any) {
   const [categoriesError, setCategoriesError] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [storeName, setStoreName] = useState('متجرك');
+  const [storeName, setStoreName] = useState(t('merchant.yourStore'));
   const [phase, setPhase] = useState<'idle' | 'uploading' | 'saving'>('idle');
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     getCategories()
       .then((data) => { setCategories(data); setCategoriesError(''); })
-      .catch(() => setCategoriesError('تعذّر تحميل التصنيفات. يمكنك الحفظ دون تصنيف وتعديله لاحقاً.'));
+      .catch(() => setCategoriesError(t('merchant.categoriesLoadFailed')));
   }, []);
 
   useEffect(() => {
@@ -157,19 +157,19 @@ export default function AddProductScreen({ navigation }: any) {
   const category = categories.find((c) => c.id === categoryId);
 
   const errors = {
-    name: !name.trim() ? 'اكتب اسم المنتج.' : '',
-    price: priceValue == null || !Number.isFinite(priceValue) || priceValue <= 0 ? 'أدخل سعراً أكبر من صفر.' : '',
-    sale: hasSale && saleValue != null && priceValue != null && saleValue >= priceValue ? 'سعر الخصم يجب أن يكون أقل من السعر الأصلي.' : '',
+    name: !name.trim() ? t('merchant.enterProductName') : '',
+    price: priceValue == null || !Number.isFinite(priceValue) || priceValue <= 0 ? t('merchant.pricePositive') : '',
+    sale: hasSale && saleValue != null && priceValue != null && saleValue >= priceValue ? t('merchant.saleLessThanOriginal') : '',
   };
 
   const checks: Check[] = useMemo(() => [
-    { label: 'صورة غلاف', tip: 'المنتجات بصورة واضحة تُفتح أكثر بكثير.', done: images.length > 0 },
-    { label: '3 صور أو أكثر', tip: 'أضف زوايا مختلفة وصورة للتفاصيل.', done: images.length >= 3 },
-    { label: 'اسم واضح', tip: 'اذكر النوع والماركة والميزة الأهم.', done: name.trim().length >= 12 },
-    { label: t('merchant.categoryLabel'), tip: 'يساعد العميل على إيجاد المنتج بالبحث.', done: !!categoryId },
-    { label: 'وصف مفيد', tip: 'المقاس والخامة واللون تقلل الإرجاع.', done: description.trim().length >= 60 },
-    { label: 'مخزون متاح', tip: 'المنتج بلا مخزون لا يمكن طلبه.', done: stockValue > 0 },
-  ], [images.length, name, categoryId, description, stockValue]);
+    { label: t('merchant.coverPhoto'), tip: t('merchant.coverPhotoTip'), done: images.length > 0 },
+    { label: t('merchant.threePhotos'), tip: t('merchant.threePhotosTip'), done: images.length >= 3 },
+    { label: t('merchant.clearName'), tip: t('merchant.clearNameTip'), done: name.trim().length >= 12 },
+    { label: t('merchant.categoryLabel'), tip: t('merchant.categoryTip'), done: !!categoryId },
+    { label: t('merchant.usefulDescription'), tip: t('merchant.usefulDescriptionTip'), done: description.trim().length >= 60 },
+    { label: t('merchant.stockAvailable'), tip: t('merchant.stockAvailableTip'), done: stockValue > 0 },
+  ], [images.length, name, categoryId, description, stockValue, t]);
   const score = Math.round((checks.filter((c) => c.done).length / checks.length) * 100);
   const nextTip = checks.find((c) => !c.done);
 
@@ -178,7 +178,7 @@ export default function AddProductScreen({ navigation }: any) {
 
   const leave = () => {
     if (!dirty || busy) { navigation.goBack(); return; }
-    Alert.alert(t('merchant.discardChanges'), 'لم يتم حفظ المنتج بعد.', [
+    Alert.alert(t('merchant.discardChanges'), t('merchant.unsavedProduct'), [
       { text: t('merchant.continueEditing'), style: 'cancel' },
       { text: t('merchant.discard'), style: 'destructive', onPress: () => navigation.goBack() },
     ]);
@@ -230,7 +230,7 @@ export default function AddProductScreen({ navigation }: any) {
 
     try {
       const merchant = await getMerchantProfile(user.id);
-      if (!merchant?.id) throw new Error('لم يتم العثور على ملف المتجر المرتبط بالحساب.');
+      if (!merchant?.id) throw new Error(t('merchant.merchantProfileMissingLinked'));
 
       let uploaded: string[] = [];
       if (images.length) {
@@ -255,12 +255,12 @@ export default function AddProductScreen({ navigation }: any) {
       });
 
       Alert.alert(
-        publish ? 'تم إرسال المنتج' : 'تم حفظ المسودة',
-        publish ? 'سيظهر للعملاء بعد مراجعة فريق المنصة.' : 'يمكنك إكماله ونشره لاحقاً من قائمة منتجاتك.',
-        [{ text: 'حسناً', onPress: () => navigation.goBack() }],
+        publish ? t('merchant.productSent') : t('merchant.draftSaved'),
+        publish ? t('merchant.publishReviewText') : t('merchant.draftLaterText'),
+        [{ text: t('merchant.ok'), onPress: () => navigation.goBack() }],
       );
     } catch (e: any) {
-      Alert.alert(t('merchant.saveFailed'), e?.message ?? 'فشل حفظ المنتج.');
+      Alert.alert(t('merchant.saveFailed'), e?.message ?? t('merchant.productSaveFailed'));
     } finally {
       setPhase('idle');
     }
@@ -268,49 +268,49 @@ export default function AddProductScreen({ navigation }: any) {
 
   const gallery = (
     <Section
-      title=t('merchant.photos')
-      hint={`${images.length}/${MAX_IMAGES} · الصورة الأولى هي الغلاف`}
+      title={t('merchant.photos')}
+      hint={`${images.length}/${MAX_IMAGES} · ${t('merchant.firstImageCover')}`}
     >
       {images.length ? (
         <>
           <View style={styles.cover}>
             <Image source={{ uri: images[0] }} style={styles.coverImage} resizeMode="cover" />
             <View style={styles.coverTag}><Ionicons name="star" size={11} color={COLORS.surface} /><Text style={styles.coverTagText}>{t('merchant.cover')}</Text></View>
-            <TouchableOpacity style={styles.coverRemove} onPress={() => removeImage(0)} accessibilityRole="button" accessibilityLabel="حذف صورة الغلاف">
+            <TouchableOpacity style={styles.coverRemove} onPress={() => removeImage(0)} accessibilityRole="button" accessibilityLabel={t('merchant.deleteCover')}>
               <Ionicons name="trash-outline" size={16} color={COLORS.surface} />
             </TouchableOpacity>
           </View>
           <View style={styles.thumbs}>
             {images.slice(1).map((uri, i) => (
               <View key={`${uri}-${i}`} style={styles.thumb}>
-                <TouchableOpacity onPress={() => makeCover(i + 1)} accessibilityRole="button" accessibilityLabel="اجعلها صورة الغلاف">
+                <TouchableOpacity onPress={() => makeCover(i + 1)} accessibilityRole="button" accessibilityLabel={t('merchant.makeCover')}>
                   <Image source={{ uri }} style={styles.thumbImage} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.thumbRemove} onPress={() => removeImage(i + 1)} hitSlop={10} accessibilityRole="button" accessibilityLabel="حذف الصورة">
+                <TouchableOpacity style={styles.thumbRemove} onPress={() => removeImage(i + 1)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('merchant.deleteImage')}>
                   <Ionicons name="close" size={11} color={COLORS.surface} />
                 </TouchableOpacity>
               </View>
             ))}
             {images.length < MAX_IMAGES ? (
-              <TouchableOpacity style={[styles.thumb, styles.thumbAdd]} onPress={() => void addImages('library')} accessibilityRole="button" accessibilityLabel="إضافة صور">
+              <TouchableOpacity style={[styles.thumb, styles.thumbAdd]} onPress={() => void addImages('library')} accessibilityRole="button" accessibilityLabel={t('merchant.addImages')}>
                 <Ionicons name="add" size={22} color={COLORS.primary} />
               </TouchableOpacity>
             ) : null}
           </View>
-          {images.length > 1 ? <Text style={styles.microHint}>اضغط على أي صورة لجعلها الغلاف.</Text> : null}
+          {images.length > 1 ? <Text style={styles.microHint}>{t('merchant.tapMakeCover')}</Text> : null}
         </>
       ) : (
         <View style={styles.dropzone}>
           <View style={styles.dropzoneIcon}><Ionicons name="images-outline" size={26} color={COLORS.primary} /></View>
-          <Text style={styles.dropzoneTitle}>ابدأ بصورة تبيع المنتج</Text>
-          <Text style={styles.dropzoneText}>خلفية فاتحة، إضاءة نهارية، والمنتج يملأ الإطار.</Text>
+          <Text style={styles.dropzoneTitle}>{t('merchant.strongPhotoTitle')}</Text>
+          <Text style={styles.dropzoneText}>{t('merchant.strongPhotoText')}</Text>
           <View style={styles.dropzoneActions}>
-            <TouchableOpacity style={styles.dropzoneBtnPrimary} onPress={() => void addImages('library')} accessibilityRole="button" accessibilityLabel="اختيار من المعرض">
+            <TouchableOpacity style={styles.dropzoneBtnPrimary} onPress={() => void addImages('library')} accessibilityRole="button" accessibilityLabel={t('merchant.chooseGallery')}>
               <Ionicons name="image-outline" size={17} color={COLORS.surface} />
               <Text style={styles.dropzoneBtnPrimaryText}>{t('merchant.gallery')}</Text>
             </TouchableOpacity>
             {Platform.OS !== 'web' ? (
-              <TouchableOpacity style={styles.dropzoneBtn} onPress={() => void addImages('camera')} accessibilityRole="button" accessibilityLabel="التصوير بالكاميرا">
+              <TouchableOpacity style={styles.dropzoneBtn} onPress={() => void addImages('camera')} accessibilityRole="button" accessibilityLabel={t('merchant.shootCamera')}>
                 <Ionicons name="camera-outline" size={17} color={COLORS.primary} />
                 <Text style={styles.dropzoneBtnText}>{t('merchant.camera')}</Text>
               </TouchableOpacity>
@@ -322,10 +322,10 @@ export default function AddProductScreen({ navigation }: any) {
   );
 
   const basics = (
-    <Section title=t('merchant.basics')>
+    <Section title={t('merchant.basics')}>
       <Field
-        label=t('merchant.productName')
-        placeholder=t('merchant.productNameExample')
+        label={t('merchant.productName')}
+        placeholder={t('merchant.productNameExample')}
         value={name}
         onChangeText={(v) => setName(v.slice(0, NAME_MAX))}
         counter={`${name.length}/${NAME_MAX}`}
@@ -359,14 +359,14 @@ export default function AddProductScreen({ navigation }: any) {
 
   const pricing = (
     <Section
-      title=t('merchant.priceStock')
+      title={t('merchant.priceStock')}
       aside={(
         <TouchableOpacity
           style={[styles.toggle, hasSale && styles.toggleOn]}
           onPress={() => { setHasSale((v) => !v); setSalePrice(''); }}
           accessibilityRole="switch"
           accessibilityState={{ checked: hasSale }}
-          accessibilityLabel="تفعيل سعر الخصم"
+          accessibilityLabel={t('merchant.enableDiscount')}
         >
           <Ionicons name="pricetag-outline" size={14} color={hasSale ? COLORS.surface : COLORS.primary} />
           <Text style={[styles.toggleText, hasSale && styles.toggleTextOn]}>{t('merchant.discount')}</Text>
@@ -381,19 +381,19 @@ export default function AddProductScreen({ navigation }: any) {
             keyboardType="decimal-pad"
             value={price}
             onChangeText={(v) => setPrice(normalizeNumber(v))}
-            suffix="ر.ي"
+            suffix={t('merchant.currencyYER')}
             error={submitted ? errors.price : ''}
           />
         </View>
         {hasSale ? (
           <View style={styles.rowItem}>
             <Field
-              label=t('merchant.salePrice')
+              label={t('merchant.salePrice')}
               placeholder="0"
               keyboardType="decimal-pad"
               value={salePrice}
               onChangeText={(v) => setSalePrice(normalizeNumber(v))}
-              suffix="ر.ي"
+              suffix={t('merchant.currencyYER')}
               error={errors.sale}
             />
           </View>
@@ -403,7 +403,7 @@ export default function AddProductScreen({ navigation }: any) {
         <View style={styles.saleNote}>
           <Ionicons name="trending-down" size={15} color={COLORS.statusOnline} />
           <Text style={styles.saleNoteText}>
-            خصم {Math.round(((priceValue - saleValue) / priceValue) * 100)}% · يوفّر العميل {formatMoney(priceValue - saleValue)} ر.ي
+            {t('merchant.discount')} {Math.round(((priceValue - saleValue) / priceValue) * 100)}% · {t('merchant.savings')} {formatMoney(priceValue - saleValue)} {t('merchant.currencyYER')}
           </Text>
         </View>
       ) : null}
@@ -411,7 +411,7 @@ export default function AddProductScreen({ navigation }: any) {
       <Text style={styles.fieldLabel}>{t('merchant.availableQuantity')}</Text>
       <View style={styles.stockRow}>
         <View style={styles.stepper}>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(1)} accessibilityRole="button" accessibilityLabel=t('merchant.increaseQuantity')>
+          <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(1)} accessibilityRole="button" accessibilityLabel={t('merchant.increaseQuantity')}>
             <Ionicons name="add" size={18} color={COLORS.primary} />
           </TouchableOpacity>
           <TextInput
@@ -421,15 +421,15 @@ export default function AddProductScreen({ navigation }: any) {
             placeholderTextColor={COLORS.inkTertiary}
             keyboardType="number-pad"
             onChangeText={(v) => setStock(normalizeNumber(v).replace('.', ''))}
-            accessibilityLabel=t('merchant.availableQuantity')
+            accessibilityLabel={t('merchant.availableQuantity')}
           />
-          <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(-1)} accessibilityRole="button" accessibilityLabel="إنقاص الكمية">
+          <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(-1)} accessibilityRole="button" accessibilityLabel={t('merchant.decreaseQuantity')}>
             <Ionicons name="remove" size={18} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
         <View style={styles.presets}>
           {STOCK_PRESETS.map((n) => (
-            <TouchableOpacity key={n} style={[styles.preset, stockValue === n && styles.presetActive]} onPress={() => setStock(String(n))} accessibilityRole="button" accessibilityLabel={`${n} قطعة`}>
+            <TouchableOpacity key={n} style={[styles.preset, stockValue === n && styles.presetActive]} onPress={() => setStock(String(n))} accessibilityRole="button" accessibilityLabel={`${n} ${t('merchant.piece')}`}>
               <Text style={[styles.presetText, stockValue === n && styles.presetTextActive]}>{n}</Text>
             </TouchableOpacity>
           ))}
@@ -439,18 +439,18 @@ export default function AddProductScreen({ navigation }: any) {
   );
 
   const details = (
-    <Section title=t('merchant.description') hint=t('merchant.descriptionHint')>
+    <Section title={t('merchant.description')} hint={t('merchant.descriptionHint')}>
       <View style={styles.prompts}>
-        {DESCRIPTION_PROMPTS.map((p) => (
-          <TouchableOpacity key={p} style={styles.prompt} onPress={() => addPrompt(p)} accessibilityRole="button" accessibilityLabel={`إضافة ${p}`}>
+        {DESCRIPTION_PROMPT_KEYS.map((key) => (
+          <TouchableOpacity key={key} style={styles.prompt} onPress={() => addPrompt(t(key))} accessibilityRole="button" accessibilityLabel={`${t('merchant.addPrompt')} ${t(key)}`}>
             <Ionicons name="add" size={13} color={COLORS.primary} />
-            <Text style={styles.promptText}>{p}</Text>
+            <Text style={styles.promptText}>{t(key)}</Text>
           </TouchableOpacity>
         ))}
       </View>
       <Field
-        label=t('merchant.productDescription')
-        placeholder="ما الذي يميز المنتج؟ لمن يناسب؟ كيف يُستخدم؟"
+        label={t('merchant.productDescription')}
+        placeholder={t('merchant.productDescriptionPlaceholder')}
         multiline
         value={description}
         onChangeText={(v) => setDescription(v.slice(0, DESCRIPTION_MAX))}
@@ -465,7 +465,7 @@ export default function AddProductScreen({ navigation }: any) {
         <ReadinessRing score={score} />
         <View style={styles.readinessCopy}>
           <Text style={styles.readinessTitle}>{score === 100 ? t('merchant.productReady') : t('merchant.productReadiness')}</Text>
-          <Text style={styles.readinessText}>{nextTip ? nextTip.tip : 'بيانات كاملة تعني ظهوراً أفضل وثقة أعلى.'}</Text>
+          <Text style={styles.readinessText}>{nextTip ? nextTip.tip : t('merchant.completeDataBetter')}</Text>
         </View>
       </View>
       <View style={styles.checks}>
@@ -500,11 +500,11 @@ export default function AddProductScreen({ navigation }: any) {
         onPress={() => void save(true)}
         disabled={busy}
         accessibilityRole="button"
-        accessibilityLabel=t('merchant.publishProduct')
+        accessibilityLabel={t('merchant.publishProduct')}
       >
         {busy ? <ActivityIndicator size="small" color={COLORS.surface} /> : <Ionicons name="paper-plane-outline" size={17} color={COLORS.surface} />}
         <Text style={styles.publishText}>
-          {phase === 'uploading' ? `جاري رفع ${images.length} صور...` : phase === 'saving' ? 'جاري الحفظ...' : t('merchant.publishProduct')}
+          {phase === 'uploading' ? `${t('merchant.uploadingImages')} (${images.length})` : phase === 'saving' ? t('customer.saving') : t('merchant.publishProduct')}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -512,7 +512,7 @@ export default function AddProductScreen({ navigation }: any) {
         onPress={() => void save(false)}
         disabled={busy}
         accessibilityRole="button"
-        accessibilityLabel="حفظ كمسودة"
+        accessibilityLabel={t('merchant.saveDraftAccessibility')}
       >
         <Text style={styles.draftText}>{t('merchant.saveDraft')}</Text>
       </TouchableOpacity>
@@ -524,7 +524,7 @@ export default function AddProductScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
 
       <View style={[styles.header, { paddingTop: isDesktop ? 20 : insets.top + 10 }]}>
-        <TouchableOpacity style={styles.headerBtn} onPress={leave} accessibilityRole="button" accessibilityLabel="رجوع">
+        <TouchableOpacity style={styles.headerBtn} onPress={leave} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
           <Ionicons name={Platform.OS === 'web' ? 'arrow-forward' : 'arrow-back'} size={20} color={COLORS.ink} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>
