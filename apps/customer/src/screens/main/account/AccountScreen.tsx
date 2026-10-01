@@ -202,7 +202,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 <View style={styles.loyaltyTextCol}>
                   <Text style={styles.loyaltyLabel}>{t('merchant.availablePoints')}</Text>
                   <Text style={styles.loyaltyValue}>
-                    <Text style={styles.loyaltyNumText}>{points}</Text> نقطة
+                    <Text style={styles.loyaltyNumText}>{points}</Text> {t('customer.points')}
                   </Text>
                 </View>
               </View>
