@@ -12,35 +12,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
-  {
-    id: '1',
-    icon: 'storefront-outline',
-    title: 'عالم من الفخامة',
-    body: 'تسوّق أرقى المنتجات من أفضل المتاجر بلمسة من الفخامة والتميز.',
-  },
-  {
-    id: '2',
-    icon: 'rocket-outline', // Used to have emojis? Now a sleek icon.
-    title: 'متابعة واضحة للطلب',
-    body: 'تابع حالة طلبك من التجهيز حتى التسليم من داخل التطبيق.',
-  },
-  {
-    id: '3',
-    icon: 'shield-checkmark-outline',
-    title: 'أمان وموثوقية',
-    body: 'الدفع عند الاستلام مع عرض التكلفة كاملة قبل تأكيد الطلب.',
-  },
-];
+  { id: '1', icon: 'storefront-outline', titleKey: 'onboarding.luxuryWorld', bodyKey: 'onboarding.luxuryBody' },
+  { id: '2', icon: 'rocket-outline', titleKey: 'onboarding.clearTracking', bodyKey: 'onboarding.clearTrackingBody' },
+  { id: '3', icon: 'shield-checkmark-outline', titleKey: 'onboarding.securityTrust', bodyKey: 'onboarding.securityTrustBody' },
+] as const;
 
 interface OnboardingScreenProps {
   onFinish: () => void;
 }
 
 export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
   const isLast = index === SLIDES.length - 1;
@@ -74,7 +61,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
           activeOpacity={0.7}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <Text style={styles.skipText}>تخطّي</Text>
+          <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -93,8 +80,8 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
             <View style={styles.iconCircle}>
               <Ionicons name={item.icon as any} size={50} color="#FFFFFF" />
             </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.body}>{item.body}</Text>
+            <Text style={styles.title}>{t(item.titleKey)}</Text>
+            <Text style={styles.body}>{t(item.bodyKey)}</Text>
           </View>
         )}
       />
@@ -108,7 +95,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
         </View>
 
         <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.9}>
-          <Text style={styles.nextBtnText}>{isLast ? 'ابدأ تجربتك' : 'التالي'}</Text>
+          <Text style={styles.nextBtnText}>{isLast ? t('onboarding.startExperience') : t('onboarding.next')}</Text>
           <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </View>
