@@ -97,9 +97,9 @@ export default function MerchantWalletScreen({ navigation }: any) {
     if (withdrawLock.current || submitting) return;
     if (blockingWithdrawal) {
       Alert.alert(
-        blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
+        blockingWithdrawal.status === 'failed' ? t('merchant.withdrawalNeedsReview') : t('merchant.withdrawalInProgress'),
         blockingWithdrawal.status === 'failed'
-          ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
+          ? t('merchant.failedWithdrawalReview')
           : t('merchant.existingWithdrawal'),
       );
       return;
@@ -111,8 +111,8 @@ export default function MerchantWalletScreen({ navigation }: any) {
     }
     if (amount > withdrawable) {
       Alert.alert(t('merchant.amountUnavailable'), codHeld > 0
-        ? `المتاح للسحب الآن ${withdrawable.toLocaleString()} ر.ي. يوجد ${codHeld.toLocaleString()} ر.ي محجوزة من مبالغ الدفع عند الاستلام حتى يتم توريدها وتسويتها.`
-        : `المبلغ المطلوب يتجاوز المتاح للسحب (${withdrawable.toLocaleString()} ر.ي)`);
+        ? `${t('merchant.availableWithdrawalNow')} ${withdrawable.toLocaleString()} ${t('merchant.currencyYER')}. ${codHeld.toLocaleString()} ${t('merchant.currencyYER')} ${t('merchant.codHeldLong')}`
+        : `${t('merchant.requestedExceedsAvailable')} (${withdrawable.toLocaleString()} ${t('merchant.currencyYER')})`);
       return;
     }
     if (amount < 50) {
@@ -189,7 +189,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   <Text style={styles.withdrawText}>{t('merchant.withdraw')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.balanceNote}>
-                  {hasBlockingWithdrawal ? t('merchant.existingWithdrawalShort') : codHeld > 0 ? `${formatMoney(codHeld)} ر.ي محجوزة مؤقتاً من الدفع عند الاستلام حتى التوريد والتسوية.` : withdrawable < 50 ? t('merchant.minimumWithdrawal') : t('merchant.administrationTransferHint')}
+                  {hasBlockingWithdrawal ? t('merchant.existingWithdrawalShort') : codHeld > 0 ? `${formatMoney(codHeld)} ${t('merchant.currencyYER')} ${t('merchant.codHeldShortSuffix')}` : withdrawable < 50 ? t('merchant.minimumWithdrawal') : t('merchant.administrationTransferHint')}
                 </Text>
               </View>
 
