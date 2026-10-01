@@ -31,6 +31,7 @@ import {
   useAuthStore,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
+import { useTranslation } from '../../i18n';
 import {
   DeliveryCoordinates,
   getDeliveryRuntimeProfile,
@@ -57,11 +58,11 @@ type PendingLocationSample = {
 };
 
 const STEPS = [
-  { key: 'heading_pickup', label: 'متجه للمتجر', action: 'وصلت إلى المتجر', statusOnEnter: null as string | null },
-  { key: 'at_pickup', label: 'في المتجر', action: 'استلمت الطلب', statusOnEnter: null as string | null },
-  { key: 'on_the_way', label: 'في الطريق للعميل', action: 'وصلت إلى العميل', statusOnEnter: ORDER_STATUS.PICKED_UP as string | null },
-  { key: 'at_dropoff', label: 'عند العميل', action: 'إضافة إثبات التسليم', statusOnEnter: ORDER_STATUS.ON_THE_WAY as string | null },
-];
+  { key: 'heading_pickup', labelKey: 'delivery.activeHeadingPickup', actionKey: 'delivery.activeArrivedStore', statusOnEnter: null as string | null },
+  { key: 'at_pickup', labelKey: 'delivery.activeAtPickup', actionKey: 'delivery.activePickedOrder', statusOnEnter: null as string | null },
+  { key: 'on_the_way', labelKey: 'delivery.activeOnWayCustomer', actionKey: 'delivery.activeArrivedCustomer', statusOnEnter: ORDER_STATUS.PICKED_UP as string | null },
+  { key: 'at_dropoff', labelKey: 'delivery.activeAtDropoff', actionKey: 'delivery.activeAddProof', statusOnEnter: ORDER_STATUS.ON_THE_WAY as string | null },
+] as const;
 
 const stepFromStatus = (status?: string): number => {
   switch (status) {
@@ -75,6 +76,7 @@ const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback;
 
 export default function ActiveDeliveryScreen({ navigation, route }: any) {
+  const { t, language } = useTranslation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= BREAKPOINTS.desktop;
   const isCompact = width < BREAKPOINTS.compact;
@@ -86,7 +88,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const [loadError, setLoadError] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [locationStatus, setLocationStatus] = useState('جاري بدء مشاركة الموقع...');
+  const [locationStatus, setLocationStatus] = useState(t('delivery.activeStartingLocation'));
   const [advancing, setAdvancing] = useState(false);
   const [proofVisible, setProofVisible] = useState(false);
   const [proofPhoto, setProofPhoto] = useState<DeliveryProofPhoto | null>(null);
@@ -123,7 +125,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       setOrder(loaded);
       if (loaded) setStepIndex(stepFromStatus(loaded.status));
     } catch (error) {
-      setLoadError(errorMessage(error, 'تعذّر تحميل التوصيلة. تحقق من الاتصال وحاول مجددًا.'));
+      setLoadError(errorMessage(error, t('delivery.activeLoadFailed')));
     } finally {
       setLoading(false);
     }
@@ -169,20 +171,20 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     const startTracking = async () => {
       if (!orderId || !user?.id || terminalOrder) return;
       if (Platform.OS === 'web') {
-        setLocationStatus('مشاركة الموقع الحية متاحة من تطبيق الجوال.');
+        setLocationStatus(t('delivery.activeLiveLocationMobile'));
         return;
       }
 
       try {
         const permission = await Location.requestForegroundPermissionsAsync();
         if (permission.status !== 'granted') {
-          setLocationStatus('إذن الموقع مطلوب لمشاركة تقدم التوصيلة مع العميل.');
+          setLocationStatus(t('delivery.activeLocationPermission'));
           return;
         }
 
         const runtimeProfile = await getDeliveryRuntimeProfile(user.id);
         if (!runtimeProfile) {
-          setLocationStatus('تعذّر العثور على ملف المندوب لإرسال الموقع.');
+          setLocationStatus(t('delivery.activeProfileMissing'));
           return;
         }
 
@@ -221,7 +223,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             }
           } catch (error) {
             if (!cancelled) {
-              setLocationStatus(errorMessage(error, 'تعذّر إرسال آخر تحديث للموقع، وستتم إعادة نفس العينة بأمان.'));
+              setLocationStatus(errorMessage(error, t('delivery.activeLocationSendFailed')));
             }
           } finally {
             locationWriteLock.current = false;
@@ -240,7 +242,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           (nextLocation) => {
             if (cancelled) return;
             setLocation(nextLocation);
-            setLocationStatus('تمت مشاركة آخر تحديث للموقع.');
+            setLocationStatus(t('delivery.activeLocationShared'));
             latestLocationCoordinates.current = {
               latitude: nextLocation.coords.latitude,
               longitude: nextLocation.coords.longitude,
@@ -253,7 +255,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         if (cancelled) subscription.remove();
         else locationSubscription = subscription;
       } catch (error) {
-        if (!cancelled) setLocationStatus(errorMessage(error, 'تعذّر بدء مشاركة الموقع.'));
+        if (!cancelled) setLocationStatus(errorMessage(error, t('delivery.activeLocationStartFailed')));
       }
     };
 
@@ -266,10 +268,10 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
   const currentStep = STEPS[stepIndex] ?? STEPS[0];
   const orderView = {
-    store: order?.merchant_profiles?.store_name ?? 'المتجر',
-    customer: order?.customer?.full_name ?? 'العميل',
+    store: order?.merchant_profiles?.store_name ?? t('delivery.activeStoreFallback'),
+    customer: order?.customer?.full_name ?? t('delivery.activeCustomerFallback'),
     customerPhone: order?.customer?.phone ?? '',
-    dropoff: order?.addresses?.full_address ?? 'عنوان العميل',
+    dropoff: order?.addresses?.full_address ?? t('delivery.activeCustomerAddress'),
     codAmount: order?.total_amount ?? 0,
     // وجهات التوجيه في خرائط جوجل (نص العنوان — يعمل بدون إحداثيات)
     storeMapsQuery: [order?.merchant_profiles?.store_name, order?.merchant_profiles?.address, order?.merchant_profiles?.city]
@@ -317,14 +319,14 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== 'granted') {
-        throw new Error('اسمح بالوصول إلى الموقع لإرفاقه بإثبات التسليم.');
+        throw new Error(t('delivery.activeProofLocationPermission'));
       }
 
       const nextLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setLocation(nextLocation);
-      setLocationStatus('تم تحديث موقع إثبات التسليم.');
+      setLocationStatus(t('delivery.activeProofLocationUpdated'));
     } catch (error) {
-      setProofError(errorMessage(error, 'تعذّر تحديد موقع إثبات التسليم. حاول مجددًا.'));
+      setProofError(errorMessage(error, t('delivery.activeProofLocationFailed')));
     } finally {
       proofLocationLock.current = false;
       setRefreshingProofLocation(false);
@@ -351,7 +353,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       if (Platform.OS !== 'web') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (permission.status !== 'granted') {
-          throw new Error('اسمح باستخدام الكاميرا لالتقاط صورة إثبات التسليم.');
+          throw new Error(t('delivery.activeCameraPermission'));
         }
       }
 
@@ -372,7 +374,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       setUploadedProofPath(null);
       proofIdempotencyKeyRef.current = createDeliveryIdempotencyKey();
     } catch (error) {
-      setProofError(errorMessage(error, 'تعذّر فتح الكاميرا. حاول مجددًا.'));
+      setProofError(errorMessage(error, t('delivery.activeCameraFailed')));
     }
   }, [completingDelivery, uploadedProofPath]);
 
@@ -413,8 +415,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       setProofPhoto(null);
       setUploadedProofPath(null);
       proofIdempotencyKeyRef.current = null;
-      Alert.alert('تم تأكيد التسليم', `تحقق الخادم من إثبات التوصيلة ${order.order_number} وسجّل اكتمالها.`, [
-        { text: 'العودة للرئيسية', onPress: goHome },
+      Alert.alert(t('delivery.activeConfirmed'), `${t('delivery.activeConfirmedText')} ${order.order_number}`, [
+        { text: t('delivery.activeBackHome'), onPress: goHome },
       ]);
     };
 
@@ -440,7 +442,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
       const confirmed = await confirmFromServer();
       if (!confirmed) {
-        throw new Error('استلم الخادم الإثبات، لكن لم نتمكن من تأكيد حالة الطلب. أعد المحاولة بنفس الإثبات؛ لن يتكرر التسجيل.');
+        throw new Error(t('delivery.activeServerProofUncertain'));
       }
       showConfirmedSuccess(confirmed);
     } catch (error) {
@@ -448,9 +450,9 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       if (confirmed) {
         showConfirmedSuccess(confirmed);
       } else {
-        const message = errorMessage(error, 'تعذّر إرسال إثبات التسليم. بقي الطلب قيد التوصيل ويمكنك إعادة المحاولة.');
+        const message = errorMessage(error, t('delivery.activeProofSendFailed'));
         setProofError(message);
-        Alert.alert('لم يُؤكد التسليم', message);
+        Alert.alert(t('delivery.activeNotConfirmed'), message);
       }
     } finally {
       completionLock.current = false;
@@ -478,7 +480,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
     // الانتقال إلى picked_up يتطلب كود الاستلام من التاجر
     const upcomingStatus = STEPS[stepIndex + 1]?.statusOnEnter;
     if (upcomingStatus === ORDER_STATUS.PICKED_UP && !pickupCode.trim()) {
-      Alert.alert('كود الاستلام مطلوب', 'اطلب كود الاستلام (6 أرقام) من التاجر وأدخله لتأكيد استلام الطلب.');
+      Alert.alert(t('delivery.activePickupCodeRequired'), t('delivery.activePickupCodeText'));
       return;
     }
 
@@ -500,7 +502,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       setStepIndex(nextStep);
     } catch (error) {
       setStepIndex(previousStep);
-      Alert.alert('تعذّر تحديث التوصيلة', errorMessage(error, 'تحقق من الاتصال وحاول مجددًا.'));
+      Alert.alert(t('delivery.activeUpdateFailed'), errorMessage(error, t('delivery.checkConnection')));
       await loadOrder();
     } finally {
       advanceLock.current = false;
@@ -520,10 +522,10 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       await reportFailedDelivery(orderId, failReason);
       setFailVisible(false);
       setFailReason('');
-      Alert.alert('تم تسجيل تعذّر التسليم', 'أُبلغت الإدارة. احتفظ بالطلب ولا تحصّل أي مبلغ حتى تتواصل معك الإدارة بخصوص الإرجاع أو إعادة الجدولة.');
+      Alert.alert(t('delivery.activeFailedLogged'), t('delivery.activeFailedLoggedText'));
       goHome();
     } catch (error) {
-      Alert.alert('تعذّر الإرسال', errorMessage(error, 'تحقق من الاتصال وحاول مجددًا.'));
+      Alert.alert(t('delivery.activeSendFailed'), errorMessage(error, t('delivery.checkConnection')));
     } finally {
       setReportingFailure(false);
     }
@@ -532,7 +534,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   if (loading) {
     return (
       <View style={styles.centeredState}>
-        <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel="جاري تحميل التوصيلة" />
+        <ActivityIndicator size="large" color={COLORS.primary} accessibilityLabel={t('delivery.activeLoading')} />
       </View>
     );
   }
@@ -543,22 +545,22 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
         <View style={[styles.header, { paddingHorizontal: pageGutter }]}>
           <View style={{ width: 40 }} />
-          <Text style={styles.headerTitle}>توصيلة نشطة</Text>
+          <Text style={styles.headerTitle}>{t('delivery.activeTitle')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyState}>
           <Ionicons name={loadError ? 'cloud-offline-outline' : 'bicycle-outline'} size={48} color={loadError ? '#DC2626' : '#D1D5DB'} />
-          <Text style={styles.emptyTitle}>{loadError ? 'تعذّر تحميل التوصيلة' : 'لا توجد توصيلة نشطة'}</Text>
+          <Text style={styles.emptyTitle}>{loadError ? t('delivery.activeLoadFailed') : t('delivery.activeNoDelivery')}</Text>
           <Text style={[styles.emptySubtitle, loadError && { color: '#DC2626' }]}>
-            {loadError || 'اقبل طلبًا من «الطلبات المتاحة» لبدء التوصيل.'}
+            {loadError || t('delivery.activeStartHint')}
           </Text>
           <TouchableOpacity
             style={styles.retryBtn}
             onPress={() => void loadOrder(true)}
             accessibilityRole="button"
-            accessibilityLabel="إعادة تحميل التوصيلة"
+            accessibilityLabel={t('delivery.activeReload')}
           >
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -574,11 +576,11 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           onPress={goBack}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="العودة"
+          accessibilityLabel={t('delivery.back')}
         >
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>توصيلة نشطة</Text>
+        <Text style={styles.headerTitle}>{t('delivery.activeTitle')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -589,7 +591,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             <Text style={[styles.mapText, { color: location ? '#059669' : '#6B7280' }]}>{locationStatus}</Text>
             {location && (
               <Text style={styles.locationTime}>
-                آخر تحديث: {new Date(location.timestamp).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}
+                {t('delivery.activeLastUpdate')}: {new Date(location.timestamp).toLocaleTimeString(language === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
               </Text>
             )}
           </View>
@@ -610,7 +612,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   {index < STEPS.length - 1 && <View style={[styles.stepLine, isDone && { backgroundColor: '#059669' }]} />}
                 </View>
                 <Text style={[styles.stepLabel, isCurrent && styles.stepLabelCurrent, isDone && { color: '#059669' }]}>
-                  {step.label}
+                  {t(step.labelKey)}
                 </Text>
               </View>
             );
@@ -618,12 +620,12 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.detailsCard}>
-          <Text style={styles.detailsTitle}>تفاصيل الطلب {order.order_number}</Text>
+          <Text style={styles.detailsTitle}>{t('delivery.activeOrderDetails')} {order.order_number}</Text>
 
           <View style={styles.detailRow}>
             <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
             <View style={styles.detailInfo}>
-              <Text style={styles.detailLabel}>الاستلام من</Text>
+              <Text style={styles.detailLabel}>{t('delivery.activePickupFrom')}</Text>
               <Text style={styles.detailValue}>{orderView.store}</Text>
             </View>
             <TouchableOpacity
@@ -631,7 +633,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               activeOpacity={0.7}
               onPress={() => openInMaps(orderView.storeMapsQuery)}
               accessibilityRole="button"
-              accessibilityLabel="التوجه إلى المتجر عبر الخرائط"
+              accessibilityLabel={t('delivery.activeNavigateStore')}
             >
               <Ionicons name="navigate" size={16} color="#FFFFFF" />
             </TouchableOpacity>
@@ -640,7 +642,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           <View style={styles.detailRow}>
             <Ionicons name="person-outline" size={18} color="#059669" />
             <View style={styles.detailInfo}>
-              <Text style={styles.detailLabel}>التسليم إلى</Text>
+              <Text style={styles.detailLabel}>{t('delivery.activeDeliverTo')}</Text>
               <Text style={styles.detailValue}>{orderView.customer} — {orderView.dropoff}</Text>
             </View>
             <TouchableOpacity
@@ -648,7 +650,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               activeOpacity={0.7}
               onPress={() => openInMaps(orderView.dropoffMapsQuery)}
               accessibilityRole="button"
-              accessibilityLabel="التوجه إلى العميل عبر الخرائط"
+              accessibilityLabel={t('delivery.activeNavigateCustomer')}
             >
               <Ionicons name="navigate" size={16} color="#FFFFFF" />
             </TouchableOpacity>
@@ -658,7 +660,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               disabled={!orderView.customerPhone}
               onPress={() => { void Linking.openURL(`tel:${orderView.customerPhone}`); }}
               accessibilityRole="button"
-              accessibilityLabel="الاتصال بالعميل"
+              accessibilityLabel={t('delivery.activeCallCustomer')}
               accessibilityState={{ disabled: !orderView.customerPhone }}
             >
               <Ionicons name="call" size={18} color="#FFFFFF" />
@@ -667,8 +669,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
 
           {order.payment_method === 'cash' && (
             <View style={[styles.codBox, isCompact && styles.codBoxCompact]}>
-              <Text style={styles.codLabel}>المبلغ المطلوب تحصيله نقدًا</Text>
-              <Text style={styles.codValue}>{orderView.codAmount.toLocaleString()} ر.ي</Text>
+              <Text style={styles.codLabel}>{t('delivery.activeCodAmount')}</Text>
+              <Text style={styles.codValue}>{orderView.codAmount.toLocaleString()} {t('merchant.currencyYER')}</Text>
             </View>
           )}
         </View>
@@ -681,14 +683,14 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             <View style={styles.pickupCodeRow}>
               <TextInput
                 style={styles.pickupCodeInput}
-                placeholder="كود الاستلام من التاجر (6 أرقام)"
+                placeholder={t('delivery.activePickupCodePlaceholder')}
                 placeholderTextColor="#9CA3AF"
                 value={pickupCode}
                 onChangeText={setPickupCode}
                 keyboardType="number-pad"
                 maxLength={6}
                 textAlign="center"
-                accessibilityLabel="كود الاستلام من التاجر"
+                accessibilityLabel={t('delivery.activePickupCodeA11y')}
               />
             </View>
           )}
@@ -698,12 +700,12 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             activeOpacity={0.8}
             disabled={advancing}
             accessibilityRole="button"
-            accessibilityLabel={currentStep.action}
+            accessibilityLabel={t(currentStep.actionKey)}
             accessibilityState={{ disabled: advancing, busy: advancing }}
           >
             {advancing
               ? <ActivityIndicator color="#FFFFFF" size="small" />
-              : <Text style={styles.actionBtnText}>{currentStep.action}</Text>}
+              : <Text style={styles.actionBtnText}>{t(currentStep.actionKey)}</Text>}
           </TouchableOpacity>
           {(order.status === ORDER_STATUS.PICKED_UP || order.status === ORDER_STATUS.ON_THE_WAY) && (
             <TouchableOpacity
@@ -712,9 +714,9 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               activeOpacity={0.8}
               disabled={advancing || reportingFailure}
               accessibilityRole="button"
-              accessibilityLabel="تعذّر التسليم"
+              accessibilityLabel={t('delivery.activeFailedDelivery')}
             >
-              <Text style={styles.failBtnText}>تعذّر التسليم</Text>
+              <Text style={styles.failBtnText}>{t('delivery.activeFailedDelivery')}</Text>
             </TouchableOpacity>
           )}
           </View>
@@ -730,19 +732,19 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       >
         <View style={[styles.proofModalOverlay, isDesktop && styles.proofModalOverlayDesktop]}>
           <View style={[styles.proofModalSheet, isDesktop && styles.proofModalSheetDesktop, styles.failSheet]}>
-            <Text style={styles.proofModalTitle}>تعذّر تسليم الطلب</Text>
-            <Text style={styles.proofModalSubtitle}>اكتب السبب (مثال: العميل رفض الاستلام، لا يرد على الهاتف، العنوان خاطئ). لا تحصّل أي مبلغ.</Text>
+            <Text style={styles.proofModalTitle}>{t('delivery.activeFailTitle')}</Text>
+            <Text style={styles.proofModalSubtitle}>{t('delivery.activeFailHint')}</Text>
             <TextInput
               style={styles.failInput}
               value={failReason}
               onChangeText={setFailReason}
-              placeholder="سبب تعذّر التسليم"
+              placeholder={t('delivery.activeFailReason')}
               placeholderTextColor="#9CA3AF"
               multiline
               maxLength={1000}
               editable={!reportingFailure}
               textAlign="right"
-              accessibilityLabel="سبب تعذّر التسليم"
+              accessibilityLabel={t('delivery.activeFailReason')}
             />
             <TouchableOpacity
               style={[styles.failConfirmBtn, (reportingFailure || failReason.trim().length < 3) && styles.disabledAction]}
@@ -753,7 +755,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
             >
               {reportingFailure
                 ? <ActivityIndicator color="#FFFFFF" size="small" />
-                : <Text style={styles.actionBtnText}>تأكيد تعذّر التسليم</Text>}
+                : <Text style={styles.actionBtnText}>{t('delivery.activeConfirmFail')}</Text>}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.failCancelBtn}
@@ -761,7 +763,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
               disabled={reportingFailure}
               accessibilityRole="button"
             >
-              <Text style={styles.failCancelText}>رجوع</Text>
+              <Text style={styles.failCancelText}>{t('delivery.activeBack')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -777,15 +779,15 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           <View style={[styles.proofModalSheet, isDesktop && styles.proofModalSheetDesktop]}>
             <View style={styles.proofModalHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.proofModalTitle}>إثبات تسليم الطلب</Text>
-                <Text style={styles.proofModalSubtitle}>لن تتغير حالة الطلب قبل تحقق الخادم من الإثبات.</Text>
+                <Text style={styles.proofModalTitle}>{t('delivery.activeProofTitle')}</Text>
+                <Text style={styles.proofModalSubtitle}>{t('delivery.activeProofSubtitle')}</Text>
               </View>
               <TouchableOpacity
                 style={styles.proofCloseBtn}
                 onPress={() => setProofVisible(false)}
                 disabled={completingDelivery}
                 accessibilityRole="button"
-                accessibilityLabel="إغلاق إثبات التسليم"
+                accessibilityLabel={t('delivery.activeCloseProof')}
                 accessibilityState={{ disabled: completingDelivery }}
               >
                 <Ionicons name="close" size={22} color="#6B7280" />
@@ -799,10 +801,10 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.proofMethodTitleRow}>
-                    <Text style={styles.proofMethodTitle}>كود تسليم قصير</Text>
-                    <Text style={styles.unavailableBadge}>غير مفعّل</Text>
+                    <Text style={styles.proofMethodTitle}>{t('delivery.activeShortCode')}</Text>
+                    <Text style={styles.unavailableBadge}>{t('delivery.activeDisabled')}</Text>
                   </View>
-                  <Text style={styles.proofMethodDescription}>لا توجد آلية تحقق خادمية للكود حاليًا، لذلك لن نستخدم تحققًا محليًا غير موثوق.</Text>
+                  <Text style={styles.proofMethodDescription}>{t('delivery.activeShortCodeDisabledText')}</Text>
                 </View>
               </View>
 
@@ -812,8 +814,8 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                     <Ionicons name="camera-outline" size={20} color="#047857" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.proofSectionTitle}>صورة التسليم</Text>
-                    <Text style={styles.proofSectionSubtitle}>التقط صورة واضحة عند موقع العميل.</Text>
+                    <Text style={styles.proofSectionTitle}>{t('delivery.activeDeliveryPhoto')}</Text>
+                    <Text style={styles.proofSectionSubtitle}>{t('delivery.activePhotoHint')}</Text>
                   </View>
                 </View>
 
@@ -822,7 +824,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 ) : (
                   <View style={styles.proofPhotoPlaceholder}>
                     <Ionicons name="image-outline" size={32} color="#9CA3AF" />
-                    <Text style={styles.proofPhotoPlaceholderText}>لم تُلتقط صورة بعد</Text>
+                    <Text style={styles.proofPhotoPlaceholderText}>{t('delivery.activeNoPhoto')}</Text>
                   </View>
                 )}
 
@@ -836,7 +838,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 >
                   <Ionicons name="camera" size={18} color="#111827" />
                   <Text style={styles.secondaryProofBtnText}>
-                    {uploadedProofPath ? 'تم رفع الصورة للمحاولة الحالية' : proofPhoto ? 'إعادة التقاط الصورة' : 'التقاط صورة'}
+                    {uploadedProofPath ? t('delivery.activeUploadedPhoto') : proofPhoto ? t('delivery.activeRetake') : t('delivery.activeTakePhotoShort')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -847,9 +849,9 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                     <Ionicons name="location-outline" size={20} color={proofLocationFresh ? '#047857' : '#B45309'} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.proofSectionTitle}>موقع التسليم</Text>
+                    <Text style={styles.proofSectionTitle}>{t('delivery.activeDeliveryLocation')}</Text>
                     <Text style={styles.proofSectionSubtitle}>
-                      {proofLocationFresh ? 'الموقع حديث وجاهز للإرفاق.' : 'يلزم تحديث الموقع قبل الإرسال.'}
+                      {proofLocationFresh ? t('delivery.activeLocationFresh') : t('delivery.activeLocationNeedsUpdate')}
                     </Text>
                   </View>
                 </View>
@@ -865,13 +867,13 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   onPress={() => void refreshProofLocation()}
                   disabled={refreshingProofLocation || completingDelivery}
                   accessibilityRole="button"
-                  accessibilityLabel="تحديث موقع إثبات التسليم"
+                  accessibilityLabel={t('delivery.activeUpdateProofLocation')}
                   accessibilityState={{ disabled: refreshingProofLocation || completingDelivery, busy: refreshingProofLocation }}
                 >
                   {refreshingProofLocation
                     ? <ActivityIndicator size="small" color="#111827" />
                     : <Ionicons name="locate" size={18} color="#111827" />}
-                  <Text style={styles.secondaryProofBtnText}>تحديث الموقع</Text>
+                  <Text style={styles.secondaryProofBtnText}>{t('delivery.activeUpdateLocation')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -882,7 +884,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                   color={proofError ? '#B91C1C' : COLORS.primary}
                 />
                 <Text style={[styles.proofNoticeText, proofError ? styles.proofErrorText : null]}>
-                  {proofError || proofValidationMessage || 'الصورة والموقع جاهزان. سيؤكد الخادم التسليم والتسوية مرة واحدة فقط.'}
+                  {proofError || proofValidationMessage || t('delivery.activeProofReady')}
                 </Text>
               </View>
 
@@ -891,14 +893,14 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 onPress={() => void submitDeliveryProof()}
                 disabled={Boolean(proofValidationMessage) || completingDelivery}
                 accessibilityRole="button"
-                accessibilityLabel="إرسال إثبات التسليم وتأكيد الطلب"
+                accessibilityLabel={t('delivery.activeSubmitProofA11y')}
                 accessibilityState={{ disabled: Boolean(proofValidationMessage) || completingDelivery, busy: completingDelivery }}
               >
                 {completingDelivery
                   ? <ActivityIndicator color="#FFFFFF" size="small" />
                   : <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" />}
                 <Text style={styles.confirmProofBtnText}>
-                  {completingDelivery ? 'جاري التحقق من الخادم...' : 'إرسال الإثبات وتأكيد التسليم'}
+                  {completingDelivery ? t('delivery.activeCheckingServer') : t('delivery.activeSubmitProof')}
                 </Text>
               </TouchableOpacity>
 
@@ -907,10 +909,10 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
                 onPress={() => setProofVisible(false)}
                 disabled={completingDelivery}
                 accessibilityRole="button"
-                accessibilityLabel="إلغاء وإبقاء الطلب قيد التوصيل"
+                accessibilityLabel={t('delivery.activeCancelKeepA11y')}
                 accessibilityState={{ disabled: completingDelivery }}
               >
-                <Text style={styles.cancelProofBtnText}>إلغاء — إبقاء الطلب قيد التوصيل</Text>
+                <Text style={styles.cancelProofBtnText}>{t('delivery.activeCancelKeep')}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
