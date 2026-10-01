@@ -15,11 +15,11 @@ import { Banner, IconButton, ScreenHeader, formatMoney, ui } from './merchantUi'
 import { useTranslation } from '../../i18n';
 
 const PERIODS = [
-  { label: 'اليوم', days: 1 },
-  { label: 'الأسبوع', days: 7 },
-  { label: 'الشهر', days: 30 },
-];
-const DAY_LABELS = ['سبت', 'أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'];
+  { labelKey: 'merchant.todayPeriod', days: 1 },
+  { labelKey: 'merchant.weekPeriod', days: 7 },
+  { labelKey: 'merchant.monthPeriod', days: 30 },
+] as const;
+const DAY_LABEL_KEYS = ['merchant.saturday', 'merchant.sunday', 'merchant.monday', 'merchant.tuesday', 'merchant.wednesday', 'merchant.thursday', 'merchant.friday'] as const;
 
 const UI = {
   primary: COLORS.primary,
@@ -92,7 +92,7 @@ function MiniBarChart({ w, h, points, color }: { w: number; h: number; points: n
 }
 
 export default function MerchantReportsScreen({ navigation }: any) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isCompact = width < BREAKPOINTS.compact;
@@ -101,6 +101,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
   const [periodIndex, setPeriodIndex] = useState(1);
   const period = PERIODS[periodIndex];
+  const periodLabel = t(periodLabelKey);
 
   const [chartData, setChartData] = useState<number[]>([]);
   const [chartLabels, setChartLabels] = useState<string[]>([]);
@@ -140,9 +141,9 @@ export default function MerchantReportsScreen({ navigation }: any) {
       setChartData(chart);
       setChartLabels(
         days === 1
-          ? ['اليوم']
+          ? [t('merchant.todayPeriod')]
           : days === 7
-          ? chart.map((_, i) => DAY_LABELS[i] ?? `${i + 1}`)
+          ? chart.map((_, i) => t(DAY_LABEL_KEYS[i]) ?? `${i + 1}`)
           : chart.map((_, i) => `${i + 1}`)
       );
       setTopProducts(top);
@@ -151,11 +152,11 @@ export default function MerchantReportsScreen({ navigation }: any) {
     } catch (e: any) {
       // نُظهر السبب الحقيقي (صلاحيات/بيانات/شبكة) بدل رسالة عامة تخفي المشكلة
       const detail = e?.message ? ` (${e.message})` : '';
-      setError(`تعذر تحميل التقرير. تحقق من الاتصال ثم أعد المحاولة.${detail}`);
+      setError(`${t('merchant.loadingReportFailed')}${detail}`);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   useFocusEffect(useCallback(() => { load(period.days); }, [load, period.days]));
 
@@ -183,22 +184,22 @@ export default function MerchantReportsScreen({ navigation }: any) {
     setExporting(true);
     try {
       const lines = [
-        `تقرير ${period.label} — ${new Date().toLocaleDateString('ar-SA')}`,
+        `${t('merchant.report')} ${periodLabel} — ${new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}`,
         '',
-        'قيمة الطلبات والعدد',
-        `إجمالي قيمة الطلبات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
-        `إجمالي الطلبات,${periodStats.currentOrders}`,
-        `متوسط قيمة الطلب,${avgValue.toFixed(2)} ر.ي`,
-        `مكتملة,${periodStats.deliveredCount} (${deliveredPct}%)`,
-        `قيد التنفيذ,${periodStats.inProgressCount} (${inProgressPct}%)`,
-        `ملغاة,${periodStats.cancelledCount} (${cancelledPct}%)`,
+        t('merchant.orderValueAndCount'),
+        `${t('merchant.totalOrderValue')},${periodStats.currentRevenue.toFixed(2)} ${t('merchant.currencyYER')}`,
+        `${t('merchant.totalOrders')},${periodStats.currentOrders}`,
+        `${t('merchant.avgOrderValue')},${avgValue.toFixed(2)} ${t('merchant.currencyYER')}`,
+        `${t('merchant.completedStatus')},${periodStats.deliveredCount} (${deliveredPct}%)`,
+        `${t('merchant.inProgressStatus')},${periodStats.inProgressCount} (${inProgressPct}%)`,
+        `${t('merchant.cancelledStatus')},${periodStats.cancelledCount} (${cancelledPct}%)`,
         '',
-        'أفضل المنتجات',
-        'الاسم,الكمية المباعة,الإيرادات',
+        t('merchant.bestProducts'),
+        t('merchant.csvProductHeaders'),
         ...topProducts.map(p => `"${p.name}",${p.total_sold},${Number(p.revenue ?? 0).toFixed(2)}`),
         '',
-        'مبيعات الفترة',
-        chartLabels.map((l, i) => `${l}: ${chartData[i]?.toFixed(2) ?? 0} ر.ي`).join('\n'),
+        t('merchant.periodSales'),
+        chartLabels.map((l, i) => `${l}: ${chartData[i]?.toFixed(2) ?? 0} ${t('merchant.currencyYER')}`).join('\n'),
       ];
       const csv = lines.join('\n');
 
@@ -207,14 +208,14 @@ export default function MerchantReportsScreen({ navigation }: any) {
         const url = (URL as any).createObjectURL(blob);
         const a = (globalThis as any).document.createElement('a');
         a.href = url;
-        a.download = `report_${period.label}_${Date.now()}.csv`;
+        a.download = `report_${periodLabel}_${Date.now()}.csv`;
         a.click();
         (URL as any).revokeObjectURL(url);
       } else {
-        await Share.share({ message: csv, title: `تقرير ${period.label}` });
+        await Share.share({ message: csv, title: `${t('merchant.report')} ${periodLabel}` });
       }
     } catch (e: any) {
-      Alert.alert('خطأ', `تعذّر تصدير التقرير${e?.message ? `: ${e.message}` : ''}`);
+      Alert.alert(t('merchant.saveFailed'), `${t('merchant.exportFailed')}${e?.message ? `: ${e.message}` : ''}`);
     } finally {
       setExporting(false);
     }
@@ -244,10 +245,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
-        title=t('merchant.reportsTitle')
-        subtitle=t('merchant.reportsSubtitle')
+        title={t('merchant.reportsTitle')}
+        subtitle={t('merchant.reportsSubtitle')}
         onBack={() => navigation.goBack()}
-        right={<IconButton icon={exporting ? 'hourglass-outline' : 'download-outline'} label=t('merchant.exportReport') onPress={() => void handleExportCSV()} />}
+        right={<IconButton icon={exporting ? 'hourglass-outline' : 'download-outline'} label={t('merchant.exportReport')} onPress={() => void handleExportCSV()} />}
       />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isTablet && styles.scrollContentWide]} showsVerticalScrollIndicator={false}>
@@ -260,7 +261,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
               onPress={() => handlePeriodChange(idx)}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={`عرض تقرير ${p.label}`}
+              accessibilityLabel={`${t('merchant.viewReport')} ${t(p.labelKey)}`}
               accessibilityState={{ selected: periodIndex === idx }}
             >
               <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{p.label}</Text>
@@ -271,7 +272,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         {loading && <ActivityIndicator size="large" color={UI.primary} style={{ marginVertical: 24 }} />}
         {!!error && (
           <View style={styles.bannerWrap}>
-            <Banner text={error} tone="error" actionLabel=t('common.retry') onAction={() => void load(period.days)} />
+            <Banner text={error} tone="error" actionLabel={t('common.retry')} onAction={() => void load(period.days)} />
           </View>
         )}
 
@@ -279,8 +280,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={[styles.row, styles.kpiGrid]}>
           <View style={styles.kpiColumn}>
             <KPICard
-              title=t('merchant.totalOrderValue')
-              value={`${formatMoney(periodStats.currentRevenue)} ر.ي`}
+              title={t('merchant.totalOrderValue')}
+              value={`${formatMoney(periodStats.currentRevenue)} ${t('merchant.currencyYER')}`}
               icon="wallet-outline"
               trend={revenueTrend.text}
               trendUp={revenueTrend.up}
@@ -289,7 +290,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.kpiColumn}>
             <KPICard
-              title=t('merchant.totalOrders')
+              title={t('merchant.totalOrders')}
               value={periodStats.currentOrders.toString()}
               icon="cube-outline"
               trend={ordersTrend.text}
@@ -299,8 +300,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.kpiColumn}>
             <KPICard
-              title=t('merchant.avgOrderValue')
-              value={`${formatMoney(avgValue)} ر.ي`}
+              title={t('merchant.avgOrderValue')}
+              value={`${formatMoney(avgValue)} ${t('merchant.currencyYER')}`}
               icon="bar-chart-outline"
               trend={avgTrend.text}
               trendUp={avgTrend.up}
@@ -309,10 +310,10 @@ export default function MerchantReportsScreen({ navigation }: any) {
           </View>
           <View style={styles.kpiColumn}>
             <KPICard
-              title=t('merchant.completionRate')
+              title={t('merchant.completionRate')}
               value={`${deliveredPct}%`}
               icon="pie-chart-outline"
-              trend={total > 0 ? `${total} طلب` : 'لا يوجد بيانات'}
+              trend={total > 0 ? `${total} ${t('merchant.orderUnit')}` : t('merchant.noData')}
               trendUp={deliveredPct >= 70}
               showChart={false}
             />
@@ -323,7 +324,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
-              <Text style={styles.cardTitle}>التدفق المالي — {period.label}</Text>
+              <Text style={styles.cardTitle}>{t('merchant.flowFinancial')} — {periodLabel}</Text>
               <Text style={styles.cardSubtitle}>{t('merchant.salesPeriod')}</Text>
             </View>
           </View>
@@ -350,7 +351,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
             <View style={styles.cardHeader}>
               <View>
                 <Text style={styles.cardTitle}>{t('merchant.topProducts')}</Text>
-                <Text style={styles.cardSubtitle}>أفضل المنتجات حسب المبيعات والإيرادات</Text>
+                <Text style={styles.cardSubtitle}>{t('merchant.bestProductsSubtitle')}</Text>
               </View>
             </View>
 
@@ -372,7 +373,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
                   </View>
                   <View style={styles.topCopy}>
                     <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
-                    <Text style={styles.productCat}>{p.total_sold} مبيع · {formatMoney(rev)} ر.ي</Text>
+                    <Text style={styles.productCat}>{p.total_sold} {t('merchant.soldCount')} · {formatMoney(rev)} {t('merchant.currencyYER')}</Text>
                     <View style={styles.progressTrack}>
                       <View style={[styles.progressFill, { width: `${progress}%` as any }]} />
                     </View>
@@ -385,7 +386,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           {/* Order Status Donut */}
           <View style={[styles.card, { flex: 4 }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>حالة الطلبات — {period.label}</Text>
+              <Text style={styles.cardTitle}>{t('merchant.orderStatus')} — {periodLabel}</Text>
             </View>
 
             <View style={{ alignItems: 'center', marginVertical: 20 }}>
