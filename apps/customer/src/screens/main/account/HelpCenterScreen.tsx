@@ -6,16 +6,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation, translate } from '../../../i18n';
 
 const CATEGORIES = [
-  { value: 'technical', label: 'مشكلة تقنية' },
-  { value: 'payment', label: 'دفع' },
-  { value: 'delivery', label: 'توصيل' },
-  { value: 'account', label: 'حساب' },
-  { value: 'other', label: 'أخرى' },
+  { value: 'technical', label: translate('customer.helpTechnical') },
+  { value: 'payment', label: translate('customer.helpPayment') },
+  { value: 'delivery', label: translate('customer.helpDelivery') },
+  { value: 'account', label: translate('customer.helpAccount') },
+  { value: 'other', label: translate('customer.other') },
 ];
 const TICKET_STATUS: Record<string, string> = {
-  open: 'مفتوحة', in_progress: 'قيد المعالجة', waiting_user: 'بانتظارك', resolved: 'محلولة', closed: 'مغلقة',
+  open: translate('customer.ticketOpen'), in_progress: translate('customer.ticketProgress'), waiting_user: translate('customer.ticketWaiting'), resolved: translate('customer.ticketResolved'), closed: translate('customer.ticketClosed'),
 };
 
 const FAQS = [
@@ -27,6 +28,7 @@ const FAQS = [
 ];
 
 export default function HelpCenterScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(920);
   const user = useAuthStore((s) => s.user);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function HelpCenterScreen({ navigation }: any) {
   }, [loadTickets, user?.id]);
 
   const submitTicket = async () => {
-    if (!subject.trim() || !message.trim()) { Alert.alert('تنبيه', 'أدخل الموضوع والرسالة'); return; }
+    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), 'أدخل الموضوع والرسالة'); return; }
     if (!user?.id) return;
     setSending(true);
     try {
@@ -68,17 +70,17 @@ export default function HelpCenterScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>مركز المساعدة</Text>
+          <Text style={styles.headerTitle}>{t('customer.help')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* إرسال تذكرة دعم */}
-        <Text style={styles.sectionTitle}>إرسال طلب دعم</Text>
+        <Text style={styles.sectionTitle}>{t('customer.sendSupport')}</Text>
         <View style={styles.ticketForm}>
           <View style={styles.catRow}>
             {CATEGORIES.map((c) => (
@@ -87,10 +89,10 @@ export default function HelpCenterScreen({ navigation }: any) {
               </TouchableOpacity>
             ))}
           </View>
-          <TextInput style={styles.ticketInput} placeholder="الموضوع" placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel="موضوع تذكرة الدعم" />
-          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder="اشرح مشكلتك..." placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel="تفاصيل تذكرة الدعم" />
+          <TextInput style={styles.ticketInput} placeholder=t('customer.subject') placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel="موضوع تذكرة الدعم" />
+          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder=t('customer.explainProblem') placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel="تفاصيل تذكرة الدعم" />
           <TouchableOpacity style={[styles.submitTicket, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
-            {sending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitTicketText}>إرسال التذكرة</Text>}
+            {sending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitTicketText}>{t('customer.sendTicket')}</Text>}
           </TouchableOpacity>
         </View>
 
@@ -98,7 +100,7 @@ export default function HelpCenterScreen({ navigation }: any) {
 
         {tickets.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>تذاكري</Text>
+            <Text style={styles.sectionTitle}>{t('customer.myTickets')}</Text>
             <View style={styles.faqContainer}>
               {tickets.map((t, i) => (
                 <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
@@ -116,7 +118,7 @@ export default function HelpCenterScreen({ navigation }: any) {
         )}
 
         {/* FAQs */}
-        <Text style={styles.sectionTitle}>الأسئلة الشائعة</Text>
+        <Text style={styles.sectionTitle}>{t('customer.faq')}</Text>
         <View style={styles.faqContainer}>
           {FAQS.map((faq, index) => {
             const isOpen = expandedId === faq.id;
