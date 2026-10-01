@@ -471,7 +471,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               <View style={styles.driverInfoCol}>
                 <Text style={styles.driverNameText}>{t('orderTracking.courierAssigned')}</Text>
                 <Text style={styles.driverVehicleText}>
-                  نعرض فقط البيانات المؤكدة من النظام؛ بيانات التواصل غير متاحة في هذا الطلب حالياً.
+                  {t('orderTracking.courierPrivacy')}
                 </Text>
               </View>
               <View style={styles.driverAvatarCircle}>
@@ -559,7 +559,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           <View style={styles.infoBannerBox}>
             <View style={styles.infoRow}>
               <Text style={styles.infoValueText}>
-                {order?.addresses?.full_address || 'لم يتم توفير عنوان التوصيل'}
+                {order?.addresses?.full_address || t('orderTracking.noDeliveryAddress')}
               </Text>
 
               <Text style={styles.infoLabelText}>{t('orderTracking.deliveryAddress')}</Text>
@@ -586,7 +586,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               {order.order_items.map((item) => (
                 <View key={item.id} style={styles.itemRow}>
                   <Text style={styles.itemPriceText}>
-                    {Number(item.total_price || 0).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} ر.ي
+                    {Number(item.total_price || 0).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} {t('merchant.currencyYER')}
                   </Text>
                   <View style={styles.itemDetailsCol}>
                     <Text style={styles.itemNameText}>{item.product_name || item.products?.name || t('orderTracking.productFallback')}</Text>
@@ -603,7 +603,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
           <View style={styles.summaryTotalRow}>
             <Text style={styles.totalPriceAmountText}>
-              {Number(order?.total_amount || 0).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} ر.ي
+              {Number(order?.total_amount || 0).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} {t('merchant.currencyYER')}
             </Text>
             <Text style={styles.totalPriceLabelText}>{t('orderTracking.orderTotal')}</Text>
           </View>
