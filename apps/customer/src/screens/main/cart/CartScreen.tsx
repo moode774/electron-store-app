@@ -22,6 +22,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 // اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
 interface Recommendation {
@@ -48,7 +49,8 @@ const toRecommendation = (p: ProductSummary): Recommendation => ({
   storeName: (p as any).merchant_profiles?.store_name ?? 'المتجر',
 });
 
-export default function CartScreen({ navigation }: any) {
+export default function CartScreen({
+  const { t } = useTranslation(); navigation }: any) {
   const layout = useCustomerLayout(1180);
   const { updateQuantity, removeFromCart, addToCart, items, toggleSelected } = useCartStore();
   const user = useAuthStore((state) => state.user);
@@ -114,14 +116,14 @@ export default function CartScreen({ navigation }: any) {
         <View style={styles.emptyIconCircle}>
           <Ionicons name="cart-outline" size={48} color={COLORS.primary} />
         </View>
-        <Text style={styles.emptyTitle}>السلة فارغة</Text>
-        <Text style={styles.emptySub}>تصفح المتاجر وأضف ما يعجبك إلى السلة</Text>
+        <Text style={styles.emptyTitle}>{t('customer.emptyCart')}</Text>
+        <Text style={styles.emptySub}>{t('customer.emptyCartText')}</Text>
         <TouchableOpacity
           style={styles.browseBtn}
           onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}
           activeOpacity={0.85}
         >
-          <Text style={styles.browseBtnText}>تصفح المتاجر</Text>
+          <Text style={styles.browseBtnText}>{t('customer.exploreStores')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -139,7 +141,7 @@ export default function CartScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <View style={styles.headerCenterRow}>
-            <Text style={styles.headerTitleText}>سلة المشتريات</Text>
+            <Text style={styles.headerTitleText}>{t('customer.shoppingCart')}</Text>
             <View style={styles.headerBadgePill}>
               <Text style={styles.headerBadgeText}>{items.length}</Text>
             </View>
@@ -257,7 +259,7 @@ export default function CartScreen({ navigation }: any) {
             <View style={styles.recommendationsHeaderRow}>
               <Text style={styles.recommendationsTitleText}>قد يعجبك أيضاً</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}>
-                <Text style={styles.viewAllText}>عرض الكل ›</Text>
+                <Text style={styles.viewAllText}>{t('customer.viewAll')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -331,7 +333,7 @@ export default function CartScreen({ navigation }: any) {
             </View>
 
             <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>تكلفة التوصيل</Text>
+              <Text style={styles.totalsLabel}>{t('customer.deliveryFee')}</Text>
               <View style={styles.shippingValRow}>
                 <Text style={styles.totalsLabel}>تُحسب حسب عنوانك عند إتمام الطلب</Text>
               </View>
@@ -341,7 +343,7 @@ export default function CartScreen({ navigation }: any) {
 
             <View style={styles.totalsRow}>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.grandTotalLabel}>الإجمالي</Text>
+                <Text style={styles.grandTotalLabel}>{t('customer.total')}</Text>
                 <Text style={styles.vatText}>قبل رسوم التوصيل</Text>
               </View>
               <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.ي</Text>
@@ -358,7 +360,7 @@ export default function CartScreen({ navigation }: any) {
             <View style={styles.checkoutBtnInner}>
               <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.checkoutBtnText}>
-                {activeCartItems.length === 0 ? 'حدد منتجاً للمتابعة' : 'إتمام الطلب'}
+                {activeCartItems.length === 0 ? 'حدد منتجاً للمتابعة' : t('customer.checkout')}
               </Text>
             </View>
           </TouchableOpacity>
