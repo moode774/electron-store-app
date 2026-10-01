@@ -16,55 +16,55 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
-import { useTranslation, translate } from '../../i18n';
+import { useTranslation } from '../../i18n';
 
 const MENU_ITEMS = [
-  { id: '1', title: translate('merchant.storeData'), icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
-  { id: '2', title: translate('merchant.analytics'), icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
-  { id: '3', title: translate('merchant.walletPayments'), icon: 'wallet-outline', screen: 'Wallet', params: undefined },
-  { id: '4', title: translate('merchant.coupons'), icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
-  { id: '4b', title: translate('merchant.refunds'), icon: 'refresh-circle-outline', screen: 'Refunds', params: undefined },
-  { id: '4c', title: translate('merchant.returns'), icon: 'return-down-back-outline', screen: 'PhysicalReturns', params: undefined },
-  { id: '5', title: translate('merchant.notifications'), icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
-  { id: '6', title: translate('customer.helpCenter'), icon: 'headset-outline', screen: 'Support', params: undefined },
-  { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
-];
+  { id: '1', titleKey: 'merchant.storeData', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
+  { id: '2', titleKey: 'merchant.analytics', icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
+  { id: '3', titleKey: 'merchant.walletPayments', icon: 'wallet-outline', screen: 'Wallet', params: undefined },
+  { id: '4', titleKey: 'merchant.coupons', icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
+  { id: '4b', titleKey: 'merchant.refunds', icon: 'refresh-circle-outline', screen: 'Refunds', params: undefined },
+  { id: '4c', titleKey: 'merchant.returns', icon: 'return-down-back-outline', screen: 'PhysicalReturns', params: undefined },
+  { id: '5', titleKey: 'merchant.notifications', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
+  { id: '6', titleKey: 'customer.helpCenter', icon: 'headset-outline', screen: 'Support', params: undefined },
+  { id: '7', titleKey: 'merchant.apiKeysAi', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
+] as const;
 
 export default function MerchantAccountScreen(props: any) {
-  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   return width >= BREAKPOINTS.desktop ? <MerchantAccountDesktop {...props} /> : <MerchantMoreScreen {...props} />;
 }
 
-type MoreItem = { title: string; subtitle: string; icon: string; screen: string; params?: object };
+type MoreItem = { titleKey: string; subtitleKey: string; icon: string; screen: string; params?: object };
 
-const MORE_SECTIONS: { title: string; items: MoreItem[] }[] = [
+const MORE_SECTIONS: { titleKey: string; items: MoreItem[] }[] = [
   {
-    title: translate('merchant.manageStore'),
+    titleKey: 'merchant.manageStore',
     items: [
-      { title: translate('merchant.analytics'), subtitle: 'المبيعات وأداء المنتجات', icon: 'bar-chart-outline', screen: 'Reports' },
-      { title: translate('merchant.coupons'), subtitle: 'الخصومات والعروض', icon: 'pricetag-outline', screen: 'Coupons' },
+      { titleKey: 'merchant.analytics', subtitleKey: 'merchant.salesProductPerformance', icon: 'bar-chart-outline', screen: 'Reports' },
+      { titleKey: 'merchant.coupons', subtitleKey: 'merchant.discountsOffers', icon: 'pricetag-outline', screen: 'Coupons' },
     ],
   },
   {
-    title: 'المالية والمرتجعات',
+    titleKey: 'merchant.financeReturns',
     items: [
-      { title: translate('merchant.walletPayments'), subtitle: 'الرصيد والتسويات والسحب', icon: 'wallet-outline', screen: 'Wallet' },
-      { title: translate('merchant.refunds'), subtitle: 'مراجعة طلبات العملاء', icon: 'refresh-circle-outline', screen: 'Refunds' },
-      { title: translate('merchant.returns'), subtitle: 'استلام المنتجات المرتجعة', icon: 'return-down-back-outline', screen: 'PhysicalReturns' },
+      { titleKey: 'merchant.walletPayments', subtitleKey: 'merchant.balanceSettlementsWithdrawals', icon: 'wallet-outline', screen: 'Wallet' },
+      { titleKey: 'merchant.refunds', subtitleKey: 'merchant.reviewCustomerRequests', icon: 'refresh-circle-outline', screen: 'Refunds' },
+      { titleKey: 'merchant.returns', subtitleKey: 'merchant.receiveReturnedProducts', icon: 'return-down-back-outline', screen: 'PhysicalReturns' },
     ],
   },
   {
-    title: translate('merchant.accountSupport'),
+    titleKey: 'merchant.accountSupport',
     items: [
-      { title: translate('merchant.notifications'), subtitle: 'تنبيهات الطلبات والحساب', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
-      { title: translate('customer.helpCenter'), subtitle: 'تذاكر الدعم والتواصل', icon: 'headset-outline', screen: 'Support' },
-      { title: translate('merchant.apiKeys'), subtitle: 'ربط المتجر بالأنظمة الخارجية', icon: 'key-outline', screen: 'ApiKeys' },
+      { titleKey: 'merchant.notifications', subtitleKey: 'merchant.orderAccountAlerts', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
+      { titleKey: 'customer.helpCenter', subtitleKey: 'merchant.supportTicketsContact', icon: 'headset-outline', screen: 'Support' },
+      { titleKey: 'merchant.apiKeys', subtitleKey: 'merchant.externalSystemsLink', icon: 'key-outline', screen: 'ApiKeys' },
     ],
   },
 ];
 
 function MerchantMoreScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const insets = useSafeAreaInsets();
@@ -77,14 +77,14 @@ function MerchantMoreScreen({ navigation }: any) {
     try {
       setProfile(await getMerchantProfile(user.id));
     } catch {
-      setLoadError('تعذّر تحميل بيانات المتجر.');
+      setLoadError(t('merchant.loadStoreDataFailed'));
     }
   }, [user?.id]);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   const confirmSignOut = () =>
-    Alert.alert(t('common.signOut'), 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
+    Alert.alert(t('common.signOut'), t('merchant.logoutConfirm'), [
       { text: t('merchant.undo'), style: 'cancel' },
       { text: t('common.signOut'), style: 'destructive', onPress: () => signOut() },
     ]);
@@ -98,7 +98,7 @@ function MerchantMoreScreen({ navigation }: any) {
         contentContainerStyle={[more.content, { paddingTop: insets.top + 16 }]}
       >
         <View style={more.header}>
-          <Text style={more.title}>المزيد</Text>
+          <Text style={more.title}>{t('merchant.more')}</Text>
           <TouchableOpacity
             style={more.headerBtn}
             onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })}
@@ -110,8 +110,8 @@ function MerchantMoreScreen({ navigation }: any) {
         </View>
 
         {loadError ? (
-          <TouchableOpacity style={more.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel="إعادة المحاولة">
-            <Text style={more.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+          <TouchableOpacity style={more.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel={t('common.retry')}>
+            <Text style={more.errorText}>{loadError} {t('merchant.retryHint')}</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -139,8 +139,8 @@ function MerchantMoreScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {MORE_SECTIONS.map((section) => (
-          <View key={section.title} style={more.section}>
-            <Text style={more.sectionTitle}>{section.title}</Text>
+          <View key={section.titleKey} style={more.section}>
+            <Text style={more.sectionTitle}>{t(section.titleKey)}</Text>
             <View style={more.group}>
               {section.items.map((item, index) => (
                 <TouchableOpacity
@@ -149,14 +149,14 @@ function MerchantMoreScreen({ navigation }: any) {
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate(item.screen, item.params)}
                   accessibilityRole="button"
-                  accessibilityLabel={item.title}
+                  accessibilityLabel={t(item.titleKey)}
                 >
                   <View style={more.rowIcon}>
                     <Ionicons name={item.icon as any} size={19} color={COLORS.primary} />
                   </View>
                   <View style={more.rowCopy}>
-                    <Text style={more.rowTitle}>{item.title}</Text>
-                    <Text style={more.rowSubtitle}>{item.subtitle}</Text>
+                    <Text style={more.rowTitle}>{t(item.titleKey)}</Text>
+                    <Text style={more.rowSubtitle}>{t(item.subtitleKey)}</Text>
                   </View>
                   <Ionicons name="chevron-back" size={18} color={COLORS.inkTertiary} />
                 </TouchableOpacity>
@@ -220,6 +220,7 @@ const more = StyleSheet.create({
 });
 
 function MerchantAccountDesktop({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const [stat, setStat] = useState({ todayOrders: 0, todayRevenue: 0, totalProducts: 0, pendingOrders: 0 });
@@ -234,32 +235,32 @@ function MerchantAccountDesktop({ navigation }: any) {
     setLoadError('');
     try {
       const merchant = await getMerchantProfile(user.id);
-      if (!merchant?.id) throw new Error('تعذّر العثور على ملف المتجر.');
+      if (!merchant?.id) throw new Error(t('merchant.merchantProfileNotFound'));
       setProfile(merchant);
       setStat(await getMerchantStats(merchant.id));
     } catch (error) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل بيانات حساب التاجر.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('merchant.merchantAccountLoadFailed'));
     }
   }, [user?.id]);
 
   useFocusEffect(useCallback(() => { void loadAccount(); }, [loadAccount]));
 
   const STATS = [
-    { id: '1', title: 'قيمة طلبات اليوم', value: `${stat.todayRevenue} ر.ي`, icon: 'cash-outline', target: 'Reports' },
-    { id: '2', title: 'طلبات اليوم', value: `${stat.todayOrders}`, icon: 'cube-outline', target: 'MerchantOrders' },
-    { id: '3', title: 'المنتجات', value: `${stat.totalProducts}`, icon: 'pricetags-outline', target: 'MerchantProducts' },
-    { id: '4', title: 'قيد الانتظار', value: `${stat.pendingOrders}`, icon: 'time-outline', target: 'MerchantOrders' },
+    { id: '1', title: t('merchant.todayOrderValue'), value: `${stat.todayRevenue} ${t('merchant.currencyYER')}`, icon: 'cash-outline', target: 'Reports' },
+    { id: '2', title: t('merchant.todayOrders'), value: `${stat.todayOrders}`, icon: 'cube-outline', target: 'MerchantOrders' },
+    { id: '3', title: t('common.products'), value: `${stat.totalProducts}`, icon: 'pricetags-outline', target: 'MerchantProducts' },
+    { id: '4', title: t('merchant.pendingCount'), value: `${stat.pendingOrders}`, icon: 'time-outline', target: 'MerchantOrders' },
   ];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, isCompact && styles.headerCompact, isDesktop && styles.headerDesktop]}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel="إعدادات المتجر">
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel={t('merchant.merchantSettingsA11y')}>
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('merchant.merchantAccount')}</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })} accessibilityRole="button" accessibilityLabel="إشعارات التاجر">
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })} accessibilityRole="button" accessibilityLabel={t('merchant.merchantNotificationsA11y')}>
           <Ionicons name="notifications-outline" size={24} color="#111827" />
           <View style={styles.badge} />
         </TouchableOpacity>
@@ -271,8 +272,8 @@ function MerchantAccountDesktop({ navigation }: any) {
       >
 
         {loadError ? (
-          <TouchableOpacity style={styles.errorCard} onPress={() => void loadAccount()} accessibilityRole="button" accessibilityLabel="إعادة تحميل حساب التاجر">
-            <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة.</Text>
+          <TouchableOpacity style={styles.errorCard} onPress={() => void loadAccount()} accessibilityRole="button" accessibilityLabel={t('merchant.reloadMerchantAccount')}>
+            <Text style={styles.errorText}>{loadError} {t('merchant.retryHint')}</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -336,11 +337,11 @@ function MerchantAccountDesktop({ navigation }: any) {
                 activeOpacity={0.7}
                 onPress={() => item.screen && navigation.navigate(item.screen as any, item.params as any)}
                 accessibilityRole="button"
-                accessibilityLabel={item.title}
+                accessibilityLabel={t(item.titleKey)}
               >
                 <View style={styles.menuItemRight}>
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
-                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                 </View>
                 <Ionicons name="chevron-back" size={20} color="#9CA3AF" />
               </TouchableOpacity>
@@ -353,7 +354,7 @@ function MerchantAccountDesktop({ navigation }: any) {
         <TouchableOpacity
           style={styles.logoutCard}
           onPress={() =>
-            Alert.alert(t('common.signOut'), 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
+            Alert.alert(t('common.signOut'), t('merchant.logoutConfirm'), [
               { text: t('merchant.undo'), style: 'cancel' },
               { text: t('common.signOut'), style: 'destructive', onPress: () => signOut() },
             ])
