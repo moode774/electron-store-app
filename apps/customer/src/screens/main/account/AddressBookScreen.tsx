@@ -38,7 +38,7 @@ export default function AddressBookScreen({
     Alert.alert(t('customer.deleteAddress'), `${t('customer.deleteAddressConfirm')}\n${item.full_address}`, [
       { text: t('merchant.undo'), style: 'cancel' },
       {
-        text: 'حذف',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           setBusyId(item.id);
