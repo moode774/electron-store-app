@@ -15,17 +15,17 @@ const ISSUE_STATUSES = new Set<string>([
   ORDER_STATUS.RETURNED, ORDER_STATUS.FAILED_DELIVERY, ORDER_STATUS.PARTIAL_DELIVERY, ORDER_STATUS.DISPUTED,
 ]);
 
-const dayLabel = (iso: string) => {
+const dayLabel = (iso: string, todayLabel: string, yesterdayLabel: string, locale: string) => {
   const d = new Date(iso);
   const today = new Date();
   const yesterday = new Date(Date.now() - 86400000);
-  if (d.toDateString() === today.toDateString()) return t('merchant.today');
-  if (d.toDateString() === yesterday.toDateString()) return t('merchant.yesterday');
-  return d.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  if (d.toDateString() === today.toDateString()) return todayLabel;
+  if (d.toDateString() === yesterday.toDateString()) return yesterdayLabel;
+  return d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 export default function MerchantHistoryScreen({ navigation }: any) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isDesktop = useIsDesktop();
   const [query, setQuery] = useState('');
@@ -59,7 +59,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
       out.push({
         kind: 'day',
         key: `d-${key}`,
-        label: dayLabel(dayOrders[0].created_at),
+        label: dayLabel(dayOrders[0].created_at, t('merchant.today'), t('merchant.yesterday'), language === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'),
         total: dayOrders.filter(groups.delivered).reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
       });
       dayOrders.forEach((order, i) => out.push({ kind: 'order', key: order.id, order, last: i === dayOrders.length - 1 }));
