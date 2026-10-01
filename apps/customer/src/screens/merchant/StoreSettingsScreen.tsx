@@ -186,7 +186,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
   if (loadError) {
     return (
       <View style={ui.screen}>
-        <ScreenHeader title=t('merchant.storeData') onBack={() => navigation.goBack()} />
+        <ScreenHeader title={t('merchant.storeData')} onBack={() => navigation.goBack()} />
         <View style={ui.content}>
           <EmptyState icon="cloud-offline-outline" title="تعذّر تحميل البيانات" text={loadError} action={{ label: t('common.retry'), onPress: () => setLoadAttempt((v) => v + 1) }} />
         </View>
@@ -209,7 +209,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         trackColor={{ false: '#FECACA', true: '#86EFAC' }}
         thumbColor={COLORS.surface}
         {...({ activeThumbColor: COLORS.surface } as any)}
-        accessibilityLabel=t('merchant.storeStatus')
+        accessibilityLabel={t('merchant.storeStatus')}
       />
     </View>
   );
@@ -230,42 +230,42 @@ export default function StoreSettingsScreen({ navigation }: any) {
   );
 
   const basics = (
-    <Section title=t('merchant.identity') icon="storefront-outline" hint="تظهر للعملاء في صفحة المتجر">
-      <InputField label=t('merchant.commercialName') value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
-      <InputField label=t('merchant.category') value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: أزياء، إلكترونيات" />
-      <InputField label=t('merchant.storeBio') value={description} onChangeText={setDescription} multiline placeholder="ماذا تبيع؟ ولماذا يشتري منك العميل؟" />
+    <Section title={t('merchant.identity')} icon="storefront-outline" hint="تظهر للعملاء في صفحة المتجر">
+      <InputField label={t('merchant.commercialName')} value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
+      <InputField label={t('merchant.category')} value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: أزياء، إلكترونيات" />
+      <InputField label={t('merchant.storeBio')} value={description} onChangeText={setDescription} multiline placeholder="ماذا تبيع؟ ولماذا يشتري منك العميل؟" />
     </Section>
   );
 
   const contact = (
-    <Section title=t('merchant.locationContact') icon="location-outline" hint="يستخدمه المندوب للاستلام">
+    <Section title={t('merchant.locationContact')} icon="location-outline" hint="يستخدمه المندوب للاستلام">
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label=t('merchant.city') value={city} onChangeText={setCity} placeholder="صنعاء" /></View>
-        <View style={s.pairItem}><InputField label=t('merchant.storePhone') value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.city')} value={city} onChangeText={setCity} placeholder="صنعاء" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.storePhone')} value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" /></View>
       </View>
-      <InputField label=t('merchant.detailedAddress') value={address} onChangeText={setAddress} placeholder="الحي، الشارع، أقرب معلم" />
+      <InputField label={t('merchant.detailedAddress')} value={address} onChangeText={setAddress} placeholder="الحي، الشارع، أقرب معلم" />
       <InputField label="واتساب (اختياري)" value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
     </Section>
   );
 
   const legal = (
-    <Section title=t('merchant.officialData') icon="document-text-outline" hint="سرّية، تُستخدم للتحقق فقط">
+    <Section title={t('merchant.officialData')} icon="document-text-outline" hint="سرّية، تُستخدم للتحقق فقط">
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label=t('merchant.ownerName') value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" /></View>
-        <View style={s.pairItem}><InputField label=t('merchant.nationalId') value={nationalId} onChangeText={setNationalId} placeholder=t('merchant.nationalId') keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.ownerName')} value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.nationalId')} value={nationalId} onChangeText={setNationalId} placeholder={t('merchant.nationalId')} keyboardType="numeric" /></View>
       </View>
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label=t('merchant.commercialRegister') value={commercialRegister} onChangeText={setCommercialRegister} placeholder="اختياري" keyboardType="numeric" /></View>
-        <View style={s.pairItem}><InputField label=t('merchant.taxNumber') value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.commercialRegister')} value={commercialRegister} onChangeText={setCommercialRegister} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.taxNumber')} value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
       </View>
     </Section>
   );
 
   const bank = (
-    <Section title=t('merchant.receiveEarnings') icon="wallet-outline" hint="تُحوَّل طلبات السحب إلى هذا الحساب">
-      <InputField label=t('merchant.bankWallet') value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
-      <InputField label=t('merchant.accountHolder') value={bankAccountName} onChangeText={setBankAccountName} placeholder="كما هو في الحساب" />
-      <InputField label=t('merchant.accountNumber') value={bankAccount} onChangeText={setBankAccount} placeholder=t('merchant.accountNumber') keyboardType="numeric" />
+    <Section title={t('merchant.receiveEarnings')} icon="wallet-outline" hint="تُحوَّل طلبات السحب إلى هذا الحساب">
+      <InputField label={t('merchant.bankWallet')} value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
+      <InputField label={t('merchant.accountHolder')} value={bankAccountName} onChangeText={setBankAccountName} placeholder="كما هو في الحساب" />
+      <InputField label={t('merchant.accountNumber')} value={bankAccount} onChangeText={setBankAccount} placeholder={t('merchant.accountNumber')} keyboardType="numeric" />
     </Section>
   );
 
@@ -277,7 +277,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         onPress={() => void save()}
         disabled={saving || !dirty}
         accessibilityRole="button"
-        accessibilityLabel=t('merchant.saveChanges')
+        accessibilityLabel={t('merchant.saveChanges')}
         accessibilityState={{ disabled: saving || !dirty }}
       >
         {saving ? <ActivityIndicator color={COLORS.surface} size="small" /> : <Ionicons name="checkmark" size={18} color={COLORS.surface} />}
@@ -289,7 +289,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title=t('merchant.storeData') subtitle={storeName || undefined} onBack={() => navigation.goBack()} />
+      <ScreenHeader title={t('merchant.storeData')} subtitle={storeName || undefined} onBack={() => navigation.goBack()} />
       <ScrollView
         contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, s.padForBar]}
         showsVerticalScrollIndicator={false}
