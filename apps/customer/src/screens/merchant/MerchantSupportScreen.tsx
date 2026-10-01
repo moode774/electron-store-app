@@ -38,12 +38,12 @@ const TICKET_STATUS: Record<string, { label: string, color: string }> = {
   closed: { label: t('customer.ticketClosed'), color: UI.textMuted },
 };
 
-const FAQS = [
-  { id: '1', q: t('merchant.faqWalletQ'), a: t('merchant.faqWalletA') },
-  { id: '2', q: t('merchant.faqCancelQ'), a: t('merchant.faqCancelA') },
-  { id: '3', q: t('merchant.faqCourierQ'), a: t('merchant.faqCourierA') },
-  { id: '4', q: t('merchant.faqStoreQ'), a: t('merchant.faqStoreA') },
-];
+const FAQ_KEYS = [
+  { id: '1', q: 'merchant.faqWalletQ', a: 'merchant.faqWalletA' },
+  { id: '2', q: 'merchant.faqCancelQ', a: 'merchant.faqCancelA' },
+  { id: '3', q: 'merchant.faqCourierQ', a: 'merchant.faqCourierA' },
+  { id: '4', q: 'merchant.faqStoreQ', a: 'merchant.faqStoreA' },
+] as const;
 
 export default function MerchantSupportScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -165,15 +165,15 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {/* FAQs */}
               <View style={[styles.card, isCompact && styles.cardCompact]}>
                 <Text style={styles.sectionTitle}>{t('merchant.merchantFaq')}</Text>
-                {FAQS.map((faq, index) => {
+                {FAQ_KEYS.map((faq, index) => {
                   const isOpen = expandedId === faq.id;
                   return (
-                    <View key={faq.id} style={[styles.faqItem, index === FAQS.length - 1 && { borderBottomWidth: 0 }]}>
-                      <TouchableOpacity style={styles.faqHeader} onPress={() => setExpandedId(isOpen ? null : faq.id)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={faq.q} accessibilityState={{ expanded: isOpen }}>
+                    <View key={faq.id} style={[styles.faqItem, index === FAQ_KEYS.length - 1 && { borderBottomWidth: 0 }]}>
+                      <TouchableOpacity style={styles.faqHeader} onPress={() => setExpandedId(isOpen ? null : faq.id)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t(faq.q)} accessibilityState={{ expanded: isOpen }}>
                         <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={UI.textMuted} />
-                        <Text style={styles.faqQuestion}>{faq.q}</Text>
+                        <Text style={styles.faqQuestion}>{t(faq.q)}</Text>
                       </TouchableOpacity>
-                      {isOpen && <Text style={styles.faqAnswer}>{faq.a}</Text>}
+                      {isOpen && <Text style={styles.faqAnswer}>{t(faq.a)}</Text>}
                     </View>
                   );
                 })}
