@@ -13,6 +13,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { Banner, EmptyState, ScreenHeader, StatusPill, card, formatDate, formatMoney, ui, useIsDesktop } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'pending',
@@ -30,6 +31,7 @@ const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: s
 };
 
 export default function MerchantWalletScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
   const [codHeld, setCodHeld] = useState(0);
@@ -125,14 +127,14 @@ export default function MerchantWalletScreen({ navigation }: any) {
       setShowWithdrawModal(false);
       await loadData();
       Alert.alert(
-        'تم إرسال طلب السحب',
+        t('merchant.withdrawalSent'),
         `تم إرسال طلب بقيمة ${amount.toLocaleString()} ر.ي للمراجعة. لا يُعد المبلغ محولاً حتى تعتمد الإدارة الطلب.`,
         [{ text: 'حسناً' }]
       );
     } catch (e: any) {
       const message = String(e?.message ?? '');
       Alert.alert(
-        'تعذّر إرسال طلب السحب',
+        t('merchant.withdrawalFailed'),
         message.includes('COD_FUNDS_NOT_YET_REMITTED')
           ? 'جزء من الرصيد ناتج عن طلبات دفع عند الاستلام ولم يتم توريده وتسويته بعد. يمكنك السحب بعد اكتمال التسوية.'
           : (message || 'تعذّر إرسال طلب السحب، يرجى المحاولة لاحقاً'),
@@ -154,7 +156,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title="المحفظة" subtitle="الرصيد والتسويات وطلبات السحب" onBack={() => navigation.goBack()} />
+      <ScreenHeader title=t('merchant.wallet') subtitle="الرصيد والتسويات وطلبات السحب" onBack={() => navigation.goBack()} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
@@ -165,12 +167,12 @@ export default function MerchantWalletScreen({ navigation }: any) {
           contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, styles.listGap]}
           ListHeaderComponent={
             <View style={styles.headerStack}>
-              {loadError ? <Banner text={loadError} tone="error" actionLabel="إعادة المحاولة" onAction={() => void loadData()} /> : null}
+              {loadError ? <Banner text={loadError} tone="error" actionLabel=t('common.retry') onAction={() => void loadData()} /> : null}
 
               <View style={styles.balance}>
                 <View style={styles.balanceTop}>
                   <View style={styles.balanceCopy}>
-                    <Text style={styles.balanceLabel}>المتاح للسحب</Text>
+                    <Text style={styles.balanceLabel}>{t('merchant.availableToWithdraw')}</Text>
                     <Text style={styles.balanceValue}>{formatMoney(withdrawable)} <Text style={styles.balanceCurrency}>ر.ي</Text></Text>
                   </View>
                   <View style={styles.balanceIcon}><Ionicons name="wallet" size={22} color={COLORS.primary} /></View>
@@ -180,11 +182,11 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   onPress={openWithdraw}
                   disabled={!canWithdraw}
                   accessibilityRole="button"
-                  accessibilityLabel="طلب سحب"
+                  accessibilityLabel=t('merchant.withdraw')
                   accessibilityState={{ disabled: !canWithdraw }}
                 >
                   <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
-                  <Text style={styles.withdrawText}>طلب سحب</Text>
+                  <Text style={styles.withdrawText}>{t('merchant.withdraw')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.balanceNote}>
                   {hasBlockingWithdrawal ? 'لديك طلب سحب قيد المعالجة.' : codHeld > 0 ? `${formatMoney(codHeld)} ر.ي محجوزة مؤقتاً من الدفع عند الاستلام حتى التوريد والتسوية.` : withdrawable < 50 ? 'الحد الأدنى للسحب 50 ر.ي' : 'يُحوَّل المبلغ بعد اعتماد الإدارة.'}
@@ -195,18 +197,18 @@ export default function MerchantWalletScreen({ navigation }: any) {
                 <View style={styles.stat}>
                   <View style={[styles.statIcon, { backgroundColor: '#DCFCE7' }]}><Ionicons name="arrow-down" size={16} color="#15803D" /></View>
                   <Text style={styles.statValue}>{formatMoney(income)}</Text>
-                  <Text style={styles.statLabel}>إجمالي الوارد</Text>
+                  <Text style={styles.statLabel}>{t('merchant.totalIncome')}</Text>
                 </View>
                 <View style={styles.stat}>
                   <View style={[styles.statIcon, { backgroundColor: '#FEE2E2' }]}><Ionicons name="arrow-up" size={16} color="#B91C1C" /></View>
                   <Text style={styles.statValue}>{formatMoney(outgoing)}</Text>
-                  <Text style={styles.statLabel}>إجمالي الصادر</Text>
+                  <Text style={styles.statLabel}>{t('merchant.totalOutgoing')}</Text>
                 </View>
               </View>
 
               {withdrawals.length ? (
                 <View style={ui.card}>
-                  <Text style={[ui.cardTitle, styles.mb8]}>طلبات السحب</Text>
+                  <Text style={[ui.cardTitle, styles.mb8]}>{t('merchant.withdrawalRequests')}</Text>
                   {withdrawals.slice(0, 5).map((request, index) => {
                     const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
                     return (
@@ -222,10 +224,10 @@ export default function MerchantWalletScreen({ navigation }: any) {
                 </View>
               ) : null}
 
-              <Text style={[ui.sectionTitle, styles.txTitleRow]}>سجل المعاملات</Text>
+              <Text style={[ui.sectionTitle, styles.txTitleRow]}>{t('merchant.transactions')}</Text>
             </View>
           }
-          ListEmptyComponent={<EmptyState icon="receipt-outline" title="لا توجد معاملات بعد" text="ستظهر هنا أرباح الطلبات المسلّمة والتسويات." />}
+          ListEmptyComponent={<EmptyState icon="receipt-outline" title=t('merchant.noTransactions') text=t('merchant.noTransactionsText') />}
           renderItem={({ item, index }) => {
             const credit = isIncome(item);
             return (
@@ -253,21 +255,21 @@ export default function MerchantWalletScreen({ navigation }: any) {
         onRequestClose={() => !submitting && setShowWithdrawModal(false)}
       >
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.overlay, isDesktop && styles.overlayCentered]}>
-          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => !submitting && setShowWithdrawModal(false)} accessibilityLabel="إغلاق" />
+          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => !submitting && setShowWithdrawModal(false)} accessibilityLabel=t('merchant.close') />
           <ScrollView style={[styles.sheet, isDesktop && styles.sheetCentered]} contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps="handled">
             {!isDesktop ? <View style={styles.handle} /> : null}
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>طلب سحب</Text>
-              <TouchableOpacity onPress={() => !submitting && setShowWithdrawModal(false)} disabled={submitting} hitSlop={8} accessibilityRole="button" accessibilityLabel="إغلاق">
+              <Text style={styles.sheetTitle}>{t('merchant.withdraw')}</Text>
+              <TouchableOpacity onPress={() => !submitting && setShowWithdrawModal(false)} disabled={submitting} hitSlop={8} accessibilityRole="button" accessibilityLabel=t('merchant.close')>
                 <Ionicons name="close" size={22} color={COLORS.inkSecondary} />
               </TouchableOpacity>
             </View>
             <View style={styles.sheetBalance}>
-              <View style={styles.flexEnd}><Text style={ui.text}>المتاح للسحب</Text>{codHeld > 0 ? <Text style={styles.heldHint}>محجوز COD: {formatMoney(codHeld)} ر.ي</Text> : null}</View>
+              <View style={styles.flexEnd}><Text style={ui.text}>{t('merchant.availableToWithdraw')}</Text>{codHeld > 0 ? <Text style={styles.heldHint}>محجوز COD: {formatMoney(codHeld)} ر.ي</Text> : null}</View>
               <Text style={styles.sheetBalanceValue}>{formatMoney(withdrawable)} ر.ي</Text>
             </View>
 
-            <Text style={ui.label}>المبلغ</Text>
+            <Text style={ui.label}>{t('merchant.amount')}</Text>
             <View style={styles.amountBox}>
               <TextInput
                 style={styles.amountInput}
@@ -291,7 +293,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               </View>
             ) : null}
 
-            <Text style={[ui.label, styles.mt12]}>ملاحظات (اختياري)</Text>
+            <Text style={[ui.label, styles.mt12]}>{t('merchant.notesOptional')}</Text>
             <TextInput
               style={[ui.input, styles.notes]}
               placeholder="أي تعليمات إضافية"
@@ -310,11 +312,11 @@ export default function MerchantWalletScreen({ navigation }: any) {
               onPress={handleWithdraw}
               disabled={submitting || hasBlockingWithdrawal}
               accessibilityRole="button"
-              accessibilityLabel="إرسال طلب السحب"
+              accessibilityLabel=t('merchant.sendWithdrawal')
               accessibilityState={{ disabled: submitting || hasBlockingWithdrawal }}
             >
               {submitting ? <ActivityIndicator color={COLORS.surface} size="small" /> : <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.surface} />}
-              <Text style={ui.primaryBtnText}>إرسال طلب السحب</Text>
+              <Text style={ui.primaryBtnText}>{t('merchant.sendWithdrawal')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
