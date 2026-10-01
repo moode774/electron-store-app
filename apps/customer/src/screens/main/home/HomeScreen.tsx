@@ -37,6 +37,7 @@ import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
+import { useTranslation } from '../../../i18n';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
@@ -77,7 +78,8 @@ const HERO_BANNERS = [
   ...DYNAMIC_BANNER_IMAGES,
 ];
 
-export default function HomeScreen({ navigation }: Props): React.JSX.Element {
+export default function HomeScreen({
+  const { t } = useTranslation(); navigation }: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const layout = useCustomerLayout();
   const user = useAuthStore((state) => state.user);
@@ -214,7 +216,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
   const quickAddToCart = (product: ProductSummary) => {
     if ((product.stock_quantity ?? 1) <= 0) {
-      Alert.alert('نفد المخزون', 'هذا المنتج غير متاح حالياً.');
+      Alert.alert(t('customer.outOfStock'), t('customer.unavailableProduct'));
       return;
     }
     addToCart({
@@ -229,7 +231,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
       storeName: product.merchant_profiles?.store_name ?? '',
       image: product.og_image_url ?? product.product_images?.[0]?.url,
     });
-    Alert.alert('تمت الإضافة', 'تمت إضافة المنتج إلى سلة التسوق بنجاح.');
+    Alert.alert(t('customer.added'), t('customer.addedToCart'));
   };
 
   const displayStores =
@@ -261,7 +263,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 activeOpacity={0.8}
                 onPress={() => openTab('More', 'AddressBook')}
                 accessibilityRole="button"
-                accessibilityLabel="تغيير عنوان التوصيل"
+                accessibilityLabel=t('customer.changeDeliveryAddress')
               >
                 <Ionicons name="location" size={17} color="#172554" />
                 <Text style={styles.locationValueText}>
@@ -276,7 +278,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               activeOpacity={0.8}
               onPress={() => openTab('More', 'Notifications')}
               accessibilityRole="button"
-              accessibilityLabel="الإشعارات"
+              accessibilityLabel=t('customer.notifications')
             >
               <Ionicons name="notifications" size={20} color="#172554" />
               {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
@@ -285,7 +287,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           <CustomerSearchField
             onPress={() => navigation.navigate('Search')}
-            placeholder="ابحث عن منتجات أو متاجر"
+            placeholder=t('customer.searchPlaceholder')
             showFilter
             onFilterPress={() => navigation.navigate('Search')}
           />
@@ -359,8 +361,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           </View>
 
           <CustomerSectionHeader
-            title="التصنيفات"
-            actionLabel="عرض الكل"
+            title=t('customer.categories')
+            actionLabel=t('customer.viewAll')
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
 
@@ -378,7 +380,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 <View style={styles.categoryCircleWrap}>
                   <Ionicons name="grid-outline" size={24} color={COLORS.primary} />
                 </View>
-                <Text style={styles.categoryCircleName}>الكل</Text>
+                <Text style={styles.categoryCircleName}>{t('customer.all')}</Text>
               </TouchableOpacity>
             ) : categories.slice(0, 8).map((item) => (
               <TouchableOpacity
@@ -401,8 +403,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           </ScrollView>
 
           <CustomerSectionHeader
-            title="متاجر"
-            actionLabel="عرض الكل"
+            title=t('common.stores')
+            actionLabel=t('customer.viewAll')
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
 
@@ -414,7 +416,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             {displayStores.length === 0 && (
               <View style={styles.storesEmptyState}>
                 <Ionicons name="storefront-outline" size={22} color="#94A3B8" />
-                <Text style={styles.storesEmptyText}>لا توجد متاجر متاحة حالياً</Text>
+                <Text style={styles.storesEmptyText}>{t('customer.noStores')}</Text>
               </View>
             )}
             {displayStores.map((store: any) => (
@@ -457,8 +459,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           <CustomerSectionHeader
             eyebrow="مختارة من المتاجر المتاحة"
-            title="منتجات تستحق المشاهدة"
-            actionLabel="استكشف"
+            title=t('common.products')
+            actionLabel=t('customer.explore')
             onActionPress={() => navigation.navigate('Search')}
           />
 
@@ -471,10 +473,10 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               <View style={styles.productsEmptyIcon}>
                 <Ionicons name="bag-handle-outline" size={28} color={COLORS.primary} />
               </View>
-              <Text style={styles.productsEmptyTitle}>لا توجد منتجات متاحة الآن</Text>
-              <Text style={styles.productsEmptyText}>جرّب تحديث الصفحة أو استكشف المتاجر المتاحة.</Text>
+              <Text style={styles.productsEmptyTitle}>{t('customer.noProducts')}</Text>
+              <Text style={styles.productsEmptyText}>{t('customer.tryRefresh')}</Text>
               <TouchableOpacity style={styles.productsEmptyButton} onPress={() => navigation.navigate('StoresList', {})}>
-                <Text style={styles.productsEmptyButtonText}>استكشف المتاجر</Text>
+                <Text style={styles.productsEmptyButtonText}>{t('customer.exploreStores')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
