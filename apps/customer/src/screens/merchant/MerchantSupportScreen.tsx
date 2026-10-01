@@ -96,7 +96,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       
-      <ScreenHeader title=t('merchant.supportCenter') subtitle=t('merchant.supportSubtitle') onBack={() => navigation.goBack()} />
+      <ScreenHeader title={t('merchant.supportCenter')} subtitle={t('merchant.supportSubtitle')} onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
         
@@ -117,10 +117,10 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   ))}
                 </View>
 
-                <TextInput style={styles.inputField} placeholder={t('merchant.ticketSubject')} placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel=t('merchant.ticketSubject') />
-                <TextInput style={[styles.inputField, styles.textArea]} placeholder={t('merchant.ticketDetails')} placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel=t('merchant.ticketDetails') />
+                <TextInput style={styles.inputField} placeholder={t('merchant.ticketSubject')} placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel={t('merchant.ticketSubject')} />
+                <TextInput style={[styles.inputField, styles.textArea]} placeholder={t('merchant.ticketDetails')} placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel={t('merchant.ticketDetails')} />
                 
-                <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel=t('merchant.sendSupportTeam') accessibilityState={{ disabled: sending, busy: sending }}>
+                <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={t('merchant.sendSupportTeam')} accessibilityState={{ disabled: sending, busy: sending }}>
                   {sending ? <ActivityIndicator color="#fff" size="small" /> : (
                     <>
                        <Text style={styles.submitBtnText}>{t('merchant.sendSupportTeam')}</Text>
@@ -135,7 +135,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {ticketsError ? (
                 <View style={styles.ticketErrorCard} accessibilityRole="alert">
                   <Text style={styles.ticketErrorText}>{ticketsError}</Text>
-                  <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel=t('merchant.reloadTickets')>
+                  <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel={t('merchant.reloadTickets')}>
                     <Text style={styles.retryText}>{t('common.retry')}</Text>
                   </TouchableOpacity>
                 </View>
