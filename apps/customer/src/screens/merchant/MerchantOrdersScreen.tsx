@@ -19,7 +19,7 @@ type Filter = 'all' | 'pending' | 'preparing' | 'ready' | 'delivery';
 
 // A pending order older than this is flagged so the store answers first.
 const LATE_PENDING_MINUTES = 10;
-const STEPS = ['استلام', 'تجهيز', 'جاهز', t('merchant.withCourier')];
+const STEP_KEYS = ['merchant.receivedStep', 'merchant.preparingStep', 'merchant.readyStep', 'merchant.withCourier'] as const;
 
 const nextAction = (status: string) => {
   switch (status) {
@@ -110,7 +110,8 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         </View>
 
         <View style={styles.steps}>
-          {STEPS.map((label, i) => {
+          {STEP_KEYS.map((key, i) => {
+            const label = t(key);
             const done = progress >= i + 1;
             return (
               <View key={label} style={styles.step}>
