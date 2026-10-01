@@ -4,16 +4,18 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
-const ITEMS: Record<string, { label: string; active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
-  Cart: { label: 'السلة', active: 'bag-handle', idle: 'bag-handle-outline' },
-  Orders: { label: 'طلباتي', active: 'receipt', idle: 'receipt-outline' },
-  Home: { label: 'الرئيسية', active: 'home', idle: 'home-outline' },
-  Categories: { label: 'المتاجر', active: 'storefront', idle: 'storefront-outline' },
-  More: { label: 'حسابي', active: 'person', idle: 'person-outline' },
+const ITEMS: Record<string, { labelKey: string; active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
+  Cart: { labelKey: 'common.cart', active: 'bag-handle', idle: 'bag-handle-outline' },
+  Orders: { labelKey: 'common.myOrders', active: 'receipt', idle: 'receipt-outline' },
+  Home: { labelKey: 'common.home', active: 'home', idle: 'home-outline' },
+  Categories: { labelKey: 'common.stores', active: 'storefront', idle: 'storefront-outline' },
+  More: { labelKey: 'common.account', active: 'person', idle: 'person-outline' },
 };
 
 export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps): React.JSX.Element {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const floating = width >= BREAKPOINTS.tablet;
   const cartCount = useCartStore((store) => store.items.reduce((count, item) => count + item.quantity, 0));
@@ -38,7 +40,7 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
               onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
               activeOpacity={0.76}
               accessibilityRole="button"
-              accessibilityLabel={item.label}
+              accessibilityLabel={t(item.labelKey)}
               accessibilityState={focused ? { selected: true } : {}}
             >
               <View style={[styles.iconWrap, focused && styles.iconWrapFocused]}>
@@ -53,7 +55,7 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
                   </View>
                 ) : null}
               </View>
-              <Text style={[styles.label, focused && styles.labelFocused]}>{item.label}</Text>
+              <Text style={[styles.label, focused && styles.labelFocused]}>{t(item.labelKey)}</Text>
             </TouchableOpacity>
           );
         })}
