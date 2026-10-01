@@ -9,6 +9,7 @@ import { useAuthStore, getMerchantProfile, updateMerchantProfileByUser } from '@
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 import { EmptyState, ScreenHeader, ui, useIsDesktop } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 function Section({ title, icon, children, hint }: { title: string; icon: any; children: React.ReactNode; hint?: string }) {
   return (
@@ -56,6 +57,7 @@ function InputField({ label, value, onChangeText, multiline = false, placeholder
 
 // ─── Main Screen ────────────────────────────────────────────────────────────
 export default function StoreSettingsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user     = useAuthStore((s) => s.user);
   const isDesktop = useIsDesktop();
   const insets = useSafeAreaInsets();
@@ -116,11 +118,11 @@ export default function StoreSettingsScreen({ navigation }: any) {
         setBankAccountName(p.bank_account_name ?? '');
         setSavedSnapshot('');
       }
-    }).catch((error: unknown) => setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل إعدادات المتجر.')).finally(() => setLoading(false));
+    }).catch((error: unknown) => setLoadError(error instanceof Error && error.message ? error.message : t('merchant.merchantLoadingFailed'))).finally(() => setLoading(false));
   }, [user?.id, loadAttempt]);
 
   const handleSave = async (): Promise<boolean> => {
-    if (!storeName.trim()) { Alert.alert('تنبيه', 'اسم المتجر مطلوب'); return false; }
+    if (!storeName.trim()) { Alert.alert('تنبيه', t('merchant.storeNameRequired')); return false; }
     if (!user?.id) return false;
     setSaving(true);
     try {
@@ -141,10 +143,10 @@ export default function StoreSettingsScreen({ navigation }: any) {
         bank_account:        bankAccount.trim()     || undefined,
         bank_account_name:   bankAccountName.trim() || undefined,
       });
-      Alert.alert('تم الحفظ', 'تم تحديث بيانات المتجر.');
+      Alert.alert(t('merchant.saveSuccess'), t('merchant.storeUpdated'));
       return true;
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر الحفظ');
+      Alert.alert('خطأ', e?.message ?? t('merchant.saveFailed'));
       return false;
     } finally { setSaving(false); }
   };
@@ -184,9 +186,9 @@ export default function StoreSettingsScreen({ navigation }: any) {
   if (loadError) {
     return (
       <View style={ui.screen}>
-        <ScreenHeader title="بيانات المتجر" onBack={() => navigation.goBack()} />
+        <ScreenHeader title=t('merchant.storeData') onBack={() => navigation.goBack()} />
         <View style={ui.content}>
-          <EmptyState icon="cloud-offline-outline" title="تعذّر تحميل البيانات" text={loadError} action={{ label: 'إعادة المحاولة', onPress: () => setLoadAttempt((v) => v + 1) }} />
+          <EmptyState icon="cloud-offline-outline" title="تعذّر تحميل البيانات" text={loadError} action={{ label: t('common.retry'), onPress: () => setLoadAttempt((v) => v + 1) }} />
         </View>
       </View>
     );
@@ -198,8 +200,8 @@ export default function StoreSettingsScreen({ navigation }: any) {
         <Ionicons name={isOpen ? 'storefront' : 'lock-closed'} size={22} color={isOpen ? '#15803D' : '#B91C1C'} />
       </View>
       <View style={s.flexEnd}>
-        <Text style={ui.cardTitle}>{isOpen ? 'المتجر مفتوح' : 'المتجر مغلق مؤقتاً'}</Text>
-        <Text style={ui.muted}>{isOpen ? 'يستقبل الطلبات الآن' : 'لن تصلك طلبات جديدة حتى تفتحه'}</Text>
+        <Text style={ui.cardTitle}>{isOpen ? t('merchant.storeOpen') : t('merchant.storeClosed')}</Text>
+        <Text style={ui.muted}>{isOpen ? t('merchant.storeAccepting') : t('merchant.storeNotAccepting')}</Text>
       </View>
       <Switch
         value={isOpen}
@@ -207,7 +209,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         trackColor={{ false: '#FECACA', true: '#86EFAC' }}
         thumbColor={COLORS.surface}
         {...({ activeThumbColor: COLORS.surface } as any)}
-        accessibilityLabel="حالة المتجر"
+        accessibilityLabel=t('merchant.storeStatus')
       />
     </View>
   );
@@ -228,54 +230,54 @@ export default function StoreSettingsScreen({ navigation }: any) {
   );
 
   const basics = (
-    <Section title="الهوية" icon="storefront-outline" hint="تظهر للعملاء في صفحة المتجر">
-      <InputField label="الاسم التجاري" value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
-      <InputField label="التصنيف" value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: أزياء، إلكترونيات" />
-      <InputField label="نبذة عن المتجر" value={description} onChangeText={setDescription} multiline placeholder="ماذا تبيع؟ ولماذا يشتري منك العميل؟" />
+    <Section title=t('merchant.identity') icon="storefront-outline" hint="تظهر للعملاء في صفحة المتجر">
+      <InputField label=t('merchant.commercialName') value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
+      <InputField label=t('merchant.category') value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: أزياء، إلكترونيات" />
+      <InputField label=t('merchant.storeBio') value={description} onChangeText={setDescription} multiline placeholder="ماذا تبيع؟ ولماذا يشتري منك العميل؟" />
     </Section>
   );
 
   const contact = (
-    <Section title="الموقع والتواصل" icon="location-outline" hint="يستخدمه المندوب للاستلام">
+    <Section title=t('merchant.locationContact') icon="location-outline" hint="يستخدمه المندوب للاستلام">
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label="المدينة" value={city} onChangeText={setCity} placeholder="صنعاء" /></View>
-        <View style={s.pairItem}><InputField label="هاتف المتجر" value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" /></View>
+        <View style={s.pairItem}><InputField label=t('merchant.city') value={city} onChangeText={setCity} placeholder="صنعاء" /></View>
+        <View style={s.pairItem}><InputField label=t('merchant.storePhone') value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" /></View>
       </View>
-      <InputField label="العنوان التفصيلي" value={address} onChangeText={setAddress} placeholder="الحي، الشارع، أقرب معلم" />
+      <InputField label=t('merchant.detailedAddress') value={address} onChangeText={setAddress} placeholder="الحي، الشارع، أقرب معلم" />
       <InputField label="واتساب (اختياري)" value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
     </Section>
   );
 
   const legal = (
-    <Section title="البيانات الرسمية" icon="document-text-outline" hint="سرّية، تُستخدم للتحقق فقط">
+    <Section title=t('merchant.officialData') icon="document-text-outline" hint="سرّية، تُستخدم للتحقق فقط">
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label="اسم المالك" value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" /></View>
-        <View style={s.pairItem}><InputField label="رقم الهوية" value={nationalId} onChangeText={setNationalId} placeholder="رقم الهوية" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label=t('merchant.ownerName') value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" /></View>
+        <View style={s.pairItem}><InputField label=t('merchant.nationalId') value={nationalId} onChangeText={setNationalId} placeholder=t('merchant.nationalId') keyboardType="numeric" /></View>
       </View>
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label="السجل التجاري" value={commercialRegister} onChangeText={setCommercialRegister} placeholder="اختياري" keyboardType="numeric" /></View>
-        <View style={s.pairItem}><InputField label="الرقم الضريبي" value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label=t('merchant.commercialRegister') value={commercialRegister} onChangeText={setCommercialRegister} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label=t('merchant.taxNumber') value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
       </View>
     </Section>
   );
 
   const bank = (
-    <Section title="استلام الأرباح" icon="wallet-outline" hint="تُحوَّل طلبات السحب إلى هذا الحساب">
-      <InputField label="البنك أو المحفظة" value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
-      <InputField label="اسم صاحب الحساب" value={bankAccountName} onChangeText={setBankAccountName} placeholder="كما هو في الحساب" />
-      <InputField label="رقم الحساب" value={bankAccount} onChangeText={setBankAccount} placeholder="رقم الحساب" keyboardType="numeric" />
+    <Section title=t('merchant.receiveEarnings') icon="wallet-outline" hint="تُحوَّل طلبات السحب إلى هذا الحساب">
+      <InputField label=t('merchant.bankWallet') value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
+      <InputField label=t('merchant.accountHolder') value={bankAccountName} onChangeText={setBankAccountName} placeholder="كما هو في الحساب" />
+      <InputField label=t('merchant.accountNumber') value={bankAccount} onChangeText={setBankAccount} placeholder=t('merchant.accountNumber') keyboardType="numeric" />
     </Section>
   );
 
   const saveBar = (
     <View style={[s.saveBar, isDesktop ? s.saveBarDesktop : { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <Text style={[s.saveHint, dirty && s.saveHintDirty]}>{dirty ? 'لديك تغييرات غير محفوظة' : 'كل التغييرات محفوظة'}</Text>
+      <Text style={[s.saveHint, dirty && s.saveHintDirty]}>{dirty ? t('merchant.unsaved') : t('merchant.saved')}</Text>
       <TouchableOpacity
         style={[ui.primaryBtn, s.saveBtn, (saving || !dirty) && s.saveBtnIdle]}
         onPress={() => void save()}
         disabled={saving || !dirty}
         accessibilityRole="button"
-        accessibilityLabel="حفظ التغييرات"
+        accessibilityLabel=t('merchant.saveChanges')
         accessibilityState={{ disabled: saving || !dirty }}
       >
         {saving ? <ActivityIndicator color={COLORS.surface} size="small" /> : <Ionicons name="checkmark" size={18} color={COLORS.surface} />}
@@ -287,7 +289,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title="بيانات المتجر" subtitle={storeName || undefined} onBack={() => navigation.goBack()} />
+      <ScreenHeader title=t('merchant.storeData') subtitle={storeName || undefined} onBack={() => navigation.goBack()} />
       <ScrollView
         contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, s.padForBar]}
         showsVerticalScrollIndicator={false}
