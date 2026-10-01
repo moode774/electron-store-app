@@ -51,7 +51,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
       setProduct(null);
       setVariants([]);
       setSelectedVariant(null);
-      setLoadError(error?.message ?? 'تعذّر تحميل المنتج. تحقق من الاتصال وحاول مجددًا.');
+      setLoadError(error?.message ?? t('customer.loadProductFailedText'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const variantAdd = selectedVariant?.price_modifier ?? 0;
   const PRODUCT = {
     id: product?.id ?? productId,
-    name: product?.name ?? 'منتج',
+    name: product?.name ?? t('customer.productFallback'),
     price: basePrice + variantAdd,
     oldPrice: product?.sale_price ? product.base_price + variantAdd : null,
     description: product?.description ?? '',
@@ -139,10 +139,10 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel={t('merchant.shareProduct')}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ${t('merchant.currencyYER')}`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel={t('merchant.shareProduct')}>
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? 'إزالة المنتج من المفضلة' : 'إضافة المنتج إلى المفضلة'} accessibilityState={{ selected: wished }}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? t('customer.removeWishlistA11y') : t('customer.addWishlistA11y')} accessibilityState={{ selected: wished }}>
               <Ionicons name={wished ? 'heart' : 'heart-outline'} size={22} color={wished ? '#EF4444' : '#111827'} />
             </TouchableOpacity>
           </View>
@@ -171,7 +171,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
               activeOpacity={0.7}
               onPress={() => PRODUCT.store.id && navigation.navigate('StoreDetails', { storeId: PRODUCT.store.id })}
               accessibilityRole="button"
-              accessibilityLabel={`فتح متجر ${PRODUCT.store.name}`}
+              accessibilityLabel={`${t('customer.openStoreA11y')} ${PRODUCT.store.name}`}
             >
               <Ionicons name="storefront-outline" size={14} color={COLORS.primary} />
               <Text style={styles.storeName}>{PRODUCT.store.name}</Text>
@@ -186,13 +186,13 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           <Text style={styles.productName}>{PRODUCT.name}</Text>
           
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>ر.ي</Text></Text>
+            <Text style={styles.price}>{PRODUCT.price} <Text style={styles.currency}>{t('merchant.currencyYER')}</Text></Text>
             {PRODUCT.oldPrice ? (
               <>
                 <Text style={styles.oldPrice}>{PRODUCT.oldPrice}</Text>
                 <View style={styles.discountBadge}>
                   <Text style={styles.discountText}>
-                    خصم {Math.round((1 - PRODUCT.price / PRODUCT.oldPrice) * 100)}%
+                    {t('customer.discountLabel')} {Math.round((1 - PRODUCT.price / PRODUCT.oldPrice) * 100)}%
                   </Text>
                 </View>
               </>
@@ -202,12 +202,12 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           <View style={styles.soldRow}>
             <View style={styles.soldBadge}>
               <Ionicons name="flame" size={14} color="#DC2626" />
-              <Text style={styles.soldText}>تم بيع {PRODUCT.sold} قطعة</Text>
+              <Text style={styles.soldText}>{t('customer.soldLabel')} {PRODUCT.sold} {t('merchant.piece')}</Text>
             </View>
             <View style={[styles.stockBadge, !PRODUCT.hasStock && styles.stockBadgeOut]}>
               <Ionicons name={PRODUCT.hasStock ? 'cube-outline' : 'close-circle-outline'} size={14} color={PRODUCT.hasStock ? '#059669' : '#DC2626'} />
               <Text style={[styles.stockText, !PRODUCT.hasStock && { color: '#DC2626' }]}>
-                {PRODUCT.hasStock ? `متبقي ${PRODUCT.stock} قطعة` : t('customer.outOfStock')}
+                {PRODUCT.hasStock ? `${t('customer.remainingLabel')} ${PRODUCT.stock} ${t('merchant.piece')}` : t('customer.outOfStock')}
               </Text>
             </View>
           </View>
@@ -229,7 +229,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
                       disabled={v.stock_quantity <= 0}
                       activeOpacity={0.8}
                       accessibilityRole="radio"
-                      accessibilityLabel={`${v.name}${v.stock_quantity <= 0 ? '، نفد المخزون' : ''}`}
+                      accessibilityLabel={`${v.name}${v.stock_quantity <= 0 ? `, ${t('customer.optionOutOfStockSuffix')}` : ''}`}
                       accessibilityState={{ selected: isActive, disabled: v.stock_quantity <= 0 }}
                     >
                       <Text style={[styles.variantLabel, isActive && styles.variantLabelActive]}>
@@ -286,12 +286,12 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
           activeOpacity={0.9}
           disabled={!PRODUCT.hasStock}
           accessibilityRole="button"
-          accessibilityLabel={`إضافة ${PRODUCT.name} إلى السلة`}
+          accessibilityLabel={`${t('customer.addProductCartA11y')} ${PRODUCT.name}`}
           accessibilityState={{ disabled: !PRODUCT.hasStock }}
           onPress={() => {
             if (!PRODUCT.store.id) {
               // بدون معرّف متجر صحيح سيفشل إنشاء الطلب لاحقاً في الدفع
-              Alert.alert('عذراً', 'تعذّر تحميل بيانات المتجر، أعد فتح المنتج');
+              Alert.alert(t('customer.sorry'), t('customer.storeDataFailed'));
               return;
             }
             addToCart({
@@ -312,7 +312,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         >
           <Text style={styles.addToCartText}>{PRODUCT.hasStock ? t('customer.addToCart') : t('customer.outOfStock')}</Text>
           <View style={styles.addToCartPriceBox}>
-            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} ر.ي</Text>
+            <Text style={styles.addToCartPrice}>{PRODUCT.price * quantity} {t('merchant.currencyYER')}</Text>
           </View>
         </TouchableOpacity>
         </View>
