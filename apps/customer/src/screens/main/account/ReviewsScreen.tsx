@@ -23,7 +23,7 @@ export default function ReviewsScreen({
     if (!user?.id) { setLoading(false); return; }
     setLoadError('');
     try { setReviews(await getMyReviews(user.id)); }
-    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل تقييماتك.'); }
+    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : t('customer.loadReviewsFailed')); }
     finally { setLoading(false); }
   }, [user?.id]);
 
