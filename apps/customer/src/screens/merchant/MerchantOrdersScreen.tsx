@@ -13,23 +13,25 @@ import {
   merchantOrderProgress,
 } from './merchantOrderState';
 import { Banner, Chips, EmptyState, ScreenHeader, StatusPill, card, formatMoney, paymentLabel, timeAgo, ui, useIsDesktop } from './merchantUi';
+import { useTranslation, translate } from '../../i18n';
 
 type Filter = 'all' | 'pending' | 'preparing' | 'ready' | 'delivery';
 
 // A pending order older than this is flagged so the store answers first.
 const LATE_PENDING_MINUTES = 10;
-const STEPS = ['استلام', 'تجهيز', 'جاهز', 'مع المندوب'];
+const STEPS = ['استلام', 'تجهيز', 'جاهز', t('merchant.withCourier')];
 
 const nextAction = (status: string) => {
   switch (status) {
-    case ORDER_STATUS.PENDING: return { label: 'قبول وبدء التجهيز', next: ORDER_STATUS.PREPARING, icon: 'checkmark' as const };
-    case ORDER_STATUS.CONFIRMED: return { label: 'بدء التجهيز', next: ORDER_STATUS.PREPARING, icon: 'restaurant-outline' as const };
-    case ORDER_STATUS.PREPARING: return { label: 'جاهز للتسليم للمندوب', next: ORDER_STATUS.READY, icon: 'bag-check-outline' as const };
+    case ORDER_STATUS.PENDING: return { label: translate('merchant.acceptPrepare'), next: ORDER_STATUS.PREPARING, icon: 'checkmark' as const };
+    case ORDER_STATUS.CONFIRMED: return { label: translate('merchant.startPreparing'), next: ORDER_STATUS.PREPARING, icon: 'restaurant-outline' as const };
+    case ORDER_STATUS.PREPARING: return { label: translate('merchant.readyCourier'), next: ORDER_STATUS.READY, icon: 'bag-check-outline' as const };
     default: return null;
   }
 };
 
 export default function MerchantOrdersScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isDesktop = useIsDesktop();
   const [filter, setFilter] = useState<Filter>('all');
@@ -91,7 +93,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         <View style={styles.meta}>
           <View style={styles.metaItem}>
             <Ionicons name="person-outline" size={14} color={COLORS.inkTertiary} />
-            <Text style={styles.metaText} numberOfLines={1}>{item.customer_profiles?.full_name || 'عميل'}</Text>
+            <Text style={styles.metaText} numberOfLines={1}>{item.customer_profiles?.full_name || t('merchant.customer')}</Text>
           </View>
           {items ? (
             <View style={styles.metaItem}>
@@ -137,7 +139,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
               <Text style={styles.actionText}>{action.label}</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.hint}>{item.status === ORDER_STATUS.READY ? 'بانتظار وصول المندوب' : 'يتابعه المندوب'}</Text>
+            <Text style={styles.hint}>{item.status === ORDER_STATUS.READY ? t('merchant.waitingCourier') : t('merchant.courierTracking')}</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -148,8 +150,8 @@ export default function MerchantOrdersScreen({ navigation }: any) {
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
-        title="الطلبات"
-        subtitle={loading ? 'جاري التحميل...' : `${orders.length} طلب نشط${count('pending') ? ` · ${count('pending')} بانتظار قبولك` : ''}`}
+        title=t('common.orders')
+        subtitle={loading ? t('merchant.loading') : `${orders.length} طلب نشط${count('pending') ? ` · ${count('pending')} بانتظار قبولك` : ''}`}
       />
 
       {loading ? (
@@ -171,17 +173,17 @@ export default function MerchantOrdersScreen({ navigation }: any) {
                 <Banner
                   text={(realtimeError ?? error) as string}
                   tone={error && !orders.length ? 'error' : 'warning'}
-                  actionLabel="تحديث"
+                  actionLabel=t('merchant.refresh')
                   onAction={() => void refresh()}
                 />
               ) : null}
               <Chips
                 items={[
-                  { key: 'all', label: 'الكل', count: orders.length },
-                  { key: 'pending', label: 'بانتظار القبول', count: count('pending') },
-                  { key: 'preparing', label: 'قيد التجهيز', count: count('preparing') },
-                  { key: 'ready', label: 'جاهزة', count: count('ready') },
-                  { key: 'delivery', label: 'مع المندوب', count: count('delivery') },
+                  { key: 'all', label: t('merchant.all'), count: orders.length },
+                  { key: 'pending', label: t('merchant.waitingAcceptance'), count: count('pending') },
+                  { key: 'preparing', label: t('merchant.preparing'), count: count('preparing') },
+                  { key: 'ready', label: t('merchant.ready'), count: count('ready') },
+                  { key: 'delivery', label: t('merchant.withCourier'), count: count('delivery') },
                 ]}
                 value={filter}
                 onChange={setFilter}
@@ -192,8 +194,8 @@ export default function MerchantOrdersScreen({ navigation }: any) {
             error && !orders.length ? null : (
               <EmptyState
                 icon="checkmark-done-outline"
-                title={filter === 'all' ? 'لا توجد طلبات نشطة' : 'لا توجد طلبات هنا'}
-                text={filter === 'all' ? 'ستظهر الطلبات الجديدة هنا فور وصولها، مع تنبيه.' : 'اختر تصفية أخرى لعرض بقية الطلبات.'}
+                title={filter === 'all' ? t('merchant.noActiveOrders') : t('merchant.noOrdersHere')}
+                text={filter === 'all' ? t('merchant.newOrdersHint') : t('merchant.otherFilterHint')}
               />
             )
           }
