@@ -593,7 +593,7 @@ export default function CodRemittancePanel() {
                 maxLength={200}
                 textAlign="right"
                 autoCapitalize="characters"
-                placeholder={t('merchant.referenceExample')}
+                placeholder={t('delivery.codReferenceExample')}
                 placeholderTextColor="#9CA3AF"
               />
 
@@ -644,7 +644,7 @@ export default function CodRemittancePanel() {
                 </Text>
               </TouchableOpacity>
               <Text style={styles.confirmHint}>
-                بعد الإرسال انتظر فقط. ستراجع الإدارة الإثبات وتؤكد استلام المبلغ.
+                {t('delivery.codAfterSendHint')}
               </Text>
             </View>
           </ScrollView>
