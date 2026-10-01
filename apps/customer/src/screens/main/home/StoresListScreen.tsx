@@ -34,39 +34,11 @@ function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
 }
 
 const STORE_CAROUSEL_CARDS = [
-  {
-    id: 's1',
-    title: t('customer.browseStores'),
-    sub: 'تصفح المنتجات والمتاجر المتاحة وقارن قبل الطلب',
-    btnText: t('customer.exploreProducts'),
-    route: 'Search',
-    img: require('../../../../assets/images/bannerstoor/delfre.png'),
-  },
-  {
-    id: 's2',
-    title: 'متاجر متاحة للتسوق 🏬',
-    sub: 'استكشف المتاجر النشطة والمنتجات المعروضة حالياً',
-    btnText: t('customer.exploreProducts'),
-    route: 'Search',
-    img: require('../../../../assets/images/home/premium-hero-desktop.png'),
-  },
-  {
-    id: 's3',
-    title: 'رسوم توصيل واضحة 🚚',
-    sub: 'رسوم التوصيل تُحسب حسب منطقة الخدمة وتظهر قبل تأكيد الطلب',
-    btnText: 'ابدأ التسوق',
-    route: 'Search',
-    img: require('../../../../assets/images/bannerstoor/delfre.png'),
-  },
-  {
-    id: 's4',
-    title: 'عروض وحسومات المتاجر ⚡',
-    sub: 'شاهد العروض المتاحة من المتاجر عند توفرها',
-    btnText: 'شاهد العروض',
-    route: 'Offers',
-    img: require('../../../../assets/images/bannerstoor/add.png'),
-  },
-];
+  { id: 's1', titleKey: 'customer.browseStores', subKey: 'customer.storeCarouselBrowseSub', btnKey: 'customer.exploreProducts', route: 'Search', img: require('../../../../assets/images/bannerstoor/delfre.png') },
+  { id: 's2', titleKey: 'customer.storeCarouselActiveTitle', subKey: 'customer.storeCarouselActiveSub', btnKey: 'customer.exploreProducts', route: 'Search', img: require('../../../../assets/images/home/premium-hero-desktop.png') },
+  { id: 's3', titleKey: 'customer.storeCarouselDeliveryTitle', subKey: 'customer.storeCarouselDeliverySub', btnKey: 'customer.startShopping', route: 'Search', img: require('../../../../assets/images/bannerstoor/delfre.png') },
+  { id: 's4', titleKey: 'customer.storeCarouselOffersTitle', subKey: 'customer.storeCarouselOffersSub', btnKey: 'customer.viewOffers', route: 'Offers', img: require('../../../../assets/images/bannerstoor/add.png') },
+] as const;
 
 export default function StoresListScreen({ navigation, route }: any) {
   const { t } = useTranslation();
@@ -240,7 +212,7 @@ export default function StoresListScreen({ navigation, route }: any) {
           value={search}
           onChangeText={setSearch}
           onClear={() => setSearch('')}
-          placeholder=t('customer.searchStore')
+          placeholder={t('customer.searchStore')}
           returnKeyType="search"
         />
 
@@ -306,15 +278,15 @@ export default function StoresListScreen({ navigation, route }: any) {
           {STORE_CAROUSEL_CARDS.map((card) => (
             <View key={card.id} style={[styles.heroCardContainer, { width: layout.usableWidth || '100%' }]}>
               <View style={styles.heroTextCol}>
-                <Text style={styles.heroTitleText}>{card.title}</Text>
-                <Text style={styles.heroSubTitleText}>{card.sub}</Text>
+                <Text style={styles.heroTitleText}>{t(card.titleKey)}</Text>
+                <Text style={styles.heroSubTitleText}>{t(card.subKey)}</Text>
 
                 <TouchableOpacity
                   style={styles.heroCtaBtn}
                   onPress={() => navigation.navigate(card.route as any)}
                   activeOpacity={0.88}
                 >
-                  <Text style={styles.heroCtaText}>{card.btnText}</Text>
+                  <Text style={styles.heroCtaText}>{t(card.btnKey)}</Text>
                   <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
