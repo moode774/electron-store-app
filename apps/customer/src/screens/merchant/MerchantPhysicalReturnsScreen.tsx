@@ -53,40 +53,40 @@ interface MerchantPhysicalReturnsScreenProps {
 }
 
 const STATUS: Record<string, { label: string; color: string; background: string }> = {
-  requested: { label: 'بانتظار مراجعة التاجر', color: '#B45309', background: '#FFFBEB' },
+  requested: { label: t('merchant.returnRequested'), color: '#B45309', background: '#FFFBEB' },
   approved: { label: t('merchant.approved'), color: '#1D4ED8', background: '#EFF6FF' },
   rejected: { label: t('merchant.rejected'), color: '#B91C1C', background: '#FEF2F2' },
   cancelled: { label: t('merchant.cancelled'), color: '#64748B', background: '#F1F5F9' },
-  pickup_scheduled: { label: 'تم تحديد الاستلام', color: '#6D28D9', background: '#F5F3FF' },
-  picked_up: { label: 'استلمه المندوب', color: '#0369A1', background: '#F0F9FF' },
-  received: { label: 'وصل إلى المتجر', color: '#047857', background: '#ECFDF5' },
-  inspected: { label: 'تم الفحص', color: '#0F766E', background: '#F0FDFA' },
-  completed: { label: 'مكتمل', color: '#047857', background: '#ECFDF5' },
+  pickup_scheduled: { label: t('merchant.pickupScheduled'), color: '#6D28D9', background: '#F5F3FF' },
+  picked_up: { label: t('merchant.pickedUp'), color: '#0369A1', background: '#F0F9FF' },
+  received: { label: t('merchant.returnReceived'), color: '#047857', background: '#ECFDF5' },
+  inspected: { label: t('merchant.inspected'), color: '#0F766E', background: '#F0FDFA' },
+  completed: { label: t('merchant.returnCompleted'), color: '#047857', background: '#ECFDF5' },
 };
 
 const REASONS: Record<string, string> = {
-  damaged: 'المنتج تالف',
-  not_as_described: 'غير مطابق للوصف',
-  wrong_item: 'تم استلام منتج مختلف',
-  changed_mind: 'تغيير رأي العميل',
-  other: 'سبب آخر',
+  damaged: t('merchant.damaged'),
+  not_as_described: t('merchant.notDescribed'),
+  wrong_item: t('merchant.wrongItem'),
+  changed_mind: t('merchant.changedMind'),
+  other: t('merchant.otherReason'),
 };
 
 const DISPOSITIONS: Array<{ value: Disposition; label: string }> = [
-  { value: 'restock', label: 'إعادة للمخزون' },
-  { value: 'discard', label: 'إتلاف' },
-  { value: 'repair', label: 'صيانة' },
-  { value: 'return_to_vendor', label: 'إرجاع للمورد' },
-  { value: 'rejected', label: 'رفض الكمية' },
+  { value: 'restock', label: t('merchant.restock') },
+  { value: 'discard', label: t('merchant.discardItem') },
+  { value: 'repair', label: t('merchant.repair') },
+  { value: 'return_to_vendor', label: t('merchant.returnVendor') },
+  { value: 'rejected', label: t('merchant.rejectQuantity') },
 ];
 
 const FILTERS = [
   { key: '', label: t('merchant.all') },
   { key: 'actionable', label: t('merchant.needsAction') },
-  { key: 'requested', label: 'جديدة' },
-  { key: 'pickup_scheduled', label: 'موعد استلام' },
-  { key: 'received', label: 'وصلت المتجر' },
-  { key: 'inspected', label: 'تم فحصها' },
+  { key: 'requested', label: t('merchant.newReturns') },
+  { key: 'pickup_scheduled', label: t('merchant.pickupAppointment') },
+  { key: 'received', label: t('merchant.reachedStore') },
+  { key: 'inspected', label: t('merchant.inspectedReturns') },
   { key: 'completed', label: 'مكتملة' },
 ];
 
@@ -479,7 +479,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       {evidenceError ? <Text style={styles.evidenceError}>{evidenceError}</Text> : null}
       {evidenceLinks.length ? (
         <View>
-          <Text style={styles.evidenceTitle}>أدلة العميل</Text>
+          <Text style={styles.evidenceTitle}>{t('merchant.customerEvidence')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.evidenceRow}>
             {evidenceLinks.map((link, index) => (
               <TouchableOpacity key={link.path} style={styles.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)} accessibilityRole="link">
@@ -496,7 +496,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       ) : null}
       {proofLinks.length ? (
         <View>
-          <Text style={styles.evidenceTitle}>إثباتات نقل العهدة</Text>
+          <Text style={styles.evidenceTitle}>{t('merchant.custodyEvidence')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.evidenceRow}>
             {proofLinks.map((link, index) => (
               <TouchableOpacity key={link.path} style={styles.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)} accessibilityRole="link">
@@ -508,7 +508,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         </View>
       ) : null}
       {!evidenceLoading && !evidenceError && !evidenceLinks.length && !proofLinks.length ? (
-        <Text style={styles.evidenceHint}>لا توجد ملفات مرفقة بهذا المرتجع.</Text>
+        <Text style={styles.evidenceHint}>{t('merchant.noEvidence')}</Text>
       ) : null}
     </View>
   );
@@ -564,12 +564,12 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>سبب الإرجاع</Text>
+        <Text style={styles.sectionLabel}>{t('merchant.returnReason')}</Text>
         <Text style={styles.bodyText}>{REASONS[item.reason] ?? item.reason}</Text>
         {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
 
         <View style={styles.itemsBox}>
-          <Text style={styles.itemsTitle}>العناصر المرتجعة</Text>
+          <Text style={styles.itemsTitle}>{t('merchant.returnedItems')}</Text>
           {(item.return_items ?? []).map((returnItem) => (
             <View key={returnItem.id} style={[styles.itemRow, isCompact && styles.itemRowCompact]}>
               <View style={{ flex: 1 }}>
@@ -628,25 +628,25 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           {item.status === 'requested' ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openResponse(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="chatbox-ellipses-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>{item.merchant_response ? 'تحديث التوصية' : 'مراجعة الطلب'}</Text>
+              <Text style={styles.primaryButtonText}>{item.merchant_response ? 'تحديث التوصية' : t('merchant.reviewRequest')}</Text>
             </TouchableOpacity>
           ) : null}
           {canConfirmReceipt ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openReceipt(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               {busy ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons name="cube-outline" size={18} color="#FFFFFF" />}
-              <Text style={styles.primaryButtonText}>تأكيد وصول المرتجع</Text>
+              <Text style={styles.primaryButtonText}>{t('merchant.confirmReturnArrival')}</Text>
             </TouchableOpacity>
           ) : null}
           {canInspect ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openInspection(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="clipboard-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>فحص الكميات</Text>
+              <Text style={styles.primaryButtonText}>{t('merchant.inspectQuantities')}</Text>
             </TouchableOpacity>
           ) : null}
           {(item.evidence_images?.length || item.return_proofs?.length) ? (
             <TouchableOpacity style={styles.outlineButton} onPress={() => openEvidence(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="images-outline" size={18} color="#1E3A8A" />
-              <Text style={styles.outlineButtonText}>عرض الأدلة والإثباتات</Text>
+              <Text style={styles.outlineButtonText}>{t('merchant.viewEvidence')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -721,13 +721,13 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalTitle}>توصية التاجر</Text>
+            <Text style={styles.modalTitle}>{t('merchant.merchantRecommendation')}</Text>
             <Text style={styles.modalHint}>هذه توصية للإدارة وليست القرار النهائي. اذكر نتيجة مراجعة الطلب بوضوح.</Text>
             {renderEvidencePanel()}
             <View style={[styles.choiceRow, isCompact && styles.choiceRowCompact]}>
               {([
-                { value: 'approve' as Recommendation, label: 'أوصي بالموافقة', icon: 'checkmark-circle-outline' },
-                { value: 'reject' as Recommendation, label: 'أوصي بالرفض', icon: 'close-circle-outline' },
+                { value: 'approve' as Recommendation, label: t('merchant.recommendApprove'), icon: 'checkmark-circle-outline' },
+                { value: 'reject' as Recommendation, label: t('merchant.recommendReject'), icon: 'close-circle-outline' },
               ]).map((choice) => (
                 <TouchableOpacity
                   key={choice.value}
@@ -757,7 +757,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 <Text style={styles.secondaryButtonText}>{t('customer.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitButton, (!response.trim() || actionId) && styles.disabled]} onPress={submitResponse} disabled={!response.trim() || Boolean(actionId)}>
-                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>إرسال التوصية</Text>}
+                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('merchant.sendRecommendation')}</Text>}
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -791,7 +791,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 <Text style={styles.secondaryButtonText}>تراجع</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitButton, actionId && styles.disabled]} onPress={submitReceipt} disabled={Boolean(actionId)}>
-                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>تأكيد الاستلام</Text>}
+                {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('merchant.confirmReceipt')}</Text>}
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -822,7 +822,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               <Ionicons name="close" size={23} color="#111827" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>فحص المرتجع</Text>
+              <Text style={styles.title}>{t('merchant.inspectReturn')}</Text>
               <Text style={styles.subtitle}>حدد الكمية المقبولة ووجهتها لكل عنصر. لا يمكن تعديلها بعد إكمال الإدارة للاسترداد.</Text>
             </View>
           </View>
@@ -834,7 +834,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 <View key={item.id} style={styles.inspectionItem}>
                   <Text style={styles.inspectionItemName}>{itemName(item)}</Text>
                   <Text style={styles.itemMeta}>الكمية المعتمدة من الإدارة: {approved}</Text>
-                  <Text style={styles.fieldLabel}>الكمية المقبولة فعليًا</Text>
+                  <Text style={styles.fieldLabel}>{t('merchant.acceptedQuantity')}</Text>
                   <TextInput
                     style={styles.quantityInput}
                     value={draft?.acceptedQuantity ?? ''}
@@ -844,7 +844,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                     textAlign="right"
                     accessibilityLabel={`الكمية المقبولة من ${itemName(item)}`}
                   />
-                  <Text style={styles.fieldLabel}>التصرف بالكمية</Text>
+                  <Text style={styles.fieldLabel}>{t('merchant.quantityAction')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dispositions}>
                     {DISPOSITIONS.map((option) => (
                       <TouchableOpacity
