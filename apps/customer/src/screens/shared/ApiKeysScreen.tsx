@@ -33,6 +33,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 export default function ApiKeysScreen() {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(960);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,14 +45,14 @@ export default function ApiKeysScreen() {
 
   const load = useCallback(async () => {
     try { setKeys(await getMyApiKeys()); }
-    catch { Alert.alert('خطأ', 'فشل تحميل المفاتيح'); }
+    catch { Alert.alert('خطأ', t('shared.loadKeysFailed')); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { load(); }, []);
 
   const handleCreate = async () => {
-    const name = newName.trim() || 'مفتاحي';
+    const name = newName.trim() || t('shared.myKey');
     setCreating(true);
     try {
       const { key } = await createApiKey(name);
@@ -60,31 +61,31 @@ export default function ApiKeysScreen() {
       await load();
     } catch (e: any) {
       const msg = String(e?.message ?? '');
-      Alert.alert('خطأ', msg.includes('max 10') ? 'الحد الأقصى 10 مفاتيح نشطة. ألغِ مفتاحاً قديماً أولاً.' : 'فشل إنشاء المفتاح');
+      Alert.alert('خطأ', msg.includes('max 10') ? t('shared.maxKeys') : t('shared.createKeyFailed'));
     } finally { setCreating(false); }
   };
 
   const handleRevoke = (k: ApiKeyInfo) => {
-    Alert.alert('إلغاء المفتاح', `إلغاء "${k.name}"؟ أي تكامل يستخدمه سيتوقف فوراً.`, [
-      { text: 'تراجع', style: 'cancel' },
+    Alert.alert(t('shared.revokeKey'), `إلغاء "${k.name}"؟ أي تكامل يستخدمه سيتوقف فوراً.`, [
+      { text: t('merchant.undo'), style: 'cancel' },
       {
-        text: 'إلغاء المفتاح', style: 'destructive',
+        text: t('shared.revokeKey'), style: 'destructive',
         onPress: async () => {
           try { await revokeApiKey(k.id); await load(); }
-          catch { Alert.alert('خطأ', 'فشل إلغاء المفتاح'); }
+          catch { Alert.alert('خطأ', t('shared.revokeKeyFailed')); }
         },
       },
     ]);
   };
 
   const handleDelete = (k: ApiKeyInfo) => {
-    Alert.alert('حذف المفتاح', `حذف "${k.name}" نهائياً من السجل؟`, [
-      { text: 'تراجع', style: 'cancel' },
+    Alert.alert(t('shared.deleteKey'), `حذف "${k.name}" نهائياً من السجل؟`, [
+      { text: t('merchant.undo'), style: 'cancel' },
       {
-        text: 'حذف', style: 'destructive',
+        text: t('shared.delete'), style: 'destructive',
         onPress: async () => {
           try { await deleteApiKey(k.id); await load(); }
-          catch { Alert.alert('خطأ', 'فشل حذف المفتاح'); }
+          catch { Alert.alert('خطأ', t('shared.deleteKeyFailed')); }
         },
       },
     ]);
@@ -100,18 +101,18 @@ export default function ApiKeysScreen() {
           <Text style={s.keyName}>{item.name}</Text>
           <Text style={s.keyPrefix}>{item.key_prefix}</Text>
           <Text style={s.keyMeta}>
-            {item.is_active ? '🟢 نشط' : '🔴 ملغى'} · آخر استخدام: {fmtDate(item.last_used_at)}
+            {item.is_active ? `🟢 ${t('shared.active')}` : `🔴 ${t('shared.revoked')}`} · {t('shared.lastUsed')}: {fmtDate(item.last_used_at)}
           </Text>
         </View>
       </View>
       <View style={s.actionsRow}>
         {item.is_active && (
           <TouchableOpacity style={[s.smallBtn, { backgroundColor: '#FFFBEB' }]} onPress={() => handleRevoke(item)}>
-            <Text style={[s.smallBtnText, { color: UI.warning }]}>إلغاء</Text>
+            <Text style={[s.smallBtnText, { color: UI.warning }]}>{t('shared.revoke')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity style={[s.smallBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => handleDelete(item)}>
-          <Text style={[s.smallBtnText, { color: UI.danger }]}>حذف</Text>
+          <Text style={[s.smallBtnText, { color: UI.danger }]}>{t('shared.delete')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -120,9 +121,9 @@ export default function ApiKeysScreen() {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: layout.gutter }, layout.desktop && s.headerDesktop]}>
-        <Text style={s.headerTitle}>مفاتيح API</Text>
+        <Text style={s.headerTitle}>{t('shared.apiKeys')}</Text>
         <Text style={s.headerSub}>
-          اربط حسابك مع Claude أو أي نموذج ذكاء اصطناعي. المفتاح يمنح صلاحيات حسابك فقط — لا تشاركه مع أحد.
+          {t('shared.apiKeysDesc')}
         </Text>
       </View>
 
@@ -132,7 +133,7 @@ export default function ApiKeysScreen() {
           style={s.input}
           value={newName}
           onChangeText={setNewName}
-          placeholder="اسم المفتاح (مثل: تكامل كلود)"
+          placeholder={t('shared.keyName')}
           placeholderTextColor={UI.textMuted}
           textAlign="right"
         />
@@ -140,7 +141,7 @@ export default function ApiKeysScreen() {
           {creating ? <ActivityIndicator color="#fff" /> : (
             <>
               <Ionicons name="add-circle-outline" size={18} color="#fff" />
-              <Text style={s.createBtnText}>إنشاء مفتاح جديد</Text>
+              <Text style={s.createBtnText}>{t('shared.createKey')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -158,7 +159,7 @@ export default function ApiKeysScreen() {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="key-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد مفاتيح بعد — أنشئ أول مفتاح للربط مع الذكاء الاصطناعي</Text>
+              <Text style={s.emptyText}>{t('shared.noKeys')}</Text>
             </View>
           }
         />
@@ -169,9 +170,9 @@ export default function ApiKeysScreen() {
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, layout.compact && s.modalCardCompact]}>
             <Ionicons name="shield-checkmark" size={40} color={UI.success} style={{ alignSelf: 'center' }} />
-            <Text style={s.modalTitle}>تم إنشاء المفتاح ✓</Text>
+            <Text style={s.modalTitle}>{t('shared.keyCreated')} ✓</Text>
             <Text style={s.modalWarn}>
-              انسخه الآن واحفظه في مكان آمن — لن يظهر مرة أخرى أبداً.
+              {t('shared.keyCreatedHint')}
             </Text>
             <ScrollView style={s.keyBox} horizontal showsHorizontalScrollIndicator={false}>
               <Text style={s.keyText} selectable>{freshKey}</Text>
@@ -181,14 +182,14 @@ export default function ApiKeysScreen() {
               style={s.copyBtn}
               onPress={async () => {
                 const ok = await copyText(freshKey!);
-                if (ok && Platform.OS === 'web') Alert.alert('تم', 'نُسخ المفتاح إلى الحافظة');
+                if (ok && Platform.OS === 'web') Alert.alert(t('shared.copied'), t('shared.copiedText'));
               }}
             >
               <Ionicons name="copy-outline" size={18} color="#fff" />
-              <Text style={s.copyBtnText}>{Platform.OS === 'web' ? 'نسخ المفتاح' : 'مشاركة / نسخ'}</Text>
+              <Text style={s.copyBtnText}>{Platform.OS === 'web' ? t('shared.copyKey') : t('shared.shareCopy')}</Text>
             </TouchableOpacity>
 
-            <Text style={s.usageTitle}>طريقة الاستخدام مع أي AI:</Text>
+            <Text style={s.usageTitle}>{t('shared.usageWithAI')}</Text>
             <ScrollView style={s.usageBox} horizontal showsHorizontalScrollIndicator={false}>
               <Text style={s.usageCode} selectable>
                 {`GET ${API_V1_URL}/me\nx-api-key: ${freshKey}`}
@@ -196,7 +197,7 @@ export default function ApiKeysScreen() {
             </ScrollView>
 
             <TouchableOpacity style={s.doneBtn} onPress={() => setFreshKey(null)}>
-              <Text style={s.doneBtnText}>حفظته، إغلاق</Text>
+              <Text style={s.doneBtnText}>{t('shared.savedClose')}</Text>
             </TouchableOpacity>
           </View>
         </View>
