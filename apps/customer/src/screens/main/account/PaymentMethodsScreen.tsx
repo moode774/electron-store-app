@@ -8,14 +8,14 @@ import { useCustomerLayout } from '../../../components/customer/CustomerResponsi
 import { useTranslation } from '../../../i18n';
 
 const METHODS = [
-  { id: 'cod', title: 'الدفع عند الاستلام', sub: 'ادفع نقداً عند وصول طلبك', icon: 'cash-outline', color: '#059669', available: true },
-  { id: 'jawali', title: 'جوالي', sub: 'محفظة إلكترونية', icon: 'phone-portrait-outline', color: '#D97706', available: false },
-  { id: 'kuraimi', title: 'الكريمي جوال', sub: 'تحويل بنكي مباشر', icon: 'business-outline', color: '#7C3AED', available: false },
-  { id: 'card', title: 'بطاقة ائتمانية', sub: 'فيزا / ماستركارد', icon: 'card-outline', color: COLORS.primary, available: false },
+  { id: 'cod', titleKey: 'customer.codMethodTitle', subKey: 'customer.codMethodSub', icon: 'cash-outline', color: '#059669', available: true },
+  { id: 'jawali', titleKey: 'customer.jawaliTitle', subKey: 'customer.walletElectronic', icon: 'phone-portrait-outline', color: '#D97706', available: false },
+  { id: 'kuraimi', titleKey: 'customer.kuraimiMobile', subKey: 'customer.bankTransfer', icon: 'business-outline', color: '#7C3AED', available: false },
+  { id: 'card', titleKey: 'customer.creditCard', subKey: 'customer.visaMastercard', icon: 'card-outline', color: COLORS.primary, available: false },
 ];
 
-export default function PaymentMethodsScreen({
-  const { t } = useTranslation(); navigation }: any) {
+export default function PaymentMethodsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(820);
   const user = useAuthStore((s) => s.user);
   const [saved, setSaved] = useState<PaymentMethod[]>([]);
@@ -29,7 +29,7 @@ export default function PaymentMethodsScreen({
     try {
       setSaved(await getPaymentMethods(user.id));
     } catch (error: any) {
-      setLoadError(error?.message ?? 'تعذّر تحميل وسائل الدفع المحفوظة.');
+      setLoadError(error?.message ?? t('customer.loadPaymentMethodsFailed'));
     } finally {
       setLoading(false);
     }
@@ -57,8 +57,8 @@ export default function PaymentMethodsScreen({
               <Ionicons name={m.icon as any} size={24} color={m.color} />
             </View>
             <View style={styles.info}>
-              <Text style={styles.title}>{m.title}</Text>
-              <Text style={styles.sub}>{m.sub}</Text>
+              <Text style={styles.title}>{t(m.titleKey)}</Text>
+              <Text style={styles.sub}>{t(m.subKey)}</Text>
             </View>
             {m.available ? (
               <View style={styles.activeBadge}>
@@ -111,7 +111,7 @@ export default function PaymentMethodsScreen({
         <View style={styles.noteBox}>
           <Ionicons name="information-circle-outline" size={18} color={COLORS.info} />
           <Text style={styles.noteText}>
-            حالياً الدفع متاح نقداً عند الاستلام فقط. سيتم تفعيل المحافظ الإلكترونية والبطاقات قريباً.
+            {t('customer.paymentOnlyCod')}
           </Text>
         </View>
       </ScrollView>
