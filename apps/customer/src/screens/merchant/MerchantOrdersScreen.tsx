@@ -59,7 +59,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
       await reloadSilently();
     } catch (transitionError) {
       await reloadSilently();
-      Alert.alert('لم تتغير حالة الطلب', getOrderTransitionErrorMessage(transitionError));
+      Alert.alert(t('merchant.orderStatusUnchanged'), getOrderTransitionErrorMessage(transitionError));
     } finally {
       setUpdatingId(null);
     }
@@ -80,12 +80,12 @@ export default function MerchantOrdersScreen({ navigation }: any) {
         activeOpacity={0.85}
         onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
         accessibilityRole="button"
-        accessibilityLabel={`فتح تفاصيل الطلب ${item.order_number}`}
+        accessibilityLabel={`${t('merchant.openOrderA11y')} ${item.order_number}`}
       >
         <View style={styles.top}>
           <View style={styles.topCopy}>
             <Text style={styles.number}>#{item.order_number}</Text>
-            <Text style={[styles.time, late && styles.timeLate]}>{late ? `متأخر · ${timeAgo(item.created_at)}` : timeAgo(item.created_at)}</Text>
+            <Text style={[styles.time, late && styles.timeLate]}>{late ? `${t('merchant.late')} · ${timeAgo(item.created_at)}` : timeAgo(item.created_at)}</Text>
           </View>
           <StatusPill label={info.label} color={info.color} background={info.background} icon={info.icon} />
         </View>
@@ -98,7 +98,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
           {items ? (
             <View style={styles.metaItem}>
               <Ionicons name="cube-outline" size={14} color={COLORS.inkTertiary} />
-              <Text style={styles.metaText}>{items} منتج</Text>
+              <Text style={styles.metaText}>{items} {t('merchant.productsCountSuffix')}</Text>
             </View>
           ) : null}
           {item.addresses?.city ? (
@@ -124,7 +124,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
 
         <View style={styles.footer}>
           <View style={styles.totalWrap}>
-            <Text style={styles.total}>{formatMoney(item.total_amount)} <Text style={styles.currency}>ر.ي</Text></Text>
+            <Text style={styles.total}>{formatMoney(item.total_amount)} <Text style={styles.currency}>{t('merchant.currencyYER')}</Text></Text>
             <Text style={styles.payment}>{paymentLabel(item.payment_method)}</Text>
           </View>
           {action ? (
@@ -133,7 +133,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
               onPress={() => void updateStatus(item.id, action.next)}
               disabled={!!updatingId}
               accessibilityRole="button"
-              accessibilityLabel={`${action.label} للطلب ${item.order_number}`}
+              accessibilityLabel={`${action.label} ${t('customer.order')} ${item.order_number}`}
               accessibilityState={{ disabled: !!updatingId, busy }}
             >
               {busy ? <ActivityIndicator size="small" color={COLORS.surface} /> : <Ionicons name={action.icon} size={16} color={COLORS.surface} />}
@@ -152,7 +152,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
         title={t('common.orders')}
-        subtitle={loading ? t('merchant.loading') : `${orders.length} طلب نشط${count('pending') ? ` · ${count('pending')} بانتظار قبولك` : ''}`}
+        subtitle={loading ? t('merchant.loading') : `${orders.length} ${t('merchant.activeOrdersCount')}${count('pending') ? ` · ${count('pending')} ${t('merchant.waitingYourAcceptance')}` : ''}`}
       />
 
       {loading ? (
