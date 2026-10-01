@@ -93,7 +93,7 @@ export default function AddAddressScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.addAddress')}</Text>
@@ -157,14 +157,14 @@ export default function AddAddressScreen({ navigation }: any) {
           </View>
 
           <Input
-            label=t('customer.street')
+            label={t('customer.street')}
             placeholder="مثال: شارع حدة، خلف المول"
             value={street}
             onChangeText={setStreet}
             containerStyle={{ marginBottom: 16 }}
           />
           <Input
-            label=t('customer.landmark')
+            label={t('customer.landmark')}
             placeholder="مسجد، مدرسة، مستشفى..."
             value={landmark}
             onChangeText={setLandmark}
