@@ -17,13 +17,13 @@ import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useTranslation } from '../../../i18n';
 
-const ALL_CATEGORY = { id: '', name: 'الكل' };
+const ALL_CATEGORY_ID = '';
 const SORTS = [
-  { key: 'default', label: t('merchant.mostRelevant') },
-  { key: 'priceAsc', label: t('merchant.priceLow') },
-  { key: 'priceDesc', label: t('merchant.priceHigh') },
-  { key: 'rating', label: t('merchant.topRated') },
-];
+  { key: 'default', labelKey: 'merchant.mostRelevant' },
+  { key: 'priceAsc', labelKey: 'merchant.priceLow' },
+  { key: 'priceDesc', labelKey: 'merchant.priceHigh' },
+  { key: 'rating', labelKey: 'merchant.topRated' },
+] as const;
 
 export default function SearchScreen({ navigation, route }: any): React.JSX.Element {
   const { t } = useTranslation();
@@ -34,7 +34,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
   const cardWidth = columns === 1 ? layout.usableWidth : (layout.usableWidth - gap * (columns - 1)) / columns;
   const [query, setQuery] = useState<string>(route?.params?.initialQuery ?? '');
   const [category, setCategory] = useState('');
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([ALL_CATEGORY]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([{ id: ALL_CATEGORY_ID, name: t('merchant.all') }]);
   const [sort, setSort] = useState('default');
   const [showSort, setShowSort] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -46,7 +46,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
   useEffect(() => {
     getCategories()
       .then((items: Category[]) => setCategories([
-        ALL_CATEGORY,
+        { id: ALL_CATEGORY_ID, name: t('merchant.all') },
         ...items.map((item) => ({ id: item.id, name: item.name_ar ?? item.name })),
       ]))
       .catch(() => setCategoriesError('تعذّر تحميل التصنيفات؛ البحث العام ما زال متاحاً.'));
@@ -84,7 +84,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               onPress={() => navigation.goBack()}
               activeOpacity={0.72}
               accessibilityRole="button"
-              accessibilityLabel=t('merchant.back')
+              accessibilityLabel={t('merchant.back')}
             >
               <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
             </TouchableOpacity>
@@ -101,7 +101,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
             onClear={() => setQuery('')}
             showFilter
             onFilterPress={() => setShowSort((current) => !current)}
-            placeholder=t('merchant.searchAnything')
+            placeholder={t('merchant.searchAnything')}
             returnKeyType="search"
             autoFocus
           />
@@ -143,7 +143,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
                   >
-                    <Text style={[styles.sortItemText, selected && styles.sortItemTextSelected]}>{item.label}</Text>
+                    <Text style={[styles.sortItemText, selected && styles.sortItemTextSelected]}>{t(item.labelKey)}</Text>
                     {selected ? <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} /> : <View style={styles.sortCircle} />}
                   </TouchableOpacity>
                 );
