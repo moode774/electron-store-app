@@ -132,8 +132,10 @@ const Tab = createBottomTabNavigator<MerchantTabParamList>();
 
 import { getFocusedRouteNameFromRoute, useNavigation, useNavigationState } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
+import { useTranslation } from '../i18n';
 
 function DesktopSidebar() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const routeName = useNavigationState((state) => {
     if (!state) return 'MerchantDashboard';
@@ -146,13 +148,13 @@ function DesktopSidebar() {
   const signOut = useAuthStore((s) => s.signOut);
 
   const TABS = [
-    { name: 'MerchantDashboard',    label: 'الرئيسية',   icon: 'grid-outline',          activeIcon: 'grid'           },
-    { name: 'MerchantOrders',       label: 'الطلبات',   icon: 'receipt-outline',       activeIcon: 'receipt'        },
-    { name: 'MerchantProducts',     label: 'المنتجات',  icon: 'cube-outline',          activeIcon: 'cube'           },
+    { name: 'MerchantDashboard',    label: t('common.home'),   icon: 'grid-outline',          activeIcon: 'grid'           },
+    { name: 'MerchantOrders',       label: t('common.orders'),   icon: 'receipt-outline',       activeIcon: 'receipt'        },
+    { name: 'MerchantProducts',     label: t('common.products'),  icon: 'cube-outline',          activeIcon: 'cube'           },
     { name: 'MerchantHistory',      label: 'السجل',    icon: 'time-outline',          activeIcon: 'time'           },
-    { name: 'MerchantAccount',      label: 'حسابي',  icon: 'person-outline', activeIcon: 'person'  },
-    { name: 'MerchantWallet',       label: 'المحفظة',   icon: 'wallet-outline',        activeIcon: 'wallet'         },
-    { name: 'MerchantSupport',      label: 'الدعم',     icon: 'headset-outline',       activeIcon: 'headset'        },
+    { name: 'MerchantAccount',      label: t('common.account'),  icon: 'person-outline', activeIcon: 'person'  },
+    { name: 'MerchantWallet',       label: t('merchant.wallet'),   icon: 'wallet-outline',        activeIcon: 'wallet'         },
+    { name: 'MerchantSupport',      label: t('common.support'),     icon: 'headset-outline',       activeIcon: 'headset'        },
     { name: 'MerchantStoreSettings',label: 'المعلومات', icon: 'storefront-outline',    activeIcon: 'storefront'     },
   ];
 
@@ -182,7 +184,7 @@ function DesktopSidebar() {
       </View>
 
       <View style={sidebarStyles.footer}>
-        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('common.signOut')}>
           <Ionicons name="log-out-outline" size={22} color={COLORS.textMuted} />
         </TouchableOpacity>
       </View>
@@ -243,6 +245,7 @@ const sidebarStyles = StyleSheet.create({
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function MerchantTabNavigator() {
+  const { t, isRTL } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isDesktop = width >= BREAKPOINTS.desktop;
@@ -287,14 +290,14 @@ export default function MerchantTabNavigator() {
     {
       name: 'MerchantDashboard',
       component: MerchantDashboardScreen,
-      options: { tabBarLabel: 'الرئيسية', tabBarIcon: tabIcon('home-outline', 'home') },
+      options: { tabBarLabel: t('common.home'), tabBarIcon: tabIcon('home-outline', 'home') },
     },
     {
       name: 'MerchantProducts',
       component: ProductsNavigator,
       // Screens with their own sticky action bar hide the tab bar.
       options: ({ route }: any) => ({
-        tabBarLabel: 'المنتجات',
+        tabBarLabel: t('common.products'),
         tabBarAccessibilityLabel: 'منتجات المتجر',
         tabBarIcon: tabIcon('cube-outline', 'cube'),
         tabBarStyle: getFocusedRouteNameFromRoute(route) === 'AddProduct' ? { display: 'none' } : barStyle,
@@ -304,7 +307,7 @@ export default function MerchantTabNavigator() {
       name: 'MerchantOrders',
       component: OrdersNavigator,
       options: ({ route }: any) => ({
-        tabBarLabel: 'الطلبات',
+        tabBarLabel: t('common.orders'),
         tabBarAccessibilityLabel: 'الطلبات النشطة',
         tabBarIcon: ({ focused }: { focused: boolean }) => (
           <View style={[tabStyles.centerAction, !focused && tabStyles.centerActionIdle]}>
