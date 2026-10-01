@@ -11,6 +11,7 @@ import {
   getSystemSettings, updateSystemSetting 
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -26,6 +27,7 @@ const UI = {
 };
 
 export default function AdminSettingsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const pagePadding = compact ? 12 : 24;
@@ -50,7 +52,7 @@ export default function AdminSettingsScreen({ navigation }: any) {
       Object.keys(data).forEach(k => s[k] = String(data[k]));
       setSettings(s);
     } catch {
-      Alert.alert('خطأ', 'فشل تحميل الإعدادات من قاعدة البيانات');
+      Alert.alert(t('adminUi.error'), t('adminUi.settingsLoadFailed'));
     } finally {
       setSettingsLoading(false);
     }
@@ -61,7 +63,7 @@ export default function AdminSettingsScreen({ navigation }: any) {
       const data = await getAllServiceAreas();
       setAreas(data);
     } catch {
-      Alert.alert('خطأ', 'فشل تحميل مناطق الخدمة');
+      Alert.alert(t('adminUi.error'), t('adminUi.areasLoadFailed'));
     } finally {
       setAreasLoading(false);
     }
@@ -76,9 +78,9 @@ export default function AdminSettingsScreen({ navigation }: any) {
     setSavingKey(key);
     try {
       await updateSystemSetting(key, settings[key]);
-      Alert.alert('تم', 'تم حفظ الإعداد بنجاح');
+      Alert.alert(t('adminUi.done'), t('adminUi.settingSaved'));
     } catch {
-      Alert.alert('خطأ', 'فشل حفظ الإعداد. تأكد من إنشاء جدول system_settings');
+      Alert.alert(t('adminUi.error'), t('adminUi.settingSaveFailed'));
     } finally {
       setSavingKey(null);
     }
@@ -89,17 +91,17 @@ export default function AdminSettingsScreen({ navigation }: any) {
       const val = !area[field];
       await updateServiceArea(area.id, { [field]: val });
       loadAreas();
-    } catch { Alert.alert('خطأ', 'فشل تحديث المنطقة'); }
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.areaUpdateFailed')); }
   };
 
   const handleAddArea = async () => {
-    if (!newCity.trim()) { Alert.alert('تنبيه', 'أدخل اسم المدينة'); return; }
+    if (!newCity.trim()) { Alert.alert(t('adminUi.alert'), t('adminUi.cityRequired')); return; }
     setSavingArea(true);
     try {
       await createServiceArea({ city: newCity.trim(), delivery_available: true });
       setNewCity('');
       loadAreas();
-    } catch { Alert.alert('خطأ', 'فشل إضافة المنطقة'); }
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.areaAddFailed')); }
     finally { setSavingArea(false); }
   };
 
@@ -123,7 +125,7 @@ export default function AdminSettingsScreen({ navigation }: any) {
           onPress={() => handleUpdateSetting(key)}
           disabled={savingKey === key}
         >
-          {savingKey === key ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={s.saveBtnText}>حفظ</Text>}
+          {savingKey === key ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={s.saveBtnText}>{t('adminUi.save')}</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -132,15 +134,15 @@ export default function AdminSettingsScreen({ navigation }: any) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>إعدادات النظام</Text>
+        <Text style={s.headerTitle}>{t('adminUi.systemSettings')}</Text>
       </View>
 
       <View style={[s.tabs, { width: contentWidth }]}>
         <TouchableOpacity style={[s.tab, activeTab === 'system' && s.tabActive]} onPress={() => setActiveTab('system')}>
-          <Text style={[s.tabText, activeTab === 'system' && s.tabTextActive]}>الإعدادات العامة</Text>
+          <Text style={[s.tabText, activeTab === 'system' && s.tabTextActive]}>{t('adminUi.generalSettings')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.tab, activeTab === 'areas' && s.tabActive]} onPress={() => setActiveTab('areas')}>
-          <Text style={[s.tabText, activeTab === 'areas' && s.tabTextActive]}>مناطق الخدمة</Text>
+          <Text style={[s.tabText, activeTab === 'areas' && s.tabTextActive]}>{t('adminUi.serviceAreas')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -148,20 +150,20 @@ export default function AdminSettingsScreen({ navigation }: any) {
         {activeTab === 'system' ? (
           settingsLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
           <View style={s.card}>
-            <Text style={s.cardTitle}>التحكم بالإيرادات والرسوم</Text>
-            {renderSettingRow('app_commission_percent', 'نسبة عمولة التطبيق', 'pie-chart', '%')}
+            <Text style={s.cardTitle}>{t('adminUi.revenueFees')}</Text>
+            {renderSettingRow('app_commission_percent', t('adminUi.appCommission'), 'pie-chart', '%')}
             <View style={s.divider} />
-            {renderSettingRow('delivery_fee', 'رسوم التوصيل الافتراضية', 'bicycle', 'ر.ي')}
+            {renderSettingRow('delivery_fee', t('adminUi.defaultDeliveryFee'), 'bicycle', t('merchant.currencyYER'))}
             <View style={s.divider} />
-            {renderSettingRow('tax_percent', 'ضريبة القيمة المضافة', 'receipt', '%')}
+            {renderSettingRow('tax_percent', t('adminUi.vat'), 'receipt', '%')}
             <View style={s.divider} />
-            {renderSettingRow('min_order_amount', 'الحد الأدنى للطلب', 'cart', 'ر.ي')}
+            {renderSettingRow('min_order_amount', t('adminUi.minimumOrder'), 'cart', 'ر.ي')}
           </View>
         ) : (
           areasLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
           <View style={s.card}>
             <View style={[s.addAreaBox, compact && s.addAreaBoxCompact]}>
-              <TextInput style={s.areaInput} placeholder="اسم المدينة الجديدة" value={newCity} onChangeText={setNewCity} textAlign="right" />
+              <TextInput style={s.areaInput} placeholder={t('adminUi.newCity')} value={newCity} onChangeText={setNewCity} textAlign="right" />
               <TouchableOpacity style={s.addBtn} onPress={handleAddArea} disabled={savingArea}>
                 {savingArea ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="add" size={20} color="#FFF" />}
               </TouchableOpacity>
@@ -177,13 +179,13 @@ export default function AdminSettingsScreen({ navigation }: any) {
                     style={[s.toggleBtn, item.delivery_available ? s.toggleActive : s.toggleInactive]}
                     onPress={() => handleToggleArea(item, 'delivery_available')}
                   >
-                    <Text style={[s.toggleText, item.delivery_available && s.toggleTextActive]}>توصيل</Text>
+                    <Text style={[s.toggleText, item.delivery_available && s.toggleTextActive]}>{t('adminUi.delivery')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[s.toggleBtn, item.is_active ? s.toggleActive : s.toggleInactive]}
                     onPress={() => handleToggleArea(item, 'is_active')}
                   >
-                    <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{item.is_active ? 'نشطة' : 'موقوفة'}</Text>
+                    <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{item.is_active ? t('adminUi.areaActive') : t('adminUi.areaPaused')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
