@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 type Props = Omit<TextInputProps, 'style'> & {
   containerStyle?: StyleProp<ViewStyle>;
@@ -27,21 +28,23 @@ export function CustomerSearchField({
   showFilter = false,
   onFilterPress,
   value,
-  placeholder = 'ابحث عن منتجات أو متاجر',
+  placeholder,
   ...inputProps
 }: Props): React.JSX.Element {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t('customer.searchPlaceholder');
   const content = (
     <>
       <View style={styles.searchIcon}>
         <Ionicons name="search" size={19} color={COLORS.primary} />
       </View>
       {onPress ? (
-        <Text style={styles.placeholder} numberOfLines={1}>{placeholder}</Text>
+        <Text style={styles.placeholder} numberOfLines={1}>{resolvedPlaceholder}</Text>
       ) : (
         <TextInput
           {...inputProps}
           value={value}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           placeholderTextColor={COLORS.textMuted}
           style={styles.input}
         />
@@ -51,7 +54,7 @@ export function CustomerSearchField({
           style={styles.trailingButton}
           onPress={onClear}
           accessibilityRole="button"
-          accessibilityLabel="مسح البحث"
+          accessibilityLabel={t('customer.clearSearchAccessibility')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
@@ -62,7 +65,7 @@ export function CustomerSearchField({
           style={styles.filterButton}
           onPress={onFilterPress}
           accessibilityRole="button"
-          accessibilityLabel="خيارات الترتيب"
+          accessibilityLabel={t('customer.sortOptions')}
         >
           <Ionicons name="options-outline" size={18} color={COLORS.textPrimary} />
         </TouchableOpacity>
@@ -77,7 +80,7 @@ export function CustomerSearchField({
         onPress={onPress}
         activeOpacity={0.84}
         accessibilityRole="button"
-        accessibilityLabel={placeholder}
+        accessibilityLabel={resolvedPlaceholder}
       >
         {content}
       </TouchableOpacity>
