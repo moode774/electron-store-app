@@ -6,11 +6,13 @@ import { COLORS, SPACING, FONT_SIZE, RADIUS, SERVICE_AREAS, FONTS } from '@marke
 import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 export default function AddAddressScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(820);
   const user = useAuthStore((s) => s.user);
-  const [label, setLabel] = useState('المنزل');
+  const [label, setLabel] = useState(t('customer.homeLabel'));
   const [selectedArea, setSelectedArea] = useState<string>(SERVICE_AREAS.SANAA);
   const [street, setStreet] = useState('');
   const [landmark, setLandmark] = useState('');
@@ -18,14 +20,14 @@ export default function AddAddressScreen({ navigation }: any) {
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const LABELS = ['المنزل', 'العمل', 'أخرى'];
+  const LABELS = [t('customer.homeLabel'), t('customer.workLabel'), t('customer.other')];
 
   const handleUseCurrentLocation = async () => {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('إذن الموقع', 'لم يتم السماح بالوصول إلى الموقع. فعّل إذن الموقع من إعدادات الجهاز.');
+        Alert.alert(t('customer.locationPermission'), t('customer.locationDenied'));
         return;
       }
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
@@ -55,22 +57,22 @@ export default function AddAddressScreen({ navigation }: any) {
       if (!street) {
         setStreet((prev) => prev || `موقعي الحالي (${current.latitude.toFixed(4)}, ${current.longitude.toFixed(4)})`);
       }
-      Alert.alert('تم تحديد موقعك 📍', 'تم جلب إحداثياتك وسيتم حفظها مع العنوان.');
+      Alert.alert(t('customer.locationFound'), t('customer.locationFoundText'));
     } catch {
-      Alert.alert('خطأ في تحديد الموقع', 'تعذّر جلب موقعك. تأكد من تفعيل GPS والسماح بالصلاحيات.');
+      Alert.alert(t('customer.locationError'), t('customer.locationErrorText'));
     } finally {
       setLocating(false);
     }
   };
 
   const handleSave = async () => {
-    if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
-    if (!street.trim()) { Alert.alert('تنبيه', 'الرجاء إدخال الشارع/الحي'); return; }
+    if (!user?.id) { Alert.alert('خطأ', t('customer.loginFirst')); return; }
+    if (!street.trim()) { Alert.alert('تنبيه', t('customer.enterStreet')); return; }
     setSaving(true);
     try {
       await createAddress({
         user_id: user.id,
-        label: label === 'المنزل' ? 'home' : label === 'العمل' ? 'work' : label,
+        label: label === t('customer.homeLabel') ? 'home' : label === t('customer.workLabel') ? 'work' : label,
         full_address: `${street.trim()}${landmark.trim() ? ' - ' + landmark.trim() : ''}`,
         city: selectedArea,
         latitude: coords?.latitude,
@@ -91,10 +93,10 @@ export default function AddAddressScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>إضافة عنوان</Text>
+          <Text style={styles.headerTitle}>{t('customer.addAddress')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -108,10 +110,10 @@ export default function AddAddressScreen({ navigation }: any) {
           <Text style={styles.mapText}>
             {coords
               ? `تم تحديد موقعك (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
-              : 'حدد موقعك لتعبئة العنوان تلقائياً'}
+              : t('customer.locationAutoHint')}
           </Text>
           <Button
-            title={locating ? 'جاري تحديد الموقع...' : coords ? 'إعادة تحديد الموقع' : 'تحديد الموقع الحالي'}
+            title={locating ? t('customer.locating') : coords ? t('customer.relocate') : t('customer.locateCurrent')}
             style={styles.locationButton}
             onPress={handleUseCurrentLocation}
             disabled={locating}
@@ -119,9 +121,9 @@ export default function AddAddressScreen({ navigation }: any) {
         </View>
 
         <Card style={styles.formCard} variant="elevated">
-          <Text style={styles.sectionTitle}>تفاصيل العنوان</Text>
+          <Text style={styles.sectionTitle}>{t('customer.addressDetails')}</Text>
           
-          <Text style={styles.inputLabel}>تسمية العنوان</Text>
+          <Text style={styles.inputLabel}>{t('customer.addressLabel')}</Text>
           <View style={styles.labelsRow}>
             {LABELS.map((lbl) => (
               <TouchableOpacity
@@ -136,7 +138,7 @@ export default function AddAddressScreen({ navigation }: any) {
             ))}
           </View>
 
-          <Text style={styles.inputLabel}>المنطقة / المدينة</Text>
+          <Text style={styles.inputLabel}>{t('customer.cityArea')}</Text>
           <View style={styles.areasRow}>
             {Object.values(SERVICE_AREAS).map((area) => (
               <TouchableOpacity
@@ -155,14 +157,14 @@ export default function AddAddressScreen({ navigation }: any) {
           </View>
 
           <Input
-            label="الشارع / الحي"
+            label=t('customer.street')
             placeholder="مثال: شارع حدة، خلف المول"
             value={street}
             onChangeText={setStreet}
             containerStyle={{ marginBottom: 16 }}
           />
           <Input
-            label="أقرب معلم بارز"
+            label=t('customer.landmark')
             placeholder="مسجد، مدرسة، مستشفى..."
             value={landmark}
             onChangeText={setLandmark}
@@ -177,7 +179,7 @@ export default function AddAddressScreen({ navigation }: any) {
       <View style={styles.bottomBar}>
         <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
           <Button
-            title={saving ? 'جاري الحفظ...' : 'حفظ العنوان'}
+            title={saving ? t('customer.saving') : t('customer.saveAddress')}
             onPress={handleSave}
             disabled={!street || saving}
           />
