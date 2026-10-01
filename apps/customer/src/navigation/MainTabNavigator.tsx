@@ -39,6 +39,7 @@ import EditProfileScreen from '../screens/main/account/EditProfileScreen';
 import PaymentMethodsScreen from '../screens/main/account/PaymentMethodsScreen';
 import LegalScreen from '../screens/main/account/LegalScreen';
 import { CustomerTabBar } from '../components/customer/CustomerTabBar';
+import { useTranslation } from '../i18n';
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 function HomeNavigator() {
@@ -113,6 +114,7 @@ function AccountNavigator() {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -125,27 +127,27 @@ export default function MainTabNavigator() {
       <Tab.Screen
         name="Cart"
         component={CartNavigator}
-        options={{ tabBarLabel: 'السلة' }}
+        options={{ tabBarLabel: t('common.cart') }}
       />
       <Tab.Screen
         name="Orders"
         component={OrdersNavigator}
-        options={{ tabBarLabel: 'طلباتي' }}
+        options={{ tabBarLabel: t('common.myOrders') }}
       />
       <Tab.Screen
         name="Home"
         component={HomeNavigator}
-        options={{ tabBarLabel: 'الرئيسية' }}
+        options={{ tabBarLabel: t('common.home') }}
       />
       <Tab.Screen
         name="Categories"
         component={CategoriesNavigator}
-        options={{ tabBarLabel: 'المتاجر' }}
+        options={{ tabBarLabel: t('common.stores') }}
       />
       <Tab.Screen
         name="More"
         component={AccountNavigator}
-        options={{ tabBarLabel: 'حسابي' }}
+        options={{ tabBarLabel: t('common.account') }}
       />
     </Tab.Navigator>
   );
