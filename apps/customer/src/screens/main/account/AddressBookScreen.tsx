@@ -104,7 +104,7 @@ export default function AddressBookScreen({
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.myAddresses')}</Text>
@@ -130,7 +130,7 @@ export default function AddressBookScreen({
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>⚠️</Text>
               <Text style={styles.emptyText}>{loadError}</Text>
-              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel=t('common.retry')>
+              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel={t('common.retry')}>
                 <Text style={styles.retryText}>{t('common.retry')}</Text>
               </TouchableOpacity>
             </View>
@@ -147,7 +147,7 @@ export default function AddressBookScreen({
       <View style={styles.bottomBar}>
         <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
           <Button
-            title=t('customer.addNewAddress')
+            title={t('customer.addNewAddress')}
             onPress={() => navigation.navigate('AddAddress')}
           />
         </View>
