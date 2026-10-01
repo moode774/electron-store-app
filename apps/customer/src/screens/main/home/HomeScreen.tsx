@@ -263,7 +263,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 activeOpacity={0.8}
                 onPress={() => openTab('More', 'AddressBook')}
                 accessibilityRole="button"
-                accessibilityLabel=t('customer.changeDeliveryAddress')
+                accessibilityLabel={t('customer.changeDeliveryAddress')}
               >
                 <Ionicons name="location" size={17} color="#172554" />
                 <Text style={styles.locationValueText}>
@@ -278,7 +278,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               activeOpacity={0.8}
               onPress={() => openTab('More', 'Notifications')}
               accessibilityRole="button"
-              accessibilityLabel=t('customer.notifications')
+              accessibilityLabel={t('customer.notifications')}
             >
               <Ionicons name="notifications" size={20} color="#172554" />
               {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
@@ -287,7 +287,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           <CustomerSearchField
             onPress={() => navigation.navigate('Search')}
-            placeholder=t('customer.searchPlaceholder')
+            placeholder={t('customer.searchPlaceholder')}
             showFilter
             onFilterPress={() => navigation.navigate('Search')}
           />
@@ -361,8 +361,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           </View>
 
           <CustomerSectionHeader
-            title=t('customer.categories')
-            actionLabel=t('customer.viewAll')
+            title={t('customer.categories')}
+            actionLabel={t('customer.viewAll')}
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
 
@@ -403,8 +403,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           </ScrollView>
 
           <CustomerSectionHeader
-            title=t('common.stores')
-            actionLabel=t('customer.viewAll')
+            title={t('common.stores')}
+            actionLabel={t('customer.viewAll')}
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
 
@@ -459,8 +459,8 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           <CustomerSectionHeader
             eyebrow="مختارة من المتاجر المتاحة"
-            title=t('common.products')
-            actionLabel=t('customer.explore')
+            title={t('common.products')}
+            actionLabel={t('customer.explore')}
             onActionPress={() => navigation.navigate('Search')}
           />
 
