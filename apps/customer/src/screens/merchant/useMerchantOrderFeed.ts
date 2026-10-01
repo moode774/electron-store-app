@@ -6,6 +6,7 @@ import {
   OrderSummary,
   supabase,
 } from '@marketplace/shared-hooks';
+import { translate } from '../../i18n';
 
 type MerchantProfile = NonNullable<Awaited<ReturnType<typeof getMerchantProfile>>>;
 type LoadMode = 'initial' | 'refresh' | 'silent';
@@ -32,7 +33,7 @@ export function useMerchantOrderFeed(userId: string | undefined, channelKey: str
       if (activeRef.current) {
         setOrders([]);
         setMerchantProfile(null);
-        setError('تعذر تحديد حساب التاجر.');
+        setError(translate('merchant.merchantAccountDetectFailed'));
         setLoading(false);
         setRefreshing(false);
       }
@@ -59,8 +60,8 @@ export function useMerchantOrderFeed(userId: string | undefined, channelKey: str
       if (activeRef.current && requestId === requestRef.current) {
         const message = loadError instanceof Error ? loadError.message : '';
         setError(message === 'MERCHANT_PROFILE_NOT_FOUND'
-          ? 'لم يتم العثور على ملف المتجر المرتبط بهذا الحساب.'
-          : 'تعذر تحميل الطلبات. تحقق من الاتصال ثم أعد المحاولة.');
+          ? translate('merchant.merchantProfileMissingOrders')
+          : translate('merchant.ordersLoadFailed'));
       }
       return null;
     } finally {
@@ -95,7 +96,7 @@ export function useMerchantOrderFeed(userId: string | undefined, channelKey: str
           return;
         }
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          setRealtimeError('تعذر الاتصال بالتحديث اللحظي؛ يتم تحديث الطلبات دوريًا كل 20 ثانية.');
+          setRealtimeError(translate('merchant.realtimeFallback'));
           if (channel === nextChannel) {
             channel = null;
             void supabase.removeChannel(nextChannel);
