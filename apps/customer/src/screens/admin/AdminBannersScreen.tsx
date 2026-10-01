@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { getAppBanners, upsertAppBanner, deleteAppBanner, AppBanner } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -22,6 +23,7 @@ const UI = {
 };
 
 export default function AdminBannersScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -42,7 +44,7 @@ export default function AdminBannersScreen({ navigation }: any) {
       const data = await getAppBanners(true); // true = admin mode (gets all banners including inactive)
       setBanners(data);
     } catch {
-      Alert.alert('خطأ', 'فشل تحميل البنرات. تأكد من تشغيل ملف SQL لإنشاء الجدول.');
+      Alert.alert(t('adminUi.error'), t('adminUi.bannersLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -54,7 +56,7 @@ export default function AdminBannersScreen({ navigation }: any) {
 
   const handleAddBanner = async () => {
     if (!newTitle.trim() || !newImage.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال عنوان ورابط الصورة للبنر');
+      Alert.alert(t('adminUi.alert'), t('adminUi.bannerFieldsRequired'));
       return;
     }
     setSaving(true);
@@ -70,7 +72,7 @@ export default function AdminBannersScreen({ navigation }: any) {
       setNewImage('');
       setNewLink('');
       load();
-    } catch { Alert.alert('خطأ', 'فشل إضافة البنر'); }
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.bannerAddFailed')); }
     finally { setSaving(false); }
   };
 
@@ -78,17 +80,17 @@ export default function AdminBannersScreen({ navigation }: any) {
     try {
       await upsertAppBanner({ id: banner.id, is_active: !banner.is_active });
       load();
-    } catch { Alert.alert('خطأ', 'فشل تحديث الحالة'); }
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.bannerStatusFailed')); }
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('تأكيد', 'هل أنت متأكد من حذف هذا البنر؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      { text: 'حذف', style: 'destructive', onPress: async () => {
+    Alert.alert(t('adminUi.confirm'), t('adminUi.bannerDeleteConfirm'), [
+      { text: t('adminUi.cancel'), style: 'cancel' },
+      { text: t('adminUi.delete'), style: 'destructive', onPress: async () => {
         try {
           await deleteAppBanner(id);
           load();
-        } catch { Alert.alert('خطأ', 'فشل الحذف'); }
+        } catch { Alert.alert(t('adminUi.error'), t('adminUi.deleteFailed')); }
       }}
     ]);
   };
@@ -106,7 +108,7 @@ export default function AdminBannersScreen({ navigation }: any) {
             style={[s.toggleBtn, item.is_active ? s.toggleActive : s.toggleInactive]}
             onPress={() => handleToggleStatus(item)}
           >
-            <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{item.is_active ? 'نشط' : 'مخفي'}</Text>
+            <Text style={[s.toggleText, item.is_active && s.toggleTextActive]}>{item.is_active ? t('adminUi.active') : t('adminUi.hidden')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.delBtn} onPress={() => handleDelete(item.id)}>
             <Ionicons name="trash" size={18} color={UI.danger} />
@@ -123,7 +125,7 @@ export default function AdminBannersScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>إدارة البنرات والإعلانات</Text>
+          <Text style={s.headerTitle}>{t('adminUi.bannersTitle')}</Text>
         </View>
       </View>
 
@@ -137,17 +139,17 @@ export default function AdminBannersScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={s.addCard}>
-            <Text style={s.addTitle}>إضافة بنر جديد</Text>
-            <TextInput style={s.input} placeholder="عنوان الإعلان" value={newTitle} onChangeText={setNewTitle} textAlign="right" />
-            <TextInput style={s.input} placeholder="رابط الصورة (URL)" value={newImage} onChangeText={setNewImage} textAlign="right" />
-            <TextInput style={s.input} placeholder="رابط التوجيه عند الضغط (اختياري)" value={newLink} onChangeText={setNewLink} textAlign="right" />
+            <Text style={s.addTitle}>{t('adminUi.addBanner')}</Text>
+            <TextInput style={s.input} placeholder={t('adminUi.adTitle')} value={newTitle} onChangeText={setNewTitle} textAlign="right" />
+            <TextInput style={s.input} placeholder={t('adminUi.imageUrl')} value={newImage} onChangeText={setNewImage} textAlign="right" />
+            <TextInput style={s.input} placeholder={t('adminUi.targetUrl')} value={newLink} onChangeText={setNewLink} textAlign="right" />
             <TouchableOpacity style={s.saveBtn} onPress={handleAddBanner} disabled={saving}>
-              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={s.saveBtnText}>نشر البنر</Text>}
+              {saving ? <ActivityIndicator color="#FFF" /> : <Text style={s.saveBtnText}>{t('adminUi.publishBanner')}</Text>}
             </TouchableOpacity>
           </View>
         }
         renderItem={renderBanner}
-        ListEmptyComponent={!loading ? <Text style={s.emptyText}>لا توجد بنرات حالياً</Text> : <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} />}
+        ListEmptyComponent={!loading ? <Text style={s.emptyText}>{t('adminUi.noBanners')}</Text> : <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} />}
       />
     </KeyboardAvoidingView>
   );
