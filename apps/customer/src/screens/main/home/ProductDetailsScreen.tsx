@@ -135,11 +135,11 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         <View style={[styles.mediaPanel, layout.desktop && styles.mediaPanelDesktop]}>
         {/* Header Options */}
         <View style={[styles.header, layout.desktop && styles.headerDesktop]}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel=t('merchant.shareProduct')>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ر.ي`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel={t('merchant.shareProduct')}>
               <Ionicons name="share-social-outline" size={22} color="#111827" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={toggleWishlist} accessibilityRole="button" accessibilityLabel={wished ? 'إزالة المنتج من المفضلة' : 'إضافة المنتج إلى المفضلة'} accessibilityState={{ selected: wished }}>
@@ -261,7 +261,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             onPress={() => setQuantity(Math.max(1, quantity - 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel=t('merchant.decreaseQuantity')
+            accessibilityLabel={t('merchant.decreaseQuantity')}
             accessibilityState={{ disabled: quantity <= 1 }}
             disabled={quantity <= 1}
           >
@@ -273,7 +273,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
             onPress={() => setQuantity(Math.min(PRODUCT.stock > 0 ? PRODUCT.stock : 1, quantity + 1))}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel=t('merchant.increaseQuantity')
+            accessibilityLabel={t('merchant.increaseQuantity')}
             accessibilityState={{ disabled: quantity >= PRODUCT.stock }}
             disabled={quantity >= PRODUCT.stock}
           >
