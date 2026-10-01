@@ -88,7 +88,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
       setSubject(''); setMessage('');
       Alert.alert(t('merchant.ticketSent'), t('merchant.ticketSentText'));
       loadTickets();
-    } catch (e: any) { Alert.alert('خطأ', e?.message ?? t('merchant.sendFailed')); }
+    } catch (e: any) { Alert.alert(t('common.error'), e?.message ?? t('merchant.sendFailed')); }
     finally { setSending(false); }
   };
 
@@ -146,7 +146,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   {tickets.map((t, i) => {
                     const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
                     return (
-                      <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
+                      <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`${t('customer.openTicketA11y')} ${t.subject}`}>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.ticketSubject}>{t.subject}</Text>
                           <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
