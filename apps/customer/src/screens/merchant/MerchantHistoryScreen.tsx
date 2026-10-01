@@ -73,7 +73,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
       return (
         <View style={styles.day}>
           <Text style={styles.dayLabel}>{item.label}</Text>
-          {item.total ? <Text style={styles.dayTotal}>{formatMoney(item.total)} ر.ي مسلّمة</Text> : null}
+          {item.total ? <Text style={styles.dayTotal}>{formatMoney(item.total)} {t('merchant.currencyYER')} {t('merchant.deliveredSuffix')}</Text> : null}
         </View>
       );
     }
@@ -86,7 +86,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         activeOpacity={0.8}
         onPress={() => navigation.navigate('OrderDetails', { orderId: order.id })}
         accessibilityRole="button"
-        accessibilityLabel={`فتح تفاصيل الطلب ${order.order_number}`}
+        accessibilityLabel={`${t('merchant.openOrderA11y')} ${order.order_number}`}
       >
         <View style={[styles.icon, { backgroundColor: info.background }]}>
           <Ionicons name={info.icon as any} size={18} color={info.color} />
@@ -108,7 +108,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title={t('merchant.orderHistoryTitle')} subtitle={loading ? t('merchant.loading') : `${orders.length} طلب منتهٍ`} />
+      <ScreenHeader title={t('merchant.orderHistoryTitle')} subtitle={loading ? t('merchant.loading') : `${orders.length} ${t('merchant.finishedOrders')}`} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
@@ -125,7 +125,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
               {realtimeError || error ? <Banner text={(realtimeError ?? error) as string} tone="warning" actionLabel={t('merchant.refresh')} onAction={() => void refresh()} /> : null}
               <View style={styles.summary}>
                 <Text style={styles.summaryLabel}>{t('merchant.deliveredOrderValue')}</Text>
-                <Text style={styles.summaryValue}>{formatMoney(deliveredValue)} <Text style={styles.summaryCurrency}>ر.ي</Text></Text>
+                <Text style={styles.summaryValue}>{formatMoney(deliveredValue)} <Text style={styles.summaryCurrency}>{t('merchant.currencyYER')}</Text></Text>
                 <View style={styles.summaryStats}>
                   {[
                     { label: t('merchant.delivered'), value: count('delivered') },
@@ -150,9 +150,9 @@ export default function MerchantHistoryScreen({ navigation }: any) {
                       style={styles.searchInput}
                       value={query}
                       onChangeText={setQuery}
-                      placeholder="رقم الطلب أو اسم العميل"
+                      placeholder={t('merchant.historySearchPlaceholder')}
                       placeholderTextColor={COLORS.inkTertiary}
-                      accessibilityLabel="البحث في سجل الطلبات"
+                      accessibilityLabel={t('merchant.historySearchA11y')}
                     />
                   </View>
                   <Chips
@@ -172,8 +172,8 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           ListEmptyComponent={
             <EmptyState
               icon="time-outline"
-              title={orders.length ? 'لا توجد نتائج' : t('merchant.noHistory')}
-              text={orders.length ? 'جرّب بحثاً أو تصفية مختلفة.' : 'ستظهر هنا الطلبات بعد تسليمها أو إلغائها.'}
+              title={orders.length ? t('merchant.noResultsHistory') : t('merchant.noHistory')}
+              text={orders.length ? t('merchant.differentSearchFilter') : t('merchant.historyWillAppear')}
             />
           }
         />
