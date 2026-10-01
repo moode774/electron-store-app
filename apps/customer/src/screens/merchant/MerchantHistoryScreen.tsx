@@ -6,6 +6,7 @@ import { useAuthStore, OrderSummary } from '@marketplace/shared-hooks';
 import { useMerchantOrderFeed } from './useMerchantOrderFeed';
 import { getMerchantOrderStatusInfo, HISTORY_MERCHANT_ORDER_STATUSES } from './merchantOrderState';
 import { Banner, Chips, EmptyState, ScreenHeader, card, formatMoney, paymentLabel, ui, useIsDesktop } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 type Filter = 'all' | 'delivered' | 'cancelled' | 'issues';
 type Row = { kind: 'day'; key: string; label: string; total: number } | { kind: 'order'; key: string; order: OrderSummary; last: boolean };
@@ -18,12 +19,13 @@ const dayLabel = (iso: string) => {
   const d = new Date(iso);
   const today = new Date();
   const yesterday = new Date(Date.now() - 86400000);
-  if (d.toDateString() === today.toDateString()) return 'اليوم';
-  if (d.toDateString() === yesterday.toDateString()) return 'أمس';
+  if (d.toDateString() === today.toDateString()) return t('merchant.today');
+  if (d.toDateString() === yesterday.toDateString()) return t('merchant.yesterday');
   return d.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 export default function MerchantHistoryScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isDesktop = useIsDesktop();
   const [query, setQuery] = useState('');
@@ -92,7 +94,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
         <View style={styles.copy}>
           <Text style={styles.number}>#{order.order_number}</Text>
           <Text style={styles.meta} numberOfLines={1}>
-            {order.customer_profiles?.full_name || 'عميل'} · {new Date(order.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {paymentLabel(order.payment_method)}
+            {order.customer_profiles?.full_name || t('merchant.customer')} · {new Date(order.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {paymentLabel(order.payment_method)}
           </Text>
         </View>
         <View style={styles.end}>
@@ -106,7 +108,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title="سجل الطلبات" subtitle={loading ? 'جاري التحميل...' : `${orders.length} طلب منتهٍ`} />
+      <ScreenHeader title=t('merchant.orderHistoryTitle') subtitle={loading ? t('merchant.loading') : `${orders.length} طلب منتهٍ`} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
@@ -120,15 +122,15 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           onRefresh={() => void refresh()}
           ListHeaderComponent={
             <View style={styles.toolbar}>
-              {realtimeError || error ? <Banner text={(realtimeError ?? error) as string} tone="warning" actionLabel="تحديث" onAction={() => void refresh()} /> : null}
+              {realtimeError || error ? <Banner text={(realtimeError ?? error) as string} tone="warning" actionLabel=t('merchant.refresh') onAction={() => void refresh()} /> : null}
               <View style={styles.summary}>
-                <Text style={styles.summaryLabel}>قيمة الطلبات المسلّمة</Text>
+                <Text style={styles.summaryLabel}>{t('merchant.deliveredOrderValue')}</Text>
                 <Text style={styles.summaryValue}>{formatMoney(deliveredValue)} <Text style={styles.summaryCurrency}>ر.ي</Text></Text>
                 <View style={styles.summaryStats}>
                   {[
-                    { label: 'مسلّم', value: count('delivered') },
-                    { label: 'ملغي', value: count('cancelled') },
-                    { label: 'مرتجع / تعذّر', value: count('issues') },
+                    { label: t('merchant.delivered'), value: count('delivered') },
+                    { label: t('merchant.cancelled'), value: count('cancelled') },
+                    { label: t('merchant.issues'), value: count('issues') },
                   ].map((s, i) => (
                     <React.Fragment key={s.label}>
                       {i > 0 ? <View style={styles.summaryDivider} /> : null}
@@ -155,10 +157,10 @@ export default function MerchantHistoryScreen({ navigation }: any) {
                   </View>
                   <Chips
                     items={[
-                      { key: 'all', label: 'الكل', count: orders.length },
-                      { key: 'delivered', label: 'مسلّم', count: count('delivered') },
-                      { key: 'cancelled', label: 'ملغي', count: count('cancelled') },
-                      { key: 'issues', label: 'مرتجع / تعذّر', count: count('issues') },
+                      { key: 'all', label: t('merchant.all'), count: orders.length },
+                      { key: 'delivered', label: t('merchant.delivered'), count: count('delivered') },
+                      { key: 'cancelled', label: t('merchant.cancelled'), count: count('cancelled') },
+                      { key: 'issues', label: t('merchant.issues'), count: count('issues') },
                     ]}
                     value={filter}
                     onChange={setFilter}
@@ -170,7 +172,7 @@ export default function MerchantHistoryScreen({ navigation }: any) {
           ListEmptyComponent={
             <EmptyState
               icon="time-outline"
-              title={orders.length ? 'لا توجد نتائج' : 'لا يوجد سجل بعد'}
+              title={orders.length ? 'لا توجد نتائج' : t('merchant.noHistory')}
               text={orders.length ? 'جرّب بحثاً أو تصفية مختلفة.' : 'ستظهر هنا الطلبات بعد تسليمها أو إلغائها.'}
             />
           }
