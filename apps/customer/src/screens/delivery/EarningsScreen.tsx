@@ -119,7 +119,7 @@ export default function EarningsScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, layout.compact && styles.modalCardCompact]}>
             <Text style={styles.modalTitle}>{t('delivery.withdrawEarnings')}</Text>
-            <Text style={styles.modalSub}>{t('delivery.currentBalance')}: <Text style={{ fontWeight: '800', color: COLORS.ink }}>{balance} ر.ي</Text></Text>
+            <Text style={styles.modalSub}>{t('delivery.currentBalance')}: <Text style={{ fontWeight: '800', color: COLORS.ink }}>{balance} {t('merchant.currencyYER')}</Text></Text>
             <TextInput
               style={styles.modalInput}
               placeholder={t('delivery.amountToWithdraw')}
@@ -174,7 +174,7 @@ export default function EarningsScreen() {
             {/* Summary Card */}
             <View style={[styles.summaryCard, layout.compact && styles.summaryCardCompact]}>
               <Text style={styles.summaryLabel}>{t('delivery.currentBalanceLabel')}</Text>
-              <Text style={styles.summaryValue}>{balance} ر.ي</Text>
+              <Text style={styles.summaryValue}>{balance} {t('merchant.currencyYER')}</Text>
               <View style={[styles.summaryRow, layout.compact && styles.summaryRowCompact]}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryItemValue}>{recordedCount}</Text>
@@ -208,7 +208,7 @@ export default function EarningsScreen() {
                   return (
                     <View key={request.id} style={styles.withdrawalRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} ر.ي</Text>
+                        <Text style={styles.withdrawalAmount}>{request.amount.toLocaleString()} {t('merchant.currencyYER')}</Text>
                         <Text style={styles.withdrawalDate}>{new Date(request.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</Text>
                       </View>
                       <Text
@@ -244,7 +244,7 @@ export default function EarningsScreen() {
               <Text style={styles.route}>{t('delivery.completedDelivery')}</Text>
               <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</Text>
             </View>
-            <Text style={styles.fee}>+{item.total_earning} ر.ي</Text>
+            <Text style={styles.fee}>+{item.total_earning} {t('merchant.currencyYER')}</Text>
           </View>
         )}
       />
