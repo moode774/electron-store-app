@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { useTranslation } from '../i18n';
 
 interface CustomAlertProps {
   visible: boolean;
@@ -21,6 +22,7 @@ export default function CustomAlert({
   message,
   onClose,
 }: CustomAlertProps): React.JSX.Element {
+  const { t } = useTranslation();
   return (
     <Modal
       transparent
@@ -40,7 +42,7 @@ export default function CustomAlert({
                 onPress={onClose}
                 activeOpacity={0.8}
               >
-                <Text style={styles.buttonText}>حسناً</Text>
+                <Text style={styles.buttonText}>{t('common.ok')}</Text>
               </TouchableOpacity>
             </View>
           </TouchableWithoutFeedback>
