@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
 import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
+import { useTranslation, translate } from '../../../i18n';
 import {
   useAuthStore,
   getOrderById,
@@ -33,12 +34,12 @@ import {
 } from '@marketplace/shared-hooks';
 
 const TRACKING_STEPS = [
-  { status: ORDER_STATUS.PENDING, label: 'تم استقبال الطلب', desc: 'تم إرسال طلبك إلى المتجر بنجاح', icon: 'time-outline' },
-  { status: ORDER_STATUS.PREPARING, label: 'جاري التجهيز', desc: 'يقوم المتجر بإعداد وتغليف منتجاتك', icon: 'cube-outline' },
-  { status: ORDER_STATUS.READY, label: 'جاهز للتوصيل', desc: 'الطلب جاهز وبانتظار استلام المندوب', icon: 'checkbox-outline' },
-  { status: ORDER_STATUS.ASSIGNED, label: 'قبول المندوب', desc: 'تم إسناد الطلب لمندوب التوصيل', icon: 'person-outline' },
-  { status: ORDER_STATUS.ON_THE_WAY, label: 'في الطريق إليك', desc: 'المندوب يتجه حالياً نحو عنوان التوصيل', icon: 'navigate-outline' },
-  { status: ORDER_STATUS.DELIVERED, label: 'تم التسليم بنجاح', desc: 'تم توصيل الطلب واستلامه بنجاح', icon: 'checkmark-circle-outline' },
+  { status: ORDER_STATUS.PENDING, label: translate('customer.receivedOrder'), desc: 'تم إرسال طلبك إلى المتجر بنجاح', icon: 'time-outline' },
+  { status: ORDER_STATUS.PREPARING, label: translate('customer.preparingOrder'), desc: 'يقوم المتجر بإعداد وتغليف منتجاتك', icon: 'cube-outline' },
+  { status: ORDER_STATUS.READY, label: translate('customer.readyDelivery'), desc: 'الطلب جاهز وبانتظار استلام المندوب', icon: 'checkbox-outline' },
+  { status: ORDER_STATUS.ASSIGNED, label: translate('customer.courierAccepted'), desc: 'تم إسناد الطلب لمندوب التوصيل', icon: 'person-outline' },
+  { status: ORDER_STATUS.ON_THE_WAY, label: translate('customer.onWay'), desc: 'المندوب يتجه حالياً نحو عنوان التوصيل', icon: 'navigate-outline' },
+  { status: ORDER_STATUS.DELIVERED, label: translate('customer.deliveredSuccess'), desc: 'تم توصيل الطلب واستلامه بنجاح', icon: 'checkmark-circle-outline' },
 ];
 
 const STATUS_STEP_INDEX: Record<string, number> = {
@@ -80,6 +81,7 @@ const REFUND_STATUS_META: Record<string, { title: string; detail: string; color:
 };
 
 export default function OrderTrackingScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const { orderId } = route.params;
   const user = useAuthStore((s) => s.user);
 
@@ -287,7 +289,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         screen: 'Chat',
         params: {
           conversationId,
-          title: order.merchant_profiles?.store_name ?? 'المتجر',
+          title: order.merchant_profiles?.store_name ?? t('customer.store'),
         },
       });
     } catch (e: any) {
@@ -387,10 +389,10 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={56} color="#DC2626" />
-        <Text style={styles.errorTitle}>تعذّر فتح الطلب</Text>
+        <Text style={styles.errorTitle}>{t('customer.openOrderFailed')}</Text>
         <Text style={styles.errorSub}>{loadError}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => reload()}>
-          <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+          <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -409,11 +411,11 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             activeOpacity={0.8}
           >
             <Ionicons name="headset-outline" size={16} color="#172554" />
-            <Text style={styles.supportPillText}>الدعم</Text>
+            <Text style={styles.supportPillText}>{t('customer.support')}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>تتبع الطلب</Text>
+            <Text style={styles.headerTitle}>{t('customer.trackOrder')}</Text>
             <Text style={styles.headerSub}># طلب {order?.order_number}</Text>
           </View>
 
@@ -564,7 +566,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             </View>
             <View style={[styles.infoRow, { marginTop: 8 }]}>
               <Text style={styles.infoValueText}>
-                {order?.merchant_profiles?.store_name || 'المتجر'}
+                {order?.merchant_profiles?.store_name || t('customer.store')}
               </Text>
 
               <Text style={styles.infoLabelText}>:اسم المتجر 🏪</Text>
@@ -663,7 +665,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               <View style={styles.inlineError} accessibilityRole="alert">
                 <Text style={styles.inlineErrorText}>{cancellationReasonsError}</Text>
                 <TouchableOpacity onPress={() => void loadCancellationReasons()} accessibilityRole="button">
-                  <Text style={styles.inlineErrorAction}>إعادة المحاولة</Text>
+                  <Text style={styles.inlineErrorAction}>{t('common.retry')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
