@@ -1,4 +1,5 @@
 import { ORDER_STATUS } from '@marketplace/shared-utils';
+import { translate } from '../../i18n';
 
 export const ACTIVE_MERCHANT_ORDER_STATUSES = new Set<string>([
   ORDER_STATUS.PENDING,
@@ -34,66 +35,38 @@ export interface MerchantOrderStatusInfo {
   icon: string;
 }
 
-const STATUS_INFO: Record<string, MerchantOrderStatusInfo> = {
-  [ORDER_STATUS.PENDING]: {
-    label: 'بانتظار القبول', color: '#D97706', background: '#FEF3C7', icon: 'time-outline',
-  },
-  [ORDER_STATUS.CONFIRMED]: {
-    label: 'تم التأكيد', color: '#2563EB', background: '#DBEAFE', icon: 'checkmark-circle-outline',
-  },
-  [ORDER_STATUS.PREPARING]: {
-    label: 'قيد التجهيز', color: '#2563EB', background: '#DBEAFE', icon: 'restaurant-outline',
-  },
-  [ORDER_STATUS.READY]: {
-    label: 'جاهز للمندوب', color: '#7C3AED', background: '#EDE9FE', icon: 'bag-check-outline',
-  },
-  [ORDER_STATUS.ASSIGNED]: {
-    label: 'أُسند إلى مندوب', color: '#0369A1', background: '#E0F2FE', icon: 'person-outline',
-  },
-  [ORDER_STATUS.PICKED_UP]: {
-    label: 'استلمه المندوب', color: '#0369A1', background: '#E0F2FE', icon: 'cube-outline',
-  },
-  [ORDER_STATUS.ON_THE_WAY]: {
-    label: 'في الطريق للعميل', color: '#0369A1', background: '#E0F2FE', icon: 'bicycle-outline',
-  },
-  [ORDER_STATUS.RESCHEDULED]: {
-    label: 'أُعيدت الجدولة', color: '#B45309', background: '#FEF3C7', icon: 'calendar-outline',
-  },
-  [ORDER_STATUS.DELIVERED]: {
-    label: 'تم التسليم', color: '#059669', background: '#D1FAE5', icon: 'checkmark-done-circle-outline',
-  },
-  [ORDER_STATUS.CANCELLED]: {
-    label: 'ملغي', color: '#DC2626', background: '#FEE2E2', icon: 'close-circle-outline',
-  },
-  [ORDER_STATUS.RETURNED]: {
-    label: 'مُرتجع', color: '#B45309', background: '#FEF3C7', icon: 'return-down-back-outline',
-  },
-  [ORDER_STATUS.FAILED_DELIVERY]: {
-    label: 'تعذر التسليم', color: '#DC2626', background: '#FEE2E2', icon: 'warning-outline',
-  },
-  [ORDER_STATUS.PARTIAL_DELIVERY]: {
-    label: 'تسليم جزئي', color: '#B45309', background: '#FEF3C7', icon: 'alert-circle-outline',
-  },
-  [ORDER_STATUS.DISPUTED]: {
-    label: 'محل نزاع', color: '#DC2626', background: '#FEE2E2', icon: 'chatbox-ellipses-outline',
-  },
+const STATUS_INFO: Record<string, Omit<MerchantOrderStatusInfo, 'label'> & { labelKey: string }> = {
+  [ORDER_STATUS.PENDING]: { labelKey: 'merchant.statusPendingAcceptance', color: '#D97706', background: '#FEF3C7', icon: 'time-outline' },
+  [ORDER_STATUS.CONFIRMED]: { labelKey: 'merchant.statusConfirmed', color: '#2563EB', background: '#DBEAFE', icon: 'checkmark-circle-outline' },
+  [ORDER_STATUS.PREPARING]: { labelKey: 'merchant.statusPreparing', color: '#2563EB', background: '#DBEAFE', icon: 'restaurant-outline' },
+  [ORDER_STATUS.READY]: { labelKey: 'merchant.statusReady', color: '#7C3AED', background: '#EDE9FE', icon: 'bag-check-outline' },
+  [ORDER_STATUS.ASSIGNED]: { labelKey: 'merchant.statusAssigned', color: '#0369A1', background: '#E0F2FE', icon: 'person-outline' },
+  [ORDER_STATUS.PICKED_UP]: { labelKey: 'merchant.statusPickedUp', color: '#0369A1', background: '#E0F2FE', icon: 'cube-outline' },
+  [ORDER_STATUS.ON_THE_WAY]: { labelKey: 'merchant.statusOnWay', color: '#0369A1', background: '#E0F2FE', icon: 'bicycle-outline' },
+  [ORDER_STATUS.RESCHEDULED]: { labelKey: 'merchant.statusRescheduled', color: '#B45309', background: '#FEF3C7', icon: 'calendar-outline' },
+  [ORDER_STATUS.DELIVERED]: { labelKey: 'merchant.statusDelivered', color: '#059669', background: '#D1FAE5', icon: 'checkmark-done-circle-outline' },
+  [ORDER_STATUS.CANCELLED]: { labelKey: 'merchant.statusCancelled', color: '#DC2626', background: '#FEE2E2', icon: 'close-circle-outline' },
+  [ORDER_STATUS.RETURNED]: { labelKey: 'merchant.statusReturned', color: '#B45309', background: '#FEF3C7', icon: 'return-down-back-outline' },
+  [ORDER_STATUS.FAILED_DELIVERY]: { labelKey: 'merchant.statusFailedDelivery', color: '#DC2626', background: '#FEE2E2', icon: 'warning-outline' },
+  [ORDER_STATUS.PARTIAL_DELIVERY]: { labelKey: 'merchant.statusPartialDelivery', color: '#B45309', background: '#FEF3C7', icon: 'alert-circle-outline' },
+  [ORDER_STATUS.DISPUTED]: { labelKey: 'merchant.statusDisputed', color: '#DC2626', background: '#FEE2E2', icon: 'chatbox-ellipses-outline' },
 };
 
 export function getMerchantOrderStatusInfo(status: string): MerchantOrderStatusInfo {
-  return STATUS_INFO[status] ?? {
-    label: status || 'غير محدد', color: '#4B5563', background: '#F3F4F6', icon: 'ellipse-outline',
-  };
+  const info = STATUS_INFO[status];
+  if (info) return { ...info, label: translate(info.labelKey) };
+  return { label: status || translate('customer.unspecified'), color: '#4B5563', background: '#F3F4F6', icon: 'ellipse-outline' };
 }
 
 export function getOrderTransitionErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? '');
   if (message.includes('انتقال حالة غير مسموح') || message.includes('غير مسموح لهذه الجهة')) {
-    return 'لا يمكن تنفيذ هذا الانتقال من حالة الطلب الحالية. تم تحديث البيانات من الخادم.';
+    return translate('merchant.transitionNotAllowed');
   }
   if (message.toLowerCase().includes('network') || message.toLowerCase().includes('fetch')) {
-    return 'تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.';
+    return translate('merchant.serverConnectionFailed');
   }
-  return 'تعذر تحديث حالة الطلب. لم يتم تغيير الحالة المعروضة.';
+  return translate('merchant.statusUpdateFailed');
 }
 
 export function merchantOrderProgress(status: string): number {
