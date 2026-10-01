@@ -24,12 +24,13 @@ const UI = {
 };
 
 const FILTERS = [
-  { key: 'all', label: 'الكل' },
-  { key: 'pending', label: 'بانتظار الموافقة' },
-  { key: 'approved', label: 'معتمد' },
+  { key: 'all', labelKey: 'adminUi.all' },
+  { key: 'pending', labelKey: 'adminUi.awaitingApproval' },
+  { key: 'approved', labelKey: 'adminUi.approved' },
 ] as const;
 
 export default function AdminMerchantsScreen() {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
