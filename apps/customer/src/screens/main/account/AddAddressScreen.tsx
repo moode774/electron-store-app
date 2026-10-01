@@ -7,6 +7,7 @@ import { Button, Input, Card } from '@marketplace/shared-ui';
 import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { resources } from '../../../i18n/translations';
 
 export default function AddAddressScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -39,9 +40,9 @@ export default function AddAddressScreen({ navigation }: any) {
         const place = reverseResults?.[0];
         if (place) {
           const detectedCity = place.city || place.region || place.subregion || '';
-          if (detectedCity.includes('عدن') || detectedCity.includes('Aden')) setSelectedArea(SERVICE_AREAS.ADEN);
-          else if (detectedCity.includes('إب') || detectedCity.includes('Ibb')) setSelectedArea(SERVICE_AREAS.IBB);
-          else if (detectedCity.includes('تعز') || detectedCity.includes('Taiz')) setSelectedArea(SERVICE_AREAS.TAIZ);
+          if (detectedCity.includes(resources.ar.customer.aden) || detectedCity.includes('Aden')) setSelectedArea(SERVICE_AREAS.ADEN);
+          else if (detectedCity.includes(resources.ar.customer.ibb) || detectedCity.includes('Ibb')) setSelectedArea(SERVICE_AREAS.IBB);
+          else if (detectedCity.includes(resources.ar.customer.taiz) || detectedCity.includes('Taiz')) setSelectedArea(SERVICE_AREAS.TAIZ);
           else setSelectedArea(SERVICE_AREAS.SANAA);
 
           const detectedStreet = [place.street, place.district, place.subregion, place.name]
