@@ -150,7 +150,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
-        title=t('common.orders')
+        title={t('common.orders')}
         subtitle={loading ? t('merchant.loading') : `${orders.length} طلب نشط${count('pending') ? ` · ${count('pending')} بانتظار قبولك` : ''}`}
       />
 
@@ -173,7 +173,7 @@ export default function MerchantOrdersScreen({ navigation }: any) {
                 <Banner
                   text={(realtimeError ?? error) as string}
                   tone={error && !orders.length ? 'error' : 'warning'}
-                  actionLabel=t('merchant.refresh')
+                  actionLabel={t('merchant.refresh')}
                   onAction={() => void refresh()}
                 />
               ) : null}
