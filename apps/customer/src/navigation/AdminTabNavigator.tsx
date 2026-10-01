@@ -89,22 +89,23 @@ const Tab = createBottomTabNavigator<AdminTabParamList>();
 
 // ---- Sidebar Tabs ----
 const SIDEBAR_TABS = [
-  { name: 'AdminDashboard', label: 'الرئيسية', icon: 'grid-outline', activeIcon: 'grid' },
-  { name: 'AdminMerchants', label: 'المتاجر', icon: 'storefront-outline', activeIcon: 'storefront' },
-  { name: 'AdminOrders', label: 'الطلبات', icon: 'receipt-outline', activeIcon: 'receipt' },
-  { name: 'AdminUsers', label: 'المستخدمون', icon: 'people-outline', activeIcon: 'people' },
-  { name: 'AdminDelivery', label: 'السائقون', icon: 'bicycle-outline', activeIcon: 'bicycle', isMore: true },
-  { name: 'AdminWallet', label: 'طلبات السحب', icon: 'wallet-outline', activeIcon: 'wallet', isMore: true },
-  { name: 'AdminPhysicalReturns', label: 'الإرجاعات', icon: 'return-down-back-outline', activeIcon: 'return-down-back', isMore: true },
-  { name: 'AdminCodCollections', label: 'التحصيلات', icon: 'cash-outline', activeIcon: 'cash', isMore: true },
-  { name: 'AdminFinancialReconciliation', label: 'المطابقة', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
-  { name: 'AdminMoreMain', label: 'كل الأدوات', icon: 'options-outline', activeIcon: 'options', isMore: true },
-  { name: 'AdminSettings', label: 'الإعدادات', icon: 'settings-outline', activeIcon: 'settings', isMore: true },
-  { name: 'AdminSupport', label: 'الدعم', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
+  { name: 'AdminDashboard', labelKey: 'navigation.home', icon: 'grid-outline', activeIcon: 'grid' },
+  { name: 'AdminMerchants', labelKey: 'admin.merchants', icon: 'storefront-outline', activeIcon: 'storefront' },
+  { name: 'AdminOrders', labelKey: 'admin.orders', icon: 'receipt-outline', activeIcon: 'receipt' },
+  { name: 'AdminUsers', labelKey: 'admin.users', icon: 'people-outline', activeIcon: 'people' },
+  { name: 'AdminDelivery', labelKey: 'admin.drivers', icon: 'bicycle-outline', activeIcon: 'bicycle', isMore: true },
+  { name: 'AdminWallet', labelKey: 'admin.withdrawals', icon: 'wallet-outline', activeIcon: 'wallet', isMore: true },
+  { name: 'AdminPhysicalReturns', labelKey: 'admin.returns', icon: 'return-down-back-outline', activeIcon: 'return-down-back', isMore: true },
+  { name: 'AdminCodCollections', labelKey: 'admin.collections', icon: 'cash-outline', activeIcon: 'cash', isMore: true },
+  { name: 'AdminFinancialReconciliation', labelKey: 'admin.reconciliation', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
+  { name: 'AdminMoreMain', labelKey: 'admin.allTools', icon: 'options-outline', activeIcon: 'options', isMore: true },
+  { name: 'AdminSettings', labelKey: 'admin.settings', icon: 'settings-outline', activeIcon: 'settings', isMore: true },
+  { name: 'AdminSupport', labelKey: 'admin.support', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
 ];
 
 // ---- Desktop floating rail ----
 function DesktopSidebar() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const routeName = useNavigationState((state) => {
     if (!state) return 'AdminDashboard';
@@ -145,7 +146,7 @@ function DesktopSidebar() {
               onPress={() => handleNavigate(tab)}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={tab.label}
+              accessibilityLabel={t(tab.labelKey)}
               accessibilityState={{ selected: isActive }}
             >
               <Ionicons name={isActive ? tab.activeIcon : tab.icon as any} size={20} color={isActive ? '#FFFFFF' : '#94A3B8'} />
@@ -252,6 +253,7 @@ const sidebarStyles = StyleSheet.create({
 
 // ---- Desktop command header ----
 function DesktopTopHeader() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
   const showFullNavigation = width >= BREAKPOINTS.wide;
@@ -274,15 +276,15 @@ function DesktopTopHeader() {
   };
 
   const currentLabel = ({
-    AdminDashboard: 'الرئيسية',
-    AdminOrders: 'الطلبات',
-    AdminMerchants: 'المتاجر',
-    AdminUsers: 'المستخدمون',
-    AdminDelivery: 'السائقون',
-    AdminWallet: 'طلبات السحب',
-    AdminSettings: 'الإعدادات',
-    AdminSupport: 'الدعم الفني',
-  } as Record<string, string>)[routeName] ?? 'لوحة التحكم';
+    AdminDashboard: t('navigation.home'),
+    AdminOrders: t('admin.orders'),
+    AdminMerchants: t('admin.merchants'),
+    AdminUsers: t('admin.users'),
+    AdminDelivery: t('admin.drivers'),
+    AdminWallet: t('admin.withdrawals'),
+    AdminSettings: t('admin.settings'),
+    AdminSupport: t('admin.technicalSupport'),
+  } as Record<string, string>)[routeName] ?? t('admin.dashboard');
 
   return (
     <View style={topHeaderStyles.topHeader}>
@@ -385,7 +387,7 @@ export default function AdminTabNavigator() {
       <Tab.Screen name="AdminUsers" component={AdminUsersScreen}
         options={{ tabBarLabel: t('admin.users'), tabBarAccessibilityLabel: t('admin.users'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMore" component={MoreNavigator}
-        options={{ tabBarLabel: 'الإدارة', tabBarAccessibilityLabel: 'إدارة التطبيق', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('admin.administration'), tabBarAccessibilityLabel: t('admin.manageApp'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
     </Tab.Navigator>
   );
 
