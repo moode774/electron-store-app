@@ -15,13 +15,14 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
+import { useTranslation } from '../../../i18n';
 
 const ALL_CATEGORY = { id: '', name: 'الكل' };
 const SORTS = [
-  { key: 'default', label: 'الأكثر صلة' },
-  { key: 'priceAsc', label: 'السعر: الأقل أولاً' },
-  { key: 'priceDesc', label: 'السعر: الأعلى أولاً' },
-  { key: 'rating', label: 'الأعلى تقييماً' },
+  { key: 'default', label: t('merchant.mostRelevant') },
+  { key: 'priceAsc', label: t('merchant.priceLow') },
+  { key: 'priceDesc', label: t('merchant.priceHigh') },
+  { key: 'rating', label: t('merchant.topRated') },
 ];
 
 export default function SearchScreen({ navigation, route }: any): React.JSX.Element {
@@ -82,7 +83,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               onPress={() => navigation.goBack()}
               activeOpacity={0.72}
               accessibilityRole="button"
-              accessibilityLabel="العودة"
+              accessibilityLabel=t('merchant.back')
             >
               <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
             </TouchableOpacity>
@@ -99,7 +100,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
             onClear={() => setQuery('')}
             showFilter
             onFilterPress={() => setShowSort((current) => !current)}
-            placeholder="ابحث عن أي شيء..."
+            placeholder=t('merchant.searchAnything')
             returnKeyType="search"
             autoFocus
           />
@@ -129,7 +130,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
 
           {showSort ? (
             <View style={styles.sortMenu}>
-              <Text style={styles.sortTitle}>ترتيب النتائج</Text>
+              <Text style={styles.sortTitle}>{t('merchant.sortResults')}</Text>
               {SORTS.map((item) => {
                 const selected = sort === item.key;
                 return (
@@ -173,14 +174,14 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
       {isSearching ? (
         <View style={styles.centerState}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.stateHint}>جارٍ البحث...</Text>
+          <Text style={styles.stateHint}>{t('merchant.searching')}</Text>
         </View>
       ) : results.length === 0 ? (
         <View style={styles.centerState}>
           <View style={styles.emptyIcon}>
             <Ionicons name="search-outline" size={36} color={COLORS.primary} />
           </View>
-          <Text style={styles.emptyTitle}>لا توجد نتائج مطابقة</Text>
+          <Text style={styles.emptyTitle}>{t('merchant.noMatchingResults')}</Text>
           <Text style={styles.emptyText}>جرّب كلمات مختلفة أو اختر تصنيفاً آخر.</Text>
         </View>
       ) : (
