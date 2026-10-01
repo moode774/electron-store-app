@@ -19,13 +19,13 @@ const TICKET_STATUS: Record<string, string> = {
   open: translate('customer.ticketOpen'), in_progress: translate('customer.ticketProgress'), waiting_user: translate('customer.ticketWaiting'), resolved: translate('customer.ticketResolved'), closed: translate('customer.ticketClosed'),
 };
 
-const FAQS = [
-  { id: '1', q: 'كيف أتابع طلبي؟', a: 'من تبويب "طلباتي" اضغط على الطلب لعرض آخر حالة مسجلة. تتحدث الصفحة عند وصول تحديث ويمكنك سحبها للأسفل للتحديث يدوياً.' },
-  { id: '2', q: 'ما هي طرق الدفع المتاحة؟', a: 'حالياً الدفع نقداً عند الاستلام (COD)، وقريباً المحافظ الإلكترونية المحلية.' },
-  { id: '3', q: 'كيف أطلب إرجاع منتج؟', a: 'بعد تسليم الطلب افتح تفاصيله واختر "طلب استرجاع / إرجاع". تخضع الأهلية للسياسة المعروضة وحالة المنتج.' },
-  { id: '4', q: 'كم تستغرق مدة التوصيل؟', a: 'تختلف المدة حسب جاهزية المتجر وتوفر المندوب والمنطقة. تابع الحالة الفعلية من صفحة الطلب.' },
-  { id: '5', q: 'كيف أدير عناويني؟', a: 'من "حسابي" ثم "العناوين المحفوظة" يمكنك إضافة عنوان أو حذفه أو جعله الافتراضي.' },
-];
+const FAQ_KEYS = [
+  { id: '1', q: 'customer.helpFaqTrackQ', a: 'customer.helpFaqTrackA' },
+  { id: '2', q: 'customer.helpFaqPaymentQ', a: 'customer.helpFaqPaymentA' },
+  { id: '3', q: 'customer.helpFaqReturnQ', a: 'customer.helpFaqReturnA' },
+  { id: '4', q: 'customer.helpFaqDeliveryQ', a: 'customer.helpFaqDeliveryA' },
+  { id: '5', q: 'customer.helpFaqAddressesQ', a: 'customer.helpFaqAddressesA' },
+] as const;
 
 export default function HelpCenterScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ export default function HelpCenterScreen({ navigation }: any) {
   const [ticketError, setTicketError] = useState('');
 
   const loadTickets = useCallback(() => {
-    if (user?.id) getSupportTickets(user.id).then((data) => { setTickets(data); setTicketError(''); }).catch(() => setTicketError('تعذّر تحديث قائمة التذاكر.'));
+    if (user?.id) getSupportTickets(user.id).then((data) => { setTickets(data); setTicketError(''); }).catch(() => setTicketError(t('customer.ticketsRefreshFailed')));
   }, [user?.id]);
   useFocusEffect(useCallback(() => { loadTickets(); }, [loadTickets]));
 
@@ -53,15 +53,15 @@ export default function HelpCenterScreen({ navigation }: any) {
   }, [loadTickets, user?.id]);
 
   const submitTicket = async () => {
-    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), 'أدخل الموضوع والرسالة'); return; }
+    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), t('customer.enterSubjectMessage')); return; }
     if (!user?.id) return;
     setSending(true);
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم. يمكنك متابعة حالتها من هذه الصفحة.');
+      Alert.alert(t('customer.ticketOpened'), t('customer.ticketOpenedText'));
       loadTickets();
-    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
+    } catch (e: any) { Alert.alert(t('common.error'), e?.message ?? t('customer.ticketSendFailed')); }
     finally { setSending(false); }
   };
 
@@ -89,9 +89,9 @@ export default function HelpCenterScreen({ navigation }: any) {
               </TouchableOpacity>
             ))}
           </View>
-          <TextInput style={styles.ticketInput} placeholder={t('customer.subject')} placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel="موضوع تذكرة الدعم" />
-          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder={t('customer.explainProblem')} placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel="تفاصيل تذكرة الدعم" />
-          <TouchableOpacity style={[styles.submitTicket, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
+          <TextInput style={styles.ticketInput} placeholder={t('customer.subject')} placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel={t('customer.ticketSubjectA11y')} />
+          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder={t('customer.explainProblem')} placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel={t('customer.ticketDetailsA11y')} />
+          <TouchableOpacity style={[styles.submitTicket, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={t('customer.sendTicketA11y')} accessibilityState={{ disabled: sending, busy: sending }}>
             {sending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitTicketText}>{t('customer.sendTicket')}</Text>}
           </TouchableOpacity>
         </View>
@@ -103,7 +103,7 @@ export default function HelpCenterScreen({ navigation }: any) {
             <Text style={styles.sectionTitle}>{t('customer.myTickets')}</Text>
             <View style={styles.faqContainer}>
               {tickets.map((t, i) => (
-                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
+                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`${t('customer.openTicketA11y')} ${t.subject}`}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ticketSubject}>{t.subject}</Text>
                     <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
@@ -120,10 +120,10 @@ export default function HelpCenterScreen({ navigation }: any) {
         {/* FAQs */}
         <Text style={styles.sectionTitle}>{t('customer.faq')}</Text>
         <View style={styles.faqContainer}>
-          {FAQS.map((faq, index) => {
+          {FAQ_KEYS.map((faq, index) => {
             const isOpen = expandedId === faq.id;
             return (
-              <View key={faq.id} style={[styles.faqItem, index === FAQS.length - 1 && { borderBottomWidth: 0 }]}>
+              <View key={faq.id} style={[styles.faqItem, index === FAQ_KEYS.length - 1 && { borderBottomWidth: 0 }]}>
                 <TouchableOpacity
                   style={styles.faqHeader}
                   onPress={() => setExpandedId(isOpen ? null : faq.id)}
@@ -132,10 +132,10 @@ export default function HelpCenterScreen({ navigation }: any) {
                   accessibilityLabel={faq.q}
                   accessibilityState={{ expanded: isOpen }}
                 >
-                  <Text style={styles.faqQuestion}>{faq.q}</Text>
+                  <Text style={styles.faqQuestion}>{t(faq.q)}</Text>
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#9CA3AF" />
                 </TouchableOpacity>
-                {isOpen && <Text style={styles.faqAnswer}>{faq.a}</Text>}
+                {isOpen && <Text style={styles.faqAnswer}>{t(faq.a)}</Text>}
               </View>
             );
           })}
