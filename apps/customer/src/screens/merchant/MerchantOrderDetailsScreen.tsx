@@ -44,7 +44,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const load = useCallback(async (showLoading = false) => {
     if (!orderId) {
       setOrder(null);
-      setLoadError('معرف الطلب غير موجود.');
+      setLoadError(t('merchant.orderIdMissing'));
       setLoading(false);
       return;
     }
@@ -59,11 +59,11 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
         setStatus(nextOrder.status);
         setLoadError(null);
       } else {
-        setLoadError('تعذر العثور على الطلب أو لا تملك صلاحية عرضه.');
+        setLoadError(t('merchant.orderNotFoundPermission'));
       }
       setDeliveryId(assignment.error ? undefined : ((assignment.data as { delivery_id?: string | null } | null)?.delivery_id ?? null));
     } catch {
-      setLoadError('تعذر تحميل تفاصيل الطلب. تحقق من الاتصال ثم أعد المحاولة.');
+      setLoadError(t('merchant.orderDetailsLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -90,9 +90,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const deliveryFee = order?.delivery_fee ?? 0;
   const taxAmount = Number(order?.tax_amount ?? 0);
   const discountAmount = Number(order?.discount_amount ?? 0);
-  const customerName = order?.customer?.full_name ?? 'عميل غير مسجل';
+  const customerName = order?.customer?.full_name ?? t('merchant.unregisteredCustomer');
   const customerPhone = order?.customer?.phone ?? '';
-  const customerAddress = order?.addresses?.full_address ?? 'عنوان غير متوفر';
+  const customerAddress = order?.addresses?.full_address ?? t('merchant.addressUnavailable');
   const customerCity = order?.addresses?.city ?? '';
   const paymentMethod = paymentLabel(order?.payment_method);
   const notes = order?.notes || '';
@@ -105,7 +105,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       await load(false);
     } catch (transitionError) {
       await load(false);
-      Alert.alert('لم تتغير حالة الطلب', getOrderTransitionErrorMessage(transitionError));
+      Alert.alert(t('merchant.orderStatusUnchanged'), getOrderTransitionErrorMessage(transitionError));
     } finally {
       setUpdating(false);
     }
@@ -125,10 +125,10 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       await cancelOrder(orderId, reason);
       setShowCancel(false);
       await load(false);
-      Alert.alert('تم إلغاء الطلب', 'أُلغي الطلب وأُعيد المخزون تلقائياً وسيُشعَر العميل.');
+      Alert.alert(t('merchant.cancelledOrderSuccess'), t('merchant.cancelledOrderSuccessText'));
     } catch (e) {
       await load(false);
-      Alert.alert('تعذّر إلغاء الطلب', getOrderTransitionErrorMessage(e));
+      Alert.alert(t('merchant.cancelOrderFailed'), getOrderTransitionErrorMessage(e));
     } finally {
       setCancelling(false);
     }
@@ -153,7 +153,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           <EmptyState
             icon="cloud-offline-outline"
             title={t('customer.openOrderFailed')}
-            text={loadError ?? 'لم يتم العثور على الطلب.'}
+            text={loadError ?? t('merchant.orderNotFound')}
             action={{ label: t('common.retry'), onPress: () => void load(true) }}
           />
         </View>
@@ -162,9 +162,9 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   }
 
   const primaryAction = status === ORDER_STATUS.PENDING || status === ORDER_STATUS.CONFIRMED
-    ? { label: status === ORDER_STATUS.PENDING ? 'قبول الطلب وبدء التجهيز' : 'بدء التجهيز', next: ORDER_STATUS.PREPARING, icon: 'checkmark' as const }
+    ? { label: status === ORDER_STATUS.PENDING ? t('merchant.acceptOrderPrepare') : t('merchant.startPreparing'), next: ORDER_STATUS.PREPARING, icon: 'checkmark' as const }
     : status === ORDER_STATUS.PREPARING
-      ? { label: 'الطلب جاهز للمندوب', next: ORDER_STATUS.READY, icon: 'bag-check-outline' as const }
+      ? { label: t('merchant.orderReadyCourier'), next: ORDER_STATUS.READY, icon: 'bag-check-outline' as const }
       : null;
 
   // After "ready" the order belongs to the courier flow (pickup code, proof of
@@ -172,19 +172,19 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   let actionNotice = '';
   if (status === ORDER_STATUS.READY) {
     actionNotice = deliveryId
-      ? 'تم إسناد الطلب إلى مندوب. ستتحدث الحالة تلقائيًا عند الاستلام.'
-      : 'الطلب جاهز وبانتظار أن يستلمه مندوب. ستتحدث الحالة تلقائيًا.';
+      ? t('merchant.courierAssignedAuto')
+      : t('merchant.readyWaitingCourierAuto');
   } else if ([ORDER_STATUS.ASSIGNED, ORDER_STATUS.PICKED_UP, ORDER_STATUS.ON_THE_WAY, ORDER_STATUS.RESCHEDULED].includes(status as any)) {
-    actionNotice = 'الطلب الآن ضمن مسار المندوب، ولا يحتاج إلى تغيير يدوي من التاجر.';
+    actionNotice = t('merchant.courierFlowNotice');
   }
 
   // Same rule as marketplace_cancel_order_as: the store may cancel before "ready".
   const canCancel = [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING].includes(status as any);
   const itemsCount = items.reduce((sum, i) => sum + (i.quantity ?? 0), 0);
-  const steps = ['جديد', 'تجهيز', 'جاهز', 'التوصيل', 'مكتمل'];
+  const steps = [t('merchant.newStep'), t('merchant.preparingStep'), t('merchant.readyStep'), t('merchant.deliveryStep'), t('merchant.completedStep')];
 
   const callCustomer = () =>
-    Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert('تعذر الاتصال', 'لا يمكن فتح تطبيق الاتصال على هذا الجهاز.'));
+    Linking.openURL(`tel:${customerPhone}`).catch(() => Alert.alert(t('merchant.callFailed'), t('merchant.callFailedText')));
 
   const actionButton = primaryAction ? (
     <TouchableOpacity
@@ -217,7 +217,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       <View style={styles.pickupIcon}><Ionicons name="key-outline" size={20} color={COLORS.primary} /></View>
       <View style={styles.flexEnd}>
         <Text style={styles.pickupTitle}>{t('merchant.pickupCode')}</Text>
-        <Text style={styles.pickupHint}>أعطه للمندوب فقط عند تسليم الطلب فعلياً.</Text>
+        <Text style={styles.pickupHint}>{t('merchant.pickupHint')}</Text>
       </View>
       <Text style={styles.pickupCode} selectable>{pickupCode}</Text>
     </View>
@@ -226,13 +226,13 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
   const cancelReasonsCard = canCancel && showCancel ? (
     <View style={ui.card}>
       <Text style={[ui.cardTitle, styles.mb8]}>{t('merchant.cancellationReason')}</Text>
-      <Text style={[ui.muted, styles.mb8]}>سيُعاد المخزون تلقائياً ويُشعَر العميل.</Text>
+      <Text style={[ui.muted, styles.mb8]}>{t('merchant.stockRestoredHint')}</Text>
       {(cancelReasons.length > 0
-        ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? 'سبب آخر' }))
+        ? cancelReasons.map((r) => ({ key: r.id, label: r.reason_text_ar ?? t('merchant.otherReason') }))
         : [
-          { key: 'out_of_stock', label: 'المنتج غير متوفر حالياً' },
-          { key: 'cannot_fulfill', label: 'تعذّر تجهيز الطلب' },
-          { key: 'other', label: 'سبب آخر' },
+          { key: 'out_of_stock', label: t('merchant.productUnavailableNow') },
+          { key: 'cannot_fulfill', label: t('merchant.cannotFulfill') },
+          { key: 'other', label: t('merchant.otherReason') },
         ]
       ).map((r) => (
         <TouchableOpacity key={r.key} style={styles.reason} onPress={() => void doCancel(r.label)} disabled={cancelling} accessibilityRole="button" accessibilityLabel={r.label}>
@@ -264,7 +264,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
           );
         })}
       </View>
-      {progress === 0 ? <Text style={[ui.muted, styles.centerText]}>الحالة الحالية: {info.label}</Text> : null}
+      {progress === 0 ? <Text style={[ui.muted, styles.centerText]}>{t('merchant.currentStatus')}: {info.label}</Text> : null}
     </View>
   );
 
@@ -272,14 +272,14 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
     <View style={ui.card}>
       <View style={[ui.row, styles.between, styles.mb8]}>
         <Text style={ui.cardTitle}>{t('merchant.productsCount')}</Text>
-        <Text style={ui.muted}>{itemsCount} قطعة</Text>
+        <Text style={ui.muted}>{itemsCount} {t('merchant.piece')}</Text>
       </View>
       {items.map((item, i) => (
         <View key={item.id} style={[styles.item, i < items.length - 1 && styles.itemDivider]}>
           <View style={styles.qty}><Text style={styles.qtyText}>×{item.quantity}</Text></View>
           <View style={styles.flexEnd}>
-            <Text style={styles.itemName} numberOfLines={2}>{item.products?.name ?? item.product_name ?? 'منتج'}</Text>
-            <Text style={ui.muted}>{formatMoney(item.unit_price)} ر.ي للقطعة</Text>
+            <Text style={styles.itemName} numberOfLines={2}>{item.products?.name ?? item.product_name ?? t('customer.productFallback')}</Text>
+            <Text style={ui.muted}>{formatMoney(item.unit_price)} {t('merchant.currencyYER')} / {t('merchant.piece')}</Text>
           </View>
           <Text style={styles.itemTotal}>{formatMoney(item.total_price)}</Text>
         </View>
@@ -294,10 +294,10 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
         <View style={styles.avatar}><Text style={styles.avatarText}>{customerName.substring(0, 1)}</Text></View>
         <View style={styles.flexEnd}>
           <Text style={styles.customerName}>{customerName}</Text>
-          <Text style={ui.muted}>{customerPhone || 'رقم غير متوفر'}</Text>
+          <Text style={ui.muted}>{customerPhone || t('merchant.phoneUnavailable')}</Text>
         </View>
         {customerPhone ? (
-          <TouchableOpacity style={styles.call} onPress={callCustomer} accessibilityRole="button" accessibilityLabel={`الاتصال بالعميل ${customerName}`}>
+          <TouchableOpacity style={styles.call} onPress={callCustomer} accessibilityRole="button" accessibilityLabel={`${t('merchant.callCustomer')} ${customerName}`}>
             <Ionicons name="call" size={16} color={COLORS.surface} />
           </TouchableOpacity>
         ) : null}
@@ -323,12 +323,12 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       {[
         { label: t('customer.subtotal'), value: subtotal },
         { label: t('customer.deliveryFee'), value: deliveryFee },
-        ...(discountAmount > 0 ? [{ label: 'الخصم', value: -discountAmount }] : []),
-        ...(taxAmount > 0 ? [{ label: 'الضريبة', value: taxAmount }] : []),
+        ...(discountAmount > 0 ? [{ label: t('merchant.discount'), value: -discountAmount }] : []),
+        ...(taxAmount > 0 ? [{ label: t('merchant.tax'), value: taxAmount }] : []),
       ].map((line) => (
         <View key={line.label} style={styles.line}>
           <Text style={ui.text}>{line.label}</Text>
-          <Text style={[styles.lineValue, line.value < 0 && { color: '#15803D' }]}>{line.value < 0 ? `- ${formatMoney(-line.value)}` : formatMoney(line.value)} ر.ي</Text>
+          <Text style={[styles.lineValue, line.value < 0 && { color: '#15803D' }]}>{line.value < 0 ? `- ${formatMoney(-line.value)}` : formatMoney(line.value)} {t('merchant.currencyYER')}</Text>
         </View>
       ))}
       <View style={styles.totalLine}>
@@ -342,7 +342,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
     <View style={styles.notes}>
       <Ionicons name="chatbox-ellipses-outline" size={18} color="#92400E" />
       <View style={styles.flexEnd}>
-        <Text style={styles.notesTitle}>ملاحظة العميل</Text>
+        <Text style={styles.notesTitle}>{t('merchant.customerNote')}</Text>
         <Text style={styles.notesText}>{notes}</Text>
       </View>
     </View>
@@ -361,7 +361,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       />
 
       <ScrollView contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, !isDesktop && hasActions && styles.padForBar]} showsVerticalScrollIndicator={false}>
-        {loadError ? <Banner text={loadError} tone="warning" actionLabel="تحديث" onAction={() => void load(false)} /> : null}
+        {loadError ? <Banner text={loadError} tone="warning" actionLabel={t('merchant.update')} onAction={() => void load(false)} /> : null}
         {isDesktop ? (
           <View style={styles.grid}>
             <View style={styles.main}>
