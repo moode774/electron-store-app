@@ -27,6 +27,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { useTranslation, translate } from '../../i18n';
 import IncomingOrderModal from '../../components/IncomingOrderModal';
 import {
   DeliveryRuntimeProfile,
@@ -68,6 +69,7 @@ const sortOffersByProximity = (
 };
 
 export default function DeliveryOffersScreen({ navigation }: any) {
+  const { t, language } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const insets = useSafeAreaInsets();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
@@ -93,14 +95,14 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 
   const readCurrentLocation = useCallback(async (): Promise<Location.LocationObject | null> => {
     if (Platform.OS === 'web') {
-      setLocationMessage('تحديث الموقع المباشر متاح من تطبيق الجوال.');
+      setLocationMessage(t('delivery.liveLocationMobileOnly'));
       return null;
     }
 
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== 'granted') {
-        setLocationMessage('فعّل إذن الموقع لتحسين ترتيب العروض القريبة.');
+        setLocationMessage(t('delivery.enableLocationForOffers'));
         return null;
       }
 
@@ -111,7 +113,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       setLocationMessage('');
       return currentLocation;
     } catch (error) {
-      setLocationMessage(errorMessage(error, 'تعذّر تحديد موقعك الحالي.'));
+      setLocationMessage(errorMessage(error, t('delivery.currentLocationFailed')));
       return null;
     }
   }, []);
@@ -142,7 +144,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       if (!runtimeProfile) {
         setProfile(null);
         setOrders([]);
-        setLoadError('ملف المندوب غير موجود. أكمل بيانات المندوب ثم حاول مجددًا.');
+        setLoadError(t('delivery.courierProfileMissing'));
         return;
       }
 
@@ -177,7 +179,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
         ),
       );
     } catch (error) {
-      setLoadError(errorMessage(error, 'تعذّر تحديث عروض التوصيل. تحقق من الاتصال وحاول مجددًا.'));
+      setLoadError(errorMessage(error, t('delivery.offersRefreshFailed')));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -237,7 +239,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 
     const nextOnline = !isOnline;
     if (nextOnline && !isApproved) {
-      Alert.alert('الحساب غير معتمد', 'لا يمكن استقبال الطلبات قبل اعتماد حساب المندوب.');
+      Alert.alert(t('delivery.accountNotApproved'), t('delivery.accountNotApprovedText'));
       return;
     }
 
@@ -264,7 +266,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
         await loadData(true);
       }
     } catch (error) {
-      Alert.alert('تعذّر تغيير حالة الاتصال', errorMessage(error, 'تحقق من اتصالك وحاول مجددًا.'));
+      Alert.alert(t('delivery.onlineStatusFailed'), errorMessage(error, t('delivery.checkConnection')));
       await loadData();
     } finally {
       onlineLock.current = false;
@@ -275,7 +277,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
   const handleAccept = useCallback(async () => {
     if (!current || !user?.id || acceptLock.current) return;
     if (!isOnline || !isApproved) {
-      Alert.alert('غير متاح', 'يجب أن يكون حسابك معتمدًا ومتصلًا قبل قبول الطلب.');
+      Alert.alert(t('delivery.unavailable'), t('delivery.approveAndOnlineFirst'));
       return;
     }
 
@@ -286,7 +288,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       if (!claimed) {
         dismissedOrderIds.current.add(current.id);
         setOrders((previous) => previous.filter((order) => order.id !== current.id));
-        Alert.alert('لم يعد متاحًا', 'قبِل مندوب آخر هذا الطلب. تم تحديث العروض المتاحة.');
+        Alert.alert(t('delivery.noLongerAvailable'), t('delivery.anotherCourierAccepted'));
         await loadData();
         return;
       }
@@ -295,7 +297,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
       setOrders((previous) => previous.filter((order) => order.id !== current.id));
       navigation.navigate('ActiveDelivery', { orderId: current.id });
     } catch (error) {
-      Alert.alert('تعذّر قبول الطلب', errorMessage(error, 'تحقق من الاتصال ثم حاول مجددًا.'));
+      Alert.alert(t('delivery.acceptFailed'), errorMessage(error, t('delivery.checkConnection')));
       await loadData();
     } finally {
       acceptLock.current = false;
@@ -324,8 +326,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
     navigation.getParent()?.navigate('DeliveryEarnings');
   }, [navigation]);
 
-  const firstName = (user?.full_name ?? '').trim().split(/\s+/)[0] || 'كابتن';
-  const todayLabel = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
+  const firstName = (user?.full_name ?? '').trim().split(/\s+/)[0] || t('delivery.captain');
+  const todayLabel = new Date().toLocaleDateString(language === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -345,13 +347,13 @@ export default function DeliveryOffersScreen({ navigation }: any) {
         <View style={styles.page}>
           {/* 1. Header */}
           <View style={styles.header}>
-            <View style={styles.avatar} accessibilityLabel={isOnline ? 'حالتك: متصل' : 'حالتك: غير متصل'}>
+            <View style={styles.avatar} accessibilityLabel={isOnline ? t('delivery.onlineStatus') : t('delivery.offlineStatus')}>
               <Ionicons name="person" size={20} color={COLORS.primary} />
               <View style={[styles.avatarDot, { backgroundColor: isOnline ? COLORS.statusOnline : COLORS.inkTertiary }]} />
             </View>
             <View style={styles.greeting}>
-              <Text style={styles.eyebrow}>مساحة المندوب</Text>
-              <Text style={styles.greetingTitle} numberOfLines={1}>أهلًا {firstName}</Text>
+              <Text style={styles.eyebrow}>{t('delivery.courierSpace')}</Text>
+              <Text style={styles.greetingTitle} numberOfLines={1}>{t('delivery.hello')} {firstName}</Text>
               <Text style={styles.greetingCaption} numberOfLines={1}>{todayLabel}</Text>
             </View>
             <TouchableOpacity
@@ -359,7 +361,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
               onPress={openNotifications}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="الإشعارات"
+              accessibilityLabel={t('shared.notifications')}
             >
               <Ionicons name="notifications-outline" size={22} color={COLORS.ink} />
             </TouchableOpacity>
@@ -372,20 +374,20 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             onPress={handleToggleOnline}
             disabled={controlsDisabled}
             accessibilityRole="switch"
-            accessibilityLabel="استقبال طلبات التوصيل"
+            accessibilityLabel={t('delivery.receiveOrders')}
             accessibilityState={{ checked: isOnline, disabled: controlsDisabled, busy: onlineUpdating }}
           >
             <View style={styles.toggleRow}>
               <View style={styles.toggleCopy}>
                 <Text style={[styles.sectionTitle, !isOnline && styles.mutedTitle]}>
-                  {isOnline ? 'جاهز لاستقبال الطلبات' : 'استقبال الطلبات متوقف'}
+                  {isOnline ? t('delivery.readyReceive') : t('delivery.receivePaused')}
                 </Text>
                 <Text style={styles.caption}>
                   {!isApproved && profile
-                    ? 'بانتظار اعتماد حسابك لاستقبال الطلبات'
+                    ? t('delivery.waitingApproval')
                     : isOnline
-                      ? 'سنرسل لك الطلبات المناسبة فور توفرها'
-                      : 'فعّل الاستقبال عندما تكون جاهزًا للعمل'}
+                      ? t('delivery.offersWhenAvailable')
+                      : t('delivery.enableWhenReady')}
                 </Text>
               </View>
               {onlineUpdating ? (
@@ -401,14 +403,14 @@ export default function DeliveryOffersScreen({ navigation }: any) {
           {/* 3. Today summary */}
           <View style={styles.summaryCard}>
             <View style={styles.summaryTop}>
-              <Text style={styles.summaryLabel}>ملخص اليوم</Text>
+              <Text style={styles.summaryLabel}>{t('delivery.todaySummary')}</Text>
               <TouchableOpacity
                 onPress={openEarnings}
                 style={styles.detailsLink}
                 accessibilityRole="button"
-                accessibilityLabel="تفاصيل الأرباح"
+                accessibilityLabel={t('delivery.details')}
               >
-                <Text style={styles.detailsText}>التفاصيل</Text>
+                <Text style={styles.detailsText}>{t('delivery.details')}</Text>
                 <Ionicons name="chevron-back" size={16} color="rgba(255,255,255,0.8)" />
               </TouchableOpacity>
             </View>
@@ -417,19 +419,19 @@ export default function DeliveryOffersScreen({ navigation }: any) {
             ) : (
               <View style={styles.amountRow}>
                 <CountUpAmount value={earningsFailed ? 0 : todayEarnings} style={styles.amount} />
-                <Text style={styles.currency}>ر.ي أرباح</Text>
+                <Text style={styles.currency}>{t('merchant.currencyYER')} {t('delivery.earningsSuffix')}</Text>
               </View>
             )}
             {earningsFailed && !initialLoading ? (
-              <Text style={styles.summaryNote}>تعذّر تحميل الأرباح الآن</Text>
+              <Text style={styles.summaryNote}>{t('delivery.earningsUnavailable')}</Text>
             ) : null}
             <View style={styles.summaryDivider} />
             <View style={styles.statsRow}>
-              <SummaryStat value={initialLoading ? null : formatInt(todayDeliveries)} label="توصيلات اليوم" />
+              <SummaryStat value={initialLoading ? null : formatInt(todayDeliveries)} label={t('delivery.todayDeliveries')} />
               <View style={styles.statsDivider} />
-              <SummaryStat value={initialLoading ? null : formatInt(totalDeliveries)} label="إجمالي التوصيلات" />
+              <SummaryStat value={initialLoading ? null : formatInt(totalDeliveries)} label={t('delivery.totalDeliveries')} />
               <View style={styles.statsDivider} />
-              <SummaryStat value={initialLoading ? null : formatMoney(walletBalance)} label="رصيد المحفظة" />
+              <SummaryStat value={initialLoading ? null : formatMoney(walletBalance)} label={t('delivery.walletBalance')} />
             </View>
           </View>
 
@@ -446,52 +448,52 @@ export default function DeliveryOffersScreen({ navigation }: any) {
                 <View style={[styles.stateIcon, styles.stateIconError]}>
                   <Ionicons name="cloud-offline-outline" size={24} color={COLORS.error} />
                 </View>
-                <Text style={styles.stateTitle}>تعذّر تحديث الطلبات</Text>
+                <Text style={styles.stateTitle}>{t('delivery.ordersRefreshFailed')}</Text>
                 <Text style={styles.stateCaption}>{loadError}</Text>
-                <RefreshButton refreshing={refreshing} onPress={() => void loadData(true)} label="إعادة المحاولة" />
+                <RefreshButton refreshing={refreshing} onPress={() => void loadData(true)} label={t('common.retry')} />
               </>
             ) : !isApproved ? (
               <>
                 <View style={styles.stateIcon}>
                   <Ionicons name="shield-checkmark-outline" size={24} color={COLORS.primary} />
                 </View>
-                <Text style={styles.stateTitle}>حسابك قيد المراجعة</Text>
-                <Text style={styles.stateCaption}>ستتمكن من استقبال الطلبات فور اعتماد بياناتك.</Text>
+                <Text style={styles.stateTitle}>{t('delivery.accountUnderReview')}</Text>
+                <Text style={styles.stateCaption}>{t('delivery.accountUnderReviewText')}</Text>
               </>
             ) : !isOnline ? (
               <>
                 <View style={styles.stateIcon}>
                   <Ionicons name="pause" size={22} color={COLORS.inkSecondary} />
                 </View>
-                <Text style={styles.stateTitle}>استقبال الطلبات متوقف</Text>
-                <Text style={styles.stateCaption}>عند الاتصال ستصلك الطلبات الجاهزة القريبة منك.</Text>
+                <Text style={styles.stateTitle}>{t('delivery.receivePaused')}</Text>
+                <Text style={styles.stateCaption}>{t('delivery.receivePausedText')}</Text>
                 <TouchableOpacity
                   style={[styles.primaryButton, controlsDisabled && styles.disabled]}
                   onPress={handleToggleOnline}
                   disabled={controlsDisabled}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  accessibilityLabel="ابدأ استقبال الطلبات"
+                  accessibilityLabel={t('delivery.startReceiving')}
                 >
-                  <Text style={styles.primaryButtonText}>ابدأ استقبال الطلبات</Text>
+                  <Text style={styles.primaryButtonText}>{t('delivery.startReceiving')}</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
                 <SearchPulse />
                 <Text style={styles.stateTitle}>
-                  {current ? 'لديك طلب جديد' : 'أنت جاهز للعمل'}
+                  {current ? t('delivery.newOrder') : t('delivery.readyToWork')}
                 </Text>
                 <Text style={styles.stateCaption}>
-                  {current ? 'راجع تفاصيل الطلب قبل القبول' : <LastUpdated at={lastUpdatedAt} />}
+                  {current ? t('delivery.reviewBeforeAccept') : <LastUpdated at={lastUpdatedAt} />}
                 </Text>
                 {realtimeDegraded ? (
                   <View style={styles.warningChip}>
                     <Ionicons name="alert-circle-outline" size={14} color={COLORS.warningInk} />
-                    <Text style={styles.warningChipText}>التحديث اللحظي متوقف مؤقتًا</Text>
+                    <Text style={styles.warningChipText}>{t('delivery.realtimePaused')}</Text>
                   </View>
                 ) : null}
-                <RefreshButton refreshing={refreshing} onPress={() => void loadData(true)} label="تحديث الآن" />
+                <RefreshButton refreshing={refreshing} onPress={() => void loadData(true)} label={t('delivery.refreshNow')} />
               </>
             )}
           </View>
@@ -525,8 +527,8 @@ export default function DeliveryOffersScreen({ navigation }: any) {
 const formatMoney = (value: number) =>
   value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatInt = (value: number) => value.toLocaleString('en-US');
-const secondsLabel = (n: number) => (n >= 3 && n <= 10 ? 'ثوانٍ' : 'ثانية');
-const minutesLabel = (n: number) => (n >= 3 && n <= 10 ? 'دقائق' : 'دقيقة');
+const secondsLabel = (n: number) => translate(n >= 3 && n <= 10 ? 'delivery.seconds' : 'delivery.second');
+const minutesLabel = (n: number) => translate(n >= 3 && n <= 10 ? 'delivery.minutes' : 'delivery.minute');
 
 function useReduceMotion() {
   const [reduce, setReduce] = useState(false);
@@ -589,7 +591,7 @@ function CountUpAmount({ value, style }: { value: number; style: any }) {
   }, [animated, reduceMotion, value]);
 
   return (
-    <Text style={style} accessibilityLabel={`${formatMoney(value)} ريال يمني`}>
+    <Text style={style} accessibilityLabel={`${formatMoney(value)} ${translate('delivery.yemeniRialA11y')}`}>
       {formatMoney(display)}
     </Text>
   );
@@ -648,13 +650,13 @@ function LastUpdated({ at }: { at: number | null }) {
     const id = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(id);
   }, []);
-  if (!at) return <Text>ستظهر الطلبات الجديدة تلقائيًا</Text>;
+  if (!at) return <Text>{translate('delivery.newOrdersAuto')}</Text>;
   const seconds = Math.max(0, Math.round((now - at) / 1000));
   const text = seconds < 5
-    ? 'آخر تحديث الآن'
+    ? translate('delivery.updatedNow')
     : seconds < 60
-      ? `آخر تحديث قبل ${formatInt(seconds)} ${secondsLabel(seconds)}`
-      : `آخر تحديث قبل ${formatInt(Math.round(seconds / 60))} ${minutesLabel(Math.round(seconds / 60))}`;
+      ? `${translate('delivery.updatedAgo')} ${formatInt(seconds)} ${secondsLabel(seconds)}`
+      : `${translate('delivery.updatedAgo')} ${formatInt(Math.round(seconds / 60))} ${minutesLabel(Math.round(seconds / 60))}`;
   return <Text>{text}</Text>;
 }
 
