@@ -44,8 +44,8 @@ const UI = {
 
 const softShadow = {};
 
-function formatDate(iso: string | null) {
-  if (!iso) return t('merchant.noExpiry');
+function formatDate(iso: string | null, noExpiry: string) {
+  if (!iso) return noExpiry;
   const d = new Date(iso);
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
@@ -202,13 +202,13 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               onPress={() => toggleActive(item)}
               disabled={!!updatingId}
               accessibilityRole="button"
-              accessibilityLabel={`${item.is_active ? t('merchant.disable') : t('merchant.enable')} الكوبون ${item.code}`}
+              accessibilityLabel={`${item.is_active ? t('merchant.disable') : t('merchant.enable')} ${t('merchant.couponWord')} ${item.code}`}
               accessibilityState={{ disabled: !!updatingId, busy: updatingId === item.id }}
               activeOpacity={0.7}
             >
               <Ionicons name={item.is_active ? 'pause-circle-outline' : 'play-circle-outline'} size={20} color={item.is_active ? UI.green : UI.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)} activeOpacity={0.7} disabled={!!updatingId} accessibilityRole="button" accessibilityLabel={`حذف الكوبون ${item.code}`} accessibilityState={{ disabled: !!updatingId }}>
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)} activeOpacity={0.7} disabled={!!updatingId} accessibilityRole="button" accessibilityLabel={`${t('merchant.deleteCouponAccessibility')} ${item.code}`} accessibilityState={{ disabled: !!updatingId }}>
               <Ionicons name="trash-outline" size={20} color={UI.red} />
             </TouchableOpacity>
           </View>
@@ -219,7 +219,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <View style={styles.detailChip}>
             <Ionicons name="pricetag-outline" size={13} color={UI.textGrey} />
             <Text style={styles.detailChipText}>
-              {item.type === 'percentage' ? `${item.value}%` : `${item.value} ر.ي`}
+              {item.type === 'percentage' ? `${item.value}%` : `${item.value} ${t('merchant.currencyYER')}`}
             </Text>
           </View>
 
@@ -227,21 +227,21 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           {item.min_order_amount ? (
             <View style={styles.detailChip}>
               <Ionicons name="cart-outline" size={13} color={UI.textGrey} />
-              <Text style={styles.detailChipText}>حد أدنى {item.min_order_amount}</Text>
+              <Text style={styles.detailChipText}>{t('merchant.minOrder')} {item.min_order_amount}</Text>
             </View>
           ) : null}
 
           {/* End Date */}
           <View style={styles.detailChip}>
             <Ionicons name="calendar-outline" size={13} color={UI.textGrey} />
-            <Text style={styles.detailChipText}>{formatDate(item.end_date)}</Text>
+            <Text style={styles.detailChipText}>{formatDate(item.end_date, t('merchant.noExpiry'))}</Text>
           </View>
 
           {/* Usage */}
           <View style={styles.detailChip}>
             <Ionicons name="people-outline" size={13} color={UI.textGrey} />
             <Text style={styles.detailChipText}>
-              {item.used_count}{item.max_uses ? `/${item.max_uses}` : ''} استخدام
+              {item.used_count}{item.max_uses ? `/${item.max_uses}` : ''} {t('merchant.usage')}
             </Text>
           </View>
         </View>
@@ -359,11 +359,11 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
               {/* Value */}
               <Text style={styles.fieldLabel}>
-                {type === 'percentage' ? 'نسبة الخصم (%) *' : 'مبلغ الخصم (ر.ي) *'}
+                {type === 'percentage' ? `${t('merchant.percentage')} *` : `${t('merchant.fixedAmount')} (${t('merchant.currencyYER')}) *`}
               </Text>
               <TextInput
                 style={styles.input}
-                placeholder={type === 'percentage' ? 'مثال: 15' : 'مثال: 50'}
+                placeholder={type === 'percentage' ? t('merchant.example15') : t('merchant.example50')}
                 placeholderTextColor={UI.textMuted}
                 value={value}
                 onChangeText={setValue}
@@ -374,7 +374,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               <Text style={styles.fieldLabel}>{t('merchant.minimumOrderOptional')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="مثال: 100"
+                placeholder={t('merchant.example100')}
                 placeholderTextColor={UI.textMuted}
                 value={minOrder}
                 onChangeText={setMinOrder}
@@ -384,10 +384,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               {/* Max Discount (percentage only) */}
               {type === 'percentage' && (
                 <>
-                  <Text style={styles.fieldLabel}>أقصى قيمة خصم (اختياري)</Text>
+                  <Text style={styles.fieldLabel}>{t('merchant.maxDiscountOptional')}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="مثال: 200"
+                    placeholder={t('merchant.example200')}
                     placeholderTextColor={UI.textMuted}
                     value={maxDiscount}
                     onChangeText={setMaxDiscount}
@@ -397,10 +397,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               )}
 
               {/* Max Uses */}
-              <Text style={styles.fieldLabel}>الحد الأقصى للاستخدام (اختياري)</Text>
+              <Text style={styles.fieldLabel}>{t('merchant.maxUsesOptional')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="اتركه فارغاً = غير محدود"
+                placeholder={t('merchant.unlimitedPlaceholder')}
                 placeholderTextColor={UI.textMuted}
                 value={maxUses}
                 onChangeText={setMaxUses}
@@ -408,7 +408,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               />
 
               {/* End Date */}
-              <Text style={styles.fieldLabel}>تاريخ الانتهاء (اختياري YYYY-MM-DD)</Text>
+              <Text style={styles.fieldLabel}>{t('merchant.expiryOptional')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="2024-12-31"
@@ -427,7 +427,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               {saving ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.submitBtnText}>إنشاء الكوبون</Text>
+                <Text style={styles.submitBtnText}>{t('merchant.createCoupon')}</Text>
               )}
             </TouchableOpacity>
           </View>
