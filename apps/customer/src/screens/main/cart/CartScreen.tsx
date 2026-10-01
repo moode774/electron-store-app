@@ -46,7 +46,7 @@ const toRecommendation = (p: ProductSummary): Recommendation => ({
     p.og_image_url ??
     null,
   storeId: p.merchant_id,
-  storeName: (p as any).merchant_profiles?.store_name ?? 'المتجر',
+  storeName: (p as any).merchant_profiles?.store_name ?? t('customer.store'),
 });
 
 export default function CartScreen({ navigation }: any) {
@@ -186,7 +186,7 @@ export default function CartScreen({ navigation }: any) {
 
                     {typeof item.maxQuantity === 'number' ? (
                       <View style={styles.stockBadgePill}>
-                        <Text style={styles.stockBadgeText}>المتاح: {item.maxQuantity}</Text>
+                        <Text style={styles.stockBadgeText}>{t('customer.available')}: {item.maxQuantity}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -224,7 +224,7 @@ export default function CartScreen({ navigation }: any) {
                       </TouchableOpacity>
 
                       <Text style={styles.itemPriceText}>
-                        {item.price.toLocaleString()} ر.ي
+                        {item.price.toLocaleString()} {t('merchant.currencyYER')}
                       </Text>
                     </View>
 
@@ -257,7 +257,7 @@ export default function CartScreen({ navigation }: any) {
         {recommendations.length > 0 && (
           <>
             <View style={styles.recommendationsHeaderRow}>
-              <Text style={styles.recommendationsTitleText}>قد يعجبك أيضاً</Text>
+              <Text style={styles.recommendationsTitleText}>{t('customer.recommendations')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Home', { screen: 'StoresList' })}>
                 <Text style={styles.viewAllText}>{t('customer.viewAll')}</Text>
               </TouchableOpacity>
@@ -290,9 +290,9 @@ export default function CartScreen({ navigation }: any) {
 
                   <View style={styles.recPriceRow}>
                     <View>
-                      <Text style={styles.recPriceText}>{rec.price.toLocaleString()} ر.ي</Text>
+                      <Text style={styles.recPriceText}>{rec.price.toLocaleString()} {t('merchant.currencyYER')}</Text>
                       {rec.oldPrice ? (
-                        <Text style={styles.recOldPriceText}>{rec.oldPrice.toLocaleString()} ر.ي</Text>
+                        <Text style={styles.recOldPriceText}>{rec.oldPrice.toLocaleString()} {t('merchant.currencyYER')}</Text>
                       ) : null}
                     </View>
 
@@ -328,14 +328,14 @@ export default function CartScreen({ navigation }: any) {
           {/* Order Totals Summary */}
           <View style={styles.orderTotalsCol}>
             <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>المجموع الفرعي ({totalCount} منتجات)</Text>
-              <Text style={styles.totalsVal}>{totalPrice.toLocaleString()} ر.ي</Text>
+              <Text style={styles.totalsLabel}>{t('customer.subtotal')} ({totalCount} {t('common.products')})</Text>
+              <Text style={styles.totalsVal}>{totalPrice.toLocaleString()} {t('merchant.currencyYER')}</Text>
             </View>
 
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>{t('customer.deliveryFee')}</Text>
               <View style={styles.shippingValRow}>
-                <Text style={styles.totalsLabel}>تُحسب حسب عنوانك عند إتمام الطلب</Text>
+                <Text style={styles.totalsLabel}>{t('customer.totalsByAddress')}</Text>
               </View>
             </View>
 
@@ -344,7 +344,7 @@ export default function CartScreen({ navigation }: any) {
             <View style={styles.totalsRow}>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={styles.grandTotalLabel}>{t('customer.total')}</Text>
-                <Text style={styles.vatText}>قبل رسوم التوصيل</Text>
+                <Text style={styles.vatText}>{t('customer.beforeDeliveryFees')}</Text>
               </View>
               <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.ي</Text>
             </View>
@@ -360,7 +360,7 @@ export default function CartScreen({ navigation }: any) {
             <View style={styles.checkoutBtnInner}>
               <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.checkoutBtnText}>
-                {activeCartItems.length === 0 ? 'حدد منتجاً للمتابعة' : t('customer.checkout')}
+                {activeCartItems.length === 0 ? t('customer.selectProductContinue') : t('customer.checkout')}
               </Text>
             </View>
           </TouchableOpacity>
