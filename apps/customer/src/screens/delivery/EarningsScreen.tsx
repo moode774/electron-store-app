@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getMyWithdrawalRequests, requestWithdrawal, DeliveryEarning, WithdrawalRequest, WithdrawalStatus } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation, translate } from '../../i18n';
 
 const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'pending',
@@ -13,24 +14,25 @@ const BLOCKING_WITHDRAWAL_STATUSES = new Set<WithdrawalStatus>([
   'processing',
 ]);
 
-const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { label: string; color: string; backgroundColor: string }> = {
-  pending: { label: 'قيد المراجعة', color: '#92400E', backgroundColor: '#FEF3C7' },
-  approved: { label: 'معتمد — لم يُثبت التحويل بعد', color: COLORS.primary, backgroundColor: COLORS.primarySoft },
-  processing: { label: 'جاري التحويل', color: '#6D28D9', backgroundColor: '#EDE9FE' },
-  paid: { label: 'مدفوع', color: '#047857', backgroundColor: '#D1FAE5' },
-  rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
-  failed: { label: 'فشل التحويل', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+const WITHDRAWAL_STATUS_INFO: Record<WithdrawalStatus, { labelKey: string; color: string; backgroundColor: string }> = {
+  pending: { labelKey: 'delivery.withdrawalPending', color: '#92400E', backgroundColor: '#FEF3C7' },
+  approved: { labelKey: 'delivery.withdrawalApproved', color: COLORS.primary, backgroundColor: COLORS.primarySoft },
+  processing: { labelKey: 'delivery.withdrawalProcessing', color: '#6D28D9', backgroundColor: '#EDE9FE' },
+  paid: { labelKey: 'delivery.withdrawalPaid', color: '#047857', backgroundColor: '#D1FAE5' },
+  rejected: { labelKey: 'delivery.withdrawalRejected', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+  failed: { labelKey: 'delivery.withdrawalFailed', color: '#B91C1C', backgroundColor: '#FEE2E2' },
 };
 
 function withdrawalErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
   if (/COD_FUNDS_NOT_YET_REMITTED/i.test(message)) {
-    return 'جزء من الرصيد ناتج عن طلبات دفع عند الاستلام ولم تعتمد الإدارة تسليم تحصيلها بعد. راجع «المحفظة والتحصيلات» لمعرفة المبلغ قيد المراجعة.';
+    return translate('delivery.codFundsBlocked');
   }
-  return message || 'تعذّر إرسال طلب السحب';
+  return message || translate('delivery.withdrawSendFailed');
 }
 
 export default function EarningsScreen() {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(920);
   const user = useAuthStore((s) => s.user);
   const [balance, setBalance] = useState(0);
@@ -59,7 +61,7 @@ export default function EarningsScreen() {
       setHistory(result.earnings);
       setWithdrawals(requests);
     } catch (error) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل الأرباح.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('delivery.earningsLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -77,17 +79,17 @@ export default function EarningsScreen() {
     if (withdrawLock.current || withdrawing) return;
     if (blockingWithdrawal) {
       Alert.alert(
-        blockingWithdrawal.status === 'failed' ? 'طلب يحتاج مراجعة' : 'طلب قيد المعالجة',
+        blockingWithdrawal.status === 'failed' ? t('delivery.requestNeedsReview') : t('delivery.requestProcessing'),
         blockingWithdrawal.status === 'failed'
-          ? 'يوجد طلب فشل تحويله. تواصل مع الدعم أو الإدارة لمراجعته قبل إنشاء طلب جديد.'
-          : 'لديك طلب سحب قائم بالفعل.',
+          ? t('delivery.failedRequestText')
+          : t('delivery.existingRequestText'),
       );
       return;
     }
     const amount = parseFloat(withdrawAmount);
-    if (!amount || amount <= 0) { Alert.alert('تنبيه', 'الرجاء إدخال مبلغ صحيح'); return; }
-    if (amount > balance) { Alert.alert('تنبيه', 'المبلغ المطلوب أكبر من رصيدك الحالي'); return; }
-    if (amount < 50) { Alert.alert('تنبيه', 'الحد الأدنى للسحب 50 ر.ي'); return; }
+    if (!amount || amount <= 0) { Alert.alert(t('auth.alert'), t('delivery.enterValidAmount')); return; }
+    if (amount > balance) { Alert.alert(t('auth.alert'), t('delivery.amountAboveBalance')); return; }
+    if (amount < 50) { Alert.alert(t('auth.alert'), `${t('delivery.minWithdrawal')} ${t('merchant.currencyYER')}`); return; }
     if (!user?.id) return;
     withdrawLock.current = true;
     setWithdrawing(true);
@@ -96,9 +98,9 @@ export default function EarningsScreen() {
       setShowWithdraw(false);
       setWithdrawAmount('');
       await loadEarnings();
-      Alert.alert('تم إنشاء الطلب', `تم تسجيل طلب سحب ${amount} ر.ي للمراجعة. يمكنك متابعة حالته في هذه الصفحة، ولا يُعد المبلغ مدفوعاً حتى تظهر حالة «مدفوع».`);
+      Alert.alert(t('delivery.requestCreated'), `${t('delivery.requestCreatedText')} ${amount} ${t('merchant.currencyYER')}`);
     } catch (error) {
-      Alert.alert('تعذّر طلب السحب', withdrawalErrorMessage(error));
+      Alert.alert(t('delivery.requestWithdrawalFailed'), withdrawalErrorMessage(error));
     } finally {
       withdrawLock.current = false;
       setWithdrawing(false);
@@ -109,18 +111,18 @@ export default function EarningsScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <View><Text style={styles.headerTitle}>الأرباح</Text><Text style={styles.headerSubtitle}>رصيدك وسجل التوصيلات وطلبات السحب</Text></View>
+        <View><Text style={styles.headerTitle}>{t('delivery.earnings')}</Text><Text style={styles.headerSubtitle}>{t('delivery.earningsSubtitle')}</Text></View>
       </View>
 
       {/* Withdrawal Modal */}
       <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => !withdrawing && setShowWithdraw(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, layout.compact && styles.modalCardCompact]}>
-            <Text style={styles.modalTitle}>طلب سحب الأرباح</Text>
-            <Text style={styles.modalSub}>رصيدك الحالي: <Text style={{ fontWeight: '800', color: COLORS.ink }}>{balance} ر.ي</Text></Text>
+            <Text style={styles.modalTitle}>{t('delivery.withdrawEarnings')}</Text>
+            <Text style={styles.modalSub}>{t('delivery.currentBalance')}: <Text style={{ fontWeight: '800', color: COLORS.ink }}>{balance} ر.ي</Text></Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="المبلغ المراد سحبه (ر.ي)"
+              placeholder={t('delivery.amountToWithdraw')}
               placeholderTextColor="#9CA3AF"
               value={withdrawAmount}
               onChangeText={setWithdrawAmount}
@@ -137,14 +139,14 @@ export default function EarningsScreen() {
             >
               {withdrawing
                 ? <ActivityIndicator color="#FFFFFF" size="small" />
-                : <Text style={styles.modalBtnText}>إرسال طلب السحب</Text>}
+                : <Text style={styles.modalBtnText}>{t('delivery.sendWithdrawal')}</Text>}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalCancel, withdrawing && { opacity: 0.5 }]}
               onPress={() => { setShowWithdraw(false); setWithdrawAmount(''); }}
               disabled={withdrawing}
             >
-              <Text style={styles.modalCancelText}>إلغاء</Text>
+              <Text style={styles.modalCancelText}>{t('delivery.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -164,24 +166,24 @@ export default function EarningsScreen() {
             {loadError ? (
               <View style={styles.errorCard}>
                 <Text style={styles.errorText}>{loadError}</Text>
-                <TouchableOpacity onPress={() => void loadEarnings()} accessibilityRole="button" accessibilityLabel="إعادة تحميل الأرباح">
-                  <Text style={styles.retryText}>إعادة المحاولة</Text>
+                <TouchableOpacity onPress={() => void loadEarnings()} accessibilityRole="button" accessibilityLabel={t('delivery.reloadEarnings')}>
+                  <Text style={styles.retryText}>{t('common.retry')}</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
             {/* Summary Card */}
             <View style={[styles.summaryCard, layout.compact && styles.summaryCardCompact]}>
-              <Text style={styles.summaryLabel}>الرصيد الحالي</Text>
+              <Text style={styles.summaryLabel}>{t('delivery.currentBalanceLabel')}</Text>
               <Text style={styles.summaryValue}>{balance} ر.ي</Text>
               <View style={[styles.summaryRow, layout.compact && styles.summaryRowCompact]}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryItemValue}>{recordedCount}</Text>
-                  <Text style={styles.summaryItemLabel}>توصيلات مسجّلة</Text>
+                  <Text style={styles.summaryItemLabel}>{t('delivery.recordedDeliveries')}</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryItemValue}>{totalDeliveries}</Text>
-                  <Text style={styles.summaryItemLabel}>إجمالي التوصيلات</Text>
+                  <Text style={styles.summaryItemLabel}>{t('delivery.totalDeliveries')}</Text>
                 </View>
               </View>
               <TouchableOpacity
@@ -190,17 +192,17 @@ export default function EarningsScreen() {
                 activeOpacity={0.8}
                 disabled={balance < 50 || hasBlockingWithdrawal || withdrawing}
                 accessibilityRole="button"
-                accessibilityLabel="طلب سحب الأرباح"
+                accessibilityLabel={t('delivery.withdrawEarnings')}
                 accessibilityState={{ disabled: balance < 50 || hasBlockingWithdrawal || withdrawing }}
               >
                 <Ionicons name="arrow-up-circle-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.withdrawBtnText}>طلب سحب الأرباح</Text>
+                <Text style={styles.withdrawBtnText}>{t('delivery.withdrawEarnings')}</Text>
               </TouchableOpacity>
             </View>
 
             {withdrawals.length ? (
               <View style={styles.withdrawalSection}>
-                <Text style={styles.sectionTitle}>طلبات السحب</Text>
+                <Text style={styles.sectionTitle}>{t('delivery.withdrawalRequests')}</Text>
                 {withdrawals.slice(0, 5).map((request) => {
                   const statusInfo = WITHDRAWAL_STATUS_INFO[request.status];
                   return (
@@ -224,13 +226,13 @@ export default function EarningsScreen() {
             ) : null}
 
             <Text style={styles.sectionTitle}>
-              سجل التوصيلات{recordedCount > history.length ? ` (أحدث ${history.length} من ${recordedCount})` : ''}
+              {t('delivery.deliveryHistory')}{recordedCount > history.length ? ` (${t('delivery.latest')} ${history.length} ${t('delivery.of')} ${recordedCount})` : ''}
             </Text>
           </>
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: COLORS.inkTertiary, fontSize: 13 }}>لا توجد أرباح مسجّلة بعد</Text>
+            <Text style={{ color: COLORS.inkTertiary, fontSize: 13 }}>{t('delivery.noEarnings')}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -239,7 +241,7 @@ export default function EarningsScreen() {
               <Ionicons name="checkmark-done" size={20} color="#059669" />
             </View>
             <View style={styles.info}>
-              <Text style={styles.route}>توصيلة مكتملة</Text>
+              <Text style={styles.route}>{t('delivery.completedDelivery')}</Text>
               <Text style={styles.meta}>{new Date(item.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</Text>
             </View>
             <Text style={styles.fee}>+{item.total_earning} ر.ي</Text>
