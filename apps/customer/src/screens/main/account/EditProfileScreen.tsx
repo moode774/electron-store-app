@@ -92,7 +92,7 @@ export default function EditProfileScreen({
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
             ) : (
-              <Text style={styles.avatarText}>{name.charAt(0) || 'م'}</Text>
+              <Text style={styles.avatarText}>{name.charAt(0) || t('merchant.user').charAt(0)}</Text>
             )}
             <TouchableOpacity
               style={styles.cameraBtn}
