@@ -42,6 +42,7 @@ import MerchantOnboardingScreen from './src/screens/onboarding/MerchantOnboardin
 import DeliveryOnboardingScreen from './src/screens/onboarding/DeliveryOnboardingScreen';
 import AdminTabNavigator from './src/navigation/AdminTabNavigator';
 import { configurePushNotifications, installForegroundNotificationHandler } from './src/services/pushNotifications';
+import { useLanguageStore, useTranslation } from './src/i18n';
 
 SplashScreenExpo.preventAutoHideAsync();
 
@@ -100,11 +101,6 @@ const storage = {
   },
 };
 
-if (!I18nManager.isRTL) {
-  I18nManager.allowRTL(true);
-  I18nManager.forceRTL(true);
-}
-
 type AuthStackParamList = {
   Login: undefined;
   Otp: { phone: string };
@@ -131,6 +127,7 @@ function AuthNavigator(): React.JSX.Element {
 }
 
 function RootNavigator(): React.JSX.Element {
+  const { t } = useTranslation();
   const { isAuthenticated, role, user } = useAuthStore();
   const [profileChecked, setProfileChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -167,7 +164,7 @@ function RootNavigator(): React.JSX.Element {
           }
         }
       } catch (error: any) {
-        if (!cancelled) setProfileCheckError(error?.message ?? 'تعذّر التحقق من الملف التشغيلي للحساب.');
+        if (!cancelled) setProfileCheckError(error?.message ?? t('workspace.profileCheckFailed'));
       } finally {
         if (!cancelled) setProfileChecked(true);
       }
@@ -190,14 +187,14 @@ function RootNavigator(): React.JSX.Element {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: 28, gap: 12 }} accessibilityRole="alert">
         <Ionicons name="cloud-offline-outline" size={50} color="#B91C1C" />
-        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'center' }}>تعذّر فتح مساحة العمل</Text>
+        <Text style={{ fontSize: 18, fontWeight: '900', color: '#111827', textAlign: 'center' }}>{t('workspace.openFailed')}</Text>
         <Text style={{ color: '#6B7280', textAlign: 'center', lineHeight: 22 }}>{profileCheckError}</Text>
         <TouchableOpacity
           style={{ minHeight: 46, minWidth: 160, borderRadius: 13, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 }}
           onPress={() => setProfileCheckAttempt((value) => value + 1)}
           accessibilityRole="button"
         >
-          <Text style={{ color: '#fff', fontWeight: '800' }}>إعادة المحاولة</Text>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>{t('common.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -225,32 +222,32 @@ function RootNavigator(): React.JSX.Element {
           <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#F1F5FB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <Ionicons name="time-outline" size={32} color="#172554" />
           </View>
-          <Text style={{ color: '#111827', fontSize: 21, fontWeight: '800', textAlign: 'center' }}>طلبك قيد المراجعة</Text>
+          <Text style={{ color: '#111827', fontSize: 21, fontWeight: '800', textAlign: 'center' }}>{t('workspace.reviewTitle')}</Text>
           <Text style={{ color: '#52606D', fontSize: 14, lineHeight: 23, textAlign: 'center', marginTop: 8 }}>
             {role === USER_ROLES.MERCHANT
-              ? 'تم استلام بيانات المتجر. ستتوفر أدوات البيع والطلبات بعد اعتماد الحساب من الإدارة.'
-              : 'تم استلام بيانات المندوب. ستتوفر طلبات التوصيل بعد اعتماد الحساب من الإدارة.'}
+              ? t('workspace.merchantReview')
+              : t('workspace.deliveryReview')}
           </Text>
           <TouchableOpacity
             style={{ width: '100%', minHeight: 48, marginTop: 20, borderRadius: 14, backgroundColor: '#172554', alignItems: 'center', justifyContent: 'center' }}
             onPress={() => setProfileCheckAttempt((value) => value + 1)}
             accessibilityRole="button"
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>تحديث حالة الطلب</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>{t('common.updateStatus')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{ minHeight: 44, marginTop: 8, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
             onPress={() => setNeedsOnboarding(true)}
             accessibilityRole="button"
           >
-            <Text style={{ color: '#172554', fontSize: 13, fontWeight: '700' }}>تعديل بيانات الطلب</Text>
+            <Text style={{ color: '#172554', fontSize: 13, fontWeight: '700' }}>{t('common.editRequest')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{ minHeight: 44, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
             onPress={() => void useAuthStore.getState().signOut()}
             accessibilityRole="button"
           >
-            <Text style={{ color: '#7A8793', fontSize: 13, fontWeight: '600' }}>تسجيل الخروج</Text>
+            <Text style={{ color: '#7A8793', fontSize: 13, fontWeight: '600' }}>{t('common.signOut')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -268,6 +265,8 @@ export default function App(): React.JSX.Element | null {
   const [appReady, setAppReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const initialize = useAuthStore((s) => s.initialize);
+  const initializeLanguage = useLanguageStore((s) => s.initializeLanguage);
+  const languageHydrated = useLanguageStore((s) => s.hydrated);
   const sessionUserId = useAuthStore((s) => s.user?.id ?? null);
   const sessionRole = useAuthStore((s) => s.role);
   const clearCart = useCartStore((s) => s.clearCart);
@@ -335,11 +334,12 @@ export default function App(): React.JSX.Element | null {
       }
     });
     return () => sub.remove();
-  }, []);
+  }, [initialize, initializeLanguage]);
 
   useEffect(() => {
     const prepare = async () => {
       try {
+        await initializeLanguage();
         await initialize();
         const done = await storage.get(ONBOARDING_KEY);
         setShowOnboarding(done !== '1');
@@ -364,7 +364,7 @@ export default function App(): React.JSX.Element | null {
 
   // Never keep the application on a blank screen if a browser delays a font.
   // The bundled font is applied as soon as it is ready.
-  if (!appReady) return null;
+  if (!appReady || !languageHydrated) return null;
 
   // 🧪 وضع اختبار الكيبورد: غيّر إلى true لعرض شاشة الدخول بدون طبقة التنقل
   const KEYBOARD_DEBUG = false;
