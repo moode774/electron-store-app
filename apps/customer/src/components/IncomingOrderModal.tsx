@@ -68,7 +68,7 @@ export default function IncomingOrderModal({ visible, order, onAccept, onReject,
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={18} color="#6B7280" />
               <Text style={styles.detailText} numberOfLines={2}>
-                يظهر عنوان العميل بالتفصيل بعد قبول الطلب
+                {t('delivery.addressAfterAccept')}
               </Text>
             </View>
             <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }]}>
