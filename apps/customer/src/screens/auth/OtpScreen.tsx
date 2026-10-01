@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 import CustomAlert from '../../components/CustomAlert';
+import { useTranslation } from '../../i18n';
 
 const OTP_LENGTH = 6;
 const OTP_RESEND_SECONDS = 60;
@@ -31,6 +32,7 @@ interface OtpScreenProps {
 }
 
 export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.Element {
+  const { t } = useTranslation();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(OTP_RESEND_SECONDS);
@@ -88,14 +90,14 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
   const handleVerify = async (code?: string): Promise<void> => {
     const token = code ?? otp.join('');
     if (token.length < OTP_LENGTH) {
-      showAlert('تنبيه', 'الرجاء إدخال رمز التحقق كاملاً');
+      showAlert(t('auth.alert'), t('onboarding.enterSixDigits'));
       return;
     }
     setIsLoading(true);
     const { error } = await verifyOtp(phone, token);
     setIsLoading(false);
     if (error) {
-      showAlert('تعذّر التحقق', error);
+      showAlert(t('workspace.openFailed'), error);
       setOtp(Array(OTP_LENGTH).fill(''));
       inputs.current[0]?.focus();
     }
@@ -107,7 +109,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
     const { error } = await signInWithPhone(phone);
     setIsLoading(false);
     if (error) {
-      showAlert('تعذّر إعادة الإرسال', error);
+      showAlert(t('workspace.openFailed'), error);
       return;
     }
     setCountdown(OTP_RESEND_SECONDS);
@@ -148,8 +150,8 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
               />
             </View>
 
-            <Text style={styles.titleText}>رمز التحقق</Text>
-            <Text style={styles.subtitleText}>أدخل الرمز المكون من 6 أرقام المرسل إلى</Text>
+            <Text style={styles.titleText}>{t('onboarding.verificationCode')}</Text>
+            <Text style={styles.subtitleText}>{t('onboarding.enterSixDigits')}</Text>
             <Text style={styles.phoneText}>{maskedPhone}</Text>
 
             <View style={styles.otpRow}>
@@ -189,7 +191,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.verifyBtnText}>تأكيد الرمز</Text>
+                  <Text style={styles.verifyBtnText}>{t('onboarding.verifyCode')}</Text>
                   <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.verifyArrow} />
                 </>
               )}
@@ -198,16 +200,16 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
             <View style={styles.resendWrapper}>
               {canResend ? (
                 <View style={styles.resendRow}>
-                  <Text style={styles.didNotReceiveText}>لم يصلك الرمز؟ </Text>
+                  <Text style={styles.didNotReceiveText}>{t('onboarding.noCode')} </Text>
                   <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
-                    <Text style={styles.resendActionText}>إعادة إرسال</Text>
+                    <Text style={styles.resendActionText}>{t('onboarding.resend')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.timerRow}>
                   <Ionicons name="time-outline" size={16} color="#6B7280" />
                   <Text style={styles.timerText}>
-                    إعادة الإرسال متاح بعد{' '}
+                    {t('onboarding.resendAfter')}{' '}
                     <Text style={styles.timerNum}>
                       {String(Math.floor(countdown / 60)).padStart(2, '0')}:
                       {String(countdown % 60).padStart(2, '0')}
