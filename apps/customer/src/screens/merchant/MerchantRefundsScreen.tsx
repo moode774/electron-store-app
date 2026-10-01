@@ -13,12 +13,12 @@ import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
 
-const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: t('merchant.refundPending'), color: '#B45309', bg: '#FFFBEB' },
-  approved: { label: t('merchant.refundApproved'), color: '#1D4ED8', bg: '#EFF6FF' },
-  processing: { label: t('merchant.refundProcessing'), color: '#7C3AED', bg: '#F5F3FF' },
-  completed: { label: t('merchant.refundCompleted'), color: '#047857', bg: '#ECFDF5' },
-  rejected: { label: t('merchant.refundRejected'), color: '#B91C1C', bg: '#FEF2F2' },
+const STATUS: Record<string, { labelKey: string; color: string; bg: string }> = {
+  pending: { labelKey: 'merchant.refundPending', color: '#B45309', bg: '#FFFBEB' },
+  approved: { labelKey: 'merchant.refundApproved', color: '#1D4ED8', bg: '#EFF6FF' },
+  processing: { labelKey: 'merchant.refundProcessing', color: '#7C3AED', bg: '#F5F3FF' },
+  completed: { labelKey: 'merchant.refundCompleted', color: '#047857', bg: '#ECFDF5' },
+  rejected: { labelKey: 'merchant.refundRejected', color: '#B91C1C', bg: '#FEF2F2' },
 };
 
 export default function MerchantRefundsScreen({ navigation }: any) {
@@ -116,12 +116,12 @@ export default function MerchantRefundsScreen({ navigation }: any) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
           ListEmptyComponent={<View style={styles.center}><Text style={styles.emptyText}>{t('merchant.noRefunds')}</Text></View>}
           renderItem={({ item }) => {
-            const meta = STATUS[item.status] ?? { label: item.status, color: '#64748B', bg: '#F1F5F9' };
+            const meta = STATUS[item.status] ?? { labelKey: '', color: '#64748B', bg: '#F1F5F9' };
             const orderItems = Array.isArray(item.orders?.order_items) ? item.orders.order_items : [];
             return (
               <View style={[styles.card, isCompact && styles.cardCompact]}>
                 <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
-                  <View style={[styles.badge, { backgroundColor: meta.bg }]}><Text style={[styles.badgeText, { color: meta.color }]}>{meta.label}</Text></View>
+                  <View style={[styles.badge, { backgroundColor: meta.bg }]}><Text style={[styles.badgeText, { color: meta.color }]}>{meta.labelKey ? t(meta.labelKey) : item.status}</Text></View>
                   <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     <Text style={styles.orderNumber}>طلب #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8)}</Text>
                     <Text style={styles.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
