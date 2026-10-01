@@ -13,6 +13,7 @@ import {
   getDeliveryOnboardingDocumentLinks,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { translate, useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -28,37 +29,38 @@ const UI = {
 };
 
 const FILTERS = [
-  { key: 'all', label: 'الكل' },
-  { key: 'pending', label: 'بانتظار الموافقة' },
-  { key: 'approved', label: 'معتمد' },
+  { key: 'all', labelKey: 'adminUi.all' },
+  { key: 'pending', labelKey: 'adminUi.awaitingApproval' },
+  { key: 'approved', labelKey: 'adminUi.approved' },
 ] as const;
 
 const VEHICLE_LABELS: Record<string, string> = {
-  pickup: 'بيك أب',
-  motorcycle: 'دراجة نارية',
-  car: 'سيارة',
-  bicycle: 'دراجة هوائية',
-  truck: 'شاحنة',
+  pickup: 'adminUi.vehiclePickup',
+  motorcycle: 'adminUi.vehicleMotorcycle',
+  car: 'adminUi.vehicleCar',
+  bicycle: 'adminUi.vehicleBicycle',
+  truck: 'adminUi.vehicleTruck',
 };
 
 function reviewErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? '');
   if (/complete core profile fields/i.test(message)) {
-    return 'لا يمكن اعتماد المندوب قبل اكتمال الاسم ورقم الهوية ونوع المركبة واللوحة ومدينة العمل.';
+    return translate('adminUi.driverCoreProfileIncomplete');
   }
   if (/both stored delivery documents|external verification note/i.test(message)) {
-    return 'يلزم وجود صورتي الهوية والرخصة معًا، أو ملاحظة تحقق خارجي واضحة لا تقل عن 20 حرفًا.';
+    return translate('adminUi.driverDocumentsOrExternalNoteRequired');
   }
   if (/document is missing or not owned|invalid delivery document/i.test(message)) {
-    return 'تعذر على الخادم التحقق من ملف الهوية أو الرخصة. أعد رفع المستندات أو وثّق تحققًا خارجيًا لا يقل عن 20 حرفًا.';
+    return translate('adminUi.driverDocumentVerificationFailed');
   }
   if (/application changed since review|revision/i.test(message)) {
-    return 'عدّل المندوب بياناته أو مستنداته أثناء المراجعة. أُعيد تحميل الطلب؛ افتحه وراجع النسخة الجديدة قبل القرار.';
+    return translate('adminUi.driverApplicationChanged');
   }
-  return message || 'لم تتغير حالة المندوب.';
+  return message || translate('adminUi.driverStatusUnchanged');
 }
 
 export default function AdminDeliveryScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -84,7 +86,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
       setDrivers(data);
     } catch (e) {
       console.error('Failed to load delivery profiles:', e);
-      setLoadError('تعذر تحميل بيانات المندوبين. تحقق من الاتصال ثم أعد المحاولة.');
+      setLoadError(t('adminUi.driversLoadFailed'));
     }
     finally { setLoading(false); setRefreshing(false); }
   }, [filter]);
@@ -111,7 +113,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
       .catch((error) => {
         if (generation === documentGeneration.current) {
           console.error('Failed to sign delivery onboarding documents:', error);
-          setDocumentsError('تعذّر فتح أحد المستندات الخاصة؛ استخدم تحققًا خارجيًا موثقًا أو اطلب إعادة الرفع.');
+          setDocumentsError(t('adminUi.driverDocumentOpenFailed'));
         }
       })
       .finally(() => {
@@ -134,15 +136,15 @@ export default function AdminDeliveryScreen({ navigation }: any) {
     const hasExternalVerification = cleanReason.length >= 20;
     const hasBothDocumentPaths = !!driver.national_id_image_path && !!driver.license_image_path;
     if (!approve && !cleanReason) {
-      Alert.alert('سبب الرفض مطلوب', 'اكتب سبباً واضحاً ليتمكن المندوب من تصحيح طلبه.');
+      Alert.alert(t('adminUi.rejectionReasonRequired'), t('adminUi.driverRejectReasonText'));
       return;
     }
     if (approve && !hasBothDocumentPaths && !hasExternalVerification) {
-      Alert.alert('توثيق التحقق الخارجي مطلوب', 'لا تكتمل صورتا الهوية والرخصة؛ اكتب ملاحظة لا تقل عن 20 حرفًا توضّح كيف تحققت منهما خارج التطبيق.');
+      Alert.alert(t('adminUi.externalVerificationRequired'), t('adminUi.externalVerificationText'));
       return;
     }
     if (approve && (documentsLoading || documentsError) && !hasExternalVerification) {
-      Alert.alert('المستندات لم تُراجع', 'انتظر تحميل المستندات أو أعد فتح الطلب قبل الاعتماد.');
+      Alert.alert(t('adminUi.documentsNotReviewed'), t('adminUi.documentsNotReviewedText'));
       return;
     }
     setProcessing(driver.id);
@@ -150,14 +152,14 @@ export default function AdminDeliveryScreen({ navigation }: any) {
       await approveDriver(driver.id, approve, driver.application_revision, cleanReason || undefined);
       setDrivers((current) => current.map((item) => item.id === driver.id ? { ...item, is_approved: approve } : item));
       closeReview();
-      Alert.alert('تم حفظ المراجعة', approve ? 'تم اعتماد المندوب بعد مراجعة البيانات المعروضة.' : 'تم رفض الطلب وتسجيل السبب.');
+      Alert.alert(t('adminUi.reviewSaved'), approve ? t('adminUi.driverApprovedAfterReview') : t('adminUi.requestRejectedReasonSaved'));
     } catch (e) {
       console.error('Failed to review delivery application:', e);
       if (/application changed since review|revision/i.test(e instanceof Error ? e.message : String(e ?? ''))) {
         closeReview();
         await load();
       }
-      Alert.alert('تعذر حفظ المراجعة', reviewErrorMessage(e));
+      Alert.alert(t('adminUi.reviewSaveFailed'), reviewErrorMessage(e));
     } finally {
       setProcessing(null);
     }
@@ -170,9 +172,9 @@ export default function AdminDeliveryScreen({ navigation }: any) {
   });
 
   const renderDriver = ({ item }: { item: AdminDriver }) => {
-    const name = (item.users as any)?.full_name ?? 'غير متوفر';
-    const phone = (item.users as any)?.phone ?? 'غير متوفر';
-    const vehicle = VEHICLE_LABELS[item.vehicle_type ?? ''] ?? item.vehicle_type ?? 'غير محدد';
+    const name = (item.users as any)?.full_name ?? t('adminUi.unavailable');
+    const phone = (item.users as any)?.phone ?? t('adminUi.unavailable');
+    const vehicle = VEHICLE_LABELS[item.vehicle_type ?? ''] ? t(VEHICLE_LABELS[item.vehicle_type ?? '']) : item.vehicle_type ?? t('adminUi.unspecified');
     return (
       <View style={s.card}>
         <View style={s.cardHeader}>
@@ -193,7 +195,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           </View>
           <View style={[s.statusBadge, { backgroundColor: item.is_approved ? '#ECFDF5' : '#FFFBEB' }]}>
             <Text style={[s.statusText, { color: item.is_approved ? UI.success : UI.warning }]}>
-              {item.is_approved ? 'معتمد' : 'انتظار'}
+              {item.is_approved ? t('adminUi.approved') : t('adminUi.waiting')}
             </Text>
           </View>
         </View>
@@ -201,12 +203,12 @@ export default function AdminDeliveryScreen({ navigation }: any) {
         <View style={s.statsRow}>
           <View style={s.statItem}>
             <Text style={s.statValue}>{item.total_deliveries}</Text>
-            <Text style={s.statLabel}>عدد التوصيلات</Text>
+            <Text style={s.statLabel}>{t('adminUi.deliveryCount')}</Text>
           </View>
           <View style={s.statDivider} />
           <View style={s.statItem}>
             <Text style={[s.statValue, { color: UI.success }]}>{item.wallet_balance.toFixed(2)}</Text>
-            <Text style={s.statLabel}>الرصيد المتاح (ر.ي)</Text>
+            <Text style={s.statLabel}>{t('adminUi.availableBalance')} ({t('adminUi.yer')})</Text>
           </View>
         </View>
 
@@ -216,18 +218,18 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           <View style={s.actionsRow}>
             <TouchableOpacity style={s.approveBtn} onPress={() => handleApprove(item, true)} activeOpacity={0.8}>
               <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-              <Text style={s.approveBtnText}>موافقة</Text>
+              <Text style={s.approveBtnText}>{t('adminUi.approve')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.rejectBtn} onPress={() => handleApprove(item, false)} activeOpacity={0.8}>
               <Ionicons name="close-circle-outline" size={18} color={UI.danger} />
-              <Text style={s.rejectBtnText}>رفض</Text>
+              <Text style={s.rejectBtnText}>{t('adminUi.reject')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={s.actionsRow}>
             <View style={s.approvedRow}>
               <Ionicons name="shield-checkmark" size={18} color={UI.success} />
-              <Text style={s.approvedText}>تمت الموافقة وهو نشط في المنصة</Text>
+              <Text style={s.approvedText}>{t('adminUi.driverApprovedActive')}</Text>
             </View>
           </View>
         )}
@@ -244,16 +246,16 @@ export default function AdminDeliveryScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>السائقين</Text>
+            <Text style={s.headerTitle}>{t('adminUi.driversTitle')}</Text>
           </View>
-          <Text style={s.headerCount}>{drivers.length} سائق</Text>
+          <Text style={s.headerCount}>{drivers.length} {t('adminUi.driversCount')}</Text>
         </View>
 
         <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
-            placeholder="البحث بالاسم أو الهاتف..."
+            placeholder={t('adminUi.searchDriverPlaceholder')}
             placeholderTextColor={UI.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -278,7 +280,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
                 onPress={() => setFilter(f.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.filterText, isActive && s.filterTextActive]}>{f.label}</Text>
+                <Text style={[s.filterText, isActive && s.filterTextActive]}>{t(f.labelKey)}</Text>
               </TouchableOpacity>
             );
           }}
@@ -291,7 +293,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
           <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('adminUi.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -306,7 +308,7 @@ export default function AdminDeliveryScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.center}>
                <Ionicons name="bicycle-outline" size={48} color={UI.border} />
-               <Text style={s.emptyText}>لا يوجد سائقون لعرضهم</Text>
+               <Text style={s.emptyText}>{t('adminUi.noDrivers')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -317,19 +319,19 @@ export default function AdminDeliveryScreen({ navigation }: any) {
         <View style={s.modalOverlay}>
           <View style={[s.modalBox, { width: Math.min(Math.max(width - 24, 280), 460) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>{reviewModal.approve ? 'مراجعة واعتماد المندوب' : 'رفض طلب اعتماد المندوب'}</Text>
-              <TouchableOpacity onPress={closeReview} disabled={!!processing} accessibilityRole="button" accessibilityLabel="إغلاق مراجعة المندوب"><Ionicons name="close" size={22} color={UI.textMuted} /></TouchableOpacity>
+              <Text style={s.modalTitle}>{reviewModal.approve ? t('adminUi.reviewApproveDriver') : t('adminUi.rejectDriverApproval')}</Text>
+              <TouchableOpacity onPress={closeReview} disabled={!!processing} accessibilityRole="button" accessibilityLabel={t('adminUi.closeDriverReview')}><Ionicons name="close" size={22} color={UI.textMuted} /></TouchableOpacity>
             </View>
             {reviewModal.driver && (() => {
               const driver = reviewModal.driver as AdminDriver & Record<string, any>;
               return <View style={s.verificationBox}>
-                <Text style={s.verificationTitle}>{(driver.users as any)?.full_name ?? 'مندوب غير معروف'}</Text>
-                <Text style={s.verificationRow}>الهاتف: {(driver.users as any)?.phone ?? 'غير متوفر'}</Text>
-                <Text style={s.verificationRow}>رقم الهوية: {driver.national_id || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>نوع المركبة: {VEHICLE_LABELS[driver.vehicle_type ?? ''] ?? driver.vehicle_type ?? 'غير محدد'}</Text>
-                <Text style={s.verificationRow}>رقم اللوحة: {driver.vehicle_plate || 'غير مرفق'}</Text>
-                <Text style={s.verificationRow}>مدينة العمل: {driver.work_city || 'غير محددة'}</Text>
-                <Text style={s.verificationRow}>نسخة الطلب: {driver.application_revision}</Text>
+                <Text style={s.verificationTitle}>{(driver.users as any)?.full_name ?? t('adminUi.unknownDriver')}</Text>
+                <Text style={s.verificationRow}>{t('adminUi.phone')}: {(driver.users as any)?.phone ?? t('adminUi.unavailable')}</Text>
+                <Text style={s.verificationRow}>{t('adminUi.nationalId')}: {driver.national_id || t('adminUi.notAttached')}</Text>
+                <Text style={s.verificationRow}>{t('adminUi.vehicleType')}: {VEHICLE_LABELS[driver.vehicle_type ?? ''] ? t(VEHICLE_LABELS[driver.vehicle_type ?? '']) : driver.vehicle_type ?? t('adminUi.unspecified')}</Text>
+                <Text style={s.verificationRow}>{t('adminUi.plateNumber')}: {driver.vehicle_plate || t('adminUi.notAttached')}</Text>
+                <Text style={s.verificationRow}>{t('adminUi.workCity')}: {driver.work_city || t('adminUi.unspecified')}</Text>
+                <Text style={s.verificationRow}>{t('adminUi.applicationRevision')}: {driver.application_revision}</Text>
                 {documentsLoading && <ActivityIndicator size="small" color={UI.primary} />}
                 {!!documentsError && <Text style={s.documentsError}>{documentsError}</Text>}
                 {documentLinks.length > 0 && (
@@ -343,14 +345,14 @@ export default function AdminDeliveryScreen({ navigation }: any) {
                       >
                         <Image source={{ uri: document.signedUrl }} style={s.documentImage} />
                         <Text style={s.documentLabel}>
-                          {document.path.includes('national-id-') ? 'صورة الهوية' : 'رخصة القيادة'}
+                          {document.path.includes('national-id-') ? t('adminUi.idImage') : t('adminUi.drivingLicense')}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 )}
                 {(!driver.national_id_image_path || !driver.license_image_path) && (
-                  <View style={s.evidenceWarning}><Ionicons name="warning-outline" size={17} color={UI.warning} /><Text style={s.evidenceWarningText}>يلزم وجود صورتي الهوية والرخصة معًا. عند غياب أي منهما، وثّق طريقة التحقق الخارجي في ملاحظة لا تقل عن 20 حرفًا.</Text></View>
+                  <View style={s.evidenceWarning}><Ionicons name="warning-outline" size={17} color={UI.warning} /><Text style={s.evidenceWarningText}>{t('adminUi.driverEvidenceWarning')}</Text></View>
                 )}
               </View>;
             })()}
@@ -358,17 +360,17 @@ export default function AdminDeliveryScreen({ navigation }: any) {
               style={s.reviewInput}
               value={reviewModal.reason}
               onChangeText={(reason) => setReviewModal((current) => ({ ...current, reason }))}
-              placeholder={reviewModal.approve ? 'ملاحظة تحقق خارجي (20 حرفًا عند غياب أي مستند)...' : 'سبب الرفض (مطلوب)...'}
+              placeholder={reviewModal.approve ? t('adminUi.externalVerificationPlaceholder') : t('adminUi.refundRejectReasonRequired')}
               placeholderTextColor={UI.textMuted}
               multiline
               textAlign="right"
-              accessibilityLabel="ملاحظات مراجعة المندوب"
+              accessibilityLabel={t('adminUi.driverReviewNotesA11y')}
             />
-            {reviewModal.approve && <Text style={s.reviewHint}>المستندان الكاملان يسمحان بالاعتماد دون ملاحظة؛ وإلا فالملاحظة الخارجية إلزامية ({reviewModal.reason.trim().length}/20).</Text>}
+            {reviewModal.approve && <Text style={s.reviewHint}>{t('adminUi.driverReviewHint')} ({reviewModal.reason.trim().length}/20).</Text>}
             <View style={s.modalActions}>
-              <TouchableOpacity style={s.modalCancel} onPress={closeReview} disabled={!!processing}><Text style={s.modalCancelText}>تراجع</Text></TouchableOpacity>
+              <TouchableOpacity style={s.modalCancel} onPress={closeReview} disabled={!!processing}><Text style={s.modalCancelText}>{t('adminUi.undo')}</Text></TouchableOpacity>
               <TouchableOpacity style={[s.modalConfirm, !reviewModal.approve && { backgroundColor: UI.danger }]} onPress={submitReview} disabled={!!processing}>
-                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalConfirmText}>{reviewModal.approve ? 'اعتماد بعد المراجعة' : 'تأكيد الرفض'}</Text>}
+                {processing ? <ActivityIndicator color="#FFF" /> : <Text style={s.modalConfirmText}>{reviewModal.approve ? t('adminUi.approveAfterReview') : t('adminUi.confirmReject')}</Text>}
               </TouchableOpacity>
             </View>
           </View>
