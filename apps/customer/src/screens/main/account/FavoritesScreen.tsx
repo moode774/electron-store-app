@@ -38,7 +38,7 @@ export default function FavoritesScreen({
     try {
       setFavorites(await getWishlist(user.id));
     } catch (error) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل المفضلة.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('customer.loadFavoritesFailed'));
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export default function FavoritesScreen({
       await removeFromWishlist(user.id, productId);
     } catch (error: any) {
       setFavorites((current) => current.some((favorite) => favorite.product_id === productId) ? current : [removed, ...current]);
-      Alert.alert('تعذّر إزالة المنتج', error?.message ?? 'لم تتغير قائمة المفضلة. حاول مجددًا.');
+      Alert.alert(t('customer.removeFavoriteFailed'), error?.message ?? t('customer.favoritesUnchanged'));
     }
   };
 
@@ -90,7 +90,7 @@ export default function FavoritesScreen({
           <View style={[styles.stateIcon, styles.errorIcon]}>
             <Ionicons name="cloud-offline-outline" size={38} color={COLORS.error} />
           </View>
-          <Text style={styles.emptyTitle}>تعذّر تحميل المفضلة</Text>
+          <Text style={styles.emptyTitle}>{t('customer.loadFavoritesFailed')}</Text>
           <Text style={styles.emptyText}>{loadError}</Text>
           <TouchableOpacity
             style={styles.retryButton}
@@ -105,8 +105,8 @@ export default function FavoritesScreen({
           <View style={styles.stateIcon}>
             <Ionicons name="heart-outline" size={40} color={COLORS.primary} />
           </View>
-          <Text style={styles.emptyTitle}>قائمتك بانتظار اختياراتك</Text>
-          <Text style={styles.emptyText}>اضغط على أيقونة القلب في أي منتج ليظهر هنا.</Text>
+          <Text style={styles.emptyTitle}>{t('customer.favoritesWaiting')}</Text>
+          <Text style={styles.emptyText}>{t('customer.favoritesHint')}</Text>
         </View>
       ) : (
         <FlatList
@@ -127,7 +127,7 @@ export default function FavoritesScreen({
           columnWrapperStyle={columns > 1 ? [styles.row, { gap }] : undefined}
           ListHeaderComponent={(
             <View style={styles.listHeader}>
-              <Text style={styles.listCount}>{favorites.length} منتج محفوظ</Text>
+              <Text style={styles.listCount}>{favorites.length} {t('customer.savedItems')}</Text>
               <Text style={styles.listTitle}>{t('customer.yourPicks')}</Text>
             </View>
           )}
