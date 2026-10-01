@@ -692,7 +692,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
           {/* Left Column: Total Cost */}
           <View style={styles.bottomTotalCol}>
             <Text style={styles.bottomTotalLabel}>{t('customer.total')}</Text>
-            <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} ر.ي</Text>
+            <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} {t('merchant.currencyYER')}</Text>
             <Text style={styles.bottomVatSub}>{t('customer.checkoutIncludesDelivery')}</Text>
           </View>
 
