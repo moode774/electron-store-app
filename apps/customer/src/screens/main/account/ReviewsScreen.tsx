@@ -64,7 +64,7 @@ export default function ReviewsScreen({
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.reviews')}</Text>
