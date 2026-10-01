@@ -77,7 +77,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
       setSelected(null);
       Alert.alert(t('merchant.responseSaved'), t('merchant.responseSavedText'));
     } catch (sendError: any) {
-      Alert.alert(t('merchant.responseSaveFailed'), sendError?.message ?? 'تحقق من الاتصال وحاول مجددًا.');
+      Alert.alert(t('merchant.responseSaveFailed'), sendError?.message ?? t('merchant.connectionTryAgain'));
     } finally {
       setSending(false);
     }
@@ -89,7 +89,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
 
       <View style={[styles.filters, isTablet && styles.filtersWide]}>
         {[
-          { key: '', label: 'الكل' }, { key: 'pending', label: t('merchant.refundPending') },
+          { key: '', label: t('merchant.all') }, { key: 'pending', label: t('merchant.refundPending') },
           { key: 'approved', label: t('merchant.refundApproved') }, { key: 'processing', label: t('merchant.refundProcessing') },
           { key: 'completed', label: t('merchant.refundCompleted') }, { key: 'rejected', label: t('merchant.refundRejected') },
         ].map((option) => (
@@ -123,12 +123,12 @@ export default function MerchantRefundsScreen({ navigation }: any) {
                 <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
                   <View style={[styles.badge, { backgroundColor: meta.bg }]}><Text style={[styles.badgeText, { color: meta.color }]}>{meta.labelKey ? t(meta.labelKey) : item.status}</Text></View>
                   <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                    <Text style={styles.orderNumber}>طلب #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8)}</Text>
+                    <Text style={styles.orderNumber}>{t('customer.order')} #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8)}</Text>
                     <Text style={styles.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
                   </View>
                 </View>
                 <View style={[styles.amountRow, isCompact && styles.amountRowCompact]}>
-                  <Text style={styles.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} ر.ي</Text>
+                  <Text style={styles.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} {t('merchant.currencyYER')}</Text>
                   <Text style={styles.amountLabel}>{t('merchant.calculatedRefund')}</Text>
                 </View>
                 <Text style={styles.label}>{t('merchant.reason')}</Text>
