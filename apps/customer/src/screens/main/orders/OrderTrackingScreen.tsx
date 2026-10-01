@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
 import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
-import { useTranslation, translate } from '../../../i18n';
+import { useTranslation } from '../../../i18n';
 import {
   useAuthStore,
   getOrderById,
@@ -34,13 +34,13 @@ import {
 } from '@marketplace/shared-hooks';
 
 const TRACKING_STEPS = [
-  { status: ORDER_STATUS.PENDING, label: translate('customer.receivedOrder'), desc: 'تم إرسال طلبك إلى المتجر بنجاح', icon: 'time-outline' },
-  { status: ORDER_STATUS.PREPARING, label: translate('customer.preparingOrder'), desc: 'يقوم المتجر بإعداد وتغليف منتجاتك', icon: 'cube-outline' },
-  { status: ORDER_STATUS.READY, label: translate('customer.readyDelivery'), desc: 'الطلب جاهز وبانتظار استلام المندوب', icon: 'checkbox-outline' },
-  { status: ORDER_STATUS.ASSIGNED, label: translate('customer.courierAccepted'), desc: 'تم إسناد الطلب لمندوب التوصيل', icon: 'person-outline' },
-  { status: ORDER_STATUS.ON_THE_WAY, label: translate('customer.onWay'), desc: 'المندوب يتجه حالياً نحو عنوان التوصيل', icon: 'navigate-outline' },
-  { status: ORDER_STATUS.DELIVERED, label: translate('customer.deliveredSuccess'), desc: 'تم توصيل الطلب واستلامه بنجاح', icon: 'checkmark-circle-outline' },
-];
+  { status: ORDER_STATUS.PENDING, labelKey: 'customer.receivedOrder', descKey: 'orderTracking.pendingDesc', icon: 'time-outline' },
+  { status: ORDER_STATUS.PREPARING, labelKey: 'customer.preparingOrder', descKey: 'orderTracking.preparingDesc', icon: 'cube-outline' },
+  { status: ORDER_STATUS.READY, labelKey: 'customer.readyDelivery', descKey: 'orderTracking.readyDesc', icon: 'checkbox-outline' },
+  { status: ORDER_STATUS.ASSIGNED, labelKey: 'customer.courierAccepted', descKey: 'orderTracking.assignedDesc', icon: 'person-outline' },
+  { status: ORDER_STATUS.ON_THE_WAY, labelKey: 'customer.onWay', descKey: 'orderTracking.onWayDesc', icon: 'navigate-outline' },
+  { status: ORDER_STATUS.DELIVERED, labelKey: 'customer.deliveredSuccess', descKey: 'orderTracking.deliveredDesc', icon: 'checkmark-circle-outline' },
+] as const;
 
 const STATUS_STEP_INDEX: Record<string, number> = {
   [ORDER_STATUS.PENDING]: 0,
@@ -55,11 +55,11 @@ const STATUS_STEP_INDEX: Record<string, number> = {
 };
 
 const TERMINAL_LABELS: Record<string, string> = {
-  [ORDER_STATUS.CANCELLED]: 'تم إلغاء هذا الطلب',
-  [ORDER_STATUS.RETURNED]: 'تم إرجاع هذا الطلب',
-  [ORDER_STATUS.FAILED_DELIVERY]: 'تعذّر توصيل هذا الطلب',
-  [ORDER_STATUS.PARTIAL_DELIVERY]: 'تم تسليم جزء من هذا الطلب',
-  [ORDER_STATUS.DISPUTED]: 'هذا الطلب محل نزاع وتراجعه الإدارة',
+  [ORDER_STATUS.CANCELLED]: 'orderTracking.cancelledState',
+  [ORDER_STATUS.RETURNED]: 'orderTracking.returnedState',
+  [ORDER_STATUS.FAILED_DELIVERY]: 'orderTracking.failedState',
+  [ORDER_STATUS.PARTIAL_DELIVERY]: 'orderTracking.partialState',
+  [ORDER_STATUS.DISPUTED]: 'orderTracking.disputedState',
 };
 
 const REFUND_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
@@ -67,21 +67,21 @@ const REFUND_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 // Money-only refunds. Item problems (damaged / wrong / not as described) go
 // through the physical return flow; the server rejects them here.
 const REFUND_REASONS = [
-  { value: 'not_received', label: 'لم يصلني الطلب' },
-  { value: 'other', label: 'مشكلة مالية أخرى لا تتطلب إعادة منتج' },
-];
+  { value: 'not_received', labelKey: 'orderTracking.refundNotReceived' },
+  { value: 'other', labelKey: 'orderTracking.refundOther' },
+] as const;
 
-const REFUND_STATUS_META: Record<string, { title: string; detail: string; color: string; background: string; border: string }> = {
-  pending: { title: 'طلب الاسترداد المالي قيد المراجعة', detail: 'استلمت الإدارة الطلب وتراجعه حالياً.', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
-  approved: { title: 'تمت الموافقة على الاسترداد المالي', detail: 'سيتم استكمال خطوات تنفيذ المبلغ وإثباته.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
-  processing: { title: 'جاري تنفيذ الاسترداد المالي', detail: 'تتم الآن معالجة المبلغ عبر المسار المالي.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
-  completed: { title: 'اكتمل الاسترداد المالي', detail: 'تم إغلاق الطلب بعد تسجيل التنفيذ المالي.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
-  rejected: { title: 'تم رفض الاسترداد المالي', detail: 'يمكنك التواصل مع الدعم لمعرفة السبب أو الاعتراض.', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
-  cancelled: { title: 'تم إلغاء الاسترداد المالي', detail: 'هذا الطلب لم يعد قيد المعالجة.', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
+const REFUND_STATUS_META: Record<string, { titleKey: string; detailKey: string; color: string; background: string; border: string }> = {
+  pending: { titleKey: 'orderTracking.refundPendingTitle', detailKey: 'orderTracking.refundPendingDetail', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
+  approved: { titleKey: 'orderTracking.refundApprovedTitle', detailKey: 'orderTracking.refundApprovedDetail', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
+  processing: { titleKey: 'orderTracking.refundProcessingTitle', detailKey: 'orderTracking.refundProcessingDetail', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
+  completed: { titleKey: 'orderTracking.refundCompletedTitle', detailKey: 'orderTracking.refundCompletedDetail', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
+  rejected: { titleKey: 'orderTracking.refundRejectedTitle', detailKey: 'orderTracking.refundRejectedDetail', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
+  cancelled: { titleKey: 'orderTracking.refundCancelledTitle', detailKey: 'orderTracking.refundCancelledDetail', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
 };
 
 export default function OrderTrackingScreen({ navigation, route }: any) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { orderId } = route.params;
   const user = useAuthStore((s) => s.user);
 
@@ -123,7 +123,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       });
 
       if (error) {
-        setReviewStatusError('تعذّر التحقق من تقييمك السابق.');
+        setReviewStatusError(t('orderTracking.reviewCheckFailed'));
         setReviewStatusLoading(false);
         return null;
       }
@@ -143,11 +143,11 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       setLoadError('');
       try {
         const data = await getOrderById(orderId);
-        if (!data) throw new Error('لم يتم العثور على الطلب أو لا تملك صلاحية عرضه.');
+        if (!data) throw new Error(t('orderTracking.orderNotFound'));
         setOrder(data);
         await loadReviewStatus(data.merchant_id);
       } catch (error: any) {
-        setLoadError(error?.message ?? 'تعذّر تحميل تفاصيل الطلب.');
+        setLoadError(error?.message ?? t('orderTracking.loadOrderFailed'));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -167,7 +167,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       setRefundRequest(requests.find((request) => request.order_id === orderId) ?? null);
       setRefundLoadError('');
     } catch (error: any) {
-      setRefundLoadError(error?.message ?? 'تعذّر التحقق من وجود طلب استرداد حالي.');
+      setRefundLoadError(error?.message ?? t('orderTracking.refundCheckFailed'));
     }
   }, [orderId, user?.id]);
 
@@ -177,11 +177,11 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       const availableReasons = await getCancellationReasons('customer');
       setReasons(availableReasons);
       if (availableReasons.length === 0) {
-        setCancellationReasonsError('لا توجد أسباب إلغاء مفعلة حاليًا. تواصل مع الدعم لإلغاء الطلب.');
+        setCancellationReasonsError(t('orderTracking.noCancelReasons'));
       }
     } catch (error) {
       setCancellationReasonsError(
-        error instanceof Error && error.message ? error.message : 'تعذّر تحميل أسباب الإلغاء.'
+        error instanceof Error && error.message ? error.message : t('orderTracking.loadCancelReasonsFailed')
       );
     }
   }, []);
@@ -245,20 +245,20 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     try {
       await cancelOrder(orderId, reason);
       await reload();
-      Alert.alert('تم الإلغاء', 'تم إلغاء طلبك بنجاح');
+      Alert.alert(t('orderTracking.cancelledTitle'), t('orderTracking.cancelledText'));
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر الإلغاء');
+      Alert.alert(t('shared.error'), e?.message ?? t('orderTracking.cancelFailed'));
     }
   };
 
   const requestRefund = async () => {
     if (!user?.id) return;
     if (!refundReasonCode) {
-      Alert.alert('اختر السبب', 'حدد سبب طلب الاسترداد أولاً.');
+      Alert.alert(t('orderTracking.chooseReason'), t('orderTracking.chooseRefundReason'));
       return;
     }
     if (refundDescription.trim().length < 10) {
-      Alert.alert('التفاصيل مطلوبة', 'اكتب وصفاً واضحاً لا يقل عن 10 أحرف.');
+      Alert.alert(t('orderTracking.detailsRequired'), t('orderTracking.detailsMin'));
       return;
     }
     setRefundSubmitting(true);
@@ -275,7 +275,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
       setRefundDescription('');
       setRefundReasonCode('');
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال الطلب');
+      Alert.alert(t('shared.error'), e?.message ?? t('orderTracking.sendRequestFailed'));
     } finally {
       setRefundSubmitting(false);
     }
@@ -293,7 +293,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         },
       });
     } catch (e: any) {
-      Alert.alert('تعذّر فتح المحادثة', e?.message ?? 'حاول مرة أخرى');
+      Alert.alert(t('orderTracking.openChatFailed'), e?.message ?? t('orderTracking.tryAgain'));
     }
   };
 
@@ -303,16 +303,16 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     try {
       await createSupportTicket({
         user_id: user.id,
-        subject: `شكوى بخصوص الطلب ${order?.order_number ?? orderId}`,
+        subject: `${t('orderTracking.complaintSubject')} ${order?.order_number ?? orderId}`,
         category: 'order_complaint',
         order_id: orderId,
-        message: `رقم الطلب: ${order?.order_number ?? orderId}\n\n${supportMessage.trim()}`,
+        message: `${t('orderTracking.orderNumber')}: ${order?.order_number ?? orderId}\n\n${supportMessage.trim()}`,
       });
       setSupportMessage('');
       setShowSupport(false);
-      Alert.alert('تم فتح الشكوى', 'وصلت شكواك للإدارة وسيتم الرد عليها في أقرب وقت.');
+      Alert.alert(t('orderTracking.complaintOpened'), t('orderTracking.complaintOpenedText'));
     } catch (e: any) {
-      Alert.alert('تعذّر إرسال الشكوى', e?.message ?? 'حاول مرة أخرى');
+      Alert.alert(t('orderTracking.complaintSendFailed'), e?.message ?? t('orderTracking.tryAgain'));
     } finally {
       setSendingSupport(false);
     }
@@ -331,9 +331,9 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         rating,
       });
       setReviewed(true);
-      Alert.alert('شكراً لك ⭐', 'تم إرسال تقييمك بنجاح');
+      Alert.alert(t('orderTracking.thankYou'), t('orderTracking.reviewSent'));
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر إرسال التقييم');
+      Alert.alert(t('shared.error'), e?.message ?? t('orderTracking.reviewSendFailed'));
     } finally {
       setSubmittingReview(false);
     }
@@ -341,7 +341,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
   const currentStatus = order?.status ?? ORDER_STATUS.PENDING;
   const currentStatusIndex = STATUS_STEP_INDEX[currentStatus] ?? 0;
-  const terminalLabel = TERMINAL_LABELS[currentStatus];
+  const terminalLabel = TERMINAL_LABELS[currentStatus] ? t(TERMINAL_LABELS[currentStatus]) : '';
   const latestLocation = [...(order?.order_tracking ?? [])]
     .filter((entry) => Number.isFinite(entry.latitude) && Number.isFinite(entry.longitude))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] ?? null;
@@ -352,7 +352,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     try {
       await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`);
     } catch {
-      Alert.alert('تعذّر فتح الخريطة', 'يمكنك نسخ الإحداثيات وفتحها في تطبيق الخرائط.');
+      Alert.alert(t('orderTracking.mapFailed'), t('orderTracking.mapFailedText'));
     }
   };
 
@@ -366,15 +366,15 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   const canStartRefund = refundWindowOpen
     && (!refundRequest || refundRequest.status === 'rejected');
   const refundDeadlineLabel = refundWindowKnown
-    ? new Date(refundDeadlineTime).toLocaleString('ar-SA')
+    ? new Date(refundDeadlineTime).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')
     : null;
   const refundStatus = refundRequest ? (REFUND_STATUS_META[refundRequest.status] ?? {
-    title: `حالة الاسترداد المالي: ${refundRequest.status}`,
-    detail: 'يمكنك متابعة التفاصيل مع مركز الدعم.',
+    titleKey: 'orderTracking.refundStatus',
+    detailKey: 'orderTracking.supportDetails',
     color: '#475569', background: '#F8FAFC', border: '#CBD5E1',
   }) : null;
   const refundReason = refundRequest
-    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.label ?? refundRequest.reason)
+    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.labelKey ? t(REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)!.labelKey) : undefined ?? refundRequest.reason)
     : '';
 
   if (loading) {
@@ -416,7 +416,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
 
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>{t('customer.trackOrder')}</Text>
-            <Text style={styles.headerSub}># طلب {order?.order_number}</Text>
+            <Text style={styles.headerSub}>#{t('customer.order')} {order?.order_number}</Text>
           </View>
 
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -449,18 +449,18 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             {terminalLabel
               ? terminalLabel
               : currentStatus === ORDER_STATUS.ON_THE_WAY
-                ? 'المندوب في الطريق إليك'
-                : TRACKING_STEPS[currentStatusIndex]?.label ?? 'جاري تحديث حالة الطلب'}
+                ? t('orderTracking.courierOnWay')
+                : TRACKING_STEPS[currentStatusIndex] ? t(TRACKING_STEPS[currentStatusIndex].labelKey) : t('orderTracking.updatingStatus')}
           </Text>
           <Text style={styles.trackingLocationText}>
             {latestLocation
-              ? `آخر موقع مسجّل: ${latestLocation.latitude?.toFixed(5)}, ${latestLocation.longitude?.toFixed(5)}`
-              : 'لم تصل إحداثيات مباشرة من المندوب حتى الآن. حالة الطلب نفسها تتحدث تلقائياً.'}
+              ? `${t('orderTracking.lastLocation')}: ${latestLocation.latitude?.toFixed(5)}, ${latestLocation.longitude?.toFixed(5)}`
+              : t('customer.noLiveLocation')}
           </Text>
           {latestLocation ? (
             <TouchableOpacity style={styles.openMapButton} onPress={openTrackedLocation} activeOpacity={0.82}>
               <Ionicons name="open-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.openMapButtonText}>فتح الموقع على الخريطة</Text>
+              <Text style={styles.openMapButtonText}>{t('orderTracking.openMap')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -469,7 +469,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           <View style={styles.card}>
             <View style={styles.driverCardRow}>
               <View style={styles.driverInfoCol}>
-                <Text style={styles.driverNameText}>تم إسناد مندوب للطلب</Text>
+                <Text style={styles.driverNameText}>{t('orderTracking.courierAssigned')}</Text>
                 <Text style={styles.driverVehicleText}>
                   نعرض فقط البيانات المؤكدة من النظام؛ بيانات التواصل غير متاحة في هذا الطلب حالياً.
                 </Text>
@@ -485,7 +485,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="git-commit-outline" size={18} color="#172554" />
-            <Text style={styles.cardTitle}>مراحل تنفيذ الطلب</Text>
+            <Text style={styles.cardTitle}>{t('orderTracking.executionStages')}</Text>
           </View>
 
           <View style={styles.verticalTimeline}>
@@ -537,11 +537,11 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                       </Text>
                       {isCurrent && (
                         <View style={styles.currentStatusBadge}>
-                          <Text style={styles.currentStatusBadgeText}>الحالة الحالية</Text>
+                          <Text style={styles.currentStatusBadgeText}>{t('orderTracking.currentStatus')}</Text>
                         </View>
                       )}
                     </View>
-                    <Text style={styles.stepDescText}>{step.desc}</Text>
+                    <Text style={styles.stepDescText}>{t(step.descKey)}</Text>
                   </View>
                 </View>
               );
@@ -553,7 +553,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="location-outline" size={18} color="#172554" />
-            <Text style={styles.cardTitle}>تفاصيل التوصيل والمستلم</Text>
+            <Text style={styles.cardTitle}>{t('orderTracking.deliveryRecipient')}</Text>
           </View>
 
           <View style={styles.infoBannerBox}>
@@ -562,14 +562,14 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                 {order?.addresses?.full_address || 'لم يتم توفير عنوان التوصيل'}
               </Text>
 
-              <Text style={styles.infoLabelText}> :عنوان التسليم 📍</Text>
+              <Text style={styles.infoLabelText}>{t('orderTracking.deliveryAddress')}</Text>
             </View>
             <View style={[styles.infoRow, { marginTop: 8 }]}>
               <Text style={styles.infoValueText}>
                 {order?.merchant_profiles?.store_name || t('customer.store')}
               </Text>
 
-              <Text style={styles.infoLabelText}>:اسم المتجر 🏪</Text>
+              <Text style={styles.infoLabelText}>{t('orderTracking.storeName')}</Text>
             </View>
           </View>
         </View>
@@ -578,7 +578,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="receipt-outline" size={18} color="#172554" />
-            <Text style={styles.cardTitle}>ملخص منتجات الطلب</Text>
+            <Text style={styles.cardTitle}>{t('orderTracking.productsSummary')}</Text>
           </View>
 
           {order?.order_items && order.order_items.length > 0 ? (
@@ -586,26 +586,26 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               {order.order_items.map((item) => (
                 <View key={item.id} style={styles.itemRow}>
                   <Text style={styles.itemPriceText}>
-                    {Number(item.total_price || 0).toLocaleString('ar-SA')} ر.ي
+                    {Number(item.total_price || 0).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} ر.ي
                   </Text>
                   <View style={styles.itemDetailsCol}>
-                    <Text style={styles.itemNameText}>{item.product_name || item.products?.name || 'منتج'}</Text>
-                    <Text style={styles.itemQtyText}>الكمية: {item.quantity}</Text>
+                    <Text style={styles.itemNameText}>{item.product_name || item.products?.name || t('orderTracking.productFallback')}</Text>
+                    <Text style={styles.itemQtyText}>{t('orderTracking.quantity')}: {item.quantity}</Text>
                   </View>
                 </View>
               ))}
             </View>
           ) : (
-            <Text style={styles.noItemsText}>يحتوي الطلب على منتجات متعددة.</Text>
+            <Text style={styles.noItemsText}>{t('orderTracking.multipleProducts')}</Text>
           )}
 
           <View style={styles.costDivider} />
 
           <View style={styles.summaryTotalRow}>
             <Text style={styles.totalPriceAmountText}>
-              {Number(order?.total_amount || 0).toLocaleString('ar-SA')} ر.ي
+              {Number(order?.total_amount || 0).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} ر.ي
             </Text>
-            <Text style={styles.totalPriceLabelText}>إجمالي الطلب:</Text>
+            <Text style={styles.totalPriceLabelText}>{t('orderTracking.orderTotal')}</Text>
           </View>
         </View>
 
@@ -613,17 +613,17 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <TouchableOpacity style={styles.merchantChatBtn} onPress={contactMerchant}>
             <Ionicons name="chatbubbles-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.merchantChatBtnText}>مراسلة المتجر المباشرة</Text>
+            <Text style={styles.merchantChatBtnText}>{t('orderTracking.chatStore')}</Text>
           </TouchableOpacity>
 
           {showSupport && (
             <View style={styles.supportFormBox}>
-              <Text style={styles.supportFormTitle}>اشرح مشكلتك وسيرى فريق الدعم الطلب فوراً</Text>
+              <Text style={styles.supportFormTitle}>{t('orderTracking.explainProblem')}</Text>
               <TextInput
                 style={styles.supportInput}
                 value={supportMessage}
                 onChangeText={setSupportMessage}
-                placeholder="اكتب التفاصيل هنا..."
+                placeholder={t('orderTracking.detailsPlaceholder')}
                 placeholderTextColor="#94A3B8"
                 multiline
                 textAlign="right"
@@ -639,7 +639,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                 {sendingSupport ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitSupportBtnText}>إرسال الشكوى للإدارة</Text>
+                  <Text style={styles.submitSupportBtnText}>{t('orderTracking.sendComplaint')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -652,15 +652,15 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             style={styles.cancelBtn}
             onPress={() => setShowCancel(true)}
             accessibilityRole="button"
-            accessibilityLabel="إلغاء هذا الطلب"
+            accessibilityLabel={t('orderTracking.cancelOrder')}
           >
             <Ionicons name="close-circle-outline" size={18} color="#DC2626" />
-            <Text style={styles.cancelBtnText}>إلغاء هذا الطلب</Text>
+            <Text style={styles.cancelBtnText}>{t('orderTracking.cancelOrder')}</Text>
           </TouchableOpacity>
         )}
         {canCancel && showCancel && (
           <View style={styles.card}>
-            <Text style={styles.actionCardTitle}>سبب الإلغاء</Text>
+            <Text style={styles.actionCardTitle}>{t('orderTracking.cancellationReason')}</Text>
             {cancellationReasonsError ? (
               <View style={styles.inlineError} accessibilityRole="alert">
                 <Text style={styles.inlineErrorText}>{cancellationReasonsError}</Text>
@@ -675,11 +675,11 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   style={styles.optionRow}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={`إلغاء الطلب بسبب ${r.reason_text_ar ?? ''}`}
+                  accessibilityLabel={`${t('orderTracking.cancelBecause')} ${r.reason_text_ar ?? ''}`}
                   onPress={() =>
-                    Alert.alert('تأكيد إلغاء الطلب', `هل تريد إلغاء الطلب بسبب: ${r.reason_text_ar ?? ''}؟`, [
-                      { text: 'تراجع', style: 'cancel' },
-                      { text: 'إلغاء الطلب', style: 'destructive', onPress: () => doCancel(r.reason_text_ar ?? '') },
+                    Alert.alert(t('orderTracking.confirmCancel'), `${t('orderTracking.confirmCancelText')}: ${r.reason_text_ar ?? ''}?`, [
+                      { text: t('orderTracking.undo'), style: 'cancel' },
+                      { text: t('orderTracking.cancelOrder'), style: 'destructive', onPress: () => doCancel(r.reason_text_ar ?? '') },
                     ])
                   }
                 >
@@ -689,7 +689,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               ))
             )}
             <TouchableOpacity onPress={() => setShowCancel(false)} style={styles.secondaryAction}>
-              <Text style={styles.secondaryActionText}>تراجع</Text>
+              <Text style={styles.secondaryActionText}>{t('orderTracking.undo')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -697,25 +697,25 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Money-only refund. Returning items has its own flow below. */}
         {refundRequest && refundStatus && (
           <View style={[styles.statusNote, { backgroundColor: refundStatus.background, borderColor: refundStatus.border }]} accessibilityRole="summary">
-            <Text style={[styles.statusNoteTitle, { color: refundStatus.color }]}>{refundStatus.title}</Text>
-            <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>{refundStatus.detail}</Text>
-            <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>السبب: {refundReason}</Text>
+            <Text style={[styles.statusNoteTitle, { color: refundStatus.color }]}>{refundStatus.titleKey === 'orderTracking.refundStatus' ? `${t(refundStatus.titleKey)}: ${refundRequest.status}` : t(refundStatus.titleKey)}</Text>
+            <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>{t(refundStatus.detailKey)}</Text>
+            <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>{t('orderTracking.reason')}: {refundReason}</Text>
             {refundRequest.decision_reason ? (
-              <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>سبب القرار: {refundRequest.decision_reason}</Text>
+              <Text style={[styles.statusNoteText, { color: refundStatus.color }]}>{t('orderTracking.decisionReason')}: {refundRequest.decision_reason}</Text>
             ) : null}
           </View>
         )}
         {refundLoadError ? (
           <TouchableOpacity style={styles.inlineError} onPress={() => void reloadRefund()} accessibilityRole="button">
-            <Text style={styles.inlineErrorText}>{refundLoadError} اضغط لإعادة المحاولة. لن نفتح طلباً جديداً قبل التحقق.</Text>
+            <Text style={styles.inlineErrorText}>{refundLoadError} {t('orderTracking.tapRetryNoNew')}</Text>
           </TouchableOpacity>
         ) : null}
         {order?.status === ORDER_STATUS.DELIVERED && !refundRequest && !refundLoadError && !refundWindowOpen && (
           <View style={styles.inlineError} accessibilityRole="summary">
             <Text style={styles.inlineErrorText}>
               {refundWindowKnown
-                ? `انتهت مهلة طلب الاسترداد المالي، ومدتها 3 أيام من التسليم (انتهت في ${refundDeadlineLabel}). يمكنك فتح شكوى للإدارة إذا كانت لديك حالة استثنائية.`
-                : 'تعذّر التحقق من وقت التسليم، لذلك أُوقف فتح طلب استرداد مالي جديد مؤقتاً. حدّث الطلب أو تواصل مع الدعم.'}
+                ? `${t('orderTracking.refundDeadlineExpired')} (${refundDeadlineLabel}). ${t('orderTracking.exceptionalComplaint')}`
+                : t('orderTracking.deliveryTimeUnknown')}
             </Text>
           </View>
         )}
@@ -724,17 +724,17 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
             style={styles.outlineAction}
             onPress={() => { setRefundReasonCode(''); setRefundDescription(''); setShowRefund(true); }}
             accessibilityRole="button"
-            accessibilityLabel="طلب استرداد مالي دون إرجاع منتجات"
+            accessibilityLabel={t('orderTracking.refundOnlyA11y')}
           >
             <Ionicons name="cash-outline" size={18} color={COLORS.primary} />
             <Text style={styles.outlineActionText}>
-              {refundRequest?.status === 'rejected' ? 'إعادة طلب الاسترداد المالي' : 'طلب استرداد مالي فقط'}
+              {refundRequest?.status === 'rejected' ? t('orderTracking.retryRefund') : t('orderTracking.refundOnly')}
             </Text>
           </TouchableOpacity>
         )}
         {showRefund && canStartRefund && (
           <View style={styles.card}>
-            <Text style={styles.actionCardTitle}>سبب الاسترداد المالي</Text>
+            <Text style={styles.actionCardTitle}>{t('orderTracking.refundReason')}</Text>
             {REFUND_REASONS.map((r) => {
               const selected = refundReasonCode === r.value;
               return (
@@ -755,15 +755,15 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               style={styles.supportInput}
               value={refundDescription}
               onChangeText={setRefundDescription}
-              placeholder="اشرح سبب الاسترداد المالي (10 أحرف على الأقل)..."
+              placeholder={t('orderTracking.refundPlaceholder')}
               placeholderTextColor="#94A3B8"
               multiline
               maxLength={2000}
               textAlign="right"
-              accessibilityLabel="تفاصيل طلب الاسترداد"
+              accessibilityLabel={t('orderTracking.refundDetailsA11y')}
             />
             <Text style={styles.helperText}>
-              يحسب الخادم المبلغ المستحق تلقائياً. للمنتجات التالفة أو الخاطئة استخدم «إرجاع منتجات» بالأسفل.
+              {t('orderTracking.refundCalcNotice')}
             </Text>
             <TouchableOpacity
               style={[styles.submitSupportBtn, (!refundReasonCode || refundDescription.trim().length < 10 || refundSubmitting) && { opacity: 0.55 }]}
@@ -772,10 +772,10 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
               accessibilityRole="button"
               accessibilityState={{ disabled: !refundReasonCode || refundDescription.trim().length < 10 || refundSubmitting, busy: refundSubmitting }}
             >
-              {refundSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitSupportBtnText}>إرسال طلب الاسترداد</Text>}
+              {refundSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitSupportBtnText}>{t('orderTracking.sendRefund')}</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => !refundSubmitting && setShowRefund(false)} style={styles.secondaryAction} disabled={refundSubmitting}>
-              <Text style={styles.secondaryActionText}>تراجع</Text>
+              <Text style={styles.secondaryActionText}>{t('orderTracking.undo')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -785,7 +785,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
         {/* Review Order Card when Delivered */}
         {order?.status === ORDER_STATUS.DELIVERED && (
           <View style={styles.card}>
-            <Text style={styles.reviewTitle}>قيّم تجربتك مع هذا الطلب ⭐</Text>
+            <Text style={styles.reviewTitle}>{t('orderTracking.rateExperience')}</Text>
             {reviewStatusLoading ? (
               <ActivityIndicator color={COLORS.primary} size="small" style={{ marginTop: 12 }} />
             ) : reviewStatusError ? (
@@ -797,10 +797,10 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                 }}
                 accessibilityRole="button"
               >
-                <Text style={styles.inlineErrorText}>{reviewStatusError} اضغط لإعادة المحاولة.</Text>
+                <Text style={styles.inlineErrorText}>{reviewStatusError} {t('orderTracking.tapRetry')}</Text>
               </TouchableOpacity>
             ) : reviewed ? (
-              <Text style={styles.reviewedText}>✅ شكرًا لك! تم إرسال تقييمك بنجاح.</Text>
+              <Text style={styles.reviewedText}>{t('orderTracking.reviewedThanks')}</Text>
             ) : (
               <View style={styles.reviewStarsWrap}>
                 <View style={styles.starsRow}>
@@ -826,7 +826,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   {submittingReview ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.submitReviewBtnText}>إرسال التقييم</Text>
+                    <Text style={styles.submitReviewBtnText}>{t('orderTracking.sendReview')}</Text>
                   )}
                 </TouchableOpacity>
               </View>
