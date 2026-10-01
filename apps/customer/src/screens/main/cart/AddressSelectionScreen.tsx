@@ -293,12 +293,12 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <Ionicons name={currentCoords ? 'location' : 'map-outline'} size={30} color={COLORS.primary} />
           </View>
           <Text style={styles.locationPreviewTitle}>
-            {currentCoords ? 'تم تحديد إحداثيات موقعك' : 'حدد موقع التوصيل بدقة'}
+            {currentCoords ? t('customer.addressCoordinatesFound') : t('customer.addressLocatePrecisely')}
           </Text>
           <Text style={styles.locationPreviewText}>
             {currentCoords
               ? `${currentCoords.latitude.toFixed(5)}, ${currentCoords.longitude.toFixed(5)}`
-              : 'استخدم GPS لتعبئة الموقع، ثم راجع المدينة والشارع قبل المتابعة.'}
+              : t('customer.addressGpsHint')}
           </Text>
           <TouchableOpacity
             style={styles.floatingLocateBtn}
@@ -312,7 +312,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <>
                 <Ionicons name="locate-outline" size={16} color={COLORS.primary} />
                 <Text style={styles.floatingLocateText}>
-                  {currentCoords ? 'تحديث موقعي' : 'استخدام موقعي الحالي'}
+                  {currentCoords ? t('customer.addressUpdateLocation') : t('customer.addressUseCurrent')}
                 </Text>
               </>
             )}
