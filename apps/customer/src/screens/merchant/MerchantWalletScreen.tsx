@@ -227,7 +227,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               <Text style={[ui.sectionTitle, styles.txTitleRow]}>{t('merchant.transactions')}</Text>
             </View>
           }
-          ListEmptyComponent={<EmptyState icon="receipt-outline" title={t('merchant.noTransactions')} text=t('merchant.noTransactionsText') />}
+          ListEmptyComponent={<EmptyState icon="receipt-outline" title={t('merchant.noTransactions')} text={t('merchant.noTransactionsText')} />}
           renderItem={({ item, index }) => {
             const credit = isIncome(item);
             return (
