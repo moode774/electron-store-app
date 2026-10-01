@@ -22,6 +22,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AccountStackParamList } from '../../../navigation/types';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation, translate } from '../../../i18n';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -30,16 +31,16 @@ interface Props {
 }
 
 const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof AccountStackParamList | null; params?: object }[] = [
-  { id: '1', title: 'معلومات الحساب', icon: 'person-outline', route: 'EditProfile' },
-  { id: '2', title: 'المفضلة', icon: 'heart-outline', route: 'Favorites' },
-  { id: '3', title: 'طرق الدفع', icon: 'card-outline', route: 'PaymentMethods' },
-  { id: '4', title: 'العناوين المحفوظة', icon: 'location-outline', route: 'AddressBook' },
-  { id: '5', title: 'الإشعارات', icon: 'notifications-outline', route: 'Notifications' },
-  { id: '6', title: 'التقييمات والمراجعات', icon: 'star-outline', route: 'Reviews' },
-  { id: '7', title: 'مركز المساعدة', icon: 'headset-outline', route: 'HelpCenter' },
+  { id: '1', title: translate('customer.accountInfo'), icon: 'person-outline', route: 'EditProfile' },
+  { id: '2', title: translate('customer.favorites'), icon: 'heart-outline', route: 'Favorites' },
+  { id: '3', title: translate('customer.paymentMethods'), icon: 'card-outline', route: 'PaymentMethods' },
+  { id: '4', title: translate('customer.savedAddresses'), icon: 'location-outline', route: 'AddressBook' },
+  { id: '5', title: translate('merchant.notifications'), icon: 'notifications-outline', route: 'Notifications' },
+  { id: '6', title: translate('customer.reviews'), icon: 'star-outline', route: 'Reviews' },
+  { id: '7', title: translate('customer.helpCenter'), icon: 'headset-outline', route: 'HelpCenter' },
   { id: '10', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', route: 'ApiKeys' },
-  { id: '8', title: 'سياسة الخصوصية', icon: 'shield-checkmark-outline', route: 'Legal', params: { type: 'privacy' } },
-  { id: '9', title: 'الشروط والأحكام', icon: 'document-text-outline', route: 'Legal', params: { type: 'terms' } },
+  { id: '8', title: translate('customer.privacy'), icon: 'shield-checkmark-outline', route: 'Legal', params: { type: 'privacy' } },
+  { id: '9', title: translate('customer.terms'), icon: 'document-text-outline', route: 'Legal', params: { type: 'terms' } },
 ];
 
 export default function AccountScreen({ navigation }: Props): React.JSX.Element {
@@ -78,14 +79,14 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
   useFocusEffect(useCallback(() => { void loadStats(); }, [loadStats]));
 
   const authUser = user as any;
-  const userName = authUser?.full_name || 'مستخدم';
-  const userSub = authUser?.email || authUser?.phone || 'حساب المستخدم';
+  const userName = authUser?.full_name || t('merchant.user');
+  const userSub = authUser?.email || authUser?.phone || t('merchant.userAccount');
 
   const STATS = [
-    { id: '1', title: 'الطلبات', value: String(counts.orders), icon: 'bag-handle-outline' },
-    { id: '2', title: 'الكوبونات', value: String(counts.coupons), icon: 'ticket-outline' },
-    { id: '3', title: 'العناوين', value: String(counts.addresses), icon: 'location-outline' },
-    { id: '4', title: 'المفضلة', value: String(counts.favorites), icon: 'heart-outline' },
+    { id: '1', title: t('common.orders'), value: String(counts.orders), icon: 'bag-handle-outline' },
+    { id: '2', title: t('merchant.couponsCount'), value: String(counts.coupons), icon: 'ticket-outline' },
+    { id: '3', title: t('merchant.addresses'), value: String(counts.addresses), icon: 'location-outline' },
+    { id: '4', title: translate('customer.favorites'), value: String(counts.favorites), icon: 'heart-outline' },
   ];
 
   return (
@@ -100,7 +101,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
       >
         {/* Header Title Bar */}
         <View style={styles.headerTitleRow}>
-          <Text style={styles.screenHeaderTitleText}>حسابي</Text>
+          <Text style={styles.screenHeaderTitleText}>{t('common.account')}</Text>
           <TouchableOpacity
             style={styles.headerNotificationBtn}
             onPress={() => navigation.navigate('Notifications')}
@@ -140,7 +141,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   <Text style={styles.userSubText} numberOfLines={1}>{userSub}</Text>
                   <View style={styles.premiumBadgePill}>
                     <Ionicons name="star-outline" size={12} color={COLORS.primary} />
-                    <Text style={styles.premiumBadgeText}>{points.toLocaleString('ar-SA')} نقطة</Text>
+                    <Text style={styles.premiumBadgeText}>{points.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} نقطة</Text>
                   </View>
                 </View>
               </View>
@@ -178,7 +179,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                     'تفاصيل مشكلة الاتصال',
                     statsErrorDetail ? `سبب الخطأ: ${statsErrorDetail}` : 'تعذّر الاتصال بالخادم مؤقتاً.',
                     [
-                      { text: 'إلغاء', style: 'cancel' },
+                      { text: t('customer.cancel'), style: 'cancel' },
                       { text: 'إعادة المحاولة الأن', onPress: () => void loadStats() },
                     ],
                   );
@@ -198,7 +199,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   <Ionicons name="diamond-outline" size={24} color={COLORS.primary} />
                 </View>
                 <View style={styles.loyaltyTextCol}>
-                  <Text style={styles.loyaltyLabel}>رصيد النقاط المتاحة</Text>
+                  <Text style={styles.loyaltyLabel}>{t('merchant.availablePoints')}</Text>
                   <Text style={styles.loyaltyValue}>
                     <Text style={styles.loyaltyNumText}>{points}</Text> نقطة
                   </Text>
@@ -229,12 +230,12 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   onPress={() => Alert.alert('متجر المكافآت', 'سيتم تحويل نقاطك إلى خصومات وكوبونات شرائية عند إتمام الطلبات.')}
                 >
                   <Ionicons name="gift-outline" size={16} color="#0F172A" style={{ marginLeft: 6 }} />
-                  <Text style={styles.redeemBtnText}>استبدل النقاط</Text>
+                  <Text style={styles.redeemBtnText}>{t('merchant.redeemPoints')}</Text>
                 </TouchableOpacity>
 
                 {!!referral && (
                   <View style={styles.referralCol}>
-                    <Text style={styles.referralLabel}>كود الإحالة الخاصة بك</Text>
+                    <Text style={styles.referralLabel}>{t('merchant.referralCode')}</Text>
                     <TouchableOpacity
                       style={styles.referralBadge}
                       activeOpacity={0.85}
@@ -252,7 +253,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
           </View>
 
           <View style={isDesktop ? styles.desktopSettings : undefined}>
-            <Text style={styles.sectionTitle}>إعدادات الحساب</Text>
+            <Text style={styles.sectionTitle}>{t('merchant.accountSettings')}</Text>
 
             {/* Menu List */}
             <View style={styles.menuCard}>
@@ -282,7 +283,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 <View style={[styles.menuIconBox, { backgroundColor: '#EFF6FF' }]}>
                   <Ionicons name="log-out-outline" size={20} color={COLORS.primary} />
                 </View>
-                <Text style={[styles.logoutText, { color: COLORS.primary }]}>تسجيل الخروج</Text>
+                <Text style={[styles.logoutText, { color: COLORS.primary }]}>{t('common.signOut')}</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color={COLORS.primary} />
             </TouchableOpacity>
@@ -293,7 +294,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
               activeOpacity={0.75}
               onPress={() =>
                 Alert.alert(
-                  'حذف الحساب نهائياً',
+                  t('merchant.deleteAccount'),
                   'سيتم حذف حسابك وكل بياناتك (الطلبات، العناوين، المفضلة...) ولا يمكن التراجع. هل أنت متأكد؟',
                   [
                     { text: 'تراجع', style: 'cancel' },
@@ -305,7 +306,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                           await deleteMyAccount();
                           await signOut();
                         } catch (e: any) {
-                          Alert.alert('خطأ', e?.message ?? 'تعذّر حذف الحساب، حاول لاحقاً');
+                          Alert.alert(t('merchant.saveFailed'), e?.message ?? 'تعذّر حذف الحساب، حاول لاحقاً');
                         }
                       },
                     },
@@ -317,7 +318,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 <View style={[styles.menuIconBox, { backgroundColor: '#FEE2E2' }]}>
                   <Ionicons name="trash-outline" size={20} color="#EF4444" />
                 </View>
-                <Text style={[styles.logoutText, { color: '#EF4444' }]}>حذف الحساب نهائياً</Text>
+                <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('merchant.deleteAccount')}</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color="#EF4444" />
             </TouchableOpacity>
