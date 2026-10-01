@@ -421,26 +421,26 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
     for (const item of returnItems) {
       const draft = inspectionDrafts[item.id];
       if (!draft) {
-        Alert.alert(t('merchant.incompleteData'), `تعذر تجهيز نتيجة فحص ${itemName(item)}.`);
+        Alert.alert(t('merchant.incompleteData'), `${t('merchant.inspectPrepareFailed')} ${itemName(item)}.`);
         return;
       }
       if (!draft.acceptedQuantity.trim()) {
-        Alert.alert(t('merchant.inspectionRequired'), `أدخل الكمية المقبولة فعليًا لـ ${itemName(item)}، حتى لو كانت صفرًا.`);
+        Alert.alert(t('merchant.inspectionRequired'), `${t('merchant.enterAcceptedQtyFor')} ${itemName(item)}، ${t('merchant.evenZero')}`);
         return;
       }
       const accepted = Number(draft.acceptedQuantity);
       const approved = Number(item.approved_quantity ?? 0);
       if (!Number.isInteger(accepted) || accepted < 0 || accepted > approved) {
-        Alert.alert(t('merchant.invalidQuantity'), `الكمية المقبولة لـ ${itemName(item)} يجب أن تكون بين 0 و${approved}.`);
+        Alert.alert(t('merchant.invalidQuantity'), `${t('merchant.acceptedQtyFor')} ${itemName(item)} ${t('merchant.mustBeBetween')} 0 و${approved}.`);
         return;
       }
       if (!draft.disposition) {
-        Alert.alert(t('merchant.inspectionRequired'), `اختر التصرف بالكمية الخاصة بـ ${itemName(item)}.`);
+        Alert.alert(t('merchant.inspectionRequired'), `${t('merchant.chooseDispositionFor')} ${itemName(item)}.`);
         return;
       }
       if ((accepted === 0 && draft.disposition !== 'rejected')
         || (accepted > 0 && draft.disposition === 'rejected')) {
-        Alert.alert(t('merchant.mismatchedInspection'), `اختر "رفض الكمية" عند قبول صفر من ${itemName(item)}، أو اختر تصرفًا فعليًا للكمية المقبولة.`);
+        Alert.alert(t('merchant.mismatchedInspection'), `${t('merchant.rejectZeroGuidance')} (${itemName(item)})`);
         return;
       }
       payload.push({
