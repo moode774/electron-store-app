@@ -6,6 +6,7 @@ import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../i18n';
 
 import DeliveryOffersScreen from '../screens/delivery/DeliveryOffersScreen';
 import ActiveDeliveryScreen from '../screens/delivery/ActiveDeliveryScreen';
@@ -100,8 +101,8 @@ function DesktopDeliverySidebar() {
           <Ionicons name="bicycle" size={22} color={COLORS.surface} />
         </View>
         <View style={styles.desktopBrandCopy}>
-          <Text style={styles.desktopBrandTitle}>مساحة المندوب</Text>
-          <Text style={styles.desktopBrandSubtitle}>إدارة التوصيل</Text>
+          <Text style={styles.desktopBrandTitle}>{t('navigation.deliverySpace')}</Text>
+          <Text style={styles.desktopBrandSubtitle}>{t('navigation.manageDelivery')}</Text>
         </View>
       </View>
 
@@ -115,7 +116,7 @@ function DesktopDeliverySidebar() {
               onPress={() => navigation.navigate(item.route)}
               activeOpacity={0.82}
               accessibilityRole="button"
-              accessibilityLabel={item.label}
+              accessibilityLabel={t(item.labelKey)}
               accessibilityState={{ selected: active }}
             >
               <View style={[styles.desktopNavIcon, active && styles.desktopNavIconActive]}>
@@ -125,7 +126,7 @@ function DesktopDeliverySidebar() {
                   color={active ? COLORS.surface : COLORS.textSecondary}
                 />
               </View>
-              <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>{item.label}</Text>
+              <Text style={[styles.desktopNavLabel, active && styles.desktopNavLabelActive]}>{t(item.labelKey)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -136,14 +137,14 @@ function DesktopDeliverySidebar() {
         onPress={() => navigation.navigate('DeliveryHome')}
         activeOpacity={0.84}
         accessibilityRole="button"
-        accessibilityLabel="فتح استقبال طلبات التوصيل"
+        accessibilityLabel={t('delivery.openReceiving')}
       >
         <View style={styles.desktopOnlineIcon}>
           <Ionicons name="radio-outline" size={20} color={COLORS.primary} />
         </View>
         <View style={styles.desktopOnlineCopy}>
-          <Text style={styles.desktopOnlineTitle}>استقبال الطلبات</Text>
-          <Text style={styles.desktopOnlineSubtitle}>تحكم بحالة الاتصال</Text>
+          <Text style={styles.desktopOnlineTitle}>{t('navigation.receiveOrders')}</Text>
+          <Text style={styles.desktopOnlineSubtitle}>{t('navigation.onlineControl')}</Text>
         </View>
         <Ionicons name="chevron-back" size={18} color={COLORS.textMuted} />
       </TouchableOpacity>
@@ -152,6 +153,7 @@ function DesktopDeliverySidebar() {
 }
 
 export default function DeliveryTabNavigator() {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isDesktop = width >= BREAKPOINTS.desktop;
@@ -172,31 +174,31 @@ export default function DeliveryTabNavigator() {
     {
       name: 'DeliveryReturnsTab',
       component: DeliveryReturnsScreen,
-      options: { tabBarLabel: 'المرتجعات', tabBarIcon: tabIcon('swap-horizontal-outline', 'swap-horizontal') },
+      options: { tabBarLabel: t('navigation.returns'), tabBarIcon: tabIcon('swap-horizontal-outline', 'swap-horizontal') },
     },
     {
       name: 'DeliveryOrders',
       component: ActiveDeliveryScreen,
-      options: { tabBarLabel: 'طلباتي', tabBarIcon: tabIcon('receipt-outline', 'receipt') },
+      options: { tabBarLabel: t('navigation.myOrders'), tabBarIcon: tabIcon('receipt-outline', 'receipt') },
     },
     {
       name: 'DeliveryHome',
       component: OffersNavigator,
       options: {
-        tabBarLabel: 'الرئيسية',
-        tabBarAccessibilityLabel: 'الرئيسية',
+        tabBarLabel: t('navigation.home'),
+        tabBarAccessibilityLabel: t('navigation.home'),
         tabBarIcon: tabIcon('home-outline', 'home'),
       },
     },
     {
       name: 'DeliveryEarnings',
       component: EarningsScreen,
-      options: { tabBarLabel: 'الأرباح', tabBarIcon: tabIcon('wallet-outline', 'wallet') },
+      options: { tabBarLabel: t('navigation.earnings'), tabBarIcon: tabIcon('wallet-outline', 'wallet') },
     },
     {
       name: 'DeliveryMore',
       component: AccountNavigator,
-      options: { tabBarLabel: 'حسابي', tabBarIcon: tabIcon('person-circle-outline', 'person-circle') },
+      options: { tabBarLabel: t('navigation.myAccount'), tabBarIcon: tabIcon('person-circle-outline', 'person-circle') },
     },
   ];
   const orderedTabs = Platform.OS === 'web' ? [...tabs].reverse() : tabs;
@@ -245,12 +247,12 @@ export default function DeliveryTabNavigator() {
         <View style={styles.desktopMain}>
           <View style={styles.desktopTopBar}>
             <View>
-              <Text style={styles.desktopTopTitle}>لوحة المندوب</Text>
-              <Text style={styles.desktopTopSubtitle}>تابع التوصيلات والأرباح من مكان واحد</Text>
+              <Text style={styles.desktopTopTitle}>{t('navigation.deliveryDashboard')}</Text>
+              <Text style={styles.desktopTopSubtitle}>{t('navigation.deliveryDashboardSub')}</Text>
             </View>
             <View style={styles.desktopTopStatus}>
               <View style={styles.desktopTopStatusDot} />
-              <Text style={styles.desktopTopStatusText}>جاهز للعمل</Text>
+              <Text style={styles.desktopTopStatusText}>{t('navigation.readyToWork')}</Text>
             </View>
           </View>
           <View style={styles.desktopFrame}>{content}</View>
