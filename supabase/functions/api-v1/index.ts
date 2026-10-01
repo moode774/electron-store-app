@@ -20,6 +20,14 @@ const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-api-key, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "600",
+};
+
+const SECURITY_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  "Pragma": "no-cache",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "no-referrer",
 };
 
 type Auth = {
@@ -33,7 +41,7 @@ type Auth = {
 const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
   new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: { ...CORS, ...extraHeaders, "content-type": "application/json; charset=utf-8" },
+    headers: { ...CORS, ...SECURITY_HEADERS, ...extraHeaders, "content-type": "application/json; charset=utf-8" },
   });
 
 const err = (message: string, status: number, headers: Record<string, string> = {}) =>
@@ -95,8 +103,8 @@ async function authenticate(req: Request): Promise<Auth | Response> {
   const bearerKey = bearer.startsWith("Bearer lv_") ? bearer.slice(7) : "";
   const apiKey = headerKey || bearerKey;
 
-  if (!apiKey.startsWith("lv_")) {
-    return err("missing api key: send it in the x-api-key header", 401);
+  if (!/^lv_live_[0-9a-f]{48}$/.test(apiKey)) {
+    return err("invalid or missing api key", 401);
   }
   const { data, error } = await supabase.rpc("verify_api_key", { p_key: apiKey });
   if (error) return err("auth service error", 500);
