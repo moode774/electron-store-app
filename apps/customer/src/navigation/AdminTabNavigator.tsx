@@ -17,6 +17,7 @@ import AdminDeliveryScreen from '../screens/admin/AdminDeliveryScreen';
 import AdminWalletScreen from '../screens/admin/AdminWalletScreen';
 import AdminSupportScreen from '../screens/admin/AdminSupportScreen';
 import AdminSettingsScreen from '../screens/admin/AdminSettingsScreen';
+import AdminDeliveryZonesScreen from '../screens/admin/AdminDeliveryZonesScreen';
 import AdminNotificationsScreen from '../screens/admin/AdminNotificationsScreen';
 import AdminBannersScreen from '../screens/admin/AdminBannersScreen';
 import AdminCouponsScreen from '../screens/admin/AdminCouponsScreen';
@@ -42,6 +43,7 @@ export type AdminMoreStackParamList = {
   AdminWallet: undefined;
   AdminSupport: undefined;
   AdminSettings: undefined;
+  AdminDeliveryZones: undefined;
   AdminNotifications: undefined;
   AdminBanners: undefined;
   AdminCoupons: undefined;
@@ -63,6 +65,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="AdminWallet" component={AdminWalletScreen} />
       <MoreStack.Screen name="AdminSupport" component={AdminSupportScreen} />
       <MoreStack.Screen name="AdminSettings" component={AdminSettingsScreen} />
+      <MoreStack.Screen name="AdminDeliveryZones" component={AdminDeliveryZonesScreen} />
       <MoreStack.Screen name="AdminNotifications" component={AdminNotificationsScreen} />
       <MoreStack.Screen name="AdminBanners" component={AdminBannersScreen} />
       <MoreStack.Screen name="AdminCoupons" component={AdminCouponsScreen} />
@@ -99,6 +102,7 @@ const SIDEBAR_TABS = [
   { name: 'AdminFinancialReconciliation', label: 'المطابقة', icon: 'git-compare-outline', activeIcon: 'git-compare', isMore: true },
   { name: 'AdminMoreMain', label: 'كل الأدوات', icon: 'options-outline', activeIcon: 'options', isMore: true },
   { name: 'AdminSettings', label: 'الإعدادات', icon: 'settings-outline', activeIcon: 'settings', isMore: true },
+  { name: 'AdminDeliveryZones', label: 'مناطق التوصيل', icon: 'map-outline', activeIcon: 'map', isMore: true },
   { name: 'AdminSupport', label: 'الدعم', icon: 'headset-outline', activeIcon: 'headset', isMore: true },
 ];
 
@@ -280,6 +284,7 @@ function DesktopTopHeader() {
     AdminDelivery: 'السائقون',
     AdminWallet: 'طلبات السحب',
     AdminSettings: 'الإعدادات',
+    AdminDeliveryZones: 'مناطق ورسوم التوصيل',
     AdminSupport: 'الدعم الفني',
   } as Record<string, string>)[routeName] ?? 'لوحة التحكم';
 

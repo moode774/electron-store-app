@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Path, Defs, LinearGradient, Stop, Rect, Circle } from 'react-native-svg';
 import {
-  useAuthStore, getMerchantProfile, getMerchantSalesChart, getMerchantTopProducts, getMerchantPeriodStats, getMerchantReport,
+  useAuthStore, getMerchantReport,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
@@ -116,25 +116,9 @@ export default function MerchantReportsScreen({ navigation }: any) {
     if (!user?.id) return;
     setLoading(true);
     try {
-      let chart: number[];
-      let top: any[];
-      let ps: typeof periodStats;
-      try {
-        // المسار الأساسي: دالة SQL واحدة تجمع التقرير كاملاً في القاعدة
-        const report = await getMerchantReport(days === 1 ? 1 : days);
-        chart = report.chart;
-        top = report.topProducts;
-        ps = report.stats;
-      } catch {
-        // مسار احتياطي: التجميع في التطبيق مع ترقيم الصفحات
-        const merchant = await getMerchantProfile(user.id);
-        if (!merchant?.id) throw new Error('MERCHANT_PROFILE_NOT_FOUND');
-        [chart, top, ps] = await Promise.all([
-          getMerchantSalesChart(merchant.id, days === 1 ? 1 : days),
-          getMerchantTopProducts(merchant.id, 5, days === 1 ? 1 : days),
-          getMerchantPeriodStats(merchant.id, days),
-        ]);
-      }
+      // Keep every report section on the same authoritative server calculation.
+      const report = await getMerchantReport(days);
+      const chart = report.chart;
       setChartData(chart);
       setChartLabels(
         days === 1
@@ -143,8 +127,8 @@ export default function MerchantReportsScreen({ navigation }: any) {
           ? chart.map((_, i) => DAY_LABELS[i] ?? `${i + 1}`)
           : chart.map((_, i) => `${i + 1}`)
       );
-      setTopProducts(top);
-      setPeriodStats(ps);
+      setTopProducts(report.topProducts);
+      setPeriodStats(report.stats);
       setError(null);
     } catch (e: any) {
       // نُظهر السبب الحقيقي (صلاحيات/بيانات/شبكة) بدل رسالة عامة تخفي المشكلة
@@ -178,13 +162,17 @@ export default function MerchantReportsScreen({ navigation }: any) {
 
   const handleExportCSV = async () => {
     if (exporting) return;
+    if (loading || error) {
+      Alert.alert('التقرير غير متاح', 'انتظر اكتمال تحميل التقرير أو أعد المحاولة قبل التصدير.');
+      return;
+    }
     setExporting(true);
     try {
       const lines = [
         `تقرير ${period.label} — ${new Date().toLocaleDateString('ar-SA')}`,
         '',
         'قيمة الطلبات والعدد',
-        `إجمالي قيمة الطلبات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
+        `صافي قيمة الطلبات بعد الاستردادات,${periodStats.currentRevenue.toFixed(2)} ر.ي`,
         `إجمالي الطلبات,${periodStats.currentOrders}`,
         `متوسط قيمة الطلب,${avgValue.toFixed(2)} ر.ي`,
         `مكتملة,${periodStats.deliveredCount} (${deliveredPct}%)`,
@@ -192,7 +180,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         `ملغاة,${periodStats.cancelledCount} (${cancelledPct}%)`,
         '',
         'أفضل المنتجات',
-        'الاسم,الكمية المباعة,الإيرادات',
+        'الاسم,الكمية المسلّمة قبل الإرجاع,القيمة الصافية المقدّرة بعد الاستردادات',
         ...topProducts.map(p => `"${p.name}",${p.total_sold},${Number(p.revenue ?? 0).toFixed(2)}`),
         '',
         'مبيعات الفترة',
@@ -243,7 +231,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
         title="التقارير"
-        subtitle="قيمة الطلبات المسجلة، وليست رصيداً مسوّى"
+        subtitle="صافي قيمة الطلبات المسلّمة بعد الاستردادات، وليس رصيد المحفظة"
         onBack={() => navigation.goBack()}
         right={<IconButton icon={exporting ? 'hourglass-outline' : 'download-outline'} label="تصدير التقرير CSV" onPress={() => void handleExportCSV()} />}
       />
@@ -348,7 +336,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
             <View style={styles.cardHeader}>
               <View>
                 <Text style={styles.cardTitle}>المنتجات الأعلى أداءً</Text>
-                <Text style={styles.cardSubtitle}>أفضل المنتجات حسب المبيعات والإيرادات</Text>
+                <Text style={styles.cardSubtitle}>الكمية المسلّمة وقيمة المنتجات بعد توزيع الاستردادات نسبياً</Text>
               </View>
             </View>
 

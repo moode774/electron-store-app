@@ -145,6 +145,10 @@ export default function AdminSettingsScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity style={s.card} onPress={() => navigation.navigate('AdminDeliveryZones')} accessibilityRole="button" accessibilityLabel="إدارة مناطق ورسوم التوصيل">
+          <Text style={s.cardTitle}>مناطق ورسوم التوصيل</Text>
+          <Text style={{ color: UI.textMuted, textAlign: 'right', fontFamily: FONTS.regular }}>حدد رسوم كل مدينة وحد التوصيل المجاني بعد الخصم وتفعيل المنطقة.</Text>
+        </TouchableOpacity>
         {activeTab === 'system' ? (
           settingsLoading ? <ActivityIndicator size="large" color={UI.primary} style={{marginTop: 50}} /> :
           <View style={s.card}>

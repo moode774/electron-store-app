@@ -95,6 +95,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
   const [completingDelivery, setCompletingDelivery] = useState(false);
   const [uploadedProofPath, setUploadedProofPath] = useState<string | null>(null);
   const advanceLock = useRef(false);
+  const arrivedPickupOrderId = useRef<string | null>(null);
   const [pickupCode, setPickupCode] = useState('');
   const [failVisible, setFailVisible] = useState(false);
   const [failReason, setFailReason] = useState('');
@@ -121,7 +122,12 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
       }
 
       setOrder(loaded);
-      if (loaded) setStepIndex(stepFromStatus(loaded.status));
+      if (loaded?.status === 'assigned' && arrivedPickupOrderId.current === loaded.id) {
+        setStepIndex(1);
+      } else {
+        arrivedPickupOrderId.current = null;
+        setStepIndex(stepFromStatus(loaded?.status));
+      }
     } catch (error) {
       setLoadError(errorMessage(error, 'تعذّر تحميل التوصيلة. تحقق من الاتصال وحاول مجددًا.'));
     } finally {
@@ -497,6 +503,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
         await updateOrderStatus(orderId, nextStatus);
         setOrder((currentOrder) => currentOrder ? { ...currentOrder, status: nextStatus } : currentOrder);
       }
+      arrivedPickupOrderId.current = nextStep === 1 ? orderId : null;
       setStepIndex(nextStep);
     } catch (error) {
       setStepIndex(previousStep);
