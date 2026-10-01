@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ProductSummary } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 type Props = {
   product: ProductSummary;
@@ -44,6 +45,7 @@ export function CustomerProductCard({
   quickActionNeedsOptions = false,
   quickActionDisabled = false,
 }: Props): React.JSX.Element {
+  const { t } = useTranslation();
   const images = useMemo(() => imageCandidates(product), [product]);
   const [imageIndex, setImageIndex] = useState(0);
   const imageUrl = images[imageIndex];
@@ -60,7 +62,7 @@ export function CustomerProductCard({
       activeOpacity={0.9}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${displayName}، السعر ${price} ريال يمني`}
+      accessibilityLabel={`${displayName}, ${t('customer.priceLabel')} ${price} ${t('customer.yemeniRial')}`}
     >
       <View style={[styles.media, isList && styles.mediaList]}>
         {imageUrl ? (
@@ -88,7 +90,7 @@ export function CustomerProductCard({
               onToggleFavorite();
             }}
             accessibilityRole="button"
-            accessibilityLabel={favorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+            accessibilityLabel={favorite ? t('customer.removeFavorite') : t('customer.addFavorite')}
             accessibilityState={{ selected: favorite }}
           >
             <Ionicons
@@ -108,10 +110,10 @@ export function CustomerProductCard({
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={13} color="#F4B740" />
           <Text style={styles.ratingText}>{Number(product.rating ?? 0).toFixed(1)}</Text>
-          {product.total_sold > 0 ? <Text style={styles.soldText}>• {product.total_sold} مبيع</Text> : null}
+          {product.total_sold > 0 ? <Text style={styles.soldText}>• {product.total_sold} {t('customer.soldCount')}</Text> : null}
         </View>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{price} <Text style={styles.currency}>ر.ي</Text></Text>
+          <Text style={styles.price}>{price} <Text style={styles.currency}>{t('merchant.currencyYER')}</Text></Text>
           {product.sale_price ? <Text style={styles.oldPrice}>{product.base_price}</Text> : null}
         </View>
       </View>
@@ -126,7 +128,7 @@ export function CustomerProductCard({
           disabled={quickActionDisabled}
           activeOpacity={0.82}
           accessibilityRole="button"
-          accessibilityLabel={quickActionNeedsOptions ? `اختيار خيارات ${displayName}` : `إضافة ${displayName} إلى السلة`}
+          accessibilityLabel={quickActionNeedsOptions ? `${t('customer.chooseOptions')} ${displayName}` : `${t('customer.addToCartAccessibility')} ${displayName}`}
           accessibilityState={{ disabled: quickActionDisabled }}
         >
           <Ionicons
