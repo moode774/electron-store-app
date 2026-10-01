@@ -56,7 +56,7 @@ export default function OrdersListScreen({ navigation }: any) {
         const data = await getOrders(user.id);
         setOrders(data);
       } catch (error: any) {
-        setErrorMessage(error?.message ?? 'تعذّر تحميل طلباتك. تحقق من الاتصال وحاول مجدداً.');
+        setErrorMessage(error?.message ?? t('customer.ordersLoadFailed'));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -103,7 +103,7 @@ export default function OrdersListScreen({ navigation }: any) {
     try {
       const items = await getReorderItems(orderId);
       if (items.length === 0) {
-        Alert.alert('لا توجد عناصر متاحة', 'المنتجات السابقة غير متوفرة حالياً.');
+        Alert.alert(t('customer.ordersNoAvailableItems'), t('customer.ordersNoAvailableItemsText'));
         return;
       }
       items.forEach((it) =>
@@ -122,7 +122,7 @@ export default function OrdersListScreen({ navigation }: any) {
       );
       navigation.navigate('Cart' as any, { screen: 'CartMain' });
     } catch (error: any) {
-      Alert.alert('تعذّرت إعادة الطلب', error?.message ?? 'تعذّر تحميل عناصر الطلب. حاول مرة أخرى.');
+      Alert.alert(t('customer.ordersReorderFailed'), error?.message ?? t('customer.ordersReorderFailedText'));
     }
   };
 
@@ -170,7 +170,7 @@ export default function OrdersListScreen({ navigation }: any) {
       case ORDER_STATUS.PICKED_UP:
       case ORDER_STATUS.ASSIGNED:
         return {
-          label: 'في الطريق',
+          label: t('customer.ordersOnWay'),
           icon: 'car-outline',
           bgColor: '#F3E8FF',
           textColor: '#7E22CE',
@@ -180,7 +180,7 @@ export default function OrdersListScreen({ navigation }: any) {
       case ORDER_STATUS.CONFIRMED:
       case ORDER_STATUS.READY:
         return {
-          label: 'جاري التجهيز',
+          label: t('customer.ordersPreparing'),
           icon: 'cube-outline',
           bgColor: '#EFF6FF',
           textColor: '#1D4ED8',
@@ -189,7 +189,7 @@ export default function OrdersListScreen({ navigation }: any) {
       // الطلب المعلّق لم يؤكّده المتجر بعد — لا يجوز عرضه كأنه قيد التجهيز
       case ORDER_STATUS.PENDING:
         return {
-          label: 'بانتظار تأكيد المتجر',
+          label: t('customer.ordersAwaitingStore'),
           icon: 'time-outline',
           bgColor: '#FEF3C7',
           textColor: '#B45309',
@@ -197,7 +197,7 @@ export default function OrdersListScreen({ navigation }: any) {
         };
       case ORDER_STATUS.DELIVERED:
         return {
-          label: 'تم التوصيل',
+          label: t('customer.ordersDelivered'),
           icon: 'checkmark-circle-outline',
           bgColor: '#ECFDF5',
           textColor: '#047857',
@@ -206,7 +206,7 @@ export default function OrdersListScreen({ navigation }: any) {
       case ORDER_STATUS.CANCELLED:
       case ORDER_STATUS.FAILED_DELIVERY:
         return {
-          label: 'ملغي',
+          label: t('customer.ordersCancelled'),
           icon: 'close-circle-outline',
           bgColor: '#FEF2F2',
           textColor: '#DC2626',
@@ -214,7 +214,7 @@ export default function OrdersListScreen({ navigation }: any) {
         };
       default:
         return {
-          label: 'جاري المعالجة',
+          label: t('customer.ordersProcessing'),
           icon: 'time-outline',
           bgColor: '#F1F5F9',
           textColor: '#475569',
@@ -264,7 +264,7 @@ export default function OrdersListScreen({ navigation }: any) {
           </View>
 
           <Text style={styles.orderIdentity} numberOfLines={1}>
-            طلب #{item.order_number}
+            {t('customer.order')} #{item.order_number}
           </Text>
 
           <View style={styles.cardBottom}>
@@ -272,7 +272,7 @@ export default function OrdersListScreen({ navigation }: any) {
               <Text style={styles.priceAmountText}>
                 {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'}
               </Text>
-              <Text style={styles.currencyText}>ر.ي</Text>
+              <Text style={styles.currencyText}>{t('merchant.currencyYER')}</Text>
             </View>
 
             <View style={styles.metaPill}>
@@ -300,16 +300,16 @@ export default function OrdersListScreen({ navigation }: any) {
         <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.supportPillBtn}
-            onPress={() => Alert.alert('خدمة العملاء', 'نحن هنا لمساعدتك على مدار الساعة.')}
+            onPress={() => Alert.alert(t('customer.ordersCustomerService'), t('customer.ordersCustomerServiceText'))}
             activeOpacity={0.8}
           >
             <Ionicons name="headset-outline" size={16} color="#172554" />
-            <Text style={styles.supportPillText}>الدعم</Text>
+            <Text style={styles.supportPillText}>{t('customer.ordersSupport')}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>{t('common.myOrders')}</Text>
-            <Text style={styles.headerSub}>تابع جميع طلباتك بسهولة</Text>
+            <Text style={styles.headerSub}>{t('customer.ordersSubtitle')}</Text>
           </View>
 
           {navigation.canGoBack() ? (
