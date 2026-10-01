@@ -3,6 +3,7 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { translate, useTranslation } from '../../i18n';
 
 // Shared building blocks for the merchant workspace so every screen uses the
 // same header, cards, chips and empty states (navy brand, RTL on web too).
@@ -24,31 +25,24 @@ export const formatDate = (iso: string | null | undefined, withTime = false) => 
   return withTime ? `${date} · ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}` : date;
 };
 
-const PAYMENT_LABELS: Record<string, string> = {
-  cash: 'الدفع عند الاستلام',
-  cod: 'الدفع عند الاستلام',
-  jawali: 'محفظة جوالي',
-  one_cash: 'ون كاش',
-  cash_wallet: 'كاش',
-  floosak: 'فلوسك',
-  jaib: 'جيب',
-  kuraimi: 'الكريمي',
-  card: 'بطاقة بنكية',
-  wallet: 'المحفظة',
+const PAYMENT_LABEL_KEYS: Record<string, string> = {
+  cash: 'merchant.paymentCash', cod: 'merchant.paymentCash', jawali: 'merchant.paymentJawali',
+  one_cash: 'merchant.paymentOneCash', cash_wallet: 'merchant.paymentCashWallet', floosak: 'merchant.paymentFloosak',
+  jaib: 'merchant.paymentJaib', kuraimi: 'merchant.paymentKuraimi', card: 'merchant.paymentCard', wallet: 'merchant.paymentWallet',
 };
 
 export const paymentLabel = (method: string | null | undefined) =>
-  (method && PAYMENT_LABELS[method]) || 'غير محدد';
+  (method && PAYMENT_LABEL_KEYS[method] ? translate(PAYMENT_LABEL_KEYS[method]) : translate('customer.unspecified'));
 
 export const isCashPayment = (method: string | null | undefined) => method === 'cash' || method === 'cod';
 
 export const timeAgo = (iso: string | null | undefined) => {
   if (!iso) return '';
   const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (minutes < 1) return 'الآن';
-  if (minutes < 60) return `منذ ${minutes} د`;
+  if (minutes < 1) return translate('merchant.now');
+  if (minutes < 60) return `${translate('merchant.minutesAgo')} ${minutes}m`;
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `منذ ${hours} س`;
+  if (hours < 24) return `${translate('merchant.hoursAgo')} ${hours}h`;
   return formatDate(iso);
 };
 
@@ -63,11 +57,12 @@ export function ScreenHeader({
   title, subtitle, onBack, right,
 }: { title: string; subtitle?: string; onBack?: () => void; right?: React.ReactNode }) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const isDesktop = useIsDesktop();
   return (
     <View style={[ui.header, { paddingTop: isDesktop ? 18 : insets.top + 10 }]}>
       {onBack ? (
-        <TouchableOpacity style={ui.iconBtn} onPress={onBack} accessibilityRole="button" accessibilityLabel="رجوع">
+        <TouchableOpacity style={ui.iconBtn} onPress={onBack} accessibilityRole="button" accessibilityLabel={t('merchant.backA11y')}>
           <Ionicons name={backIcon} size={20} color={COLORS.ink} />
         </TouchableOpacity>
       ) : null}
