@@ -70,7 +70,7 @@ export default function HelpCenterScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.help')}</Text>
@@ -89,8 +89,8 @@ export default function HelpCenterScreen({ navigation }: any) {
               </TouchableOpacity>
             ))}
           </View>
-          <TextInput style={styles.ticketInput} placeholder=t('customer.subject') placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel="موضوع تذكرة الدعم" />
-          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder=t('customer.explainProblem') placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel="تفاصيل تذكرة الدعم" />
+          <TextInput style={styles.ticketInput} placeholder={t('customer.subject')} placeholderTextColor="#9CA3AF" value={subject} onChangeText={setSubject} accessibilityLabel="موضوع تذكرة الدعم" />
+          <TextInput style={[styles.ticketInput, styles.ticketArea]} placeholder={t('customer.explainProblem')} placeholderTextColor="#9CA3AF" value={message} onChangeText={setMessage} multiline accessibilityLabel="تفاصيل تذكرة الدعم" />
           <TouchableOpacity style={[styles.submitTicket, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
             {sending ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitTicketText}>{t('customer.sendTicket')}</Text>}
           </TouchableOpacity>
