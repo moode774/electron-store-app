@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
-import { useTranslation, translate } from '../../i18n';
+import { useTranslation } from '../../i18n';
 import {
   getSupportTicketThread, replyToSupportTicket, SupportMessage, SupportTicket,
   supabase, useAuthStore,
@@ -13,13 +13,13 @@ import {
 import { Alert } from '../../components/appAlert';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
-const STATUS_LABELS: Record<string, string> = {
-  open: 'مفتوحة',
-  in_progress: 'قيد المعالجة',
-  waiting_user: 'بانتظار ردك',
-  resolved: 'محلولة',
-  closed: 'مغلقة',
-};
+const STATUS_KEYS = {
+  open: 'shared.ticketOpen',
+  in_progress: 'shared.ticketProgress',
+  waiting_user: 'shared.ticketWaiting',
+  resolved: 'shared.ticketResolved',
+  closed: 'shared.ticketClosed',
+} as const;
 
 export default function SupportTicketThreadScreen({ navigation, route }: any) {
   const { t } = useTranslation();
