@@ -5,10 +5,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { getServiceAreas } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation } from '../../i18n';
 
 type Zone = { id: string; name: string; orders: string; available: boolean };
 
 export default function DeliveryZonesScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(900);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,11 +23,11 @@ export default function DeliveryZonesScreen({ navigation }: any) {
       setZones(areas.map((a) => ({
         id: a.id,
         name: a.city,
-        orders: a.delivery_available ? 'متاح للتوصيل' : 'غير متاح',
+        orders: a.delivery_available ? t('delivery.zonesAvailable') : t('delivery.zonesUnavailable'),
         available: a.delivery_available,
       })));
     } catch (error) {
-      setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل نطاقات التغطية.');
+      setLoadError(error instanceof Error && error.message ? error.message : t('delivery.zonesLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -42,10 +44,10 @@ export default function DeliveryZonesScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.back')}>
           <Ionicons name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>نطاقات التغطية</Text>
+        <Text style={styles.headerTitle}>{t('delivery.coverageZones')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -53,7 +55,7 @@ export default function DeliveryZonesScreen({ navigation }: any) {
         <View style={styles.infoCard}>
           <Ionicons name="map-outline" size={20} color={COLORS.primary} />
           <Text style={styles.infoText}>
-            يعرض النظام المناطق المتاحة للتوصيل حاليًا. توجد <Text style={{ fontWeight: '800' }}>{availableCount}</Text> مناطق متاحة.
+            {t('delivery.coverageIntro')} <Text style={{ fontWeight: '800' }}>{availableCount}</Text> {t('delivery.zonesAvailableCount')}
           </Text>
         </View>
 
@@ -61,13 +63,13 @@ export default function DeliveryZonesScreen({ navigation }: any) {
         {loadError ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorText}>{loadError}</Text>
-            <TouchableOpacity onPress={() => void loadZones()} accessibilityRole="button" accessibilityLabel="إعادة تحميل نطاقات التغطية">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <TouchableOpacity onPress={() => void loadZones()} accessibilityRole="button" accessibilityLabel={t('delivery.reloadZones')}>
+              <Text style={styles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
         {!loading && zones.length === 0 && (
-          <Text style={{ color: COLORS.inkTertiary, fontSize: 13, textAlign: 'center', marginTop: 20 }}>لا توجد مناطق متاحة</Text>
+          <Text style={{ color: COLORS.inkTertiary, fontSize: 13, textAlign: 'center', marginTop: 20 }}>{t('delivery.noZones')}</Text>
         )}
         {zones.map((zone) => (
           <View key={zone.id} style={[styles.zoneCard, zone.available && styles.zoneCardActive]} accessibilityLabel={`${zone.name}: ${zone.orders}`}>
@@ -79,7 +81,7 @@ export default function DeliveryZonesScreen({ navigation }: any) {
               <Text style={styles.zoneOrders}>{zone.orders}</Text>
             </View>
             <View style={[styles.statusBadge, zone.available && styles.statusBadgeAvailable]}>
-              <Text style={[styles.statusText, zone.available && styles.statusTextAvailable]}>{zone.available ? 'متاحة' : 'متوقفة'}</Text>
+              <Text style={[styles.statusText, zone.available && styles.statusTextAvailable]}>{zone.available ? t('delivery.zoneActive') : t('delivery.zonePaused')}</Text>
             </View>
           </View>
         ))}
