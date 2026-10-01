@@ -15,20 +15,21 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../../components/appAlert';
+import { useTranslation } from '../../../i18n';
 
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const ACTIVE_STATUSES = new Set(['requested', 'approved', 'pickup_scheduled', 'picked_up', 'received', 'inspected']);
 
-const STATUS_META: Record<string, { title: string; detail: string; color: string; background: string; border: string }> = {
-  requested: { title: 'طلب الإرجاع قيد المراجعة', detail: 'وصل الطلب إلى التاجر والإدارة للمراجعة.', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
-  approved: { title: 'تمت الموافقة على الإرجاع', detail: 'تنتظر العملية تحديد موعد وطريقة استلام المنتجات.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
-  rejected: { title: 'رُفض طلب الإرجاع', detail: 'راجع سبب القرار، ويمكنك فتح شكوى إذا كان لديك اعتراض.', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
-  cancelled: { title: 'أُلغي طلب الإرجاع', detail: 'أُلغي الطلب قبل اعتماده.', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
-  pickup_scheduled: { title: 'تمت جدولة استلام المنتجات', detail: 'سيظهر تقدم المندوب هنا حتى تسليمها إلى المتجر.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
-  picked_up: { title: 'استلم المندوب المنتجات', detail: 'المنتجات الآن بعهدة المندوب وفي طريقها إلى المتجر.', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
-  received: { title: 'وصلت المنتجات إلى المتجر', detail: 'ينتظر الطلب فحص حالة المنتجات والكميات المقبولة.', color: '#6D28D9', background: '#F5F3FF', border: '#DDD6FE' },
-  inspected: { title: 'اكتمل فحص المنتجات', detail: 'تراجع الإدارة نتيجة الفحص قبل تنفيذ الاسترداد المالي.', color: '#6D28D9', background: '#F5F3FF', border: '#DDD6FE' },
-  completed: { title: 'اكتملت معالجة الإرجاع', detail: 'أُغلقت العملية بعد الفحص وقرار الإدارة المثبت.', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
+const STATUS_META: Record<string, { titleKey: string; detailKey: string; color: string; background: string; border: string }> = {
+  requested: { titleKey: 'physicalReturn.requestedTitle', detailKey: 'physicalReturn.requestedDetail', color: '#92400E', background: '#FFFBEB', border: '#FDE68A' },
+  approved: { titleKey: 'physicalReturn.approvedTitle', detailKey: 'physicalReturn.approvedDetail', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
+  rejected: { titleKey: 'physicalReturn.rejectedTitle', detailKey: 'physicalReturn.rejectedDetail', color: '#B91C1C', background: '#FEF2F2', border: '#FECACA' },
+  cancelled: { titleKey: 'physicalReturn.cancelledTitle', detailKey: 'physicalReturn.cancelledDetail', color: '#475569', background: '#F8FAFC', border: '#CBD5E1' },
+  pickup_scheduled: { titleKey: 'physicalReturn.scheduledTitle', detailKey: 'physicalReturn.scheduledDetail', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
+  picked_up: { titleKey: 'physicalReturn.pickedTitle', detailKey: 'physicalReturn.pickedDetail', color: '#1D4ED8', background: '#EFF6FF', border: '#BFDBFE' },
+  received: { titleKey: 'physicalReturn.receivedTitle', detailKey: 'physicalReturn.receivedDetail', color: '#6D28D9', background: '#F5F3FF', border: '#DDD6FE' },
+  inspected: { titleKey: 'physicalReturn.inspectedTitle', detailKey: 'physicalReturn.inspectedDetail', color: '#6D28D9', background: '#F5F3FF', border: '#DDD6FE' },
+  completed: { titleKey: 'physicalReturn.completedTitle', detailKey: 'physicalReturn.completedDetail', color: '#166534', background: '#F0FDF4', border: '#BBF7D0' },
 };
 
 const RETURN_REASONS: Array<{ value: PhysicalReturnRequest['reason']; label: string }> = [
@@ -49,6 +50,7 @@ type EvidenceFile = {
 };
 
 export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
+  const { t, language } = useTranslation();
   const [requests, setRequests] = useState<PhysicalReturnRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -67,7 +69,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
       setRequests(result);
       setLoadError('');
     } catch (error: any) {
-      setLoadError(error?.message ?? 'تعذّر التحقق من طلبات إرجاع المنتجات.');
+      setLoadError(error?.message ?? t('physicalReturn.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -141,7 +143,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (permission.status !== 'granted') {
-        Alert.alert('السماح بالصور مطلوب', 'اسمح للتطبيق باختيار صورة توضح حالة المنتج.');
+        Alert.alert(t('physicalReturn.photosRequired'), t('physicalReturn.photosRequiredText'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -153,7 +155,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
       if (!asset) return;
       const contentType = asset.mimeType === 'image/png' ? 'image/png' : 'image/jpeg';
       if (asset.fileSize != null && (asset.fileSize < 1 || asset.fileSize > 10 * 1024 * 1024)) {
-        Alert.alert('الصورة غير مقبولة', 'حجم الصورة يجب ألا يتجاوز 10 ميجابايت.');
+        Alert.alert(t('physicalReturn.imageRejected'), t('physicalReturn.imageTooLarge'));
         return;
       }
       setEvidence((current) => [...current, {
@@ -163,16 +165,16 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
         size: asset.fileSize,
       }]);
     } catch (error: any) {
-      Alert.alert('تعذّر اختيار الصورة', error?.message ?? 'حاول مرة أخرى.');
+      Alert.alert(t('physicalReturn.chooseImageFailed'), error?.message ?? t('orderTracking.tryAgain'));
     }
   };
 
   const submit = async () => {
-    if (!reason) { Alert.alert('اختر السبب', 'حدد سبب إرجاع المنتجات أولاً.'); return; }
-    if (!selectedItems.length) { Alert.alert('اختر المنتجات', 'حدد منتجًا واحدًا على الأقل والكمية المراد إرجاعها.'); return; }
-    if (description.trim().length < 10) { Alert.alert('التفاصيل مطلوبة', 'اكتب وصفًا واضحًا لا يقل عن 10 أحرف.'); return; }
+    if (!reason) { Alert.alert(t('physicalReturn.chooseReason'), t('physicalReturn.chooseReasonText')); return; }
+    if (!selectedItems.length) { Alert.alert(t('physicalReturn.chooseProducts'), t('physicalReturn.chooseProductsText')); return; }
+    if (description.trim().length < 10) { Alert.alert(t('physicalReturn.detailsRequired'), t('physicalReturn.detailsText')); return; }
     if (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0) {
-      Alert.alert('صورة الإثبات مطلوبة', 'أرفق صورة واحدة على الأقل لهذا النوع من الإرجاع.');
+      Alert.alert(t('physicalReturn.evidenceRequired'), t('physicalReturn.evidenceRequiredText'));
       return;
     }
     setSubmitting(true);
@@ -207,9 +209,9 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
       await load();
       setShowForm(false);
       idempotencyKey.current = null;
-      Alert.alert('تم إرسال طلب الإرجاع', 'سيظهر هنا قرار المراجعة ثم مراحل استلام المنتجات وفحصها.');
+      Alert.alert(t('physicalReturn.sentTitle'), t('physicalReturn.sentText'));
     } catch (error: any) {
-      Alert.alert('تعذّر إرسال طلب الإرجاع', error?.message ?? 'حاول مرة أخرى مع الاحتفاظ بنفس البيانات.');
+      Alert.alert(t('physicalReturn.sendFailed'), error?.message ?? t('physicalReturn.retryKeepData'));
     } finally {
       setSubmitting(false);
     }
@@ -217,15 +219,15 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
 
   const cancel = () => {
     if (!latestRequest || latestRequest.status !== 'requested') return;
-    Alert.alert('إلغاء طلب الإرجاع', 'يمكن الإلغاء الآن فقط قبل اعتماد الطلب. هل تريد المتابعة؟', [
-      { text: 'تراجع', style: 'cancel' },
+    Alert.alert(t('physicalReturn.cancelTitle'), t('physicalReturn.cancelText'), [
+      { text: t('physicalReturn.undo'), style: 'cancel' },
       {
-        text: 'إلغاء الطلب', style: 'destructive', onPress: async () => {
+        text: t('physicalReturn.cancelOrder'), style: 'destructive', onPress: async () => {
           try {
-            await cancelPhysicalReturnRequest(latestRequest.id, 'ألغاه العميل من شاشة متابعة الطلب');
+            await cancelPhysicalReturnRequest(latestRequest.id, t('physicalReturn.customerCancelledReason'));
             await load();
           } catch (error: any) {
-            Alert.alert('تعذّر الإلغاء', error?.message ?? 'حاول مرة أخرى.');
+            Alert.alert(t('physicalReturn.cancelFailed'), error?.message ?? t('orderTracking.tryAgain'));
           }
         },
       },
@@ -233,7 +235,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   };
 
   if (loading) {
-    return <View style={styles.loading}><ActivityIndicator color="#172554" /><Text style={styles.loadingText}>جارٍ التحقق من إرجاع المنتجات…</Text></View>;
+    return <View style={styles.loading}><ActivityIndicator color="#172554" /><Text style={styles.loadingText}>{t('physicalReturn.checking')}</Text></View>;
   }
 
   const completedWithoutRefund = latestRequest?.status === 'completed'
@@ -243,8 +245,8 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
     ? (completedWithoutRefund
       ? {
         ...STATUS_META.completed,
-        title: 'أُغلق الإرجاع بلا استرداد',
-        detail: 'رفض فحص المتجر جميع الكميات، لذلك لم تُنشأ حركة مالية أو إعادة مخزون.',
+        titleKey: 'physicalReturn.closedNoRefundTitle',
+        detailKey: 'physicalReturn.closedNoRefundDetail',
       }
       : (STATUS_META[latestRequest.status] ?? STATUS_META.requested))
     : null;
@@ -252,113 +254,113 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   return (
     <View>
       <View style={styles.sectionIntro}>
-        <Text style={styles.sectionTitle}>إرجاع منتجات فعليًا</Text>
-        <Text style={styles.sectionText}>هذا المسار للمنتج التالف أو الخاطئ أو غير المطابق. يمر بالاستلام ثم فحص المتجر قبل أي استرداد مالي.</Text>
+        <Text style={styles.sectionTitle}>{t('physicalReturn.sectionTitle')}</Text>
+        <Text style={styles.sectionText}>{t('physicalReturn.sectionText')}</Text>
       </View>
 
       {latestRequest && status ? (
         <View style={[styles.statusCard, { backgroundColor: status.background, borderColor: status.border }]} accessibilityRole="summary">
-          <Text style={[styles.statusTitle, { color: status.color }]}>{status.title}</Text>
-          <Text style={[styles.statusText, { color: status.color }]}>{status.detail}</Text>
-          <Text style={[styles.statusText, { color: status.color }]}>الطريقة: {latestRequest.pickup_method === 'courier_pickup' ? 'استلام بواسطة مندوب' : 'تسليم العميل للمتجر'}</Text>
-          {latestRequest.pickup_scheduled_at ? <Text style={[styles.statusText, { color: status.color }]}>الموعد: {new Date(latestRequest.pickup_scheduled_at).toLocaleString('ar-SA')}</Text> : null}
-          {latestRequest.review_notes ? <Text style={[styles.statusText, { color: status.color }]}>قرار الإدارة: {latestRequest.review_notes}</Text> : null}
-          {latestRequest.merchant_response ? <Text style={[styles.statusText, { color: status.color }]}>رد التاجر: {latestRequest.merchant_response}</Text> : null}
-          {latestRequest.inspection_notes ? <Text style={[styles.statusText, { color: status.color }]}>نتيجة الفحص: {latestRequest.inspection_notes}</Text> : null}
+          <Text style={[styles.statusTitle, { color: status.color }]}>{t(status.titleKey)}</Text>
+          <Text style={[styles.statusText, { color: status.color }]}>{t(status.detailKey)}</Text>
+          <Text style={[styles.statusText, { color: status.color }]}>{t('physicalReturn.method')}: {latestRequest.pickup_method === 'courier_pickup' ? t('physicalReturn.courierPickup') : t('physicalReturn.customerDropoff')}</Text>
+          {latestRequest.pickup_scheduled_at ? <Text style={[styles.statusText, { color: status.color }]}>{t('physicalReturn.appointment')}: {new Date(latestRequest.pickup_scheduled_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text> : null}
+          {latestRequest.review_notes ? <Text style={[styles.statusText, { color: status.color }]}>{t('physicalReturn.adminDecision')}: {latestRequest.review_notes}</Text> : null}
+          {latestRequest.merchant_response ? <Text style={[styles.statusText, { color: status.color }]}>{t('physicalReturn.merchantReply')}: {latestRequest.merchant_response}</Text> : null}
+          {latestRequest.inspection_notes ? <Text style={[styles.statusText, { color: status.color }]}>{t('physicalReturn.inspectionResult')}: {latestRequest.inspection_notes}</Text> : null}
           {latestRequest.status === 'completed' ? (
             <Text style={[styles.statusText, { color: status.color }]}>
-              {completedWithoutRefund ? 'لم يُنشأ استرداد مالي.' : `المبلغ المسترد: ${latestRequest.refund_amount} ر.ي`}
+              {completedWithoutRefund ? t('physicalReturn.noRefundCreated') : `${t('physicalReturn.refundedAmount')}: ${latestRequest.refund_amount} ${t('merchant.currencyYER')}`}
             </Text>
           ) : null}
           {latestRequest.status === 'requested' ? (
-            <TouchableOpacity onPress={cancel} style={styles.cancelRequestBtn} accessibilityRole="button" accessibilityLabel="إلغاء طلب إرجاع المنتجات">
-              <Text style={styles.cancelRequestText}>إلغاء الطلب قبل الاعتماد</Text>
+            <TouchableOpacity onPress={cancel} style={styles.cancelRequestBtn} accessibilityRole="button" accessibilityLabel={t('physicalReturn.cancelTitle')}>
+              <Text style={styles.cancelRequestText}>{t('physicalReturn.cancelBeforeApproval')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
       ) : null}
 
       {loadError ? (
-        <TouchableOpacity style={styles.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel="إعادة التحقق من إرجاع المنتجات">
-          <Text style={styles.errorText}>{loadError} اضغط لإعادة المحاولة. لن يُفتح طلب جديد قبل نجاح التحقق.</Text>
+        <TouchableOpacity style={styles.errorCard} onPress={() => void load()} accessibilityRole="button" accessibilityLabel={t('physicalReturn.recheckA11y')}>
+          <Text style={styles.errorText}>{loadError} {t('physicalReturn.tapRetryNoNew')}</Text>
         </TouchableOpacity>
       ) : null}
 
       {!loadError && order.status === ORDER_STATUS.DELIVERED && !windowOpen && !activeRequest ? (
         <View style={styles.errorCard}>
-          <Text style={styles.errorText}>{windowKnown ? `انتهت مهلة إرجاع المنتجات (7 أيام) في ${new Date(returnDeadline).toLocaleString('ar-SA')}. افتح شكوى للحالات الاستثنائية.` : 'تعذّر التحقق من وقت التسليم؛ أُوقف فتح إرجاع جديد حتى تتضح البيانات.'}</Text>
+          <Text style={styles.errorText}>{windowKnown ? `${t('physicalReturn.returnWindowExpired')} ${new Date(returnDeadline).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}. ${t('physicalReturn.exceptionalComplaint')}` : t('physicalReturn.deliveryTimeUnknown')}</Text>
         </View>
       ) : null}
 
       {canCreate && !loadError && !showForm ? (
-        <TouchableOpacity style={styles.openBtn} onPress={openForm} accessibilityRole="button" accessibilityLabel="فتح طلب إرجاع منتجات">
+        <TouchableOpacity style={styles.openBtn} onPress={openForm} accessibilityRole="button" accessibilityLabel={t('physicalReturn.openRequest')}>
           <Ionicons name="cube-outline" size={19} color="#172554" />
-          <Text style={styles.openBtnText}>{latestRequest?.status === 'completed' ? 'إرجاع كمية متبقية' : 'طلب إرجاع منتجات'}</Text>
+          <Text style={styles.openBtnText}>{latestRequest?.status === 'completed' ? t('physicalReturn.remainingQuantity') : t('physicalReturn.requestReturn')}</Text>
         </TouchableOpacity>
       ) : null}
 
       {showForm && canCreate ? (
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>حدد المنتجات والكميات</Text>
+          <Text style={styles.formTitle}>{t('physicalReturn.selectProductsQty')}</Text>
           {availableItems.map((item) => {
             const quantity = quantities[item.id] ?? 0;
             return (
               <View key={item.id} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.product_name ?? item.products?.name ?? 'منتج'}</Text>
-                  <Text style={styles.itemSub}>المتاح للإرجاع: {item.available} · سعر الوحدة: {item.unit_price} ر.ي</Text>
+                  <Text style={styles.itemName}>{item.product_name ?? item.products?.name ?? t('physicalReturn.productFallback')}</Text>
+                  <Text style={styles.itemSub}>{t('physicalReturn.availableReturn')}: {item.available} · {t('physicalReturn.unitPrice')}: {item.unit_price} {t('merchant.currencyYER')}</Text>
                 </View>
                 <View style={styles.counter}>
-                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, 1)} accessibilityLabel={`زيادة كمية ${item.product_name ?? 'المنتج'}`}><Text style={styles.counterText}>+</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, 1)} accessibilityLabel={`${t('physicalReturn.increaseQty')} ${item.product_name ?? t('physicalReturn.productFallback')}`}><Text style={styles.counterText}>+</Text></TouchableOpacity>
                   <Text style={styles.quantity}>{quantity}</Text>
-                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, -1)} accessibilityLabel={`تقليل كمية ${item.product_name ?? 'المنتج'}`}><Text style={styles.counterText}>−</Text></TouchableOpacity>
+                  <TouchableOpacity style={styles.counterBtn} onPress={() => changeQuantity(item.id, item.available, -1)} accessibilityLabel={`${t('physicalReturn.decreaseQty')} ${item.product_name ?? t('physicalReturn.productFallback')}`}><Text style={styles.counterText}>−</Text></TouchableOpacity>
                 </View>
               </View>
             );
           })}
 
-          <Text style={styles.formTitle}>سبب الإرجاع</Text>
+          <Text style={styles.formTitle}>{t('physicalReturn.returnReason')}</Text>
           {RETURN_REASONS.map((item) => (
             <TouchableOpacity key={item.value} style={[styles.choiceRow, reason === item.value && styles.choiceSelected]} onPress={() => setReason(item.value)} accessibilityRole="radio" accessibilityState={{ selected: reason === item.value }}>
-              <Text style={[styles.choiceText, reason === item.value && styles.choiceTextSelected]}>{item.label}</Text>
+              <Text style={[styles.choiceText, reason === item.value && styles.choiceTextSelected]}>{t(item.labelKey)}</Text>
               <Ionicons name={reason === item.value ? 'radio-button-on' : 'radio-button-off'} size={20} color={reason === item.value ? '#172554' : '#94A3B8'} />
             </TouchableOpacity>
           ))}
 
-          <Text style={[styles.formTitle, { marginTop: 14 }]}>طريقة تسليم المنتجات</Text>
+          <Text style={[styles.formTitle, { marginTop: 14 }]}>{t('physicalReturn.deliveryMethod')}</Text>
           {([
-            ['courier_pickup', 'مندوب يستلمها من عنوان الطلب'],
-            ['customer_dropoff', 'سأسلمها بنفسي إلى المتجر'],
+            ['courier_pickup', 'physicalReturn.courierCollects'],
+            ['customer_dropoff', 'physicalReturn.selfDropoff'],
           ] as const).map(([value, label]) => (
             <TouchableOpacity key={value} style={[styles.choiceRow, pickupMethod === value && styles.choiceSelected]} onPress={() => setPickupMethod(value)} accessibilityRole="radio" accessibilityState={{ selected: pickupMethod === value }}>
-              <Text style={[styles.choiceText, pickupMethod === value && styles.choiceTextSelected]}>{label}</Text>
+              <Text style={[styles.choiceText, pickupMethod === value && styles.choiceTextSelected]}>{t(label)}</Text>
               <Ionicons name={pickupMethod === value ? 'radio-button-on' : 'radio-button-off'} size={20} color={pickupMethod === value ? '#172554' : '#94A3B8'} />
             </TouchableOpacity>
           ))}
 
-          <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="صف حالة المنتج والتغليف وما حدث (10 أحرف على الأقل)…" placeholderTextColor="#94A3B8" multiline maxLength={2000} textAlign="right" accessibilityLabel="تفاصيل إرجاع المنتجات" />
+          <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t('physicalReturn.descriptionPlaceholder')} placeholderTextColor="#94A3B8" multiline maxLength={2000} textAlign="right" accessibilityLabel={t('physicalReturn.detailsA11y')} />
           <View style={styles.evidenceHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.formTitle}>صور حالة المنتج</Text>
-              <Text style={styles.evidenceHint}>مطلوبة للتالف أو الخاطئ أو غير المطابق · حتى 5 صور</Text>
+              <Text style={styles.formTitle}>{t('physicalReturn.productPhotos')}</Text>
+              <Text style={styles.evidenceHint}>{t('physicalReturn.evidenceHint')}</Text>
             </View>
-            <TouchableOpacity style={styles.addEvidenceBtn} onPress={() => void pickEvidence()} disabled={submitting || evidence.length >= 5} accessibilityRole="button" accessibilityLabel="إضافة صورة إثبات">
+            <TouchableOpacity style={styles.addEvidenceBtn} onPress={() => void pickEvidence()} disabled={submitting || evidence.length >= 5} accessibilityRole="button" accessibilityLabel={t('physicalReturn.addEvidence')}>
               <Ionicons name="camera-outline" size={18} color="#1D4ED8" />
-              <Text style={styles.addEvidenceText}>إضافة</Text>
+              <Text style={styles.addEvidenceText}>{t('physicalReturn.add')}</Text>
             </TouchableOpacity>
           </View>
           {evidence.map((file, index) => (
             <View key={file.id} style={styles.evidenceRow}>
               <Ionicons name={file.path ? 'cloud-done-outline' : 'image-outline'} size={18} color={file.path ? '#059669' : '#475569'} />
-              <Text style={styles.evidenceName}>صورة {index + 1}{file.path ? ' · تم رفعها بأمان' : ''}</Text>
-              {!file.path ? <TouchableOpacity style={styles.removeEvidenceBtn} onPress={() => setEvidence((current) => current.filter((item) => item.id !== file.id))} accessibilityRole="button" accessibilityLabel={`حذف صورة الإثبات ${index + 1}`}><Ionicons name="trash-outline" size={18} color="#DC2626" /></TouchableOpacity> : null}
+              <Text style={styles.evidenceName}>{t('physicalReturn.image')} {index + 1}{file.path ? ` · ${t('physicalReturn.uploadedSecurely')}` : ''}</Text>
+              {!file.path ? <TouchableOpacity style={styles.removeEvidenceBtn} onPress={() => setEvidence((current) => current.filter((item) => item.id !== file.id))} accessibilityRole="button" accessibilityLabel={`${t('physicalReturn.deleteEvidence')} ${index + 1}`}><Ionicons name="trash-outline" size={18} color="#DC2626" /></TouchableOpacity> : null}
             </View>
           ))}
-          <View style={styles.notice}><Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" /><Text style={styles.noticeText}>المبلغ لا يُنفذ الآن. بعد الاستلام والفحص تحسبه قاعدة البيانات من الكميات المقبولة والتسوية المثبتة، ولا تعيد رسوم التوصيل تلقائيًا.</Text></View>
+          <View style={styles.notice}><Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" /><Text style={styles.noticeText}>{t('physicalReturn.refundNotice')}</Text></View>
           <TouchableOpacity style={[styles.submitBtn, (submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0)) && { opacity: 0.5 }]} onPress={submit} disabled={submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0)} accessibilityRole="button" accessibilityState={{ disabled: submitting || !reason || !selectedItems.length || description.trim().length < 10 || (['damaged', 'not_as_described', 'wrong_item'].includes(reason) && evidence.length === 0), busy: submitting }}>
-            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>إرسال طلب إرجاع المنتجات</Text>}
+            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>{t('physicalReturn.submit')}</Text>}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.dismissBtn} onPress={() => !submitting && setShowForm(false)} disabled={submitting}><Text style={styles.dismissText}>تراجع</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.dismissBtn} onPress={() => !submitting && setShowForm(false)} disabled={submitting}><Text style={styles.dismissText}>{t('physicalReturn.undo')}</Text></TouchableOpacity>
         </View>
       ) : null}
     </View>
