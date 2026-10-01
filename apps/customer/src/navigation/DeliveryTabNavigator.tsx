@@ -77,20 +77,21 @@ const Tab = createBottomTabNavigator<DeliveryTabParamList>();
 
 type DeliveryNavItem = {
   route: keyof DeliveryTabParamList;
-  label: string;
+  labelKey: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   activeIcon: React.ComponentProps<typeof Ionicons>['name'];
 };
 
 const DELIVERY_NAV_ITEMS: DeliveryNavItem[] = [
-  { route: 'DeliveryHome', label: 'الرئيسية', icon: 'home-outline', activeIcon: 'home' },
-  { route: 'DeliveryOrders', label: 'طلباتي', icon: 'receipt-outline', activeIcon: 'receipt' },
-  { route: 'DeliveryReturnsTab', label: 'المرتجعات', icon: 'swap-horizontal-outline', activeIcon: 'swap-horizontal' },
-  { route: 'DeliveryEarnings', label: 'الأرباح', icon: 'wallet-outline', activeIcon: 'wallet' },
-  { route: 'DeliveryMore', label: 'حسابي', icon: 'person-circle-outline', activeIcon: 'person-circle' },
+  { route: 'DeliveryHome', labelKey: 'navigation.home', icon: 'home-outline', activeIcon: 'home' },
+  { route: 'DeliveryOrders', labelKey: 'navigation.myOrders', icon: 'receipt-outline', activeIcon: 'receipt' },
+  { route: 'DeliveryReturnsTab', labelKey: 'navigation.returns', icon: 'swap-horizontal-outline', activeIcon: 'swap-horizontal' },
+  { route: 'DeliveryEarnings', labelKey: 'navigation.earnings', icon: 'wallet-outline', activeIcon: 'wallet' },
+  { route: 'DeliveryMore', labelKey: 'navigation.myAccount', icon: 'person-circle-outline', activeIcon: 'person-circle' },
 ];
 
 function DesktopDeliverySidebar() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const activeRoute = useNavigationState((state) => state?.routes[state.index]?.name ?? 'DeliveryHome');
 
