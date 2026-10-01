@@ -33,7 +33,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, translate } from '../../i18n';
 
 type Recommendation = 'approve' | 'reject';
 type Disposition = 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected';
@@ -52,49 +52,49 @@ interface MerchantPhysicalReturnsScreenProps {
   navigation: { goBack: () => void };
 }
 
-const STATUS: Record<string, { label: string; color: string; background: string }> = {
-  requested: { label: t('merchant.returnRequested'), color: '#B45309', background: '#FFFBEB' },
-  approved: { label: t('merchant.approved'), color: '#1D4ED8', background: '#EFF6FF' },
-  rejected: { label: t('merchant.rejected'), color: '#B91C1C', background: '#FEF2F2' },
-  cancelled: { label: t('merchant.cancelled'), color: '#64748B', background: '#F1F5F9' },
-  pickup_scheduled: { label: t('merchant.pickupScheduled'), color: '#6D28D9', background: '#F5F3FF' },
-  picked_up: { label: t('merchant.pickedUp'), color: '#0369A1', background: '#F0F9FF' },
-  received: { label: t('merchant.returnReceived'), color: '#047857', background: '#ECFDF5' },
-  inspected: { label: t('merchant.inspected'), color: '#0F766E', background: '#F0FDFA' },
-  completed: { label: t('merchant.returnCompleted'), color: '#047857', background: '#ECFDF5' },
+const STATUS: Record<string, { labelKey: string; color: string; background: string }> = {
+  requested: { labelKey: 'merchant.returnRequested', color: '#B45309', background: '#FFFBEB' },
+  approved: { labelKey: 'merchant.returnApproved', color: '#1D4ED8', background: '#EFF6FF' },
+  rejected: { labelKey: 'merchant.returnRejected', color: '#B91C1C', background: '#FEF2F2' },
+  cancelled: { labelKey: 'merchant.returnCancelled', color: '#64748B', background: '#F1F5F9' },
+  pickup_scheduled: { labelKey: 'merchant.pickupScheduled', color: '#6D28D9', background: '#F5F3FF' },
+  picked_up: { labelKey: 'merchant.pickedUp', color: '#0369A1', background: '#F0F9FF' },
+  received: { labelKey: 'merchant.returnReceived', color: '#047857', background: '#ECFDF5' },
+  inspected: { labelKey: 'merchant.inspected', color: '#0F766E', background: '#F0FDFA' },
+  completed: { labelKey: 'merchant.returnCompleted', color: '#047857', background: '#ECFDF5' },
 };
 
 const REASONS: Record<string, string> = {
-  damaged: t('merchant.damaged'),
-  not_as_described: t('merchant.notDescribed'),
-  wrong_item: t('merchant.wrongItem'),
-  changed_mind: t('merchant.changedMind'),
-  other: t('merchant.otherReason'),
+  damaged: 'merchant.damaged',
+  not_as_described: 'merchant.notDescribed',
+  wrong_item: 'merchant.wrongItem',
+  changed_mind: 'merchant.changedMind',
+  other: 'merchant.otherReason',
 };
 
-const DISPOSITIONS: Array<{ value: Disposition; label: string }> = [
-  { value: 'restock', label: t('merchant.restock') },
-  { value: 'discard', label: t('merchant.discardItem') },
-  { value: 'repair', label: t('merchant.repair') },
-  { value: 'return_to_vendor', label: t('merchant.returnVendor') },
-  { value: 'rejected', label: t('merchant.rejectQuantity') },
+const DISPOSITIONS: Array<{ value: Disposition; labelKey: string }> = [
+  { value: 'restock', labelKey: 'merchant.restock' },
+  { value: 'discard', labelKey: 'merchant.discardItem' },
+  { value: 'repair', labelKey: 'merchant.repair' },
+  { value: 'return_to_vendor', labelKey: 'merchant.returnVendor' },
+  { value: 'rejected', labelKey: 'merchant.rejectQuantity' },
 ];
 
 const FILTERS = [
-  { key: '', label: t('merchant.all') },
-  { key: 'actionable', label: t('merchant.needsAction') },
-  { key: 'requested', label: t('merchant.newReturns') },
-  { key: 'pickup_scheduled', label: t('merchant.pickupAppointment') },
-  { key: 'received', label: t('merchant.reachedStore') },
-  { key: 'inspected', label: t('merchant.inspectedReturns') },
-  { key: 'completed', label: 'مكتملة' },
-];
+  { key: '', labelKey: 'merchant.all' },
+  { key: 'actionable', labelKey: 'merchant.actionable' },
+  { key: 'requested', labelKey: 'merchant.newReturns' },
+  { key: 'pickup_scheduled', labelKey: 'merchant.pickupAppointment' },
+  { key: 'received', labelKey: 'merchant.reachedStore' },
+  { key: 'inspected', labelKey: 'merchant.inspectedReturns' },
+  { key: 'completed', labelKey: 'merchant.completedFilter' },
+] as const;
 
 function itemName(item: PhysicalReturnItem): string {
   return item.order_items?.product_name
     || item.products?.name_ar
     || item.products?.name
-    || `منتج ${item.product_id.slice(0, 8)}`;
+    || `${translate('merchant.productFallback')} ${item.product_id.slice(0, 8)}`;
 }
 
 function variantLabel(item: PhysicalReturnItem): string {
@@ -105,32 +105,32 @@ function variantLabel(item: PhysicalReturnItem): string {
       .map(([key, value]) => `${key}: ${String(value)}`);
     if (values.length) return values.join(' • ');
   }
-  return item.variant_id ? `متغير #${item.variant_id.slice(0, 8)}` : 'بدون متغير';
+  return item.variant_id ? `${translate('merchant.variantPrefix')} #${item.variant_id.slice(0, 8)}` : translate('merchant.variantFallback');
 }
 
 function isPreviewableImage(path: string): boolean {
   return /\.(?:jpe?g|png)(?:$|\?)/i.test(path);
 }
 
-function merchandiseValue(item: PhysicalReturnItem): { quantity: number; amount: number; stage: string } {
+function merchandiseValue(item: PhysicalReturnItem): { quantity: number; amount: number; stageKey: string } {
   if (item.accepted_quantity != null) {
     return {
       quantity: Number(item.accepted_quantity),
       amount: Number(item.unit_price ?? 0) * Number(item.accepted_quantity),
-      stage: 'المقبولة بعد الفحص',
+      stageKey: 'merchant.acceptedAfterInspection',
     };
   }
   if (item.approved_quantity != null) {
     return {
       quantity: Number(item.approved_quantity),
       amount: Number(item.unit_price ?? 0) * Number(item.approved_quantity),
-      stage: 'المعتمدة للإرجاع',
+      stageKey: 'merchant.approvedForReturn',
     };
   }
   return {
     quantity: Number(item.requested_quantity),
     amount: Number(item.unit_price ?? 0) * Number(item.requested_quantity),
-    stage: 'المطلوبة للإرجاع',
+    stageKey: 'merchant.requestedForReturn',
   };
 }
 
@@ -141,7 +141,7 @@ function isActionable(item: MerchantPhysicalReturn): boolean {
 }
 
 export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPhysicalReturnsScreenProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { width } = useWindowDimensions();
   const isCompact = width < BREAKPOINTS.compact;
@@ -212,7 +212,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       let profileId = merchantProfileIdRef.current;
       if (!append || !profileId) {
         const profile = await getMerchantProfile(user.id);
-        if (!profile?.id) throw new Error('ملف التاجر غير موجود.');
+        if (!profile?.id) throw new Error(t('merchant.merchantFileMissing'));
         profileId = profile.id;
       }
       const offset = append ? returnsRef.current.length : 0;
@@ -232,7 +232,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       setLoadMoreError('');
     } catch (error: any) {
       if (generation !== loadGeneration.current) return;
-      const message = error?.message ?? 'تعذر تحميل المرتجعات الفعلية.';
+      const message = error?.message ?? t('merchant.loadPhysicalReturnsFailed');
       if (append || returnsRef.current.length > 0) setLoadMoreError(message);
       else setLoadError(message);
     } finally {
@@ -259,7 +259,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setLoadMoreError('انقطع التحديث المباشر. يمكنك إعادة مزامنة القائمة يدويًا.');
+          setLoadMoreError(t('merchant.realtimeDisconnected'));
         }
       });
     return () => { void supabase.removeChannel(channel); };
@@ -342,9 +342,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       setResponseTarget(null);
       clearEvidence();
       await load('realtime');
-      Alert.alert('تم إرسال التوصية', 'وصل ردك إلى الإدارة والعميل، وبقي قرار الاعتماد النهائي لدى الإدارة.');
+      Alert.alert(t('merchant.recommendationSent'), t('merchant.recommendationSentText'));
     } catch (error: any) {
-      Alert.alert('تعذر إرسال التوصية', error?.message ?? 'تحقق من الاتصال ثم حاول مرة أخرى.');
+      Alert.alert(t('merchant.recommendationFailed'), error?.message ?? t('merchant.connectionTryAgain'));
     } finally {
       setActionId(null);
     }
@@ -375,9 +375,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       setReceiptNotes('');
       clearEvidence();
       await load('realtime');
-      Alert.alert('تم التأكيد', 'أصبح المرتجع جاهزًا لتسجيل نتيجة الفحص.');
+      Alert.alert(t('merchant.receiptConfirmed'), t('merchant.receiptConfirmedText'));
     } catch (error: any) {
-      Alert.alert('تعذر تأكيد الاستلام', error?.message ?? 'تحقق من حالة المرتجع ثم حاول مرة أخرى.');
+      Alert.alert(t('merchant.receiptFailed'), error?.message ?? t('merchant.checkReturnState'));
     } finally {
       setActionId(null);
     }
@@ -408,7 +408,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
     if (!inspectionTarget || actionId) return;
     const returnItems = inspectionTarget.return_items ?? [];
     if (!returnItems.length) {
-      Alert.alert('بيانات غير مكتملة', 'لا توجد عناصر مرتبطة بهذا المرتجع.');
+      Alert.alert(t('merchant.incompleteData'), t('merchant.noReturnItems'));
       return;
     }
 
@@ -421,26 +421,26 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
     for (const item of returnItems) {
       const draft = inspectionDrafts[item.id];
       if (!draft) {
-        Alert.alert('بيانات غير مكتملة', `تعذر تجهيز نتيجة فحص ${itemName(item)}.`);
+        Alert.alert(t('merchant.incompleteData'), `تعذر تجهيز نتيجة فحص ${itemName(item)}.`);
         return;
       }
       if (!draft.acceptedQuantity.trim()) {
-        Alert.alert('نتيجة الفحص مطلوبة', `أدخل الكمية المقبولة فعليًا لـ ${itemName(item)}، حتى لو كانت صفرًا.`);
+        Alert.alert(t('merchant.inspectionRequired'), `أدخل الكمية المقبولة فعليًا لـ ${itemName(item)}، حتى لو كانت صفرًا.`);
         return;
       }
       const accepted = Number(draft.acceptedQuantity);
       const approved = Number(item.approved_quantity ?? 0);
       if (!Number.isInteger(accepted) || accepted < 0 || accepted > approved) {
-        Alert.alert('كمية غير صحيحة', `الكمية المقبولة لـ ${itemName(item)} يجب أن تكون بين 0 و${approved}.`);
+        Alert.alert(t('merchant.invalidQuantity'), `الكمية المقبولة لـ ${itemName(item)} يجب أن تكون بين 0 و${approved}.`);
         return;
       }
       if (!draft.disposition) {
-        Alert.alert('نتيجة الفحص مطلوبة', `اختر التصرف بالكمية الخاصة بـ ${itemName(item)}.`);
+        Alert.alert(t('merchant.inspectionRequired'), `اختر التصرف بالكمية الخاصة بـ ${itemName(item)}.`);
         return;
       }
       if ((accepted === 0 && draft.disposition !== 'rejected')
         || (accepted > 0 && draft.disposition === 'rejected')) {
-        Alert.alert('نتيجة غير متطابقة', `اختر "رفض الكمية" عند قبول صفر من ${itemName(item)}، أو اختر تصرفًا فعليًا للكمية المقبولة.`);
+        Alert.alert(t('merchant.mismatchedInspection'), `اختر "رفض الكمية" عند قبول صفر من ${itemName(item)}، أو اختر تصرفًا فعليًا للكمية المقبولة.`);
         return;
       }
       payload.push({
@@ -460,9 +460,9 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       });
       setInspectionTarget(null);
       await load();
-      Alert.alert('اكتمل الفحص', 'تم حفظ قرار كل عنصر. إذا كانت جميع الكميات مرفوضة فستغلق الإدارة المرتجع بلا استرداد أو حركة مخزون.');
+      Alert.alert(t('merchant.inspectionCompleted'), t('merchant.inspectionCompletedText'));
     } catch (error: any) {
-      Alert.alert('تعذر حفظ الفحص', error?.message ?? 'راجع الكميات وحاول مرة أخرى.');
+      Alert.alert(t('merchant.inspectionSaveFailed'), error?.message ?? t('merchant.reviewQuantities'));
     } finally {
       setActionId(null);
     }
@@ -473,7 +473,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       {evidenceLoading ? (
         <View style={styles.evidenceLoadingRow}>
           <ActivityIndicator size="small" color="#1E3A8A" />
-          <Text style={styles.evidenceHint}>جاري فتح الملفات الخاصة بصلاحية مؤقتة...</Text>
+          <Text style={styles.evidenceHint}>{t('merchant.openingTemporaryFiles')}</Text>
         </View>
       ) : null}
       {evidenceError ? <Text style={styles.evidenceError}>{evidenceError}</Text> : null}
@@ -488,7 +488,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 ) : (
                   <View style={styles.evidenceFileIcon}><Ionicons name="document-text-outline" size={28} color="#1E3A8A" /></View>
                 )}
-                <Text style={styles.evidenceLabel}>دليل {index + 1}</Text>
+                <Text style={styles.evidenceLabel}>{t('merchant.evidence')} {index + 1}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -501,7 +501,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             {proofLinks.map((link, index) => (
               <TouchableOpacity key={link.path} style={styles.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)} accessibilityRole="link">
                 <Image source={{ uri: link.signedUrl }} style={styles.evidenceImage} />
-                <Text style={styles.evidenceLabel}>إثبات {index + 1}</Text>
+                <Text style={styles.evidenceLabel}>{t('merchant.proof')} {index + 1}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -514,13 +514,11 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
   );
 
   const renderReturn = ({ item }: { item: MerchantPhysicalReturn }) => {
-    const baseMeta = STATUS[item.status] ?? { label: item.status, color: '#475569', background: '#F1F5F9' };
+    const baseMeta = STATUS[item.status] ?? { labelKey: '', color: '#475569', background: '#F1F5F9' };
     const meta = item.status === 'completed'
       ? {
         ...baseMeta,
-        label: item.refund_request_id || Number(item.refund_amount ?? 0) > 0
-          ? 'مكتمل ومسترد'
-          : 'مغلق بلا استرداد',
+        labelKey: item.refund_request_id || Number(item.refund_amount ?? 0) > 0 ? 'merchant.completedRefunded' : 'merchant.closedNoRefund',
       }
       : baseMeta;
     const canConfirmReceipt = (
@@ -544,28 +542,28 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
       <View style={[styles.card, isCompact && styles.cardCompact]}>
         <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
           <View style={[styles.statusBadge, { backgroundColor: meta.background }]}>
-            <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[styles.statusText, { color: meta.color }]}>{meta.labelKey ? t(meta.labelKey) : item.status}</Text>
           </View>
           <View style={styles.orderInfo}>
-            <Text style={styles.orderNumber}>طلب #{item.orders?.order_number ?? item.order_id.slice(0, 8)}</Text>
-            <Text style={styles.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+            <Text style={styles.orderNumber}>{t('customer.order')} #{item.orders?.order_number ?? item.order_id.slice(0, 8)}</Text>
+            <Text style={styles.date}>{new Date(item.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text>
           </View>
         </View>
 
         <View style={[styles.infoGrid, isCompact && styles.infoGridCompact]}>
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>{t('merchant.customerLabel')}</Text>
-            <Text style={styles.infoValue}>{item.users?.full_name ?? 'عميل الطلب'}</Text>
+            <Text style={styles.infoValue}>{item.users?.full_name ?? t('merchant.orderCustomer')}</Text>
             {item.users?.phone ? <Text style={styles.secondaryValue}>{item.users.phone}</Text> : null}
           </View>
           <View style={styles.infoBlock}>
-            <Text style={styles.infoLabel}>طريقة التسليم</Text>
-            <Text style={styles.infoValue}>{item.pickup_method === 'courier_pickup' ? 'استلام بواسطة مندوب' : 'تسليم العميل للمتجر'}</Text>
+            <Text style={styles.infoLabel}>{t('merchant.deliveryMethod')}</Text>
+            <Text style={styles.infoValue}>{item.pickup_method === 'courier_pickup' ? t('merchant.courierPickup') : t('merchant.customerDropoff')}</Text>
           </View>
         </View>
 
         <Text style={styles.sectionLabel}>{t('merchant.returnReason')}</Text>
-        <Text style={styles.bodyText}>{REASONS[item.reason] ?? item.reason}</Text>
+        <Text style={styles.bodyText}>{REASONS[item.reason] ? t(REASONS[item.reason]) : item.reason}</Text>
         {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
 
         <View style={styles.itemsBox}>
@@ -576,14 +574,14 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                 <Text style={styles.itemName}>{itemName(returnItem)}</Text>
                 <Text style={styles.itemVariant}>{variantLabel(returnItem)}</Text>
                 <Text style={styles.itemMeta}>
-                  مطلوب {returnItem.requested_quantity}
-                  {returnItem.approved_quantity != null ? ` • معتمد ${returnItem.approved_quantity}` : ''}
-                  {returnItem.accepted_quantity != null ? ` • مقبول ${returnItem.accepted_quantity}` : ''}
+                  {t('merchant.requestedQty')} {returnItem.requested_quantity}
+                  {returnItem.approved_quantity != null ? ` • ${t('merchant.approvedQty')} ${returnItem.approved_quantity}` : ''}
+                  {returnItem.accepted_quantity != null ? ` • ${t('merchant.acceptedQty')} ${returnItem.accepted_quantity}` : ''}
                 </Text>
               </View>
               <View style={styles.itemAmountWrap}>
-                <Text style={styles.itemAmount}>{merchandiseValue(returnItem).amount.toFixed(2)} ر.ي</Text>
-                <Text style={styles.itemAmountStage}>{merchandiseValue(returnItem).stage}</Text>
+                <Text style={styles.itemAmount}>{merchandiseValue(returnItem).amount.toFixed(2)} {t('merchant.currencyYER')}</Text>
+                <Text style={styles.itemAmountStage}>{t(merchandiseValue(returnItem).stageKey)}</Text>
               </View>
             </View>
           ))}
@@ -592,34 +590,34 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         {item.pickup_scheduled_at ? (
           <View style={styles.scheduleBox}>
             <Ionicons name="calendar-outline" size={17} color="#6D28D9" />
-            <Text style={styles.scheduleText}>موعد الاستلام: {new Date(item.pickup_scheduled_at).toLocaleString('ar-SA')}</Text>
+            <Text style={styles.scheduleText}>{t('merchant.pickupDate')}: {new Date(item.pickup_scheduled_at).toLocaleString('ar-SA')}</Text>
           </View>
         ) : null}
 
         {item.merchant_response ? (
           <View style={styles.responseBox}>
-            <Text style={styles.sectionLabel}>توصية التاجر: {item.merchant_recommendation === 'approve' ? 'موافقة' : 'رفض'}</Text>
+            <Text style={styles.sectionLabel}>{t('merchant.merchantRecommendation')}: {item.merchant_recommendation === 'approve' ? t('merchant.approval') : t('merchant.rejection')}</Text>
             <Text style={styles.bodyText}>{item.merchant_response}</Text>
           </View>
         ) : null}
 
         {item.review_notes ? (
           <View style={styles.adminBox}>
-            <Text style={styles.sectionLabel}>ملاحظات الإدارة</Text>
+            <Text style={styles.sectionLabel}>{t('merchant.adminNotes')}</Text>
             <Text style={styles.bodyText}>{item.review_notes}</Text>
           </View>
         ) : null}
 
         {receiptEvent?.notes ? (
           <View style={styles.receiptBox}>
-            <Text style={styles.sectionLabel}>ملاحظات استلام المتجر</Text>
+            <Text style={styles.sectionLabel}>{t('merchant.storeReceiptNotes')}</Text>
             <Text style={styles.bodyText}>{receiptEvent.notes}</Text>
           </View>
         ) : null}
 
         {latestTracking ? (
           <Text style={styles.latestEvent}>
-            آخر تحديث: {STATUS[latestTracking.status]?.label ?? latestTracking.status}
+            {t('merchant.lastUpdate')}: {STATUS[latestTracking.status]?.labelKey ? t(STATUS[latestTracking.status].labelKey) : latestTracking.status}
             {latestTracking.notes ? ` — ${latestTracking.notes}` : ''}
           </Text>
         ) : null}
@@ -628,7 +626,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
           {item.status === 'requested' ? (
             <TouchableOpacity style={styles.primaryButton} onPress={() => openResponse(item)} disabled={Boolean(actionId)} accessibilityRole="button">
               <Ionicons name="chatbox-ellipses-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>{item.merchant_response ? 'تحديث التوصية' : t('merchant.reviewRequest')}</Text>
+              <Text style={styles.primaryButtonText}>{item.merchant_response ? t('merchant.updateRecommendation') : t('merchant.reviewRequest')}</Text>
             </TouchableOpacity>
           ) : null}
           {canConfirmReceipt ? (
@@ -656,7 +654,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
 
   return (
     <View style={styles.page}>
-      <ScreenHeader title=t('merchant.returnsTitle') subtitle=t('merchant.returnsSubtitle') onBack={() => navigation.goBack()} />
+      <ScreenHeader title={t('merchant.returnsTitle')} subtitle={t('merchant.returnsSubtitle')} onBack={() => navigation.goBack()} />
 
       <View style={[styles.filters, isDesktop && styles.filtersWide]}>
         {FILTERS.map((option) => (
@@ -667,7 +665,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             accessibilityRole="button"
             accessibilityState={{ selected: filter === option.key }}
           >
-            <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{option.label}</Text>
+            <Text style={[styles.filterText, filter === option.key && styles.filterTextActive]}>{t(option.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -700,7 +698,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             <View style={styles.listFooter} accessibilityRole="alert">
               <Text style={styles.errorText}>{loadMoreError}</Text>
               <TouchableOpacity style={styles.retryButton} onPress={() => void load('more')} accessibilityRole="button">
-                <Text style={styles.retryText}>إعادة تحميل المزيد</Text>
+                <Text style={styles.retryText}>{t('merchant.loadMore')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -722,7 +720,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             showsVerticalScrollIndicator={false}
           >
             <Text style={styles.modalTitle}>{t('merchant.merchantRecommendation')}</Text>
-            <Text style={styles.modalHint}>هذه توصية للإدارة وليست القرار النهائي. اذكر نتيجة مراجعة الطلب بوضوح.</Text>
+            <Text style={styles.modalHint}>{t('merchant.recommendationHint')}</Text>
             {renderEvidencePanel()}
             <View style={[styles.choiceRow, isCompact && styles.choiceRowCompact]}>
               {([
@@ -749,7 +747,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               maxLength={2000}
               textAlign="right"
               textAlignVertical="top"
-              placeholder="اشرح سبب توصيتك وحالة المنتج قبل التسليم..."
+              placeholder={t('merchant.recommendationPlaceholder')}
               placeholderTextColor="#94A3B8"
             />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
@@ -772,8 +770,8 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalTitle}>تأكيد استلام المرتجع</Text>
-            <Text style={styles.modalHint}>راجع إثبات نقل العهدة وحالة الطرد، ثم سجل أي ملاحظة استلام قبل بدء الفحص.</Text>
+            <Text style={styles.modalTitle}>{t('merchant.confirmReturnReceiptTitle')}</Text>
+            <Text style={styles.modalHint}>{t('merchant.confirmReturnReceiptHint')}</Text>
             {renderEvidencePanel()}
             <TextInput
               style={styles.responseInput}
@@ -783,12 +781,12 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               maxLength={2000}
               textAlign="right"
               textAlignVertical="top"
-              placeholder="ملاحظات حالة الطرد عند الوصول (اختياري)"
+              placeholder={t('merchant.receiptNotesPlaceholder')}
               placeholderTextColor="#94A3B8"
             />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.secondaryButton} onPress={closeReceipt} disabled={Boolean(actionId)}>
-                <Text style={styles.secondaryButtonText}>تراجع</Text>
+                <Text style={styles.secondaryButtonText}>{t('merchant.undo')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitButton, actionId && styles.disabled]} onPress={submitReceipt} disabled={Boolean(actionId)}>
                 {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('merchant.confirmReceipt')}</Text>}
@@ -805,8 +803,8 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             contentContainerStyle={[styles.modalCardContent, isCompact && styles.modalCardCompact]}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.modalTitle}>أدلة المرتجع وإثباتات العهدة</Text>
-            <Text style={styles.modalHint}>الروابط خاصة ومؤقتة. افتح الملف لمراجعته بالحجم الكامل.</Text>
+            <Text style={styles.modalTitle}>{t('merchant.evidenceTitle')}</Text>
+            <Text style={styles.modalHint}>{t('merchant.evidenceHint')}</Text>
             {renderEvidencePanel()}
             <TouchableOpacity style={styles.secondaryButton} onPress={closeEvidence} accessibilityRole="button">
               <Text style={styles.secondaryButtonText}>{t('merchant.close')}</Text>
@@ -823,7 +821,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{t('merchant.inspectReturn')}</Text>
-              <Text style={styles.subtitle}>حدد الكمية المقبولة ووجهتها لكل عنصر. لا يمكن تعديلها بعد إكمال الإدارة للاسترداد.</Text>
+              <Text style={styles.subtitle}>{t('merchant.inspectReturnHint')}</Text>
             </View>
           </View>
           <ScrollView contentContainerStyle={[styles.inspectionContent, isCompact && styles.inspectionContentCompact]} keyboardShouldPersistTaps="handled">
@@ -833,7 +831,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               return (
                 <View key={item.id} style={styles.inspectionItem}>
                   <Text style={styles.inspectionItemName}>{itemName(item)}</Text>
-                  <Text style={styles.itemMeta}>الكمية المعتمدة من الإدارة: {approved}</Text>
+                  <Text style={styles.itemMeta}>{t('merchant.approvedByAdminQty')}: {approved}</Text>
                   <Text style={styles.fieldLabel}>{t('merchant.acceptedQuantity')}</Text>
                   <TextInput
                     style={styles.quantityInput}
@@ -842,7 +840,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                     keyboardType="number-pad"
                     maxLength={4}
                     textAlign="right"
-                    accessibilityLabel={`الكمية المقبولة من ${itemName(item)}`}
+                    accessibilityLabel={`${t('merchant.acceptedFrom')} ${itemName(item)}`}
                   />
                   <Text style={styles.fieldLabel}>{t('merchant.quantityAction')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dispositions}>
@@ -854,7 +852,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                         accessibilityRole="button"
                         accessibilityState={{ selected: draft?.disposition === option.value }}
                       >
-                        <Text style={[styles.dispositionText, draft?.disposition === option.value && styles.dispositionTextActive]}>{option.label}</Text>
+                        <Text style={[styles.dispositionText, draft?.disposition === option.value && styles.dispositionTextActive]}>{t(option.labelKey)}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -866,13 +864,13 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
                     multiline
                     textAlign="right"
                     textAlignVertical="top"
-                    placeholder="ملاحظة على حالة هذا العنصر (اختياري)"
+                    placeholder={t('merchant.itemNotePlaceholder')}
                     placeholderTextColor="#94A3B8"
                   />
                 </View>
               );
             })}
-            <Text style={styles.fieldLabel}>ملاحظات الفحص العامة</Text>
+            <Text style={styles.fieldLabel}>{t('merchant.generalInspectionNotes')}</Text>
             <TextInput
               style={styles.responseInput}
               value={inspectionNotes}
@@ -881,11 +879,11 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
               multiline
               textAlign="right"
               textAlignVertical="top"
-              placeholder="ملخص حالة المرتجع (اختياري)"
+              placeholder={t('merchant.inspectionSummaryPlaceholder')}
               placeholderTextColor="#94A3B8"
             />
             <TouchableOpacity style={[styles.submitInspection, actionId && styles.disabled]} onPress={submitInspection} disabled={Boolean(actionId)} accessibilityRole="button">
-              {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>حفظ نتيجة الفحص</Text>}
+              {actionId ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>{t('merchant.saveInspectionResult')}</Text>}
             </TouchableOpacity>
           </ScrollView>
         </View>
