@@ -252,10 +252,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
       <ScreenHeader
-        title=t('merchant.couponsTitle')
-        subtitle=t('merchant.couponsSubtitle')
+        title={t('merchant.couponsTitle')}
+        subtitle={t('merchant.couponsSubtitle')}
         onBack={() => navigation.goBack()}
-        right={<IconButton icon="add" label=t('merchant.newCoupon') primary onPress={openModal} />}
+        right={<IconButton icon="add" label={t('merchant.newCoupon')} primary onPress={openModal} />}
       />
 
       <View style={[styles.pageContent, isTablet && styles.pageContentWide]}>
