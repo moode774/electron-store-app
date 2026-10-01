@@ -23,19 +23,19 @@ const UI = {
 const softShadow = {};
 
 const CATEGORIES = [
-  { value: 'technical', label: t('merchant.technicalIssue') },
-  { value: 'payment', label: t('merchant.paymentsWallet') },
-  { value: 'order', label: t('common.orders') },
-  { value: 'account', label: t('merchant.storeAccount') },
-  { value: 'other', label: t('customer.other') },
-];
+  { value: 'technical', labelKey: 'merchant.technicalIssue' },
+  { value: 'payment', labelKey: 'merchant.paymentsWallet' },
+  { value: 'order', labelKey: 'common.orders' },
+  { value: 'account', labelKey: 'merchant.storeAccount' },
+  { value: 'other', labelKey: 'customer.other' },
+] as const;
 
-const TICKET_STATUS: Record<string, { label: string, color: string }> = {
-  open: { label: t('customer.ticketOpen'), color: UI.green },
-  in_progress: { label: t('customer.ticketProgress'), color: UI.blue },
-  waiting_user: { label: t('customer.ticketWaiting'), color: '#F59E0B' },
-  resolved: { label: t('customer.ticketResolved'), color: UI.textGrey },
-  closed: { label: t('customer.ticketClosed'), color: UI.textMuted },
+const TICKET_STATUS: Record<string, { labelKey: string, color: string }> = {
+  open: { labelKey: 'customer.ticketOpen', color: UI.green },
+  in_progress: { labelKey: 'customer.ticketProgress', color: UI.blue },
+  waiting_user: { labelKey: 'customer.ticketWaiting', color: '#F59E0B' },
+  resolved: { labelKey: 'customer.ticketResolved', color: UI.textGrey },
+  closed: { labelKey: 'customer.ticketClosed', color: UI.textMuted },
 };
 
 const FAQ_KEYS = [
@@ -111,8 +111,8 @@ export default function MerchantSupportScreen({ navigation }: any) {
                 
                 <View style={styles.catRow}>
                   {CATEGORIES.map((c) => (
-                    <TouchableOpacity key={c.value} style={[styles.catChip, category === c.value && styles.catChipActive]} onPress={() => setCategory(c.value)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={c.label} accessibilityState={{ selected: category === c.value }}>
-                      <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{c.label}</Text>
+                    <TouchableOpacity key={c.value} style={[styles.catChip, category === c.value && styles.catChipActive]} onPress={() => setCategory(c.value)} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t(c.labelKey)} accessibilityState={{ selected: category === c.value }}>
+                      <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{t(c.labelKey)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
