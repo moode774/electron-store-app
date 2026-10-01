@@ -77,7 +77,7 @@ export default function EditProfileScreen({
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.editProfile')}</Text>
@@ -110,8 +110,8 @@ export default function EditProfileScreen({
           </View>
         </View>
 
-        <Input label=t('customer.fullName') placeholder="اسمك" value={name} onChangeText={setName} />
-        <Input label=t('customer.emailOptional') placeholder="example@mail.com" keyboardType="email-address" value={email ?? ''} onChangeText={setEmail} />
+        <Input label={t('customer.fullName')} placeholder="اسمك" value={name} onChangeText={setName} />
+        <Input label={t('customer.emailOptional')} placeholder="example@mail.com" keyboardType="email-address" value={email ?? ''} onChangeText={setEmail} />
 
         {/* Phone (read-only) */}
         <Text style={styles.label}>{t('customer.phone')}</Text>
