@@ -324,7 +324,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>التدفق المالي — {period.label}</Text>
-              <Text style={styles.cardSubtitle}>مبيعات المتجر خلال هذه الفترة بالريال</Text>
+              <Text style={styles.cardSubtitle}>{t('merchant.salesPeriod')}</Text>
             </View>
           </View>
           <View style={{ height: 220, marginTop: 20, alignItems: 'center' }}>
@@ -407,7 +407,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
                 </Svg>
                 <View style={styles.donutInner}>
                   <Text style={styles.donutValue}>{total}</Text>
-                  <Text style={styles.donutLabel}>إجمالي</Text>
+                  <Text style={styles.donutLabel}>{t('merchant.total')}</Text>
                 </View>
               </View>
             </View>
@@ -416,21 +416,21 @@ export default function MerchantReportsScreen({ navigation }: any) {
               <View style={styles.legendRow}>
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                   <View style={[styles.dot, { backgroundColor: UI.primary }]} />
-                  <Text style={styles.legendText}>مكتملة</Text>
+                  <Text style={styles.legendText}>{t('merchant.completedStatus')}</Text>
                 </View>
                 <Text style={styles.legendValue}>{deliveredPct}% ({periodStats.deliveredCount})</Text>
               </View>
               <View style={styles.legendRow}>
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                   <View style={[styles.dot, { backgroundColor: UI.textGrey }]} />
-                  <Text style={styles.legendText}>قيد التنفيذ</Text>
+                  <Text style={styles.legendText}>{t('merchant.inProgressStatus')}</Text>
                 </View>
                 <Text style={styles.legendValue}>{inProgressPct}% ({periodStats.inProgressCount})</Text>
               </View>
               <View style={styles.legendRow}>
                 <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8 }}>
                   <View style={[styles.dot, { backgroundColor: UI.red }]} />
-                  <Text style={styles.legendText}>ملغاة</Text>
+                  <Text style={styles.legendText}>{t('merchant.cancelledStatus')}</Text>
                 </View>
                 <Text style={styles.legendValue}>{cancelledPct}% ({periodStats.cancelledCount})</Text>
               </View>
