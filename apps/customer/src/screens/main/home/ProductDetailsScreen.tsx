@@ -22,8 +22,8 @@ interface Props {
 
 // بيانات افتراضية عند التحميل
 
-export default function ProductDetailsScreen({
-  const { t } = useTranslation(); navigation, route }: Props) {
+export default function ProductDetailsScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(1180);
   const { productId } = route.params;
   const [product, setProduct] = useState<ProductDetail | null>(null);
