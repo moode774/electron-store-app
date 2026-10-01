@@ -18,6 +18,7 @@ import { supabase, useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 
 import { Alert } from '../../components/appAlert';
+import { useTranslation } from '../../i18n';
 import {
   availableCodRemittanceAmount,
   CodCollection,
@@ -34,31 +35,31 @@ import {
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const COLLECTION_STATUS_INFO: Record<CodCollectionStatus, {
-  label: string;
+  labelKey: string;
   color: string;
   backgroundColor: string;
   icon: IconName;
 }> = {
   collected: {
-    label: 'عليك تسليمه',
+    labelKey: 'delivery.codNeedHandOver',
     color: '#92400E',
     backgroundColor: '#FEF3C7',
     icon: 'cash-outline',
   },
   partially_remitted: {
-    label: 'سُلّم جزء منه',
+    labelKey: 'delivery.codPartiallyHanded',
     color: COLORS.primary,
     backgroundColor: COLORS.primarySoft,
     icon: 'time-outline',
   },
   remitted: {
-    label: 'تم التسليم',
+    labelKey: 'delivery.codHandedOver',
     color: '#047857',
     backgroundColor: '#D1FAE5',
     icon: 'checkmark-circle-outline',
   },
   disputed: {
-    label: 'راجع الإدارة',
+    labelKey: 'delivery.codReviewAdmin',
     color: '#B91C1C',
     backgroundColor: '#FEE2E2',
     icon: 'warning-outline',
@@ -66,14 +67,14 @@ const COLLECTION_STATUS_INFO: Record<CodCollectionStatus, {
 };
 
 const SUBMISSION_STATUS_INFO: Record<CodSubmissionStatus, {
-  label: string;
+  labelKey: string;
   color: string;
   backgroundColor: string;
 }> = {
-  pending: { label: 'الإدارة تراجعه', color: '#92400E', backgroundColor: '#FEF3C7' },
-  approved: { label: 'معتمد', color: '#047857', backgroundColor: '#D1FAE5' },
-  rejected: { label: 'مرفوض', color: '#B91C1C', backgroundColor: '#FEE2E2' },
-  disputed: { label: 'قيد النزاع', color: '#6D28D9', backgroundColor: '#EDE9FE' },
+  pending: { labelKey: 'delivery.codPendingReview', color: '#92400E', backgroundColor: '#FEF3C7' },
+  approved: { labelKey: 'delivery.codApproved', color: '#047857', backgroundColor: '#D1FAE5' },
+  rejected: { labelKey: 'delivery.codRejected', color: '#B91C1C', backgroundColor: '#FEE2E2' },
+  disputed: { labelKey: 'delivery.codDisputed', color: '#6D28D9', backgroundColor: '#EDE9FE' },
 };
 
 interface PendingAttempt {
@@ -126,6 +127,7 @@ function proofFingerprint(
 }
 
 export default function CodRemittancePanel() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const [collections, setCollections] = useState<CodCollection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,7 +156,7 @@ export default function CodRemittancePanel() {
       setCollections(rows);
       return rows;
     } catch (error) {
-      setLoadError(errorMessage(error, 'تعذّر تحميل سجل التحصيلات النقدية.'));
+      setLoadError(errorMessage(error, t('delivery.codLoadFailed')));
       return null;
     } finally {
       setLoading(false);
@@ -197,15 +199,15 @@ export default function CodRemittancePanel() {
   const openForm = useCallback((collection: CodCollection) => {
     const available = availableCodRemittanceAmount(collection);
     if (collection.status === 'disputed') {
-      Alert.alert('التحصيل قيد النزاع', collection.dispute_reason ?? 'انتظر مراجعة الإدارة قبل إرسال مبلغ جديد.');
+      Alert.alert(t('delivery.codDisputeTitle'), collection.dispute_reason ?? t('delivery.codDisputeWait'));
       return;
     }
     if (available <= 0) {
       Alert.alert(
-        collection.status === 'remitted' ? 'اكتمل التحصيل' : 'لا يوجد مبلغ متاح',
+        collection.status === 'remitted' ? t('delivery.codCompleted') : t('delivery.codNoAvailable'),
         collection.status === 'remitted'
-          ? 'اعتمدت الإدارة كامل المبلغ المستلم من العميل.'
-          : 'المتبقي موجود ضمن طلب تحويل قيد المراجعة.',
+          ? t('delivery.codCompletedText')
+          : t('delivery.codPendingText'),
       );
       return;
     }
@@ -233,7 +235,7 @@ export default function CodRemittancePanel() {
       if (Platform.OS !== 'web') {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (permission.status !== 'granted') {
-          throw new Error('اسمح بالوصول إلى الصور لاختيار صورة الإثبات.');
+          throw new Error(t('delivery.photosPermission'));
         }
       }
 
@@ -250,9 +252,9 @@ export default function CodRemittancePanel() {
       const supported = mimeType
         ? ['image/jpeg', 'image/jpg', 'image/png'].includes(mimeType)
         : /[.](jpe?g|png)$/.test(sourceName);
-      if (!supported) throw new Error('صيغة الإثبات غير مدعومة. اختر صورة JPEG أو PNG.');
+      if (!supported) throw new Error(t('delivery.unsupportedProof'));
       if (Number.isFinite(asset.fileSize) && (asset.fileSize as number) > COD_REMITTANCE_PROOF_MAX_BYTES) {
-        throw new Error('حجم صورة الإثبات أكبر من 10 ميجابايت.');
+        throw new Error(t('delivery.proofTooLarge'));
       }
 
       setProof({
@@ -262,7 +264,7 @@ export default function CodRemittancePanel() {
         fileSize: asset.fileSize,
       });
     } catch (error) {
-      setFormError(errorMessage(error, 'تعذّر اختيار صورة الإثبات.'));
+      setFormError(errorMessage(error, t('delivery.proofChooseFailed')));
     }
   }, [submitting]);
 
@@ -273,19 +275,19 @@ export default function CodRemittancePanel() {
     const reference = referenceInput.trim();
     const available = availableCodRemittanceAmount(selectedCollection);
     if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('أدخل مبلغًا صحيحًا أكبر من صفر.');
+      setFormError(t('delivery.codAmountInvalid'));
       return;
     }
     if (amount > available + 0.001) {
-      setFormError(`أقصى مبلغ متاح الآن هو ${money(available)} ر.ي بعد احتساب الطلبات قيد المراجعة.`);
+      setFormError(`${t('delivery.codMaxAvailable')} ${money(available)} ${t('merchant.currencyYER')}`);
       return;
     }
     if (!reference || reference.length > 200) {
-      setFormError('أدخل رقم الحوالة أو الإيداع، بحد أقصى 200 حرف.');
+      setFormError(t('delivery.codReferenceRequired'));
       return;
     }
     if (!proof) {
-      setFormError('اختر صورة إثبات الحوالة قبل الإرسال.');
+      setFormError(t('delivery.codProofRequired'));
       return;
     }
 
@@ -335,7 +337,7 @@ export default function CodRemittancePanel() {
       }
 
       if (!confirmed) {
-        setFormError(errorMessage(error, 'تعذّر إرسال التحصيل. بقيت البيانات محفوظة ويمكنك إعادة المحاولة.'));
+        setFormError(errorMessage(error, t('delivery.codSendFailed')));
         return;
       }
     } finally {
@@ -351,10 +353,7 @@ export default function CodRemittancePanel() {
     setReferenceInput('');
     setProof(null);
     setFormError('');
-    Alert.alert(
-      'تم إرسال التحصيل',
-      `أُرسل مبلغ ${money(amount)} ر.ي مع الإثبات إلى الإدارة. سيبقى قيد المراجعة حتى يتم اعتماد الاستلام.`,
-    );
+    Alert.alert(t('delivery.codSent'), `${t('delivery.codSentText')} ${money(amount)} ${t('merchant.currencyYER')}`);
   }, [
     amountInput,
     loadCollections,
@@ -377,8 +376,8 @@ export default function CodRemittancePanel() {
             <Ionicons name="cash-outline" size={19} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.sectionTitle}>تحصيلات الكاش</Text>
-            <Text style={styles.sectionSubtitle}>المبالغ التي استلمتها من العملاء</Text>
+            <Text style={styles.sectionTitle}>{t('delivery.codCashCollections')}</Text>
+            <Text style={styles.sectionSubtitle}>{t('delivery.codCashSubtitle')}</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -386,7 +385,7 @@ export default function CodRemittancePanel() {
           onPress={() => void loadCollections(true)}
           disabled={refreshing}
           accessibilityRole="button"
-          accessibilityLabel="تحديث التحصيلات النقدية"
+          accessibilityLabel={t('delivery.codRefresh')}
         >
           {refreshing
             ? <ActivityIndicator size="small" color={COLORS.primary} />
@@ -397,7 +396,7 @@ export default function CodRemittancePanel() {
       {loading ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="small" color={COLORS.primary} />
-          <Text style={styles.loadingText}>جاري تحميل التحصيلات…</Text>
+          <Text style={styles.loadingText}>{t('delivery.codLoading')}</Text>
         </View>
       ) : null}
 
@@ -406,7 +405,7 @@ export default function CodRemittancePanel() {
           <Ionicons name="alert-circle-outline" size={19} color="#B91C1C" />
           <Text style={styles.errorText}>{loadError}</Text>
           <TouchableOpacity onPress={() => void loadCollections()} accessibilityRole="button">
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -414,19 +413,19 @@ export default function CodRemittancePanel() {
       {!loading && collections.length === 0 && !loadError ? (
         <View style={styles.emptyBox}>
           <Ionicons name="checkmark-done-circle-outline" size={28} color="#059669" />
-          <Text style={styles.emptyTitle}>لا توجد تحصيلات نقدية مسجلة</Text>
-          <Text style={styles.emptyText}>ستظهر هنا الطلبات النقدية بعد تسليمها للعميل.</Text>
+          <Text style={styles.emptyTitle}>{t('delivery.codEmpty')}</Text>
+          <Text style={styles.emptyText}>{t('delivery.codEmptyText')}</Text>
         </View>
       ) : null}
 
       {collections.length > 0 ? (
         <>
           <View style={styles.actionSummary}>
-            <View style={styles.actionTop}><View style={styles.actionIcon}><Ionicons name="arrow-up-circle-outline" size={20} color={COLORS.primary} /></View><Text style={styles.actionEyebrow}>المبلغ المطلوب تسليمه</Text></View>
-            <Text style={styles.actionAmount}>{money(Math.max(totalOutstanding - totalPending, 0))} <Text style={styles.actionCurrency}>ر.ي</Text></Text>
-            <Text style={styles.actionText}>{Math.max(totalOutstanding - totalPending, 0) > 0 ? 'بعد التسليم اضغط على الطلب وارفع الإثبات' : totalPending > 0 ? 'تم الإرسال، انتظر مراجعة الإدارة' : 'لا يوجد عليك مبلغ حاليًا'}</Text>
+            <View style={styles.actionTop}><View style={styles.actionIcon}><Ionicons name="arrow-up-circle-outline" size={20} color={COLORS.primary} /></View><Text style={styles.actionEyebrow}>{t('delivery.codRequiredHandover')}</Text></View>
+            <Text style={styles.actionAmount}>{money(Math.max(totalOutstanding - totalPending, 0))} <Text style={styles.actionCurrency}>{t('merchant.currencyYER')}</Text></Text>
+            <Text style={styles.actionText}>{Math.max(totalOutstanding - totalPending, 0) > 0 ? t('delivery.codAfterHandover') : totalPending > 0 ? t('delivery.codSentWait') : t('delivery.codNothingDue')}</Text>
           </View>
-          {totalPending > 0 ? <View style={styles.simpleStatus}><Ionicons name="time-outline" size={18} color={COLORS.primary} /><Text style={styles.simpleStatusText}>{money(totalPending)} ر.ي أرسلته بالفعل والإدارة تراجعه الآن</Text></View> : null}
+          {totalPending > 0 ? <View style={styles.simpleStatus}><Ionicons name="time-outline" size={18} color={COLORS.primary} /><Text style={styles.simpleStatusText}>{money(totalPending)} {t('merchant.currencyYER')} {t('delivery.codAlreadySent')}</Text></View> : null}
 
           {collections.map((collection) => {
             const status = COLLECTION_STATUS_INFO[collection.status];
@@ -446,20 +445,20 @@ export default function CodRemittancePanel() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.orderNumber}>
-                      الطلب {collection.order_number ?? `#${collection.order_id.slice(-8)}`}
+                      {t('delivery.codOrder')} {collection.order_number ?? `#${collection.order_id.slice(-8)}`}
                     </Text>
-                    <Text style={styles.collectionDate}>استُلم في {dateLabel(collection.collected_at)}</Text>
+                    <Text style={styles.collectionDate}>{t('delivery.codCollectedAt')} {dateLabel(collection.collected_at)}</Text>
                   </View>
                   <Text style={[styles.statusBadge, {
                     color: status.color,
                     backgroundColor: status.backgroundColor,
-                  }]}>{status.label}</Text>
+                  }]}>{t(status.labelKey)}</Text>
                 </View>
 
                 <View style={styles.amountLine}>
-                  <Text style={styles.amountLabel}>سلّمت للإدارة</Text>
+                  <Text style={styles.amountLabel}>{t('delivery.codHandedAdmin')}</Text>
                   <Text style={styles.amountValue}>
-                    {money(collection.amount_remitted)} / {money(collection.amount_collected)} ر.ي
+                    {money(collection.amount_remitted)} / {money(collection.amount_collected)} {t('merchant.currencyYER')}
                   </Text>
                 </View>
                 <View style={styles.progressTrack}>
@@ -467,10 +466,10 @@ export default function CodRemittancePanel() {
                 </View>
 
                 <View style={styles.collectionStats}>
-                  <Text style={styles.collectionStat}>باقي عليك: {money(collection.amount_outstanding)} ر.ي</Text>
+                  <Text style={styles.collectionStat}>{t('delivery.codRemaining')}: {money(collection.amount_outstanding)} {t('merchant.currencyYER')}</Text>
                   {collection.amount_pending_review > 0 ? (
                     <Text style={[styles.collectionStat, { color: COLORS.primary }]}>
-                      أرسلته للمراجعة: {money(collection.amount_pending_review)} ر.ي
+                      {t('delivery.codSentForReview')}: {money(collection.amount_pending_review)} {t('merchant.currencyYER')}
                     </Text>
                   ) : null}
                 </View>
@@ -488,7 +487,7 @@ export default function CodRemittancePanel() {
                     <View key={submission.id} style={styles.submissionRow}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.submissionAmount}>
-                          {money(submission.amount)} ر.ي · {submission.reference}
+                          {money(submission.amount)} {t('merchant.currencyYER')} · {submission.reference}
                         </Text>
                         <Text style={styles.submissionDate}>{dateLabel(submission.submitted_at)}</Text>
                         {submission.review_note ? (
@@ -498,7 +497,7 @@ export default function CodRemittancePanel() {
                       <Text style={[styles.submissionBadge, {
                         color: submissionStatus.color,
                         backgroundColor: submissionStatus.backgroundColor,
-                      }]}>{submissionStatus.label}</Text>
+                      }]}>{t(submissionStatus.labelKey)}</Text>
                     </View>
                   );
                 })}
@@ -509,7 +508,7 @@ export default function CodRemittancePanel() {
                   disabled={!canSubmit}
                   accessibilityRole="button"
                   accessibilityState={{ disabled: !canSubmit }}
-                  accessibilityLabel={`إرسال تحصيل الطلب ${collection.order_number ?? collection.order_id}`}
+                  accessibilityLabel={`${t('delivery.codSendOrderA11y')} ${collection.order_number ?? collection.order_id}`}
                   activeOpacity={0.8}
                 >
                   <Ionicons
@@ -519,12 +518,12 @@ export default function CodRemittancePanel() {
                   />
                   <Text style={[styles.submitButtonText, !canSubmit && styles.submitButtonTextDisabled]}>
                     {collection.status === 'remitted'
-                      ? 'تم — لا يوجد عليك شيء'
+                      ? t('delivery.codDoneNothingDue')
                       : collection.status === 'disputed'
-                        ? 'موقوف حتى حل النزاع'
+                        ? t('delivery.codBlockedDispute')
                         : available <= 0
-                          ? 'أرسلته — انتظر مراجعة الإدارة'
-                          : `سلّمت المبلغ؟ أرسل الإثبات (${money(available)} ر.ي متاح)`}
+                          ? t('delivery.codSentReview')
+                          : `${t('delivery.codSendProof')} (${money(available)} ${t('merchant.currencyYER')} ${t('delivery.codAvailable')})`}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -550,9 +549,9 @@ export default function CodRemittancePanel() {
             <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.modalTitle}>أرسل إثبات تسليم الكاش</Text>
+                  <Text style={styles.modalTitle}>{t('delivery.codProofTitle')}</Text>
                   <Text style={styles.modalSubtitle}>
-                    الطلب {selectedCollection?.order_number ?? selectedCollection?.order_id.slice(-8)}
+                    {t('delivery.codOrder')} {selectedCollection?.order_number ?? selectedCollection?.order_id.slice(-8)}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -560,20 +559,20 @@ export default function CodRemittancePanel() {
                   onPress={closeForm}
                   disabled={submitting}
                   accessibilityRole="button"
-                  accessibilityLabel="إغلاق نموذج التحصيل"
+                  accessibilityLabel={t('delivery.codCloseForm')}
                 >
                   <Ionicons name="close" size={21} color="#374151" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.availableBox}>
-                <Text style={styles.availableLabel}>المبلغ المطلوب تسليمه</Text>
+                <Text style={styles.availableLabel}>{t('delivery.codRequiredHandover')}</Text>
                 <Text style={styles.availableValue}>
-                  {money(selectedCollection ? availableCodRemittanceAmount(selectedCollection) : 0)} ر.ي
+                  {money(selectedCollection ? availableCodRemittanceAmount(selectedCollection) : 0)} {t('merchant.currencyYER')}
                 </Text>
               </View>
 
-              <Text style={styles.inputLabel}>المبلغ</Text>
+              <Text style={styles.inputLabel}>{t('delivery.amount')}</Text>
               <TextInput
                 style={styles.input}
                 value={amountInput}
@@ -585,7 +584,7 @@ export default function CodRemittancePanel() {
                 placeholderTextColor="#9CA3AF"
               />
 
-              <Text style={styles.inputLabel}>رقم مرجع الحوالة أو الإيداع</Text>
+              <Text style={styles.inputLabel}>{t('delivery.codReference')}</Text>
               <TextInput
                 style={styles.input}
                 value={referenceInput}
@@ -594,29 +593,29 @@ export default function CodRemittancePanel() {
                 maxLength={200}
                 textAlign="right"
                 autoCapitalize="characters"
-                placeholder="مثال: BANK-458921"
+                placeholder={t('merchant.referenceExample')}
                 placeholderTextColor="#9CA3AF"
               />
 
-              <Text style={styles.inputLabel}>إثبات الحوالة</Text>
+              <Text style={styles.inputLabel}>{t('delivery.codProof')}</Text>
               <TouchableOpacity
                 style={styles.proofPicker}
                 onPress={() => void chooseProof()}
                 disabled={submitting}
                 accessibilityRole="button"
-                accessibilityLabel="اختيار صورة إثبات الحوالة"
+                accessibilityLabel={t('delivery.codChooseProof')}
               >
                 <View style={styles.proofIcon}>
                   <Ionicons name={proof ? 'document-attach' : 'image-outline'} size={22} color={COLORS.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.proofTitle}>
-                    {proof ? (proof.fileName ?? 'تم اختيار صورة الإثبات') : 'اختر صورة JPEG أو PNG'}
+                    {proof ? (proof.fileName ?? t('delivery.codProofSelected')) : t('delivery.codChooseJpegPng')}
                   </Text>
                   <Text style={styles.proofSubtitle}>
                     {proof?.fileSize
-                      ? `${(proof.fileSize / 1024 / 1024).toFixed(2)} ميجابايت`
-                      : 'الحد الأقصى 10 ميجابايت'}
+                      ? `${(proof.fileSize / 1024 / 1024).toFixed(2)} MB`
+                      : t('delivery.codMax10mb')}
                   </Text>
                 </View>
                 <Ionicons name="chevron-back" size={18} color="#9CA3AF" />
@@ -641,7 +640,7 @@ export default function CodRemittancePanel() {
                   ? <ActivityIndicator size="small" color="#FFFFFF" />
                   : <Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" />}
                 <Text style={styles.confirmButtonText}>
-                  {submitting ? 'جاري رفع الإثبات والإرسال…' : 'أرسلت المبلغ — إرسال الإثبات'}
+                  {submitting ? t('delivery.codUploading') : t('delivery.codSentProof')}
                 </Text>
               </TouchableOpacity>
               <Text style={styles.confirmHint}>
