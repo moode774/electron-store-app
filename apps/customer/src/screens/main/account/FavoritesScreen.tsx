@@ -15,6 +15,7 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 export default function FavoritesScreen({ navigation }: any): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -67,13 +68,13 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
             onPress={() => navigation.goBack()}
             activeOpacity={0.72}
             accessibilityRole="button"
-            accessibilityLabel="العودة"
+            accessibilityLabel=t('merchant.back')
           >
             <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCopy}>
-            <Text style={styles.headerTitle}>المفضلة</Text>
-            <Text style={styles.headerSubtitle}>كل اختياراتك المحفوظة في مكان واحد</Text>
+            <Text style={styles.headerTitle}>{t('customer.favorites')}</Text>
+            <Text style={styles.headerSubtitle}>{t('customer.favoritesSubtitle')}</Text>
           </View>
           <View style={styles.headerSpacer} />
         </CustomerResponsiveShell>
@@ -95,7 +96,7 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
             onPress={() => { setLoading(true); void load(); }}
             accessibilityRole="button"
           >
-            <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : favorites.length === 0 ? (
@@ -126,7 +127,7 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
           ListHeaderComponent={(
             <View style={styles.listHeader}>
               <Text style={styles.listCount}>{favorites.length} منتج محفوظ</Text>
-              <Text style={styles.listTitle}>اختياراتك</Text>
+              <Text style={styles.listTitle}>{t('customer.yourPicks')}</Text>
             </View>
           )}
           renderItem={({ item }) => item.products ? (
@@ -141,9 +142,9 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
           ) : (
             <View style={[styles.unavailableCard, { width: cardWidth }]}>
               <Ionicons name="alert-circle-outline" size={25} color={COLORS.textMuted} />
-              <Text style={styles.unavailableText}>هذا المنتج لم يعد متاحاً</Text>
+              <Text style={styles.unavailableText}>{t('customer.unavailable')}</Text>
               <TouchableOpacity style={styles.removeButton} onPress={() => void removeFavorite(item.product_id)} accessibilityRole="button">
-                <Text style={styles.removeText}>إزالة من القائمة</Text>
+                <Text style={styles.removeText}>{t('customer.removeList')}</Text>
               </TouchableOpacity>
             </View>
           )}
