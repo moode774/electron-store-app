@@ -19,7 +19,7 @@ export default function LanguageSwitcher(): React.JSX.Element {
             style={[styles.option, language === item && styles.active]}
           >
             <Text style={[styles.optionText, language === item && styles.activeText]}>
-              {item === 'ar' ? 'العربية' : 'English'}
+              {item === 'ar' ? t('common.arabic') : t('common.english')}
             </Text>
           </TouchableOpacity>
         ))}
