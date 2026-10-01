@@ -191,7 +191,7 @@ export default function AddProductScreen({ navigation }: any) {
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (permission.status !== 'granted') {
-          Alert.alert(t('customer.locationPermission'), 'اسمح للتطبيق بالوصول من الإعدادات ثم أعد المحاولة.');
+          Alert.alert(t('customer.locationPermission'), t('merchant.allowPhotos'));
           return;
         }
       }
@@ -207,7 +207,7 @@ export default function AddProductScreen({ navigation }: any) {
         setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_IMAGES));
       }
     } catch {
-      Alert.alert(t('merchant.saveFailed'), source === 'camera' ? 'تعذّر فتح الكاميرا.' : 'تعذّر فتح مكتبة الصور.');
+      Alert.alert(t('merchant.saveFailed'), source === 'camera' ? t('merchant.cameraFailed') : t('merchant.galleryFailed'));
     }
   };
 
@@ -325,7 +325,7 @@ export default function AddProductScreen({ navigation }: any) {
     <Section title=t('merchant.basics')>
       <Field
         label=t('merchant.productName')
-        placeholder="مثال: حذاء رياضي نايكي للجري - مقاس 42"
+        placeholder=t('merchant.productNameExample')
         value={name}
         onChangeText={(v) => setName(v.slice(0, NAME_MAX))}
         counter={`${name.length}/${NAME_MAX}`}
@@ -352,7 +352,7 @@ export default function AddProductScreen({ navigation }: any) {
           })}
         </View>
       ) : (
-        <Text style={[styles.microHint, !!categoriesError && { color: COLORS.error }]}>{categoriesError || 'جاري تحميل التصنيفات...'}</Text>
+        <Text style={[styles.microHint, !!categoriesError && { color: COLORS.error }]}>{categoriesError || t('merchant.loadingCategories')}</Text>
       )}
     </Section>
   );
@@ -369,14 +369,14 @@ export default function AddProductScreen({ navigation }: any) {
           accessibilityLabel="تفعيل سعر الخصم"
         >
           <Ionicons name="pricetag-outline" size={14} color={hasSale ? COLORS.surface : COLORS.primary} />
-          <Text style={[styles.toggleText, hasSale && styles.toggleTextOn]}>خصم</Text>
+          <Text style={[styles.toggleText, hasSale && styles.toggleTextOn]}>{t('merchant.discount')}</Text>
         </TouchableOpacity>
       )}
     >
       <View style={styles.row}>
         <View style={styles.rowItem}>
           <Field
-            label={hasSale ? 'السعر قبل الخصم' : 'السعر'}
+            label={hasSale ? t('merchant.originalPrice') : t('merchant.price')}
             placeholder="0"
             keyboardType="decimal-pad"
             value={price}
@@ -388,7 +388,7 @@ export default function AddProductScreen({ navigation }: any) {
         {hasSale ? (
           <View style={styles.rowItem}>
             <Field
-              label="السعر بعد الخصم"
+              label=t('merchant.salePrice')
               placeholder="0"
               keyboardType="decimal-pad"
               value={salePrice}
@@ -408,7 +408,7 @@ export default function AddProductScreen({ navigation }: any) {
         </View>
       ) : null}
 
-      <Text style={styles.fieldLabel}>الكمية المتوفرة</Text>
+      <Text style={styles.fieldLabel}>{t('merchant.availableQuantity')}</Text>
       <View style={styles.stockRow}>
         <View style={styles.stepper}>
           <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(1)} accessibilityRole="button" accessibilityLabel=t('merchant.increaseQuantity')>
@@ -421,7 +421,7 @@ export default function AddProductScreen({ navigation }: any) {
             placeholderTextColor={COLORS.inkTertiary}
             keyboardType="number-pad"
             onChangeText={(v) => setStock(normalizeNumber(v).replace('.', ''))}
-            accessibilityLabel="الكمية المتوفرة"
+            accessibilityLabel=t('merchant.availableQuantity')
           />
           <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(-1)} accessibilityRole="button" accessibilityLabel="إنقاص الكمية">
             <Ionicons name="remove" size={18} color={COLORS.primary} />
@@ -439,7 +439,7 @@ export default function AddProductScreen({ navigation }: any) {
   );
 
   const details = (
-    <Section title="الوصف" hint="أجب عن أسئلة العميل قبل أن يسألها">
+    <Section title=t('merchant.description') hint=t('merchant.descriptionHint')>
       <View style={styles.prompts}>
         {DESCRIPTION_PROMPTS.map((p) => (
           <TouchableOpacity key={p} style={styles.prompt} onPress={() => addPrompt(p)} accessibilityRole="button" accessibilityLabel={`إضافة ${p}`}>
@@ -449,7 +449,7 @@ export default function AddProductScreen({ navigation }: any) {
         ))}
       </View>
       <Field
-        label="وصف المنتج"
+        label=t('merchant.productDescription')
         placeholder="ما الذي يميز المنتج؟ لمن يناسب؟ كيف يُستخدم؟"
         multiline
         value={description}
@@ -464,7 +464,7 @@ export default function AddProductScreen({ navigation }: any) {
       <View style={styles.readinessHead}>
         <ReadinessRing score={score} />
         <View style={styles.readinessCopy}>
-          <Text style={styles.readinessTitle}>{score === 100 ? 'المنتج جاهز للنشر' : 'جاهزية المنتج'}</Text>
+          <Text style={styles.readinessTitle}>{score === 100 ? t('merchant.productReady') : t('merchant.productReadiness')}</Text>
           <Text style={styles.readinessText}>{nextTip ? nextTip.tip : 'بيانات كاملة تعني ظهوراً أفضل وثقة أعلى.'}</Text>
         </View>
       </View>
@@ -481,7 +481,7 @@ export default function AddProductScreen({ navigation }: any) {
 
   const preview = (
     <View>
-      <Text style={styles.previewLabel}>هكذا سيراه العميل</Text>
+      <Text style={styles.previewLabel}>{t('merchant.previewCustomer')}</Text>
       <PreviewCard
         image={images[0]}
         name={name.trim()}
@@ -500,11 +500,11 @@ export default function AddProductScreen({ navigation }: any) {
         onPress={() => void save(true)}
         disabled={busy}
         accessibilityRole="button"
-        accessibilityLabel="نشر المنتج"
+        accessibilityLabel=t('merchant.publishProduct')
       >
         {busy ? <ActivityIndicator size="small" color={COLORS.surface} /> : <Ionicons name="paper-plane-outline" size={17} color={COLORS.surface} />}
         <Text style={styles.publishText}>
-          {phase === 'uploading' ? `جاري رفع ${images.length} صور...` : phase === 'saving' ? 'جاري الحفظ...' : 'نشر المنتج'}
+          {phase === 'uploading' ? `جاري رفع ${images.length} صور...` : phase === 'saving' ? 'جاري الحفظ...' : t('merchant.publishProduct')}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -514,7 +514,7 @@ export default function AddProductScreen({ navigation }: any) {
         accessibilityRole="button"
         accessibilityLabel="حفظ كمسودة"
       >
-        <Text style={styles.draftText}>مسودة</Text>
+        <Text style={styles.draftText}>{t('merchant.saveDraft')}</Text>
       </TouchableOpacity>
     </View>
   );
