@@ -11,6 +11,7 @@ import * as Location from 'expo-location';
 import {
   useAuthStore, createMerchantProfile, uploadImageToStorage, getServiceAreas, ServiceArea,
 } from '@marketplace/shared-hooks';
+import { useTranslation, translate } from '../../i18n';
 
 // ─── Design System ─────────────────────────────────────────
 const UI = {
@@ -37,27 +38,40 @@ const softShadow = {
 
 // ─── Constants ─────────────────────────────────────────────
 const STORE_CATEGORIES = [
-  'إلكترونيات وتقنية', 'أزياء وملابس', 'مطاعم وطعام', 'عطور ومستحضرات',
-  'منزل ومطبخ', 'رياضة ولياقة', 'صحة وصيدلية', 'كتب ومستلزمات', 'خدمات', 'أخرى',
-];
-const CITIES = ['صنعاء', 'عدن', 'تعز', 'إب', 'الحديدة', 'مأرب', 'حضرموت', 'أخرى'];
+  { value: 'إلكترونيات وتقنية', labelKey: 'merchantOnboarding.categoryElectronics' },
+  { value: 'أزياء وملابس', labelKey: 'merchantOnboarding.categoryFashion' },
+  { value: 'مطاعم وطعام', labelKey: 'merchantOnboarding.categoryFood' },
+  { value: 'عطور ومستحضرات', labelKey: 'merchantOnboarding.categoryPerfume' },
+  { value: 'منزل ومطبخ', labelKey: 'merchantOnboarding.categoryHome' },
+  { value: 'رياضة ولياقة', labelKey: 'merchantOnboarding.categorySports' },
+  { value: 'صحة وصيدلية', labelKey: 'merchantOnboarding.categoryHealth' },
+  { value: 'كتب ومستلزمات', labelKey: 'merchantOnboarding.categoryBooks' },
+  { value: 'خدمات', labelKey: 'merchantOnboarding.categoryServices' },
+  { value: 'أخرى', labelKey: 'merchantOnboarding.categoryOther' },
+] as const;
+const CITIES = [
+  { value: 'صنعاء', labelKey: 'customer.sanaa' }, { value: 'عدن', labelKey: 'customer.aden' },
+  { value: 'تعز', labelKey: 'customer.taiz' }, { value: 'إب', labelKey: 'customer.ibb' },
+  { value: 'الحديدة', labelKey: 'delivery.cityHodeidah' }, { value: 'مأرب', labelKey: 'delivery.cityMarib' },
+  { value: 'حضرموت', labelKey: 'delivery.cityHadramout' }, { value: 'أخرى', labelKey: 'delivery.otherCity' },
+] as const;
 const DELIVERY_TYPES = [
-  { id: 'local',    title: 'داخل المحافظة فقط', desc: 'توصيل الطلبات ضمن مدينتك الحالية.' },
-  { id: 'national', title: 'كافة المحافظات',     desc: 'شحن لجميع المدن والمحافظات.' },
-];
+  { id: 'local', titleKey: 'merchantOnboarding.localDelivery', descKey: 'merchantOnboarding.localDeliveryDesc' },
+  { id: 'national', titleKey: 'merchantOnboarding.nationalDelivery', descKey: 'merchantOnboarding.nationalDeliveryDesc' },
+] as const;
 const TOTAL_STEPS = 9;
 
 const STEP_META = [
-  { label: 'معلومات المتجر',   icon: 'storefront-outline'       },
-  { label: 'التصنيف',          icon: 'apps-outline'              },
-  { label: 'التواصل',          icon: 'call-outline'              },
-  { label: 'الهوية البصرية',   icon: 'image-outline'             },
-  { label: 'الموقع',           icon: 'location-outline'          },
-  { label: 'نطاق التوصيل',     icon: 'car-outline'               },
-  { label: 'الوثائق الرسمية',  icon: 'shield-checkmark-outline'  },
-  { label: 'البيانات البنكية', icon: 'wallet-outline'            },
-  { label: 'المراجعة',         icon: 'checkmark-done-outline'    },
-];
+  { labelKey: 'merchantOnboarding.stepStore', icon: 'storefront-outline' },
+  { labelKey: 'merchantOnboarding.stepCategory', icon: 'apps-outline' },
+  { labelKey: 'merchantOnboarding.stepContact', icon: 'call-outline' },
+  { labelKey: 'merchantOnboarding.stepBrand', icon: 'image-outline' },
+  { labelKey: 'merchantOnboarding.stepLocation', icon: 'location-outline' },
+  { labelKey: 'merchantOnboarding.stepDelivery', icon: 'car-outline' },
+  { labelKey: 'merchantOnboarding.stepDocs', icon: 'shield-checkmark-outline' },
+  { labelKey: 'merchantOnboarding.stepBank', icon: 'wallet-outline' },
+  { labelKey: 'merchantOnboarding.stepReview', icon: 'checkmark-done-outline' },
+] as const;
 
 // ─── Sub-components ────────────────────────────────────────
 function Field({ label, icon, children, hint }: { label: string; icon: string; children: React.ReactNode; hint?: string }) {
@@ -80,7 +94,7 @@ function ReviewBlock({ title, rows, onEdit }: { title: string; rows: [string, st
         <Text style={s.reviewTitle}>{title}</Text>
         <TouchableOpacity onPress={onEdit} activeOpacity={0.7} style={s.reviewEditBtn}>
           <Ionicons name="create-outline" size={14} color={UI.primary} />
-          <Text style={s.reviewEditText}>تعديل</Text>
+          <Text style={s.reviewEditText}>{translate('merchantOnboarding.edit')}</Text>
         </TouchableOpacity>
       </View>
       {rows.map(([k, v]) => (
@@ -97,6 +111,7 @@ function ReviewBlock({ title, rows, onEdit }: { title: string; rows: [string, st
 interface Props { onComplete: () => void; }
 
 export default function MerchantOnboardingScreen({ onComplete }: Props) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -124,7 +139,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
   const [commercialRegister, setCommercialRegister] = useState('');
   const [taxNumber,          setTaxNumber]          = useState('');
   const [bankAccountName,    setBankAccountName]    = useState('');
-  const [bankName,           setBankName]           = useState('بنك الكريمي');
+  const [bankName,           setBankName]           = useState(t('merchantOnboarding.bankDefault'));
   const [iban,               setIban]               = useState('');
   const [agreedToTerms,      setAgreedToTerms]      = useState(false);
   const [step,               setStep]               = useState(1);
@@ -134,7 +149,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
 
   const pickImage = async (aspect: [number, number]): Promise<string | null> => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) { Alert.alert('تنبيه', 'يجب السماح بالوصول إلى معرض الصور'); return null; }
+    if (!perm.granted) { Alert.alert(t('auth.alert'), t('merchantOnboarding.galleryPermission')); return null; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect, quality: 0.8 });
     if (result.canceled) return null;
     return result.assets[0].uri;
@@ -144,31 +159,31 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') { Alert.alert('تنبيه', 'يجب السماح بالوصول إلى الموقع'); return; }
+      if (status !== 'granted') { Alert.alert(t('auth.alert'), t('merchantOnboarding.locationPermission')); return; }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setLat(Number(pos.coords.latitude.toFixed(6)));
       setLng(Number(pos.coords.longitude.toFixed(6)));
-    } catch { Alert.alert('خطأ', 'تعذّر تحديد الموقع، أدخل العنوان يدوياً'); }
+    } catch { Alert.alert(t('shared.error'), t('merchantOnboarding.locationFailed')); }
     finally { setLocating(false); }
   };
 
   const nextStep = () => {
-    if (step === 1 && !storeName.trim()) return Alert.alert('تنبيه', 'اسم المتجر مطلوب');
-    if (step === 2 && !storeCategory)   return Alert.alert('تنبيه', 'اختر تصنيف المتجر');
-    if (step === 3 && !storePhone.trim()) return Alert.alert('تنبيه', 'رقم تواصل المتجر مطلوب');
-    if (step === 4 && !logoUri)         return Alert.alert('تنبيه', 'شعار المتجر مطلوب');
-    if (step === 5 && !city)            return Alert.alert('تنبيه', 'اختر المحافظة');
-    if (step === 5 && !address.trim())  return Alert.alert('تنبيه', 'العنوان التفصيلي مطلوب');
-    if (step === 7 && !ownerName.trim())          return Alert.alert('تنبيه', 'اسم صاحب المتجر مطلوب');
-    if (step === 7 && !nationalId.trim())         return Alert.alert('تنبيه', 'رقم الهوية مطلوب');
-    if (step === 7 && !commercialRegister.trim()) return Alert.alert('تنبيه', 'رقم السجل التجاري مطلوب');
-    if (step === 8 && !bankAccountName.trim())    return Alert.alert('تنبيه', 'اسم صاحب الحساب مطلوب');
-    if (step === 8 && !iban.trim())               return Alert.alert('تنبيه', 'رقم الحساب مطلوب');
+    if (step === 1 && !storeName.trim()) return Alert.alert(t('auth.alert'), t('merchantOnboarding.storeNameRequired'));
+    if (step === 2 && !storeCategory)   return Alert.alert(t('auth.alert'), t('merchantOnboarding.categoryRequired'));
+    if (step === 3 && !storePhone.trim()) return Alert.alert(t('auth.alert'), t('merchantOnboarding.storePhoneRequired'));
+    if (step === 4 && !logoUri)         return Alert.alert(t('auth.alert'), t('merchantOnboarding.logoRequired'));
+    if (step === 5 && !city)            return Alert.alert(t('auth.alert'), t('merchantOnboarding.cityRequired'));
+    if (step === 5 && !address.trim())  return Alert.alert(t('auth.alert'), t('merchantOnboarding.addressRequired'));
+    if (step === 7 && !ownerName.trim())          return Alert.alert(t('auth.alert'), t('merchantOnboarding.ownerRequired'));
+    if (step === 7 && !nationalId.trim())         return Alert.alert(t('auth.alert'), t('merchantOnboarding.nationalIdRequired'));
+    if (step === 7 && !commercialRegister.trim()) return Alert.alert(t('auth.alert'), t('merchantOnboarding.commercialRegisterRequired'));
+    if (step === 8 && !bankAccountName.trim())    return Alert.alert(t('auth.alert'), t('merchantOnboarding.accountNameRequired'));
+    if (step === 8 && !iban.trim())               return Alert.alert(t('auth.alert'), t('merchantOnboarding.accountNumberRequired'));
     setStep((s) => s + 1);
   };
 
   const submitProfile = async () => {
-    if (!agreedToTerms) { Alert.alert('تنبيه', 'يجب الموافقة على الشروط والأحكام'); return; }
+    if (!agreedToTerms) { Alert.alert(t('auth.alert'), t('merchantOnboarding.termsRequired')); return; }
     if (!user?.id) return;
     setSaving(true);
     
@@ -209,9 +224,9 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         store_logo_url: logoUrl, store_banner_url: bannerUrl,
       }), 15000, 'Create Profile');
 
-      Alert.alert('تم التسجيل', 'تم إرسال بيانات متجرك بنجاح.', [{ text: 'حسناً', onPress: onComplete }]);
+      Alert.alert(t('merchantOnboarding.registered'), t('merchantOnboarding.registeredText'), [{ text: t('merchantOnboarding.okay'), onPress: onComplete }]);
     } catch (e: any) {
-      Alert.alert('خطأ مفصل', e?.message ?? JSON.stringify(e) ?? 'فشل غير معروف');
+      Alert.alert(t('merchantOnboarding.detailedError'), e?.message ?? JSON.stringify(e) ?? t('merchantOnboarding.unknownFailure'));
     } finally { 
       setSaving(false); 
     }
@@ -236,18 +251,18 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View style={s.stepIconBox}>
           <Ionicons name={currentMeta.icon as any} size={28} color={UI.primary} />
         </View>
-        <Text style={s.stepTitle}>{currentMeta.label}</Text>
-        <Text style={s.stepCount}>الخطوة {step} من {TOTAL_STEPS}</Text>
+        <Text style={s.stepTitle}>{t(currentMeta.labelKey)}</Text>
+        <Text style={s.stepCount}>{t('merchantOnboarding.step')} {step} {t('merchantOnboarding.of')} {TOTAL_STEPS}</Text>
       </View>
 
       {/* ── Step 1 ── معلومات المتجر */}
       {step === 1 && (
         <View>
-          <Field label="الاسم التجاري للمتجر" icon="storefront-outline">
-            <TextInput style={s.input} placeholder="مثال: متجر الأناقة" placeholderTextColor={UI.textMuted} value={storeName} onChangeText={setStoreName} textAlign="right" />
+          <Field label={t('merchantOnboarding.commercialStoreName')} icon="storefront-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.storeNameExample')} placeholderTextColor={UI.textMuted} value={storeName} onChangeText={setStoreName} textAlign="right" />
           </Field>
-          <Field label="وصف المتجر (اختياري)" icon="document-text-outline" hint="يظهر للعملاء في صفحة متجرك">
-            <TextInput style={[s.input, s.textarea]} placeholder="نبذة مميزة عن متجرك..." placeholderTextColor={UI.textMuted} value={description} onChangeText={setDescription} multiline textAlign="right" textAlignVertical="top" />
+          <Field label={t('merchantOnboarding.storeDescriptionOptional')} icon="document-text-outline" hint={t('merchantOnboarding.storeDescriptionHint')}>
+            <TextInput style={[s.input, s.textarea]} placeholder={t('merchantOnboarding.storeDescriptionPlaceholder')} placeholderTextColor={UI.textMuted} value={description} onChangeText={setDescription} multiline textAlign="right" textAlignVertical="top" />
           </Field>
         </View>
       )}
@@ -255,11 +270,11 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 2 ── تصنيف المتجر */}
       {step === 2 && (
         <View>
-          <Text style={s.subLabel}>اختر التصنيف الأنسب لمنتجاتك</Text>
+          <Text style={s.subLabel}>{t('merchantOnboarding.chooseCategory')}</Text>
           <View style={s.chipGrid}>
             {STORE_CATEGORIES.map((cat) => (
-              <TouchableOpacity key={cat} style={[s.chip, storeCategory === cat && s.chipActive]} onPress={() => setStoreCategory(cat)} activeOpacity={0.7}>
-                <Text style={[s.chipText, storeCategory === cat && s.chipTextActive]}>{cat}</Text>
+              <TouchableOpacity key={cat.value} style={[s.chip, storeCategory === cat.value && s.chipActive]} onPress={() => setStoreCategory(cat.value)} activeOpacity={0.7}>
+                <Text style={[s.chipText, storeCategory === cat && s.chipTextActive]}>{t(cat.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -269,10 +284,10 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 3 ── معلومات التواصل */}
       {step === 3 && (
         <View>
-          <Field label="رقم تواصل المتجر" icon="call-outline" hint="سيظهر للعملاء لإتمام الطلب">
+          <Field label={t('merchantOnboarding.storeContact')} icon="call-outline" hint={t('merchantOnboarding.storeContactHint')}>
             <TextInput style={s.input} placeholder="7XXXXXXXX" placeholderTextColor={UI.textMuted} value={storePhone} onChangeText={setStorePhone} keyboardType="phone-pad" textAlign="right" />
           </Field>
-          <Field label="رقم واتساب (اختياري)" icon="logo-whatsapp">
+          <Field label={t('merchantOnboarding.whatsappOptional')} icon="logo-whatsapp">
             <TextInput style={s.input} placeholder="7XXXXXXXX" placeholderTextColor={UI.textMuted} value={whatsapp} onChangeText={setWhatsapp} keyboardType="phone-pad" textAlign="right" />
           </Field>
         </View>
@@ -281,7 +296,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 4 ── الهوية البصرية */}
       {step === 4 && (
         <View>
-          <Text style={s.subLabel}>شعار المتجر</Text>
+          <Text style={s.subLabel}>{t('merchantOnboarding.storeLogo')}</Text>
           <TouchableOpacity style={s.imagePicker} activeOpacity={0.8} onPress={async () => { const uri = await pickImage([1, 1]); if (uri) setLogoUri(uri); }}>
             {logoUri ? (
               <Image source={{ uri: logoUri }} style={s.imagePreview} resizeMode="cover" />
@@ -290,16 +305,16 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
                 <View style={s.imagePickerIconBox}>
                   <Ionicons name="camera-outline" size={26} color={UI.primary} />
                 </View>
-                <Text style={s.imagePickerTitle}>رفع شعار المتجر</Text>
-                <Text style={s.imagePickerSub}>JPG او PNG — مربع الشكل مفضل</Text>
+                <Text style={s.imagePickerTitle}>{t('merchantOnboarding.uploadLogo')}</Text>
+                <Text style={s.imagePickerSub}>{t('merchantOnboarding.logoHint')}</Text>
               </View>
             )}
           </TouchableOpacity>
-          {logoUri && <Text style={s.changeHint}>اضغط الصورة لتغييرها</Text>}
+          {logoUri && <Text style={s.changeHint}>{t('merchantOnboarding.tapImageChange')}</Text>}
 
           <View style={s.divider} />
 
-          <Text style={s.subLabel}>لافتة المتجر (اختياري)</Text>
+          <Text style={s.subLabel}>{t('merchantOnboarding.bannerOptional')}</Text>
           <TouchableOpacity style={[s.imagePicker, { borderColor: UI.border, borderStyle: 'solid' }]} activeOpacity={0.8} onPress={async () => { const uri = await pickImage([16, 9]); if (uri) setBannerUri(uri); }}>
             {bannerUri ? (
               <Image source={{ uri: bannerUri }} style={s.imagePreview} resizeMode="cover" />
@@ -308,44 +323,44 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
                 <View style={[s.imagePickerIconBox, { backgroundColor: UI.bg }]}>
                   <Ionicons name="image-outline" size={26} color={UI.textMuted} />
                 </View>
-                <Text style={[s.imagePickerTitle, { color: UI.textGrey }]}>رفع لافتة المتجر</Text>
-                <Text style={s.imagePickerSub}>نسبة 16:9 — تظهر اعلى صفحة متجرك</Text>
+                <Text style={[s.imagePickerTitle, { color: UI.textGrey }]}>{t('merchantOnboarding.uploadBanner')}</Text>
+                <Text style={s.imagePickerSub}>{t('merchantOnboarding.bannerHint')}</Text>
               </View>
             )}
           </TouchableOpacity>
-          {bannerUri && <Text style={s.changeHint}>اضغط الصورة لتغييرها</Text>}
+          {bannerUri && <Text style={s.changeHint}>{t('merchantOnboarding.tapImageChange')}</Text>}
         </View>
       )}
 
       {/* ── Step 5 ── الموقع والمحافظة */}
       {step === 5 && (
         <View>
-          <Text style={s.subLabel}>المدينة / المحافظة</Text>
+          <Text style={s.subLabel}>{t('merchantOnboarding.cityProvince')}</Text>
           <View style={s.chipGrid}>
-            {CITIES.map((c) => (
-              <TouchableOpacity key={c} style={[s.chip, city === c && s.chipActive]} onPress={() => setCity(c)} activeOpacity={0.7}>
-                <Text style={[s.chipText, city === c && s.chipTextActive]}>{c}</Text>
+            {CITIES.map((cityOption) => (
+              <TouchableOpacity key={cityOption.value} style={[s.chip, city === cityOption.value && s.chipActive]} onPress={() => setCity(cityOption.value)} activeOpacity={0.7}>
+                <Text style={[s.chipText, city === cityOption.value && s.chipTextActive]}>{t(cityOption.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Field label="العنوان التفصيلي" icon="navigate-outline">
-            <TextInput style={s.input} placeholder="الحي، الشارع، اقرب معلم" placeholderTextColor={UI.textMuted} value={address} onChangeText={setAddress} textAlign="right" />
+          <Field label={t('merchantOnboarding.detailedAddress')} icon="navigate-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.addressPlaceholder')} placeholderTextColor={UI.textMuted} value={address} onChangeText={setAddress} textAlign="right" />
           </Field>
 
-          <Text style={s.subLabel}>الموقع الجغرافي</Text>
+          <Text style={s.subLabel}>{t('merchantOnboarding.geoLocation')}</Text>
           <TouchableOpacity style={[s.locationBtn, lat != null && s.locationBtnDone]} onPress={captureLocation} disabled={locating} activeOpacity={0.8}>
             {locating ? (
               <ActivityIndicator color={UI.primary} size="small" />
             ) : lat != null ? (
               <>
                 <Ionicons name="checkmark-circle" size={20} color={UI.green} />
-                <Text style={s.locationDoneText}>تم تحديد الموقع بنجاح ({lat}, {lng})</Text>
+                <Text style={s.locationDoneText}>{t('merchantOnboarding.locationSuccess')} ({lat}, {lng})</Text>
               </>
             ) : (
               <>
                 <Ionicons name="locate" size={20} color={UI.primary} />
-                <Text style={s.locationText}>استخدام موقعي الحالي</Text>
+                <Text style={s.locationText}>{t('merchantOnboarding.useCurrentLocation')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -355,15 +370,15 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 6 ── نطاق التوصيل */}
       {step === 6 && (
         <View>
-          <Text style={s.subLabel}>حدد نطاق استقبالك للطلبات</Text>
+          <Text style={s.subLabel}>{t('merchantOnboarding.chooseDeliveryScope')}</Text>
           {DELIVERY_TYPES.map((type) => (
             <TouchableOpacity key={type.id} style={[s.selectionCard, deliveryType === type.id && s.selectionCardActive]} onPress={() => setDeliveryType(type.id)} activeOpacity={0.8}>
               <View style={[s.selectionRadio, deliveryType === type.id && s.selectionRadioActive]}>
                 {deliveryType === type.id && <View style={s.selectionRadioDot} />}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.selectionTitle, deliveryType === type.id && { color: UI.primary }]}>{type.title}</Text>
-                <Text style={s.selectionDesc}>{type.desc}</Text>
+                <Text style={[s.selectionTitle, deliveryType === type.id && { color: UI.primary }]}>{t(type.titleKey)}</Text>
+                <Text style={s.selectionDesc}>{t(type.descKey)}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -375,19 +390,19 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View>
           <View style={s.infoBox}>
             <Ionicons name="lock-closed-outline" size={18} color={UI.blueText} />
-            <Text style={s.infoText}>تُستخدم هذه البيانات لمراجعة واعتماد طلب المتجر وتشغيل الخدمات المرتبطة بالحساب.</Text>
+            <Text style={s.infoText}>{t('merchantOnboarding.officialDataInfo')}</Text>
           </View>
-          <Field label="اسم مالك المتجر" icon="person-outline">
-            <TextInput style={s.input} placeholder="الاسم الكامل" placeholderTextColor={UI.textMuted} value={ownerName} onChangeText={setOwnerName} textAlign="right" />
+          <Field label={t('merchantOnboarding.storeOwnerName')} icon="person-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.fullName')} placeholderTextColor={UI.textMuted} value={ownerName} onChangeText={setOwnerName} textAlign="right" />
           </Field>
-          <Field label="رقم الهوية الوطنية" icon="card-outline">
-            <TextInput style={s.input} placeholder="رقم الهوية" placeholderTextColor={UI.textMuted} value={nationalId} onChangeText={setNationalId} keyboardType="numeric" textAlign="right" />
+          <Field label={t('merchantOnboarding.nationalId')} icon="card-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.nationalIdPlaceholder')} placeholderTextColor={UI.textMuted} value={nationalId} onChangeText={setNationalId} keyboardType="numeric" textAlign="right" />
           </Field>
-          <Field label="رقم السجل التجاري" icon="document-outline">
-            <TextInput style={s.input} placeholder="مثال: 1010000000" placeholderTextColor={UI.textMuted} value={commercialRegister} onChangeText={setCommercialRegister} keyboardType="numeric" textAlign="right" />
+          <Field label={t('merchantOnboarding.commercialRegister')} icon="document-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.commercialRegisterExample')} placeholderTextColor={UI.textMuted} value={commercialRegister} onChangeText={setCommercialRegister} keyboardType="numeric" textAlign="right" />
           </Field>
-          <Field label="الرقم الضريبي (اختياري)" icon="receipt-outline">
-            <TextInput style={s.input} placeholder="الرقم الضريبي ان وجد" placeholderTextColor={UI.textMuted} value={taxNumber} onChangeText={setTaxNumber} keyboardType="numeric" textAlign="right" />
+          <Field label={t('merchantOnboarding.taxOptional')} icon="receipt-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.taxPlaceholder')} placeholderTextColor={UI.textMuted} value={taxNumber} onChangeText={setTaxNumber} keyboardType="numeric" textAlign="right" />
           </Field>
         </View>
       )}
@@ -397,16 +412,16 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View>
           <View style={s.infoBox}>
             <Ionicons name="information-circle-outline" size={18} color={UI.blueText} />
-            <Text style={s.infoText}>سنقوم بتحويل أرباحك دورياً إلى هذا الحساب. تأكد من دقة البيانات.</Text>
+            <Text style={s.infoText}>{t('merchantOnboarding.bankInfo')}</Text>
           </View>
-          <Field label="اسم البنك" icon="business-outline">
+          <Field label={t('merchantOnboarding.bankName')} icon="business-outline">
             <TextInput style={[s.input, { color: UI.textMuted }]} value={bankName} onChangeText={setBankName} editable={false} textAlign="right" />
           </Field>
-          <Field label="اسم صاحب الحساب" icon="person-circle-outline">
-            <TextInput style={s.input} placeholder="الاسم كما يظهر في الحساب البنكي" placeholderTextColor={UI.textMuted} value={bankAccountName} onChangeText={setBankAccountName} textAlign="right" />
+          <Field label={t('merchantOnboarding.accountHolder')} icon="person-circle-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.accountHolderPlaceholder')} placeholderTextColor={UI.textMuted} value={bankAccountName} onChangeText={setBankAccountName} textAlign="right" />
           </Field>
-          <Field label="رقم الحساب البنكي" icon="card-outline">
-            <TextInput style={s.input} placeholder="رقم حسابك في بنك الكريمي" placeholderTextColor={UI.textMuted} value={iban} onChangeText={setIban} keyboardType="numeric" textAlign="right" />
+          <Field label={t('merchantOnboarding.bankAccount')} icon="card-outline">
+            <TextInput style={s.input} placeholder={t('merchantOnboarding.bankAccountPlaceholder')} placeholderTextColor={UI.textMuted} value={iban} onChangeText={setIban} keyboardType="numeric" textAlign="right" />
           </Field>
         </View>
       )}
@@ -414,29 +429,29 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       {/* ── Step 9 ── المراجعة */}
       {step === 9 && (
         <View>
-          <ReviewBlock title="معلومات المتجر" onEdit={() => setStep(1)} rows={[
-            ['اسم المتجر', storeName],
-            ['الوصف', description],
-            ['التصنيف', storeCategory],
+          <ReviewBlock title={t('merchantOnboarding.stepStore')} onEdit={() => setStep(1)} rows={[
+            [t('merchantOnboarding.reviewStoreName'), storeName],
+            [t('merchantOnboarding.reviewDescription'), description],
+            [t('merchantOnboarding.reviewCategory'), storeCategory],
           ]} />
-          <ReviewBlock title="التواصل" onEdit={() => setStep(3)} rows={[
-            ['الهاتف', storePhone],
-            ['واتساب', whatsapp],
+          <ReviewBlock title={t('merchantOnboarding.stepContact')} onEdit={() => setStep(3)} rows={[
+            [t('merchantOnboarding.reviewPhone'), storePhone],
+            [t('merchantOnboarding.reviewWhatsapp'), whatsapp],
           ]} />
-          <ReviewBlock title="الموقع والتوصيل" onEdit={() => setStep(5)} rows={[
-            ['المحافظة', city],
-            ['العنوان', address],
-            ['نطاق التوصيل', deliveryType === 'local' ? 'داخل المحافظة' : 'كافة المحافظات'],
+          <ReviewBlock title={t('merchantOnboarding.reviewLocationDelivery')} onEdit={() => setStep(5)} rows={[
+            [t('merchantOnboarding.reviewProvince'), city],
+            [t('merchantOnboarding.reviewAddress'), address],
+            [t('merchantOnboarding.reviewDeliveryScope'), deliveryType === 'local' ? t('merchantOnboarding.reviewLocal') : t('merchantOnboarding.reviewNational')],
           ]} />
-          <ReviewBlock title="الوثائق الرسمية" onEdit={() => setStep(7)} rows={[
-            ['اسم المالك', ownerName],
-            ['الهوية', nationalId],
-            ['السجل التجاري', commercialRegister],
+          <ReviewBlock title={t('merchantOnboarding.stepDocs')} onEdit={() => setStep(7)} rows={[
+            [t('merchantOnboarding.reviewOwner'), ownerName],
+            [t('merchantOnboarding.reviewIdentity'), nationalId],
+            [t('merchantOnboarding.reviewCommercial'), commercialRegister],
           ]} />
-          <ReviewBlock title="البيانات البنكية" onEdit={() => setStep(8)} rows={[
-            ['البنك', bankName],
-            ['اسم الحساب', bankAccountName],
-            ['رقم الحساب', iban],
+          <ReviewBlock title={t('merchantOnboarding.stepBank')} onEdit={() => setStep(8)} rows={[
+            [t('merchantOnboarding.reviewBank'), bankName],
+            [t('merchantOnboarding.reviewAccountName'), bankAccountName],
+            [t('merchantOnboarding.reviewAccountNumber'), iban],
           ]} />
 
           <TouchableOpacity style={s.termsRow} onPress={() => setAgreedToTerms((v) => !v)} activeOpacity={0.8}>
@@ -444,16 +459,16 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
               {agreedToTerms && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
             </View>
             <Text style={s.termsText}>
-              أوافق على{' '}
-              <Text style={s.termsLink}>الشروط والأحكام</Text>
-              {' '}و{' '}
-              <Text style={s.termsLink}>سياسة الخصوصية</Text>
+              {t('merchantOnboarding.agree')}{' '}
+              <Text style={s.termsLink}>{t('merchantOnboarding.terms')}</Text>
+              {' & '}
+              <Text style={s.termsLink}>{t('merchantOnboarding.privacy')}</Text>
             </Text>
           </TouchableOpacity>
 
           <View style={s.finalNote}>
             <Ionicons name="time-outline" size={18} color={UI.green} />
-            <Text style={s.finalNoteText}>بعد الإرسال سيراجع فريقنا بياناتك خلال 24 ساعة ويصلك إشعار بالقبول.</Text>
+            <Text style={s.finalNoteText}>{t('merchantOnboarding.finalNote')}</Text>
           </View>
         </View>
       )}
@@ -474,15 +489,15 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
             onPress={() => useAuthStore.getState().signOut()} 
             style={{position: 'absolute', top: 20, right: 20, flexDirection: 'row-reverse', alignItems: 'center', gap: 6}}
           >
-            <Text style={{color: '#FCA5A5', fontSize: 13, fontWeight: '700'}}>تسجيل خروج</Text>
+            <Text style={{color: '#FCA5A5', fontSize: 13, fontWeight: '700'}}>{t('merchantOnboarding.signOut')}</Text>
             <Ionicons name="log-out-outline" size={18} color="#FCA5A5" />
           </TouchableOpacity>
 
           <View style={s.sidebarLogo}>
             <Ionicons name="storefront" size={28} color={UI.white} />
           </View>
-          <Text style={s.sidebarMainTitle}>تسجيل متجر</Text>
-          <Text style={s.sidebarSubTitle}>أكمل الخطوات لتفعيل متجرك</Text>
+          <Text style={s.sidebarMainTitle}>{t('merchantOnboarding.registerStore')}</Text>
+          <Text style={s.sidebarSubTitle}>{t('merchantOnboarding.registerStoreSub')}</Text>
 
           <View style={s.sidebarSteps}>
             {STEP_META.map((m, i) => {
@@ -518,20 +533,20 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
               {step > 1 && (
                 <TouchableOpacity style={s.backBtn} onPress={() => setStep((s) => s - 1)} activeOpacity={0.7}>
                   <Ionicons name="arrow-forward" size={18} color={UI.textDark} />
-                  <Text style={s.backBtnText}>السابق</Text>
+                  <Text style={s.backBtnText}>{t('merchantOnboarding.previous')}</Text>
                 </TouchableOpacity>
               )}
               <View style={{ flex: 1 }} />
               {step < TOTAL_STEPS ? (
                 <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
-                  <Text style={s.nextBtnText}>التالي</Text>
+                  <Text style={s.nextBtnText}>{t('merchantOnboarding.next')}</Text>
                   <Ionicons name="arrow-back" size={18} color={UI.white} />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity style={[s.nextBtn, (saving || !agreedToTerms) && s.btnDisabled]} onPress={submitProfile} disabled={saving || !agreedToTerms} activeOpacity={0.85}>
                   {saving ? <ActivityIndicator color={UI.white} size="small" /> : (
                     <>
-                      <Text style={s.nextBtnText}>ارسال وتفعيل المتجر</Text>
+                      <Text style={s.nextBtnText}>{t('merchantOnboarding.submitActivate')}</Text>
                       <Ionicons name="checkmark-circle" size={18} color={UI.white} />
                     </>
                   )}
@@ -561,7 +576,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
           </TouchableOpacity>
         )}
         <View style={s.mobileHeaderCenter}>
-          <Text style={s.mobileHeaderLabel}>تسجيل متجر جديد</Text>
+          <Text style={s.mobileHeaderLabel}>{t('merchantOnboarding.registerNewStore')}</Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -578,14 +593,14 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
         <View style={[s.mobileBottomBar, { paddingHorizontal: pageGutter }]}>
           {step < TOTAL_STEPS ? (
             <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
-              <Text style={s.nextBtnText}>التالي</Text>
+              <Text style={s.nextBtnText}>{t('merchantOnboarding.next')}</Text>
               <Ionicons name="arrow-back" size={18} color={UI.white} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[s.nextBtn, (saving || !agreedToTerms) && s.btnDisabled]} onPress={submitProfile} disabled={saving || !agreedToTerms} activeOpacity={0.85}>
               {saving ? <ActivityIndicator color={UI.white} size="small" /> : (
                 <>
-                  <Text style={s.nextBtnText}>ارسال وتفعيل المتجر</Text>
+                  <Text style={s.nextBtnText}>{t('merchantOnboarding.submitActivate')}</Text>
                   <Ionicons name="checkmark-circle" size={18} color={UI.white} />
                 </>
               )}
