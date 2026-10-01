@@ -16,20 +16,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { useTranslation, translate } from '../../i18n';
 
 const MENU_ITEMS = [
-  { id: '1', title: 'بيانات المتجر', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
-  { id: '2', title: 'التقارير والإحصائيات', icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
-  { id: '3', title: 'المحفظة والمدفوعات', icon: 'wallet-outline', screen: 'Wallet', params: undefined },
-  { id: '4', title: 'كوبونات المتجر', icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
-  { id: '4b', title: 'طلبات الاسترداد', icon: 'refresh-circle-outline', screen: 'Refunds', params: undefined },
-  { id: '4c', title: 'المرتجعات الفعلية', icon: 'return-down-back-outline', screen: 'PhysicalReturns', params: undefined },
-  { id: '5', title: 'الإشعارات', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
-  { id: '6', title: 'مركز المساعدة', icon: 'headset-outline', screen: 'Support', params: undefined },
+  { id: '1', title: translate('merchant.storeData'), icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
+  { id: '2', title: translate('merchant.analytics'), icon: 'bar-chart-outline', screen: 'Reports', params: undefined },
+  { id: '3', title: translate('merchant.walletPayments'), icon: 'wallet-outline', screen: 'Wallet', params: undefined },
+  { id: '4', title: translate('merchant.coupons'), icon: 'pricetag-outline', screen: 'Coupons', params: undefined },
+  { id: '4b', title: translate('merchant.refunds'), icon: 'refresh-circle-outline', screen: 'Refunds', params: undefined },
+  { id: '4c', title: translate('merchant.returns'), icon: 'return-down-back-outline', screen: 'PhysicalReturns', params: undefined },
+  { id: '5', title: translate('merchant.notifications'), icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
+  { id: '6', title: translate('customer.helpCenter'), icon: 'headset-outline', screen: 'Support', params: undefined },
   { id: '7', title: 'مفاتيح API (ربط الذكاء الاصطناعي)', icon: 'key-outline', screen: 'ApiKeys', params: undefined },
 ];
 
 export default function MerchantAccountScreen(props: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   return width >= BREAKPOINTS.desktop ? <MerchantAccountDesktop {...props} /> : <MerchantMoreScreen {...props} />;
 }
@@ -38,26 +40,26 @@ type MoreItem = { title: string; subtitle: string; icon: string; screen: string;
 
 const MORE_SECTIONS: { title: string; items: MoreItem[] }[] = [
   {
-    title: 'إدارة المتجر',
+    title: translate('merchant.manageStore'),
     items: [
-      { title: 'التقارير والإحصائيات', subtitle: 'المبيعات وأداء المنتجات', icon: 'bar-chart-outline', screen: 'Reports' },
-      { title: 'كوبونات المتجر', subtitle: 'الخصومات والعروض', icon: 'pricetag-outline', screen: 'Coupons' },
+      { title: translate('merchant.analytics'), subtitle: 'المبيعات وأداء المنتجات', icon: 'bar-chart-outline', screen: 'Reports' },
+      { title: translate('merchant.coupons'), subtitle: 'الخصومات والعروض', icon: 'pricetag-outline', screen: 'Coupons' },
     ],
   },
   {
     title: 'المالية والمرتجعات',
     items: [
-      { title: 'المحفظة والمدفوعات', subtitle: 'الرصيد والتسويات والسحب', icon: 'wallet-outline', screen: 'Wallet' },
-      { title: 'طلبات الاسترداد', subtitle: 'مراجعة طلبات العملاء', icon: 'refresh-circle-outline', screen: 'Refunds' },
-      { title: 'المرتجعات الفعلية', subtitle: 'استلام المنتجات المرتجعة', icon: 'return-down-back-outline', screen: 'PhysicalReturns' },
+      { title: translate('merchant.walletPayments'), subtitle: 'الرصيد والتسويات والسحب', icon: 'wallet-outline', screen: 'Wallet' },
+      { title: translate('merchant.refunds'), subtitle: 'مراجعة طلبات العملاء', icon: 'refresh-circle-outline', screen: 'Refunds' },
+      { title: translate('merchant.returns'), subtitle: 'استلام المنتجات المرتجعة', icon: 'return-down-back-outline', screen: 'PhysicalReturns' },
     ],
   },
   {
-    title: 'الحساب والدعم',
+    title: translate('merchant.accountSupport'),
     items: [
-      { title: 'الإشعارات', subtitle: 'تنبيهات الطلبات والحساب', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
-      { title: 'مركز المساعدة', subtitle: 'تذاكر الدعم والتواصل', icon: 'headset-outline', screen: 'Support' },
-      { title: 'مفاتيح API', subtitle: 'ربط المتجر بالأنظمة الخارجية', icon: 'key-outline', screen: 'ApiKeys' },
+      { title: translate('merchant.notifications'), subtitle: 'تنبيهات الطلبات والحساب', icon: 'notifications-outline', screen: 'RoleNotifications', params: { role: 'merchant' } },
+      { title: translate('customer.helpCenter'), subtitle: 'تذاكر الدعم والتواصل', icon: 'headset-outline', screen: 'Support' },
+      { title: translate('merchant.apiKeys'), subtitle: 'ربط المتجر بالأنظمة الخارجية', icon: 'key-outline', screen: 'ApiKeys' },
     ],
   },
 ];
@@ -82,9 +84,9 @@ function MerchantMoreScreen({ navigation }: any) {
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   const confirmSignOut = () =>
-    Alert.alert('تسجيل الخروج', 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
-      { text: 'تراجع', style: 'cancel' },
-      { text: 'تسجيل الخروج', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(t('common.signOut'), 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
+      { text: t('merchant.undo'), style: 'cancel' },
+      { text: t('common.signOut'), style: 'destructive', onPress: () => signOut() },
     ]);
 
   const approved = !!profile?.is_approved;
@@ -101,7 +103,7 @@ function MerchantMoreScreen({ navigation }: any) {
             style={more.headerBtn}
             onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })}
             accessibilityRole="button"
-            accessibilityLabel="الإشعارات"
+            accessibilityLabel=t('merchant.notifications')
           >
             <Ionicons name="notifications-outline" size={20} color={COLORS.ink} />
           </TouchableOpacity>
@@ -118,20 +120,20 @@ function MerchantMoreScreen({ navigation }: any) {
           activeOpacity={0.85}
           onPress={() => navigation.navigate('StoreSettings')}
           accessibilityRole="button"
-          accessibilityLabel="بيانات المتجر"
+          accessibilityLabel=t('merchant.storeData')
         >
           <View style={more.storeAvatar}>
             <Ionicons name="storefront" size={24} color={COLORS.primary} />
           </View>
           <View style={more.storeCopy}>
-            <Text style={more.storeName} numberOfLines={1}>{profile?.store_name ?? user?.full_name ?? 'متجري'}</Text>
+            <Text style={more.storeName} numberOfLines={1}>{profile?.store_name ?? user?.full_name ?? t('merchant.myStore')}</Text>
             <View style={more.storeMeta}>
               <View style={[more.statusDot, { backgroundColor: approved ? COLORS.statusOnline : '#F59E0B' }]} />
-              <Text style={more.storeStatus}>{approved ? 'تاجر معتمد' : 'قيد المراجعة'}</Text>
+              <Text style={more.storeStatus}>{approved ? t('merchant.approvedMerchant') : t('merchant.pendingReview')}</Text>
             </View>
           </View>
           <View style={more.storeAction}>
-            <Text style={more.storeActionText}>بيانات المتجر</Text>
+            <Text style={more.storeActionText}>{t('merchant.storeData')}</Text>
             <Ionicons name="chevron-back" size={14} color={COLORS.surface} />
           </View>
         </TouchableOpacity>
@@ -163,9 +165,9 @@ function MerchantMoreScreen({ navigation }: any) {
           </View>
         ))}
 
-        <TouchableOpacity style={more.logout} onPress={confirmSignOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={more.logout} onPress={confirmSignOut} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('common.signOut')>
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={more.logoutText}>تسجيل الخروج</Text>
+          <Text style={more.logoutText}>{t('common.signOut')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -256,7 +258,7 @@ function MerchantAccountDesktop({ navigation }: any) {
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreSettings')} accessibilityRole="button" accessibilityLabel="إعدادات المتجر">
           <Ionicons name="settings-outline" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>حساب التاجر</Text>
+        <Text style={styles.headerTitle}>{t('merchant.merchantAccount')}</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('RoleNotifications', { role: 'merchant' })} accessibilityRole="button" accessibilityLabel="إشعارات التاجر">
           <Ionicons name="notifications-outline" size={24} color="#111827" />
           <View style={styles.badge} />
@@ -283,7 +285,7 @@ function MerchantAccountDesktop({ navigation }: any) {
 
           {/* Center Zone: Info */}
           <View style={styles.profileZoneCenter}>
-            <Text style={styles.userName}>{profile?.store_name ?? user?.full_name ?? 'متجري'}</Text>
+            <Text style={styles.userName}>{profile?.store_name ?? user?.full_name ?? t('merchant.myStore')}</Text>
           </View>
 
           {/* Right Zone: Avatar */}
@@ -294,7 +296,7 @@ function MerchantAccountDesktop({ navigation }: any) {
               </View>
               <View style={styles.premiumBadge}>
                 <Ionicons name="sparkles" size={10} color="#3B82F6" />
-                <Text style={styles.premiumText}>{profile?.is_approved ? 'تاجر معتمد' : 'قيد المراجعة'}</Text>
+                <Text style={styles.premiumText}>{profile?.is_approved ? t('merchant.approvedMerchant') : t('merchant.pendingReview')}</Text>
               </View>
             </View>
           </View>
@@ -323,7 +325,7 @@ function MerchantAccountDesktop({ navigation }: any) {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>حساب التاجر</Text>
+        <Text style={styles.sectionTitle}>{t('merchant.merchantAccount')}</Text>
 
         {/* Menu List */}
         <View style={styles.menuCard}>
@@ -351,17 +353,17 @@ function MerchantAccountDesktop({ navigation }: any) {
         <TouchableOpacity
           style={styles.logoutCard}
           onPress={() =>
-            Alert.alert('تسجيل الخروج', 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
-              { text: 'تراجع', style: 'cancel' },
-              { text: 'تسجيل الخروج', style: 'destructive', onPress: () => signOut() },
+            Alert.alert(t('common.signOut'), 'هل أنت متأكد من تسجيل الخروج من حساب متجرك؟', [
+              { text: t('merchant.undo'), style: 'cancel' },
+              { text: t('common.signOut'), style: 'destructive', onPress: () => signOut() },
             ])
           }
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="تسجيل الخروج"
+          accessibilityLabel=t('common.signOut')
         >
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
-          <Text style={[styles.logoutText, { color: '#EF4444' }]}>تسجيل الخروج</Text>
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('common.signOut')}</Text>
         </TouchableOpacity>
 
         {/* Promo Banner */}
