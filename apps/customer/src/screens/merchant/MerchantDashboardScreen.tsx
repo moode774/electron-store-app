@@ -26,6 +26,7 @@ const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
 function OrderRow({ order, onPress, last }: { order: OrderSummary; onPress: () => void; last?: boolean }) {
+  const { t } = useTranslation();
   const st = getMerchantOrderStatusInfo(order.status);
   const items = order.order_items?.reduce((sum, item) => sum + (item.quantity ?? 0), 0) ?? 0;
   return (
@@ -67,12 +68,13 @@ function MobileDashboard({
   onRetry: () => void;
 }) {
   const navigation = useNavigation<any>();
+  const { t, language } = useTranslation();
   const insets = useSafeAreaInsets();
   const needsAction = useMemo(() => orders.filter((o) => MERCHANT_ACTION_STATUSES.has(o.status)), [orders]);
   const pendingCount = useMemo(() => orders.filter((o) => o.status === ORDER_STATUS.PENDING).length, [orders]);
   const activeCount = useMemo(() => orders.filter((o) => ACTIVE_MERCHANT_ORDER_STATUSES.has(o.status)).length, [orders]);
   const recent = useMemo(() => orders.slice(0, 5), [orders]);
-  const today = new Date().toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString(language === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' });
   const openOrder = (orderId: string) => navigation.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId } });
 
   const actions = [
