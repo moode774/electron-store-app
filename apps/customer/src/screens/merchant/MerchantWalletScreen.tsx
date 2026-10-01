@@ -156,7 +156,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
   return (
     <View style={ui.screen}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
-      <ScreenHeader title=t('merchant.wallet') subtitle="الرصيد والتسويات وطلبات السحب" onBack={() => navigation.goBack()} />
+      <ScreenHeader title={t('merchant.wallet')} subtitle="الرصيد والتسويات وطلبات السحب" onBack={() => navigation.goBack()} />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
@@ -167,7 +167,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
           contentContainerStyle={[ui.content, isDesktop && ui.contentDesktop, styles.listGap]}
           ListHeaderComponent={
             <View style={styles.headerStack}>
-              {loadError ? <Banner text={loadError} tone="error" actionLabel=t('common.retry') onAction={() => void loadData()} /> : null}
+              {loadError ? <Banner text={loadError} tone="error" actionLabel={t('common.retry')} onAction={() => void loadData()} /> : null}
 
               <View style={styles.balance}>
                 <View style={styles.balanceTop}>
@@ -182,7 +182,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                   onPress={openWithdraw}
                   disabled={!canWithdraw}
                   accessibilityRole="button"
-                  accessibilityLabel=t('merchant.withdraw')
+                  accessibilityLabel={t('merchant.withdraw')}
                   accessibilityState={{ disabled: !canWithdraw }}
                 >
                   <Ionicons name="arrow-down-circle-outline" size={18} color={COLORS.primary} />
@@ -227,7 +227,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               <Text style={[ui.sectionTitle, styles.txTitleRow]}>{t('merchant.transactions')}</Text>
             </View>
           }
-          ListEmptyComponent={<EmptyState icon="receipt-outline" title=t('merchant.noTransactions') text=t('merchant.noTransactionsText') />}
+          ListEmptyComponent={<EmptyState icon="receipt-outline" title={t('merchant.noTransactions')} text=t('merchant.noTransactionsText') />}
           renderItem={({ item, index }) => {
             const credit = isIncome(item);
             return (
@@ -255,12 +255,12 @@ export default function MerchantWalletScreen({ navigation }: any) {
         onRequestClose={() => !submitting && setShowWithdrawModal(false)}
       >
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.overlay, isDesktop && styles.overlayCentered]}>
-          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => !submitting && setShowWithdrawModal(false)} accessibilityLabel=t('merchant.close') />
+          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => !submitting && setShowWithdrawModal(false)} accessibilityLabel={t('merchant.close')} />
           <ScrollView style={[styles.sheet, isDesktop && styles.sheetCentered]} contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps="handled">
             {!isDesktop ? <View style={styles.handle} /> : null}
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>{t('merchant.withdraw')}</Text>
-              <TouchableOpacity onPress={() => !submitting && setShowWithdrawModal(false)} disabled={submitting} hitSlop={8} accessibilityRole="button" accessibilityLabel=t('merchant.close')>
+              <TouchableOpacity onPress={() => !submitting && setShowWithdrawModal(false)} disabled={submitting} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('merchant.close')}>
                 <Ionicons name="close" size={22} color={COLORS.inkSecondary} />
               </TouchableOpacity>
             </View>
@@ -312,7 +312,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
               onPress={handleWithdraw}
               disabled={submitting || hasBlockingWithdrawal}
               accessibilityRole="button"
-              accessibilityLabel=t('merchant.sendWithdrawal')
+              accessibilityLabel={t('merchant.sendWithdrawal')}
               accessibilityState={{ disabled: submitting || hasBlockingWithdrawal }}
             >
               {submitting ? <ActivityIndicator color={COLORS.surface} size="small" /> : <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.surface} />}
