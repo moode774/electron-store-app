@@ -21,8 +21,8 @@ interface Props {
 
 const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-export default function StoreDetailsScreen({
-  const { t } = useTranslation(); navigation, route }: Props) {
+export default function StoreDetailsScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(1120);
   const productGutter = layout.gutter;
   const productGap = layout.compact ? 10 : 16;
