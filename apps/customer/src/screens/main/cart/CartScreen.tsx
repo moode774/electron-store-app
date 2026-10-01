@@ -49,8 +49,8 @@ const toRecommendation = (p: ProductSummary): Recommendation => ({
   storeName: (p as any).merchant_profiles?.store_name ?? 'المتجر',
 });
 
-export default function CartScreen({
-  const { t } = useTranslation(); navigation }: any) {
+export default function CartScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(1180);
   const { updateQuantity, removeFromCart, addToCart, items, toggleSelected } = useCartStore();
   const user = useAuthStore((state) => state.user);
