@@ -11,6 +11,7 @@ import {
   updateSupportTicketStatus, SupportMessage,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -26,42 +27,43 @@ const UI = {
 };
 
 const STATUS_FILTERS = [
-  { key: 'open', label: 'مفتوحة' },
-  { key: 'in_progress', label: 'قيد المعالجة' },
-  { key: 'waiting_user', label: 'بانتظار المستخدم' },
-  { key: 'resolved', label: 'محلولة' },
-  { key: 'closed', label: 'مغلقة' },
-  { key: '', label: 'الكل' },
+  { key: 'open', labelKey: 'adminUi.supportOpen' },
+  { key: 'in_progress', labelKey: 'adminUi.supportInProgress' },
+  { key: 'waiting_user', labelKey: 'adminUi.supportWaitingUser' },
+  { key: 'resolved', labelKey: 'adminUi.supportResolved' },
+  { key: 'closed', labelKey: 'adminUi.supportClosed' },
+  { key: '', labelKey: 'adminUi.all' },
 ];
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  open: { label: 'مفتوحة', color: UI.danger, bg: '#FEF2F2' },
-  in_progress: { label: 'قيد المعالجة', color: UI.warning, bg: '#FFFBEB' },
-  waiting_user: { label: 'بانتظار المستخدم', color: '#7C3AED', bg: '#F5F3FF' },
-  resolved: { label: 'محلولة', color: UI.success, bg: '#ECFDF5' },
-  closed: { label: 'مغلقة', color: UI.textMuted, bg: '#F1F5F9' },
+const STATUS_META: Record<string, { labelKey: string; color: string; bg: string }> = {
+  open: { labelKey: 'adminUi.supportOpen', color: UI.danger, bg: '#FEF2F2' },
+  in_progress: { labelKey: 'adminUi.supportInProgress', color: UI.warning, bg: '#FFFBEB' },
+  waiting_user: { labelKey: 'adminUi.supportWaitingUser', color: '#7C3AED', bg: '#F5F3FF' },
+  resolved: { labelKey: 'adminUi.supportResolved', color: UI.success, bg: '#ECFDF5' },
+  closed: { labelKey: 'adminUi.supportClosed', color: UI.textMuted, bg: '#F1F5F9' },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  order: 'طلب',
-  payment: 'دفع',
-  account: 'حساب',
-  delivery: 'توصيل',
-  merchant: 'تاجر',
-  technical: 'مشكلة تقنية',
-  order_complaint: 'شكوى طلب',
-  general: 'عام',
-  other: 'أخرى',
+  order: 'adminUi.supportCategoryOrder',
+  payment: 'adminUi.supportCategoryPayment',
+  account: 'adminUi.supportCategoryAccount',
+  delivery: 'adminUi.supportCategoryDelivery',
+  merchant: 'adminUi.supportCategoryMerchant',
+  technical: 'adminUi.supportCategoryTechnical',
+  order_complaint: 'adminUi.supportCategoryComplaint',
+  general: 'adminUi.supportCategoryGeneral',
+  other: 'adminUi.supportCategoryOther',
 };
 
 const NEXT_STATUSES = [
-  { key: 'in_progress', label: 'قيد المعالجة', color: UI.warning },
-  { key: 'waiting_user', label: 'بانتظار المستخدم', color: '#7C3AED' },
-  { key: 'resolved', label: 'تم الحل', color: UI.success },
-  { key: 'closed', label: 'إغلاق التذكرة', color: UI.textMuted },
+  { key: 'in_progress', labelKey: 'adminUi.supportInProgress', color: UI.warning },
+  { key: 'waiting_user', labelKey: 'adminUi.supportWaitingUser', color: '#7C3AED' },
+  { key: 'resolved', labelKey: 'adminUi.supportMarkResolved', color: UI.success },
+  { key: 'closed', labelKey: 'adminUi.supportCloseTicket', color: UI.textMuted },
 ];
 
 export default function AdminSupportScreen({ navigation }: any) {
+  const { t, language } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -87,7 +89,7 @@ export default function AdminSupportScreen({ navigation }: any) {
       setTickets(data);
     } catch (e) {
       console.error('Failed to load support tickets:', e);
-      setLoadError('تعذر تحميل تذاكر الدعم. تحقق من الاتصال ثم أعد المحاولة.');
+      setLoadError(t('adminUi.supportLoadFailed'));
     }
     finally { setLoading(false); setRefreshing(false); }
   }, [filter]);
@@ -108,7 +110,7 @@ export default function AdminSupportScreen({ navigation }: any) {
       setMessages(thread.messages);
     } catch (e) {
       console.error('Failed to load support ticket thread:', e);
-      setThreadError('تعذر تحميل محادثة التذكرة.');
+      setThreadError(t('adminUi.supportThreadLoadFailed'));
     } finally {
       setThreadLoading(false);
     }
@@ -125,7 +127,7 @@ export default function AdminSupportScreen({ navigation }: any) {
       setSelected((current: any) => current?.id === ticketId ? { ...current, status } : current);
     } catch (e) {
       console.error('Failed to update support ticket status:', e);
-      Alert.alert('خطأ', e instanceof Error ? e.message : 'فشل تحديث حالة التذكرة');
+      Alert.alert(t('adminUi.error'), e instanceof Error ? e.message : t('adminUi.supportStatusUpdateFailed'));
     }
     finally { setProcessing(null); }
   };
@@ -144,24 +146,24 @@ export default function AdminSupportScreen({ navigation }: any) {
         : current.map((ticket) => ticket.id === selected.id ? { ...ticket, status: thread.ticket.status } : ticket));
     } catch (e) {
       console.error('Failed to reply to support ticket:', e);
-      Alert.alert('تعذر إرسال الرد', e instanceof Error ? e.message : 'لم يتم إرسال الرسالة.');
+      Alert.alert(t('adminUi.supportReplyFailed'), e instanceof Error ? e.message : t('adminUi.supportMessageNotSent'));
     } finally {
       setSendingReply(false);
     }
   };
 
   const renderTicket = ({ item }: { item: any }) => {
-    const statusInfo = STATUS_META[item.status] ?? { label: item.status, color: UI.textMuted, bg: '#F1F5F9' };
+    const statusInfo = STATUS_META[item.status] ?? { labelKey: '', color: UI.textMuted, bg: '#F1F5F9' };
     const user = item.users as any;
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const date = new Date(item.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
-      <TouchableOpacity style={s.card} onPress={() => openTicket(item)} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${item.subject}`}>
+      <TouchableOpacity style={s.card} onPress={() => openTicket(item)} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel={`${t('adminUi.supportOpenTicket')} ${item.subject}`}>
         <View style={s.cardTop}>
           <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
-            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.labelKey ? t(statusInfo.labelKey) : item.status}</Text>
           </View>
           <View style={s.categoryBadge}>
-            <Text style={s.categoryText}>{CATEGORY_LABELS[item.category ?? ''] ?? item.category ?? 'أخرى'}</Text>
+            <Text style={s.categoryText}>{CATEGORY_LABELS[item.category ?? ''] ? t(CATEGORY_LABELS[item.category ?? '']) : item.category ?? t('adminUi.supportCategoryOther')}</Text>
           </View>
         </View>
         <Text style={s.subject} numberOfLines={2}>{item.subject}</Text>
@@ -171,7 +173,7 @@ export default function AdminSupportScreen({ navigation }: any) {
         <View style={s.cardBottom}>
           <View style={s.userInfoRow}>
              <View style={s.userAvatar}><Ionicons name="person" size={14} color={UI.primary} /></View>
-             <Text style={s.userName}>{user?.full_name ?? 'غير معروف'}</Text>
+             <Text style={s.userName}>{user?.full_name ?? t('adminUi.unknown')}</Text>
           </View>
           <Text style={s.dateText}>{date}</Text>
         </View>
@@ -189,9 +191,9 @@ export default function AdminSupportScreen({ navigation }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>الدعم الفني</Text>
+            <Text style={s.headerTitle}>{t('adminUi.technicalSupport')}</Text>
           </View>
-          <Text style={s.headerCount}>{tickets.length} تذكرة</Text>
+          <Text style={s.headerCount}>{tickets.length} {t('adminUi.supportTicketCount')}</Text>
         </View>
       </View>
 
@@ -204,7 +206,7 @@ export default function AdminSupportScreen({ navigation }: any) {
               onPress={() => setFilter(f.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{t(f.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -216,7 +218,7 @@ export default function AdminSupportScreen({ navigation }: any) {
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
           <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('adminUi.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -231,7 +233,7 @@ export default function AdminSupportScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="headset-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد تذاكر دعم حالياً</Text>
+              <Text style={s.emptyText}>{t('adminUi.supportNoTickets')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -242,7 +244,7 @@ export default function AdminSupportScreen({ navigation }: any) {
         <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
           <View style={[s.modalBox, !compact && s.modalBoxDesktop, { width: Math.min(Math.max(width - 24, 280), 760) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>تفاصيل التذكرة</Text>
+              <Text style={s.modalTitle}>{t('adminUi.supportTicketDetails')}</Text>
               <TouchableOpacity onPress={() => setSelected(null)} style={s.closeBtn}>
                 <Ionicons name="close" size={24} color={UI.textMuted} />
               </TouchableOpacity>
@@ -250,42 +252,42 @@ export default function AdminSupportScreen({ navigation }: any) {
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{gap: 20}}>
                 <View style={s.detailBlock}>
-                  <Text style={s.detailLabel}>الموضوع</Text>
+                  <Text style={s.detailLabel}>{t('adminUi.supportSubject')}</Text>
                   <Text style={s.detailValueMain}>{selected.subject}</Text>
                 </View>
                 
                 <View style={s.detailBlock}>
-                  <Text style={s.detailLabel}>المحادثة</Text>
+                  <Text style={s.detailLabel}>{t('adminUi.supportConversation')}</Text>
                   {threadLoading ? <ActivityIndicator color={UI.primary} style={{ alignSelf: 'center', marginVertical: 20 }} /> : threadError ? (
                     <View style={s.threadErrorBox}>
                       <Text style={s.errorText}>{threadError}</Text>
-                      <TouchableOpacity onPress={() => openTicket(selected)} style={s.smallRetry}><Text style={s.retryText}>إعادة تحميل المحادثة</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => openTicket(selected)} style={s.smallRetry}><Text style={s.retryText}>{t('adminUi.supportReloadConversation')}</Text></TouchableOpacity>
                     </View>
                   ) : messages.length ? messages.map((message) => {
                     const isAdmin = message.users?.role === 'admin';
                     return (
                       <View key={message.id} style={[s.messageBubble, isAdmin ? s.adminBubble : s.userBubble]}>
-                        <Text style={s.messageSender}>{message.users?.full_name ?? (isAdmin ? 'الإدارة' : 'المستخدم')}</Text>
+                        <Text style={s.messageSender}>{message.users?.full_name ?? (isAdmin ? t('adminUi.supportAdministration') : t('adminUi.supportUser'))}</Text>
                         <Text style={s.detailValueMsg}>{message.message}</Text>
-                        <Text style={s.messageDate}>{new Date(message.created_at).toLocaleString('ar-SA')}</Text>
+                        <Text style={s.messageDate}>{new Date(message.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text>
                       </View>
                     );
-                  }) : <Text style={s.noMessages}>لا توجد رسائل ظاهرة في هذه التذكرة.</Text>}
+                  }) : <Text style={s.noMessages}>{t('adminUi.supportNoMessages')}</Text>}
                 </View>
                 
                 <View style={s.detailRow2}>
                   <View style={s.detailBlockHalf}>
-                    <Text style={s.detailLabel}>المستخدم</Text>
-                    <Text style={s.detailValueInfo}>{(selected.users as any)?.full_name ?? 'غير متوفر'}</Text>
+                    <Text style={s.detailLabel}>{t('adminUi.supportUser')}</Text>
+                    <Text style={s.detailValueInfo}>{(selected.users as any)?.full_name ?? t('adminUi.unavailable')}</Text>
                   </View>
                   <View style={s.detailBlockHalf}>
-                    <Text style={s.detailLabel}>القسم / الفئة</Text>
-                    <Text style={s.detailValueInfo}>{CATEGORY_LABELS[selected.category ?? ''] ?? 'أخرى'}</Text>
+                    <Text style={s.detailLabel}>{t('adminUi.supportCategory')}</Text>
+                    <Text style={s.detailValueInfo}>{CATEGORY_LABELS[selected.category ?? ''] ? t(CATEGORY_LABELS[selected.category ?? '']) : t('adminUi.supportCategoryOther')}</Text>
                   </View>
                 </View>
                 
                 <View style={s.actionsContainer}>
-                  <Text style={s.actionLabel}>تغيير حالة التذكرة إلى:</Text>
+                  <Text style={s.actionLabel}>{t('adminUi.supportChangeStatusTo')}</Text>
                   <View style={s.statusActionsRow}>
                     {NEXT_STATUSES.filter(n => n.key !== selected.status).map(n => (
                       <TouchableOpacity
@@ -296,7 +298,7 @@ export default function AdminSupportScreen({ navigation }: any) {
                         activeOpacity={0.8}
                         accessibilityState={{ disabled: processing === selected.id, busy: processing === selected.id }}
                       >
-                        <Text style={[s.statusActionText, { color: n.color }]}>{n.label}</Text>
+                        <Text style={[s.statusActionText, { color: n.color }]}>{t(n.labelKey)}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -304,17 +306,17 @@ export default function AdminSupportScreen({ navigation }: any) {
 
                 {selected.status !== 'closed' && (
                   <View style={s.replySection}>
-                    <Text style={s.actionLabel}>رد الإدارة</Text>
+                    <Text style={s.actionLabel}>{t('adminUi.supportAdminReply')}</Text>
                     <TextInput
                       style={s.replyInput}
                       value={reply}
                       onChangeText={setReply}
-                      placeholder="اكتب رداً واضحاً للمستخدم..."
+                      placeholder={t('adminUi.supportReplyPlaceholder')}
                       placeholderTextColor={UI.textMuted}
                       multiline
                       maxLength={4000}
-                      textAlign="right"
-                      accessibilityLabel="نص رد الإدارة"
+                      textAlign={language === 'ar' ? 'right' : 'left'}
+                      accessibilityLabel={t('adminUi.supportReplyA11y')}
                     />
                     <TouchableOpacity
                       style={[s.sendBtn, (!reply.trim() || sendingReply) && s.sendBtnDisabled]}
@@ -322,7 +324,7 @@ export default function AdminSupportScreen({ navigation }: any) {
                       disabled={!reply.trim() || sendingReply}
                       accessibilityRole="button"
                     >
-                      {sendingReply ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="send" size={17} color="#FFF" /><Text style={s.sendText}>إرسال الرد</Text></>}
+                      {sendingReply ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="send" size={17} color="#FFF" /><Text style={s.sendText}>{t('adminUi.supportSendReply')}</Text></>}
                     </TouchableOpacity>
                   </View>
                 )}
