@@ -25,7 +25,7 @@ export default function EditProfileScreen({
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('إذن الصور', 'نحتاج إذن الوصول للصور لاختيار صورة الحساب.');
+        Alert.alert(t('customer.photosPermission'), t('customer.photosPermissionText'));
         return;
       }
       const picked = await ImagePicker.launchImageLibraryAsync({
@@ -41,9 +41,9 @@ export default function EditProfileScreen({
       await updateUserProfile(user.id, { avatar_url: url });
       await refreshUser();
       setAvatarUrl(url);
-      Alert.alert('تم التحديث ✅', 'تم تغيير صورة حسابك.');
+      Alert.alert(t('customer.photoUpdated'), t('customer.photoUpdatedText'));
     } catch (e: any) {
-      Alert.alert('تعذّر تغيير الصورة', e?.message ?? 'حاول مرة أخرى.');
+      Alert.alert(t('customer.photoUpdateFailed'), e?.message ?? t('customer.tryAgain'));
     } finally {
       setUploadingAvatar(false);
     }
@@ -51,10 +51,10 @@ export default function EditProfileScreen({
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert(t('auth.alert'), 'الرجاء إدخال الاسم');
+      Alert.alert(t('auth.alert'), t('customer.enterName'));
       return;
     }
-    if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
+    if (!user?.id) { Alert.alert(t('common.error'), t('customer.loginFirst')); return; }
     setIsSaving(true);
     try {
       await updateUserProfile(user.id, {
@@ -62,11 +62,11 @@ export default function EditProfileScreen({
         email: email.trim() || undefined,
       });
       await refreshUser();
-      Alert.alert('تم الحفظ ✅', 'تم تحديث بياناتك بنجاح', [
-        { text: 'حسناً', onPress: () => navigation.goBack() },
+      Alert.alert(t('customer.profileSaved'), t('customer.profileSavedText'), [
+        { text: t('common.ok'), onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'تعذّر حفظ التغييرات');
+      Alert.alert(t('common.error'), e?.message ?? t('customer.saveProfileFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -100,7 +100,7 @@ export default function EditProfileScreen({
               onPress={handleChangeAvatar}
               disabled={uploadingAvatar}
               accessibilityRole="button"
-              accessibilityLabel="تغيير الصورة الشخصية"
+              accessibilityLabel={t('customer.changePhoto')}
               accessibilityState={{ disabled: uploadingAvatar, busy: uploadingAvatar }}
             >
               {uploadingAvatar
@@ -110,7 +110,7 @@ export default function EditProfileScreen({
           </View>
         </View>
 
-        <Input label={t('customer.fullName')} placeholder="اسمك" value={name} onChangeText={setName} />
+        <Input label={t('customer.fullName')} placeholder={t('customer.namePlaceholder')} value={name} onChangeText={setName} />
         <Input label={t('customer.emailOptional')} placeholder="example@mail.com" keyboardType="email-address" value={email ?? ''} onChangeText={setEmail} />
 
         {/* Phone (read-only) */}
