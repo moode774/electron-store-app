@@ -11,6 +11,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const STATUS: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'بانتظار المراجعة', color: '#B45309', bg: '#FFFBEB' },
@@ -21,6 +22,7 @@ const STATUS: Record<string, { label: string; color: string; bg: string }> = {
 };
 
 export default function MerchantRefundsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
 
   return (
     <View style={styles.page}>
-      <ScreenHeader title="طلبات الاسترداد" subtitle="القرار والتنفيذ المالي من صلاحية الإدارة" onBack={() => navigation.goBack()} />
+      <ScreenHeader title=t('merchant.refundRequests') subtitle=t('merchant.refundsSubtitle') onBack={() => navigation.goBack()} />
 
       <View style={[styles.filters, isTablet && styles.filtersWide]}>
         {[
@@ -101,7 +103,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
         <View style={styles.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={44} color="#B91C1C" />
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retry} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.retry} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>{t('common.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -112,7 +114,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
           key={isTablet ? 'refund-grid' : 'refund-list'}
           columnWrapperStyle={isTablet ? styles.columnWrapper : undefined}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
-          ListEmptyComponent={<View style={styles.center}><Text style={styles.emptyText}>لا توجد طلبات استرداد بهذه الحالة.</Text></View>}
+          ListEmptyComponent={<View style={styles.center}><Text style={styles.emptyText}>{t('merchant.noRefunds')}</Text></View>}
           renderItem={({ item }) => {
             const meta = STATUS[item.status] ?? { label: item.status, color: '#64748B', bg: '#F1F5F9' };
             const orderItems = Array.isArray(item.orders?.order_items) ? item.orders.order_items : [];
@@ -129,7 +131,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
                   <Text style={styles.amount}>{Number(item.refund_amount ?? 0).toFixed(2)} ر.ي</Text>
                   <Text style={styles.amountLabel}>المبلغ المحسوب للاسترداد</Text>
                 </View>
-                <Text style={styles.label}>السبب</Text>
+                <Text style={styles.label}>{t('merchant.reason')}</Text>
                 <Text style={styles.body}>{item.reason ?? '—'}</Text>
                 {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
                 {orderItems.length ? (
@@ -138,11 +140,11 @@ export default function MerchantRefundsScreen({ navigation }: any) {
                     {orderItems.map((orderItem: any, index: number) => <Text key={`${orderItem.product_name}-${index}`} style={styles.itemLine}>{orderItem.product_name ?? 'منتج'} × {orderItem.quantity ?? 0}</Text>)}
                   </View>
                 ) : null}
-                {item.merchant_response ? <View style={styles.responseBox}><Text style={styles.label}>رد المتجر</Text><Text style={styles.body}>{item.merchant_response}</Text></View> : null}
+                {item.merchant_response ? <View style={styles.responseBox}><Text style={styles.label}>{t('merchant.merchantResponse')}</Text><Text style={styles.body}>{item.merchant_response}</Text></View> : null}
                 {item.decision_reason ? <View style={styles.adminBox}><Text style={styles.label}>سبب القرار</Text><Text style={styles.body}>{item.decision_reason}</Text></View> : null}
                 {item.status === 'pending' ? (
                   <TouchableOpacity style={styles.responseButton} onPress={() => openResponse(item)} accessibilityRole="button" accessibilityLabel="إضافة رد التاجر">
-                    <Text style={styles.responseButtonText}>{item.merchant_response ? 'تحديث رد المتجر' : 'إضافة معلومات للإدارة'}</Text>
+                    <Text style={styles.responseButtonText}>{item.merchant_response ? t('merchant.updateResponse') : t('merchant.addAdminInfo')}</Text>
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -156,11 +158,11 @@ export default function MerchantRefundsScreen({ navigation }: any) {
           <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text style={styles.modalTitle}>رد المتجر على طلب الاسترداد</Text>
             <Text style={styles.modalHint}>اكتب حالة تجهيز الطلب أو أي معلومة تساعد الإدارة. هذا الرد لا يرفض الطلب ولا يغير حالته.</Text>
-            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder="تفاصيل رد المتجر..." placeholderTextColor="#94A3B8" accessibilityLabel="رد المتجر" />
+            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder="تفاصيل رد المتجر..." placeholderTextColor="#94A3B8" accessibilityLabel=t('merchant.merchantResponse') />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
-              <TouchableOpacity style={styles.cancel} onPress={() => setSelected(null)} disabled={sending}><Text style={styles.cancelText}>إلغاء</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.cancel} onPress={() => setSelected(null)} disabled={sending}><Text style={styles.cancelText}>{t('customer.cancel')}</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.confirm, (!response.trim() || sending) && { opacity: 0.5 }]} onPress={sendResponse} disabled={!response.trim() || sending}>
-                {sending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.confirmText}>حفظ الرد</Text>}
+                {sending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.confirmText}>{t('merchant.saveResponse')}</Text>}
               </TouchableOpacity>
             </View>
           </ScrollView>
