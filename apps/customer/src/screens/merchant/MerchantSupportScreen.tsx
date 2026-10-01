@@ -117,8 +117,8 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   ))}
                 </View>
 
-                <TextInput style={styles.inputField} placeholder=t('merchant.ticketSubject') placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
-                <TextInput style={[styles.inputField, styles.textArea]} placeholder=t('merchant.ticketDetails') placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
+                <TextInput style={styles.inputField} placeholder={t('merchant.ticketSubject')} placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
+                <TextInput style={[styles.inputField, styles.textArea]} placeholder={t('merchant.ticketDetails')} placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
                 
                 <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
                   {sending ? <ActivityIndicator color="#fff" size="small" /> : (
