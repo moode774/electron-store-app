@@ -7,6 +7,7 @@ import { useAuthStore } from '@marketplace/shared-hooks';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AdminMoreStackParamList } from '../../navigation/AdminTabNavigator';
 import { BREAKPOINTS, COLORS, FONTS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
 const MENU_ITEMS = [
@@ -88,12 +89,13 @@ const MENU_ITEMS = [
 
 
 const GROUPS = [
-  { title: 'التشغيل وخدمة العملاء', screens: ['AdminProducts', 'AdminDelivery', 'AdminSupport'] },
-  { title: 'المالية والاسترجاع', screens: ['AdminWallet', 'AdminRefunds', 'AdminPhysicalReturns', 'AdminCodCollections', 'AdminFinancialReconciliation'] },
-  { title: 'التسويق والتواصل', screens: ['AdminBanners', 'AdminCoupons', 'AdminBroadcast', 'AdminNotifications'] },
-  { title: 'إعدادات المنصة والتكاملات', screens: ['AdminSettings', 'ApiKeys'] },
-];
+  { titleKey: 'adminUi.groupOperations', screens: ['AdminProducts', 'AdminDelivery', 'AdminSupport'] },
+  { titleKey: 'adminUi.groupFinance', screens: ['AdminWallet', 'AdminRefunds', 'AdminPhysicalReturns', 'AdminCodCollections', 'AdminFinancialReconciliation'] },
+  { titleKey: 'adminUi.groupMarketing', screens: ['AdminBanners', 'AdminCoupons', 'AdminBroadcast', 'AdminNotifications'] },
+  { titleKey: 'adminUi.groupPlatform', screens: ['AdminSettings', 'ApiKeys'] },
+] as const;
 export default function AdminMoreScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const signOut = useAuthStore(s => s.signOut);
@@ -101,32 +103,32 @@ export default function AdminMoreScreen() {
   const { width } = useWindowDimensions();
   const desktop = width >= BREAKPOINTS.desktop;
   const query = search.trim();
-  const matches = MENU_ITEMS.filter(item => (item.title + ' ' + item.description).includes(query));
+  const matches = MENU_ITEMS.filter(item => (t(item.titleKey) + ' ' + t(item.descriptionKey)).includes(query));
   return <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: Math.max(insets.top, 16) }]} keyboardShouldPersistTaps="handled">
     <View style={s.heading}>
       <View style={s.icon}><Ionicons name="shield-checkmark-outline" size={24} color={COLORS.primary} /></View>
-      <View style={{ flex: 1 }}><Text style={s.title}>إدارة التطبيق</Text><Text style={s.subtitle}>إدارة جميع المتاجر والعمليات من مكان واحد</Text></View>
+      <View style={{ flex: 1 }}><Text style={s.title}>{t('adminUi.appManagement')}</Text><Text style={s.subtitle}>{t('adminUi.appManagementDesc')}</Text></View>
     </View>
     <View style={s.search}>
       <Ionicons name="search-outline" size={20} color={COLORS.textMuted} />
-      <TextInput value={search} onChangeText={setSearch} placeholder="ابحث عن أداة أو إعداد…" accessibilityLabel="البحث في أدوات الإدارة" style={s.input} />
-      {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel="مسح البحث" style={s.clear}><Ionicons name="close" size={20} color={COLORS.textMuted} /></TouchableOpacity>}
+      <TextInput value={search} onChangeText={setSearch} placeholder={t('adminUi.searchTool')} accessibilityLabel={t('adminUi.searchAdminTools')} style={s.input} />
+      {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityLabel={t('adminUi.clearSearch')} style={s.clear}><Ionicons name="close" size={20} color={COLORS.textMuted} /></TouchableOpacity>}
     </View>
-    <Text style={s.subtitle}>{matches.length} أداة إدارية</Text>
+    <Text style={s.subtitle}>{matches.length} {t('adminUi.adminTools')}</Text>
     {GROUPS.map(group => {
       const items = matches.filter(item => group.screens.includes(item.screen));
       if (!items.length) return null;
-      return <View key={group.title} style={s.section}>
-        <Text style={s.sectionTitle}>{group.title}</Text>
-        <View style={s.grid}>{items.map(item => <TouchableOpacity key={item.screen} accessibilityRole="button" accessibilityLabel={item.title} onPress={() => navigation.navigate(item.screen)} style={[s.card, desktop && s.desktopCard]} activeOpacity={0.7}>
+      return <View key={group.titleKey} style={s.section}>
+        <Text style={s.sectionTitle}>{t(group.titleKey)}</Text>
+        <View style={s.grid}>{items.map(item => <TouchableOpacity key={item.screen} accessibilityRole="button" accessibilityLabel={t(item.titleKey)} onPress={() => navigation.navigate(item.screen)} style={[s.card, desktop && s.desktopCard]} activeOpacity={0.7}>
           <View style={s.icon}><Ionicons name={item.icon as any} size={22} color={COLORS.primary} /></View>
-          <View style={s.copy}><Text style={s.cardTitle}>{item.title}</Text><Text style={s.description}>{item.description}</Text></View>
+          <View style={s.copy}><Text style={s.cardTitle}>{t(item.titleKey)}</Text><Text style={s.description}>{t(item.descriptionKey)}</Text></View>
           <Ionicons name="chevron-back" size={16} color={COLORS.textMuted} />
         </TouchableOpacity>)}</View>
       </View>;
     })}
-    {!matches.length && <Text style={s.empty}>لا توجد أدوات مطابقة. جرّب اسمًا آخر.</Text>}
-    <TouchableOpacity onPress={signOut} style={s.logout} accessibilityRole="button"><Ionicons name="log-out-outline" size={20} color={COLORS.error} /><Text style={s.logoutText}>تسجيل الخروج</Text></TouchableOpacity>
+    {!matches.length && <Text style={s.empty}>{t('adminUi.noMatchingTools')}</Text>}
+    <TouchableOpacity onPress={signOut} style={s.logout} accessibilityRole="button"><Ionicons name="log-out-outline" size={20} color={COLORS.error} /><Text style={s.logoutText}>{t('adminUi.signOut')}</Text></TouchableOpacity>
   </ScrollView>;
 }
 const s = StyleSheet.create({
