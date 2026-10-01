@@ -24,19 +24,21 @@ import {
   supabase,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { useTranslation } from '../../../i18n';
 
 type FilterTab = 'all' | 'active' | 'delivering' | 'completed';
 
 const PAYMENT_LABELS: Record<string, string> = {
-  cash: 'الدفع عند الاستلام',
-  cod: 'الدفع عند الاستلام',
+  cash: t('customer.cashOnDelivery'),
+  cod: t('customer.cashOnDelivery'),
   jawali: 'محفظة جوالي',
   kuraimi: 'الكريمي',
   card: 'بطاقة بنكية',
   wallet: 'المحفظة',
 };
 
-export default function OrdersListScreen({ navigation }: any) {
+export default function OrdersListScreen({
+  const { t } = useTranslation(); navigation }: any) {
   const user = useAuthStore((s) => s.user);
   const addToCart = useCartStore((s) => s.addToCart);
 
@@ -227,7 +229,7 @@ export default function OrdersListScreen({ navigation }: any) {
 
   const renderOrderCard = ({ item }: { item: OrderSummary }) => {
     const statusConfig = getStatusBadgeConfig(item.status);
-    const storeName = item.merchant_profiles?.store_name ?? 'المتجر';
+    const storeName = item.merchant_profiles?.store_name ?? t('customer.store');
     const dateFormatted = formatDate(item.created_at);
     const totalItems = item.order_items?.length || 1;
     const firstImage = item.order_items?.[0]?.products?.og_image_url ?? null;
@@ -310,7 +312,7 @@ export default function OrdersListScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>طلباتي</Text>
+            <Text style={styles.headerTitle}>{t('common.myOrders')}</Text>
             <Text style={styles.headerSub}>تابع جميع طلباتك بسهولة</Text>
           </View>
 
@@ -406,14 +408,14 @@ export default function OrdersListScreen({ navigation }: any) {
             <View style={styles.emptyContainer}>
               <Ionicons name="bag-handle-outline" size={54} color="#CBD5E1" />
               <Text style={styles.emptyTitleText}>
-                {errorMessage || 'لا توجد طلبات في هذه القائمة'}
+                {errorMessage || t('customer.noOrders')}
               </Text>
               <Text style={styles.emptySubText}>
                 تصفح المنتجات في المتجر وأضف مشترياتك المفضلة للسلة!
               </Text>
               {errorMessage ? (
                 <TouchableOpacity style={styles.retryBtn} onPress={() => loadOrders()}>
-                  <Text style={styles.retryBtnText}>إعادة المحاولة</Text>
+                  <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
