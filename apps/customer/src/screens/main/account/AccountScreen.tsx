@@ -44,6 +44,7 @@ const MENU_ITEMS: { id: string; title: string; icon: string; route: keyof Accoun
 ];
 
 export default function AccountScreen({ navigation }: Props): React.JSX.Element {
+  const { t, language } = useTranslation();
   const layout = useCustomerLayout(1260);
   const isDesktop = layout.desktop;
   const user = useAuthStore((s) => s.user);
