@@ -2,7 +2,7 @@ export const resources = {
   ar: {
     common: {
       retry: 'إعادة المحاولة',
-      signOut: 'تسجيل الخروج',
+      signOut: 'تسجيل الخروج', administration: 'الإدارة', manageApp: 'إدارة التطبيق',
       updateStatus: 'تحديث حالة الطلب',
       editRequest: 'تعديل بيانات الطلب',
       home: 'الرئيسية',
@@ -689,7 +689,7 @@ export const resources = {
       merchantSpace: 'مساحة التاجر', manageStore: 'إدارة المتجر', deliverySpace: 'مساحة المندوب', manageDelivery: 'إدارة التوصيل',
       earnings: 'الأرباح', myOrders: 'طلباتي', myAccount: 'حسابي', receiveOrders: 'استقبال الطلبات', onlineControl: 'تحكم بحالة الاتصال',
       deliveryDashboard: 'لوحة المندوب', deliveryDashboardSub: 'تابع التوصيلات والأرباح من مكان واحد', readyToWork: 'جاهز للعمل',
-      more: 'المزيد', reports: 'التقارير', notifications: 'الإشعارات', search: 'البحث', signOut: 'تسجيل الخروج',
+      more: 'المزيد', reports: 'التقارير', notifications: 'الإشعارات', search: 'البحث', signOut: 'تسجيل الخروج', overview: 'نظرة عامة', storeProducts: 'منتجات المتجر', activeOrders: 'الطلبات النشطة',
     },
     workspace: {
       openFailed: 'تعذّر فتح مساحة العمل',
@@ -702,7 +702,7 @@ export const resources = {
   en: {
     common: {
       retry: 'Try Again',
-      signOut: 'Sign Out',
+      signOut: 'Sign Out', administration: 'Administration', manageApp: 'Manage Application',
       updateStatus: 'Refresh Status',
       editRequest: 'Edit Application',
       home: 'Home',
@@ -1355,7 +1355,7 @@ export const resources = {
       merchantSpace: 'Merchant Space', manageStore: 'Manage Store', deliverySpace: 'Courier Space', manageDelivery: 'Manage Delivery',
       earnings: 'Earnings', myOrders: 'My Orders', myAccount: 'My Account', receiveOrders: 'Receive Orders', onlineControl: 'Control Availability',
       deliveryDashboard: 'Courier Dashboard', deliveryDashboardSub: 'Track deliveries and earnings in one place', readyToWork: 'Ready to Work',
-      more: 'More', reports: 'Reports', notifications: 'Notifications', search: 'Search', signOut: 'Sign Out',
+      more: 'More', reports: 'Reports', notifications: 'Notifications', search: 'Search', signOut: 'Sign Out', overview: 'Overview', storeProducts: 'Store Products', activeOrders: 'Active Orders',
     },
     workspace: {
       openFailed: 'Could not open workspace',
