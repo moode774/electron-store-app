@@ -9,6 +9,7 @@ import {
   Image,
   Easing,
 } from 'react-native';
+import { useTranslation } from '../../i18n';
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,6 +18,7 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX.Element {
+  const { t } = useTranslation();
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -51,7 +53,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps): React.JSX
 
         {/* Text */}
         <Animated.Text style={[styles.tagline, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}>
-          تجربة تسوق أفضل
+          {t('onboarding.betterShopping')}
         </Animated.Text>
       </View>
     </View>
