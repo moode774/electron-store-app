@@ -23,6 +23,7 @@ import {
   reconcileLegacyDeliveredOrder,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const C = {
   primary: COLORS.primary,
@@ -41,26 +42,26 @@ const C = {
 };
 
 const CONFLICT_LABELS: Record<string, string> = {
-  new_order_requires_incident_investigation: 'الطلب جديد ويحتاج تحقيق عطل، وليس تسوية تاريخية.',
-  delivery_assignment_missing: 'تعيين المندوب أو حسابه غير مكتمل.',
-  merchant_profile_missing: 'ملف التاجر المرتبط غير مكتمل.',
-  customer_role_relationship_invalid: 'صاحب الطلب ليس مرتبطًا بدور عميل صحيح.',
-  merchant_role_relationship_invalid: 'مالك ملف المتجر ليس مرتبطًا بدور تاجر صحيح.',
-  delivery_role_relationship_invalid: 'مالك ملف المندوب ليس مرتبطًا بدور توصيل صحيح.',
-  order_payment_already_refunded: 'حالة دفع الطلب مستردة؛ يمنع إنشاء تسوية جديدة.',
-  completed_refund_or_reversal_exists: 'يوجد استرداد مكتمل أو قيد عكسي مالي؛ يمنع إنشاء تسوية جديدة.',
-  settled_timestamp_without_settlement: 'يوجد وقت تسوية بلا سجل تسوية؛ يلزم فحص يدوي.',
-  wallet_transactions_already_exist: 'توجد حركات محفظة سابقة مرتبطة بالطلب.',
-  delivery_earning_already_exists: 'يوجد ربح توصيل سابق مرتبط بالطلب.',
-  ledger_entries_already_exist: 'توجد قيود محاسبية سابقة مرتبطة بالطلب.',
-  cod_collection_already_exists: 'يوجد تحصيل نقدي سابق مرتبط بالطلب.',
-  order_financial_components_unbalanced: 'مكونات الطلب المالية غير متوازنة.',
+  new_order_requires_incident_investigation: 'adminUi.reconConflictNewOrder',
+  delivery_assignment_missing: 'adminUi.reconConflictDeliveryMissing',
+  merchant_profile_missing: 'adminUi.reconConflictMerchantMissing',
+  customer_role_relationship_invalid: 'adminUi.reconConflictCustomerRole',
+  merchant_role_relationship_invalid: 'adminUi.reconConflictMerchantRole',
+  delivery_role_relationship_invalid: 'adminUi.reconConflictDeliveryRole',
+  order_payment_already_refunded: 'adminUi.reconConflictAlreadyRefunded',
+  completed_refund_or_reversal_exists: 'adminUi.reconConflictRefundExists',
+  settled_timestamp_without_settlement: 'adminUi.reconConflictTimestampWithoutSettlement',
+  wallet_transactions_already_exist: 'adminUi.reconConflictWalletTransactions',
+  delivery_earning_already_exists: 'adminUi.reconConflictDeliveryEarning',
+  ledger_entries_already_exist: 'adminUi.reconConflictLedger',
+  cod_collection_already_exists: 'adminUi.reconConflictCod',
+  order_financial_components_unbalanced: 'adminUi.reconConflictUnbalanced',
 };
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار تأكيد الدفع',
-  paid: 'مدفوع',
-  refunded: 'مسترد',
+  pending: 'adminUi.reconPaymentPending',
+  paid: 'adminUi.paymentPaid',
+  refunded: 'adminUi.paymentRefunded',
 };
 
 type FormState = {
@@ -98,6 +99,7 @@ function initialForm(item: LegacyFinancialReconciliationCandidate): FormState {
 }
 
 export default function AdminFinancialReconciliationScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -118,7 +120,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
       setItems(await getAdminLegacyFinancialReconciliationQueue());
     } catch (error) {
       console.error('Failed to load legacy reconciliation queue:', error);
-      setLoadError('تعذر تحميل طلبات المطابقة المالية. لم تُجرَ أي تغييرات.');
+      setLoadError(t('adminUi.reconLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -143,34 +145,34 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
   const submit = async () => {
     if (!selected || !form || submitting) return;
     if (form.confirmOrderNumber.trim() !== selected.order_number) {
-      Alert.alert('رقم الطلب غير مطابق', 'اكتب رقم الطلب الظاهر كما هو لتأكيد أنك تراجع السجل الصحيح.');
+      Alert.alert(t('adminUi.reconOrderMismatch'), t('adminUi.reconOrderMismatchText'));
       return;
     }
     const deliveredAt = new Date(form.deliveredAt);
     if (!form.deliveredAt.trim() || Number.isNaN(deliveredAt.getTime())) {
-      Alert.alert('وقت التسليم مطلوب', 'أدخل وقتًا صحيحًا بصيغة ISO، مثال: 2026-07-10T14:30:00+03:00');
+      Alert.alert(t('adminUi.reconDeliveryTimeRequired'), t('adminUi.reconDeliveryTimeRequiredText'));
       return;
     }
     const values = [form.gross, form.merchant, form.delivery, form.commission, form.tax].map(Number);
     if (values.some((value) => !Number.isFinite(value) || value < 0)) {
-      Alert.alert('المبالغ غير صالحة', 'راجع جميع المبالغ ولا تترك أي مبلغ فارغًا أو سالبًا.');
+      Alert.alert(t('adminUi.reconInvalidAmounts'), t('adminUi.reconInvalidAmountsText'));
       return;
     }
     const [gross, merchant, delivery, commission, tax] = values;
     if (Math.abs(gross - merchant - delivery - commission - tax) > 0.01) {
-      Alert.alert('المبالغ غير متوازنة', 'يجب أن يساوي الإجمالي مستحق التاجر + التوصيل + العمولة + الضريبة.');
+      Alert.alert(t('adminUi.reconUnbalancedAmounts'), t('adminUi.reconUnbalancedAmountsText'));
       return;
     }
     if (!form.statsState) {
-      Alert.alert('قرار الإحصاءات مطلوب', 'حدد هل أضيف الطلب سابقًا إلى عدادات التاجر والمندوب أم لا.');
+      Alert.alert(t('adminUi.reconStatsDecisionRequired'), t('adminUi.reconStatsDecisionText'));
       return;
     }
     if (selected.cod_custody_requires_review && !form.acknowledgeCod) {
-      Alert.alert('إقرار التحصيل النقدي مطلوب', 'أكد أن التحصيل سيبقى معلقًا حتى يرسل المندوب إثبات الحوالة وتراجعه الإدارة.');
+      Alert.alert(t('adminUi.reconCodAckRequired'), t('adminUi.reconCodAckText'));
       return;
     }
     if (form.evidence.trim().length < 5 || form.reason.trim().length < 20) {
-      Alert.alert('الدليل والسبب مطلوبان', 'أدخل مرجع دليل واضح وسبب مراجعة لا يقل عن 20 حرفًا.');
+      Alert.alert(t('adminUi.reconEvidenceReasonRequired'), t('adminUi.reconEvidenceReasonText'));
       return;
     }
 
@@ -196,16 +198,16 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
       setForm(null);
       await load();
       Alert.alert(
-        'تمت المطابقة بأمان',
+        t('adminUi.reconSuccessTitle'),
         result.cod_custody_requires_review
-          ? 'تم إنشاء التسوية. التحصيل النقدي ما زال يحتاج إثبات حوالة من المندوب ومراجعة مستقلة من الإدارة.'
-          : 'تم إنشاء التسوية والقيود والمحافظ مرة واحدة مع حفظ سجل التدقيق.',
+          ? t('adminUi.reconSuccessCod')
+          : t('adminUi.reconSuccessStandard'),
       );
     } catch (error) {
       console.error('Legacy financial reconciliation failed:', error);
       Alert.alert(
-        'لم تتم المطابقة',
-        error instanceof Error ? error.message : 'رفضت قاعدة البيانات العملية ولم تغيّر الأرصدة.',
+        t('adminUi.reconFailedTitle'),
+        error instanceof Error ? error.message : t('adminUi.reconDatabaseRejected'),
       );
     } finally {
       setSubmitting(false);
@@ -219,50 +221,50 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
         <View style={s.cardHeader}>
           <View style={[s.badge, item.is_reconcilable ? s.readyBadge : s.blockedBadge]}>
             <Text style={[s.badgeText, { color: item.is_reconcilable ? C.success : C.danger }]}>
-              {item.is_reconcilable ? 'جاهز للمراجعة' : 'موقوف للفحص اليدوي'}
+              {item.is_reconcilable ? t('adminUi.reconReady') : t('adminUi.reconManualReview')}
             </Text>
           </View>
           <View style={s.orderTitleWrap}>
-            <Text style={s.orderNumber}>طلب {item.order_number}</Text>
+            <Text style={s.orderNumber}>{t('adminUi.order')} {item.order_number}</Text>
             <Text style={s.meta}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
           </View>
         </View>
 
         <View style={s.participants}>
-          <Text style={s.participant}>التاجر: {item.merchant_name ?? 'غير معروف'}</Text>
-          <Text style={s.participant}>المندوب: {item.delivery_name ?? 'غير معروف'}</Text>
-          <Text style={s.participant}>الدفع: {PAYMENT_STATUS_LABELS[item.payment_status] ?? item.payment_status}</Text>
+          <Text style={s.participant}>{t('adminUi.roleMerchant')}: {item.merchant_name ?? t('adminUi.unknown')}</Text>
+          <Text style={s.participant}>{t('adminUi.courier')}: {item.delivery_name ?? t('adminUi.unknown')}</Text>
+          <Text style={s.participant}>{t('adminUi.paymentStatus')}: {PAYMENT_STATUS_LABELS[item.payment_status] ? t(PAYMENT_STATUS_LABELS[item.payment_status]) : item.payment_status}</Text>
         </View>
 
         <View style={s.moneyGrid}>
-          <Text style={s.money}>الإجمالي: {amount(item.gross_amount)} ر.ي</Text>
-          <Text style={s.money}>التاجر: {amount(item.merchant_proceeds)} ر.ي</Text>
-          <Text style={s.money}>التوصيل: {amount(item.delivery_earning)} ر.ي</Text>
-          <Text style={s.money}>المنصة والضريبة: {amount(item.platform_amount)} ر.ي</Text>
+          <Text style={s.money}>{t('adminUi.totalAmount')}: {amount(item.gross_amount)} {t('adminUi.yer')}</Text>
+          <Text style={s.money}>{t('adminUi.roleMerchant')}: {amount(item.merchant_proceeds)} {t('adminUi.yer')}</Text>
+          <Text style={s.money}>{t('adminUi.deliveryFee')}: {amount(item.delivery_earning)} {t('adminUi.yer')}</Text>
+          <Text style={s.money}>{t('adminUi.reconPlatformTax')}: {amount(item.platform_amount)} {t('adminUi.yer')}</Text>
         </View>
 
         {!item.stored_delivered_at && (
           <View style={s.warningBox}>
             <Ionicons name="time-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>وقت التسليم مفقود ويجب إدخاله من دليل موثوق.</Text>
+            <Text style={s.warningText}>{t('adminUi.reconMissingDeliveryTime')}</Text>
           </View>
         )}
         {item.cod_custody_requires_review && (
           <View style={s.warningBox}>
             <Ionicons name="cash-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>طلب نقدي: التسوية لا تعني استلام الإدارة للنقد؛ إثبات الحوالة مسار منفصل.</Text>
+            <Text style={s.warningText}>{t('adminUi.reconCodWarning')}</Text>
           </View>
         )}
         {item.has_active_refund && (
           <View style={s.warningBox}>
             <Ionicons name="wallet-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>يوجد طلب استرداد مالي نشط. قد تكون التسوية الموثقة متطلبًا لمعالجته، ويجب مراجعته فور نجاح المطابقة.</Text>
+            <Text style={s.warningText}>{t('adminUi.reconActiveRefundWarning')}</Text>
           </View>
         )}
         {item.has_active_physical_return && (
           <View style={s.warningBox}>
             <Ionicons name="return-down-back-outline" size={18} color={C.warning} />
-            <Text style={s.warningText}>يوجد إرجاع فعلي نشط مرتبط بهذا الطلب؛ راجع عهدة البضاعة والفحص بعد إنشاء التسوية.</Text>
+            <Text style={s.warningText}>{t('adminUi.reconActiveReturnWarning')}</Text>
           </View>
         )}
 
@@ -276,7 +278,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
 
         {item.is_reconcilable && (
           <TouchableOpacity style={s.reviewButton} onPress={() => open(item)} accessibilityRole="button">
-            <Text style={s.reviewButtonText}>فتح المراجعة الموثقة</Text>
+            <Text style={s.reviewButtonText}>{t('adminUi.reconOpenReview')}</Text>
             <Ionicons name="shield-checkmark" size={19} color="#FFFFFF" />
           </TouchableOpacity>
         )}
@@ -291,8 +293,8 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           <Ionicons name="arrow-forward" size={24} color={C.text} />
         </TouchableOpacity>
         <View style={s.headerText}>
-          <Text style={s.title}>مطابقة الطلبات المالية القديمة</Text>
-          <Text style={s.subtitle}>لا تُنشأ أي تسوية بلا أرقام ودليل وقرار صريح عن العدادات.</Text>
+          <Text style={s.title}>{t('adminUi.reconTitle')}</Text>
+          <Text style={s.subtitle}>{t('adminUi.reconSubtitle')}</Text>
         </View>
       </View>
 
@@ -303,7 +305,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           <Ionicons name="alert-circle-outline" size={48} color={C.danger} />
           <Text style={s.centerText}>{loadError}</Text>
           <TouchableOpacity style={s.retryButton} onPress={() => { setLoading(true); load(); }}>
-            <Text style={s.retryText}>إعادة المحاولة</Text>
+            <Text style={s.retryText}>{t('adminUi.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -319,7 +321,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           ListEmptyComponent={(
             <View style={s.center}>
               <Ionicons name="checkmark-done-circle-outline" size={52} color={C.success} />
-              <Text style={s.centerText}>لا توجد طلبات مسلّمة قديمة بلا تسوية.</Text>
+              <Text style={s.centerText}>{t('adminUi.reconEmpty')}</Text>
             </View>
           )}
         />
@@ -339,26 +341,26 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
                   <Ionicons name="close" size={22} color={C.muted} />
                 </TouchableOpacity>
                 <View style={s.modalTitleWrap}>
-                  <Text style={s.modalTitle}>مطابقة {selected?.order_number}</Text>
-                  <Text style={s.modalSubtitle}>راجع الدليل خارج التطبيق أولًا، ثم أكد البيانات هنا.</Text>
+                  <Text style={s.modalTitle}>{t('adminUi.reconModalTitle')} {selected?.order_number}</Text>
+                  <Text style={s.modalSubtitle}>{t('adminUi.reconModalSubtitle')}</Text>
                 </View>
               </View>
 
-              <Field label="وقت التسليم المؤكد (ISO)" value={form?.deliveredAt ?? ''} onChangeText={(v) => update('deliveredAt', v)} placeholder="2026-07-10T14:30:00+03:00" />
+              <Field label={t('adminUi.reconConfirmedDeliveryTime')} value={form?.deliveredAt ?? ''} onChangeText={(v) => update('deliveredAt', v)} placeholder="2026-07-10T14:30:00+03:00" />
               <View style={[s.twoColumns, compact && s.stack]}>
-                <Field compact label="الإجمالي" value={form?.gross ?? ''} onChangeText={(v) => update('gross', v)} keyboardType="decimal-pad" />
-                <Field compact label="مستحق التاجر" value={form?.merchant ?? ''} onChangeText={(v) => update('merchant', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('adminUi.totalAmount')} value={form?.gross ?? ''} onChangeText={(v) => update('gross', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('adminUi.reconMerchantProceeds')} value={form?.merchant ?? ''} onChangeText={(v) => update('merchant', v)} keyboardType="decimal-pad" />
               </View>
               <View style={[s.twoColumns, compact && s.stack]}>
-                <Field compact label="مستحق التوصيل" value={form?.delivery ?? ''} onChangeText={(v) => update('delivery', v)} keyboardType="decimal-pad" />
-                <Field compact label="عمولة المنصة" value={form?.commission ?? ''} onChangeText={(v) => update('commission', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('adminUi.reconDeliveryProceeds')} value={form?.delivery ?? ''} onChangeText={(v) => update('delivery', v)} keyboardType="decimal-pad" />
+                <Field compact label={t('adminUi.reconPlatformCommission')} value={form?.commission ?? ''} onChangeText={(v) => update('commission', v)} keyboardType="decimal-pad" />
               </View>
-              <Field label="الضريبة" value={form?.tax ?? ''} onChangeText={(v) => update('tax', v)} keyboardType="decimal-pad" />
+              <Field label={t('adminUi.reconTax')} value={form?.tax ?? ''} onChangeText={(v) => update('tax', v)} keyboardType="decimal-pad" />
 
-              <Text style={s.fieldLabel}>هل أضيفت إحصاءات الطلب سابقًا؟</Text>
+              <Text style={s.fieldLabel}>{t('adminUi.reconStatsQuestion')}</Text>
               <View style={[s.choiceRow, compact && s.stack]}>
-                <Choice selected={form?.statsState === 'already_counted'} label="نعم، محسوبة" onPress={() => update('statsState', 'already_counted')} />
-                <Choice selected={form?.statsState === 'not_counted'} label="لا، غير محسوبة" onPress={() => update('statsState', 'not_counted')} />
+                <Choice selected={form?.statsState === 'already_counted'} label={t('adminUi.reconStatsCounted')} onPress={() => update('statsState', 'already_counted')} />
+                <Choice selected={form?.statsState === 'not_counted'} label={t('adminUi.reconStatsNotCounted')} onPress={() => update('statsState', 'not_counted')} />
               </View>
 
               {selected?.cod_custody_requires_review && (
@@ -369,18 +371,18 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
                   accessibilityState={{ checked: !!form?.acknowledgeCod }}
                 >
                   <Ionicons name={form?.acknowledgeCod ? 'checkbox' : 'square-outline'} size={22} color={C.primary} />
-                  <Text style={s.ackText}>أقرّ أن النقد سيبقى معلقًا، ولن يُعد مستلمًا حتى يرفع المندوب إثبات الحوالة وتراجعه إدارة أخرى.</Text>
+                  <Text style={s.ackText}>{t('adminUi.reconCodAcknowledgement')}</Text>
                 </TouchableOpacity>
               )}
 
-              <Field label="مرجع الدليل" value={form?.evidence ?? ''} onChangeText={(v) => update('evidence', v)} placeholder="رقم تذكرة، رابط ملف خاص، أو مرجع كشف موثوق" maxLength={1000} />
-              <Field label="سبب المطابقة (20 حرفًا على الأقل)" value={form?.reason ?? ''} onChangeText={(v) => update('reason', v)} multiline maxLength={2000} />
-              <Field label={`اكتب رقم الطلب للتأكيد: ${selected?.order_number ?? ''}`} value={form?.confirmOrderNumber ?? ''} onChangeText={(v) => update('confirmOrderNumber', v)} />
+              <Field label={t('adminUi.reconEvidenceReference')} value={form?.evidence ?? ''} onChangeText={(v) => update('evidence', v)} placeholder={t('adminUi.reconEvidencePlaceholder')} maxLength={1000} />
+              <Field label={t('adminUi.reconReasonLabel')} value={form?.reason ?? ''} onChangeText={(v) => update('reason', v)} multiline maxLength={2000} />
+              <Field label={`${t('adminUi.reconConfirmOrderNumber')}: ${selected?.order_number ?? ''}`} value={form?.confirmOrderNumber ?? ''} onChangeText={(v) => update('confirmOrderNumber', v)} />
 
               <TouchableOpacity style={[s.submitButton, submitting && s.disabled]} onPress={submit} disabled={submitting}>
                 {submitting ? <ActivityIndicator color="#FFFFFF" /> : (
                   <>
-                    <Text style={s.submitText}>تأكيد وإنشاء التسوية مرة واحدة</Text>
+                    <Text style={s.submitText}>{t('adminUi.reconSubmit')}</Text>
                     <Ionicons name="lock-closed" size={18} color="#FFFFFF" />
                   </>
                 )}
