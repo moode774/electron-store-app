@@ -19,7 +19,7 @@ interface Props {
   route: ScreenRouteProp;
 }
 
-const DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const DAY_KEYS = ['customer.sunday','customer.monday','customer.tuesday','customer.wednesday','customer.thursday','customer.friday','customer.saturday'] as const;
 
 export default function StoreDetailsScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
@@ -48,7 +48,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
       const convId = await getOrCreateConversation(user.id, storeId);
       navigation.navigate('Chat', { conversationId: convId, title: store?.store_name ?? t('customer.store') });
     } catch (error: any) {
-      Alert.alert('تعذّر فتح المحادثة', error?.message ?? t('merchant.connectionRetry'));
+      Alert.alert(t('customer.openConversationFailed'), error?.message ?? t('merchant.connectionRetry'));
     }
   };
   const addToCart = useCartStore((s) => s.addToCart);
@@ -74,7 +74,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
       return;
     }
     if (Number(product.stock_quantity ?? 0) <= 0) {
-      Alert.alert(t('customer.outOfStock'), 'هذا المنتج غير متاح للإضافة حاليًا.');
+      Alert.alert(t('customer.outOfStock'), t('customer.productCannotAdd'));
       return;
     }
     addToCart({
@@ -100,7 +100,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     } catch (error: any) {
       setStore(null);
       setProducts([]);
-      setLoadError(error?.message ?? 'تعذّر تحميل المتجر. تحقق من الاتصال وحاول مجددًا.');
+      setLoadError(error?.message ?? t('customer.storeLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -184,7 +184,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
     coverColor: '#111827',
     rating: store?.rating ?? 0,
     reviews: store?.total_reviews ?? 0,
-    category: store?.store_category ?? 'متجر',
+    category: store?.store_category ?? t('customer.currentStoreFallback'),
     description: store?.store_description ?? '',
     isVerified: store?.is_approved ?? false,
   };
@@ -223,7 +223,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                 <Ionicons name="star" size={14} color="#B45309" />
                 <Text style={styles.statValue}>{STORE.rating}</Text>
               </View>
-              <Text style={styles.statLabel}>{STORE.reviews} تقييم</Text>
+              <Text style={styles.statLabel}>{STORE.reviews} {t('customer.reviewUnit')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -236,11 +236,11 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
               activeOpacity={0.8}
               onPress={toggleFollow}
               accessibilityRole="button"
-              accessibilityLabel={following ? 'إلغاء متابعة المتجر' : 'متابعة المتجر'}
+              accessibilityLabel={following ? t('customer.unfollowStore') : t('customer.followStoreA11y')}
               accessibilityState={{ selected: following }}
             >
               <Text style={[styles.followBtnText, following && styles.followBtnTextActive]}>
-                {following ? '✓ متابَع' : '+ متابعة'}
+                {following ? `✓ ${t('customer.following')}` : `+ ${t('customer.follow')}`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -327,7 +327,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                     <Text style={styles.aboutTitle}>{t('customer.workingHours')}</Text>
                     {hours.map((h) => (
                       <View key={h.id} style={styles.hourRow}>
-                        <Text style={styles.hourDay}>{DAY_NAMES[h.day_of_week]}</Text>
+                        <Text style={styles.hourDay}>{t(DAY_KEYS[h.day_of_week])}</Text>
                         <Text style={[styles.hourTime, h.is_closed && { color: '#EF4444' }]}>
                           {h.is_closed ? t('customer.closed') : `${(h.open_time ?? '').slice(0,5)} - ${(h.close_time ?? '').slice(0,5)}`}
                         </Text>
@@ -346,7 +346,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
                     <Ionicons name="star-outline" size={20} color={COLORS.primary} />
                   </View>
                   <View style={styles.aboutContent}>
-                    <Text style={styles.aboutTitle}>التقييمات ({reviews.length})</Text>
+                    <Text style={styles.aboutTitle}>{t('customer.reviewsTitle')} ({reviews.length})</Text>
                     {reviews.slice(0, 5).map((r) => (
                       <View key={r.id} style={styles.reviewRow}>
                         <Text style={styles.reviewStars}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</Text>
