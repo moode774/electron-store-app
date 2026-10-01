@@ -19,12 +19,14 @@ import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
 import CustomAlert from '../../components/CustomAlert';
+import { useTranslation } from '../../i18n';
 
 const { height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
 
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<any>();
+  const { t, isRTL, textAlign, rowDirection } = useTranslation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
@@ -43,7 +45,7 @@ export default function LoginScreen(): React.JSX.Element {
   const handleSendOtp = async (): Promise<void> => {
     const cleaned = phone.trim().replace(/\s/g, '');
     if (cleaned.length < 9) {
-      showAlert('تنبيه', 'الرجاء إدخال رقم جوال صحيح');
+      showAlert(t('auth.alert'), t('auth.invalidPhone'));
       return;
     }
 
@@ -53,7 +55,7 @@ export default function LoginScreen(): React.JSX.Element {
     setIsLoading(false);
 
     if (error) {
-      showAlert('تعذّر إرسال الرمز', error);
+      showAlert(t('auth.sendFailed'), error);
       return;
     }
 
@@ -70,8 +72,8 @@ export default function LoginScreen(): React.JSX.Element {
             source={require('../../../assets/images/logo.png')}
             style={styles.desktopCoverLogo}
           />
-          <Text style={styles.desktopCoverTitle}>منصة متكاملة</Text>
-          <Text style={styles.desktopCoverSub}>الوجهة الأولى لتجارتك ومشترياتك.</Text>
+          <Text style={styles.desktopCoverTitle}>{t('auth.platformTitle')}</Text>
+          <Text style={styles.desktopCoverSub}>{t('auth.platformSubtitle')}</Text>
         </View>
       )}
 
@@ -98,13 +100,13 @@ export default function LoginScreen(): React.JSX.Element {
                 style={{ width: 100, height: 100, resizeMode: 'contain' }}
               />
             </View>
-            <Text style={styles.welcomeText}>مرحباً بك</Text>
-            <Text style={styles.subtitleText}>سجّل دخولك للوصول إلى حسابك</Text>
+            <Text style={styles.welcomeText}>{t('auth.welcome')}</Text>
+            <Text style={styles.subtitleText}>{t('auth.subtitle')}</Text>
           </View>
 
           {/* Form */}
           <View style={styles.formContainer}>
-            <View style={styles.inputRow}>
+            <View style={[styles.inputRow, { flexDirection: rowDirection }]}>
               <View style={styles.countryCodeBox}>
                 <Text style={styles.countryCodeText}>+967</Text>
               </View>
@@ -113,13 +115,13 @@ export default function LoginScreen(): React.JSX.Element {
 
               <TextInput
                 style={styles.input}
-                placeholder="رقم الهاتف"
+                placeholder={t('auth.phone')}
                 placeholderTextColor="#9CA3AF"
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
                 maxLength={10}
-                textAlign="right"
+                textAlign={textAlign}
                 returnKeyType="done"
                 onSubmitEditing={handleSendOtp}
               />
@@ -134,12 +136,12 @@ export default function LoginScreen(): React.JSX.Element {
               activeOpacity={0.7}
             >
               <Text style={styles.registerLinkText}>
-                ترغب بالانضمام كشريك؟ <Text style={styles.registerLinkBold}>سجل كتاجر أو مندوب</Text>
+                {t('auth.partnerQuestion')} <Text style={styles.registerLinkBold}>{t('auth.partnerRegister')}</Text>
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              style={[styles.loginButton, { flexDirection: rowDirection }, isLoading && styles.loginButtonDisabled]}
               onPress={handleSendOtp}
               disabled={isLoading}
               activeOpacity={0.8}
@@ -148,8 +150,8 @@ export default function LoginScreen(): React.JSX.Element {
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.loginButtonText}>إرسال رمز التحقق</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.loginArrow} />
+                  <Text style={styles.loginButtonText}>{t('auth.sendCode')}</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={[styles.loginArrow, isRTL ? { left: 20, right: undefined } : { right: 20, left: undefined }]} />
                 </>
               )}
             </TouchableOpacity>
