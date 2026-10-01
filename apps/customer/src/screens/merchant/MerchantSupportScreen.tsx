@@ -31,18 +31,18 @@ const CATEGORIES = [
 ];
 
 const TICKET_STATUS: Record<string, { label: string, color: string }> = {
-  open: { label: 'مفتوحة', color: UI.green },
-  in_progress: { label: 'قيد المعالجة', color: UI.blue },
-  waiting_user: { label: 'بانتظارك', color: '#F59E0B' },
-  resolved: { label: 'محلولة', color: UI.textGrey },
-  closed: { label: 'مغلقة', color: UI.textMuted },
+  open: { label: t('customer.ticketOpen'), color: UI.green },
+  in_progress: { label: t('customer.ticketProgress'), color: UI.blue },
+  waiting_user: { label: t('customer.ticketWaiting'), color: '#F59E0B' },
+  resolved: { label: t('customer.ticketResolved'), color: UI.textGrey },
+  closed: { label: t('customer.ticketClosed'), color: UI.textMuted },
 };
 
 const FAQS = [
-  { id: '1', q: 'متى يظهر الرصيد في المحفظة؟', a: 'يظهر الرصيد بعد اكتمال تسوية الطلب. إذا بقي الطلب مسلماً دون تسوية، افتح تذكرة دعم وأرفق رقم الطلب.' },
-  { id: '2', q: 'كيف ألغي طلباً؟', a: 'افتح تفاصيل الطلب واضغط «إلغاء الطلب» واختر السبب. الإلغاء متاح قبل تحويل الطلب إلى «جاهز للمندوب»، ويُعاد المخزون تلقائياً ويُشعَر العميل. بعد مرحلة الجاهزية تواصل مع الدعم.' },
-  { id: '3', q: 'متى يستلم المندوب الطلب؟', a: 'بعد تحويله إلى «جاهز للمندوب» يبقى بانتظار مطالبة مندوب، ثم تظهر مراحل الإسناد والاستلام والتوصيل تلقائياً.' },
-  { id: '4', q: 'كيف أفتح أو أغلق متجري؟', a: 'من «بيانات المتجر» يمكنك تغيير حالة المتجر يدوياً. الجدولة الآلية لساعات العمل غير مفعلة حالياً.' },
+  { id: '1', q: t('merchant.faqWalletQ'), a: t('merchant.faqWalletA') },
+  { id: '2', q: t('merchant.faqCancelQ'), a: t('merchant.faqCancelA') },
+  { id: '3', q: t('merchant.faqCourierQ'), a: t('merchant.faqCourierA') },
+  { id: '4', q: t('merchant.faqStoreQ'), a: t('merchant.faqStoreA') },
 ];
 
 export default function MerchantSupportScreen({ navigation }: any) {
@@ -65,7 +65,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
     setTicketsLoading(true);
     setTicketsError('');
     try { setTickets(await getSupportTickets(user.id)); }
-    catch (error) { setTicketsError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل تذاكر الدعم.'); }
+    catch (error) { setTicketsError(error instanceof Error && error.message ? error.message : t('merchant.loadTicketsFailed')); }
     finally { setTicketsLoading(false); }
   }, [user?.id]);
 
@@ -88,7 +88,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
       setSubject(''); setMessage('');
       Alert.alert(t('merchant.ticketSent'), t('merchant.ticketSentText'));
       loadTickets();
-    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? t('merchant.sendFailed')); }
     finally { setSending(false); }
   };
 
@@ -107,7 +107,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {/* Ticket Form */}
               <View style={[styles.card, isCompact && styles.cardCompact]}>
                 <Text style={styles.sectionTitle}>{t('merchant.openSupportTicket')}</Text>
-                <Text style={styles.sectionDesc}>وضّح المشكلة والطلب المرتبط بها إن وجد، ثم تابع حالة التذكرة والردود من القائمة أدناه:</Text>
+                <Text style={styles.sectionDesc}>{t('merchant.supportExplain')}</Text>
                 
                 <View style={styles.catRow}>
                   {CATEGORIES.map((c) => (
@@ -117,10 +117,10 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   ))}
                 </View>
 
-                <TextInput style={styles.inputField} placeholder={t('merchant.ticketSubject')} placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
-                <TextInput style={[styles.inputField, styles.textArea]} placeholder={t('merchant.ticketDetails')} placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
+                <TextInput style={styles.inputField} placeholder={t('merchant.ticketSubject')} placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel=t('merchant.ticketSubject') />
+                <TextInput style={[styles.inputField, styles.textArea]} placeholder={t('merchant.ticketDetails')} placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel=t('merchant.ticketDetails') />
                 
-                <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
+                <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel=t('merchant.sendSupportTeam') accessibilityState={{ disabled: sending, busy: sending }}>
                   {sending ? <ActivityIndicator color="#fff" size="small" /> : (
                     <>
                        <Text style={styles.submitBtnText}>{t('merchant.sendSupportTeam')}</Text>
@@ -135,7 +135,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {ticketsError ? (
                 <View style={styles.ticketErrorCard} accessibilityRole="alert">
                   <Text style={styles.ticketErrorText}>{ticketsError}</Text>
-                  <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة تحميل تذاكر الدعم">
+                  <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel=t('merchant.reloadTickets')>
                     <Text style={styles.retryText}>{t('common.retry')}</Text>
                   </TouchableOpacity>
                 </View>
