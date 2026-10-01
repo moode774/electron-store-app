@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: '#111827',
@@ -20,29 +21,30 @@ const UI = {
 };
 
 const CATEGORIES = [
-  { value: 'technical', label: 'مشكلة تقنية' },
-  { value: 'payment', label: 'الأرباح والمحفظة' },
-  { value: 'order', label: 'الطلبات' },
-  { value: 'account', label: 'الحساب' },
-  { value: 'other', label: 'أخرى' },
-];
+  { value: 'technical', labelKey: 'delivery.supportTechnical' },
+  { value: 'payment', labelKey: 'delivery.supportPayment' },
+  { value: 'order', labelKey: 'delivery.supportOrders' },
+  { value: 'account', labelKey: 'delivery.supportAccount' },
+  { value: 'other', labelKey: 'delivery.supportOther' },
+] as const;
 
-const TICKET_STATUS: Record<string, { label: string; color: string }> = {
-  open: { label: 'مفتوحة', color: UI.green },
-  in_progress: { label: 'قيد المعالجة', color: UI.blue },
-  waiting_user: { label: 'بانتظارك', color: '#F59E0B' },
-  resolved: { label: 'محلولة', color: UI.textGrey },
-  closed: { label: 'مغلقة', color: UI.textMuted },
+const TICKET_STATUS: Record<string, { labelKey: string; color: string }> = {
+  open: { labelKey: 'delivery.statusOpen', color: UI.green },
+  in_progress: { labelKey: 'delivery.statusProgress', color: UI.blue },
+  waiting_user: { labelKey: 'delivery.statusWaiting', color: '#F59E0B' },
+  resolved: { labelKey: 'delivery.statusResolved', color: UI.textGrey },
+  closed: { labelKey: 'delivery.statusClosed', color: UI.textMuted },
 };
 
 const FAQS = [
-  { id: '1', q: 'كيف أستلم أرباحي؟', a: 'تظهر التوصيلات التي تمت تسويتها في شاشة الأرباح. يمكنك تقديم طلب سحب من الشاشة نفسها ومتابعة حالته مع الدعم.' },
-  { id: '2', q: 'ماذا أفعل إذا لم يفتح الطلب بعد قبوله؟', a: 'تأكد من اتصالك بالإنترنت ثم افتح تبويب "الطلبات". إذا استمرت المشكلة، تواصل مع فريق الدعم الفني عبر هذه الشاشة.' },
-  { id: '3', q: 'كيف أُعدّل بيانات مركبتي؟', a: 'اذهب لـ "المزيد" ثم "بياناتي ومركبتي" وقم بتعديل نوع المركبة أو رقم اللوحة ثم احفظ.' },
-  { id: '4', q: 'كيف أُبلّغ عن مشكلة مع العميل؟', a: 'يمكنك فتح تذكرة دعم أدناه موضحاً فيها رقم الطلب وتفاصيل المشكلة، ثم متابعة الرد من قائمة التذاكر.' },
-];
+  { id: '1', qKey: 'delivery.faq1q', aKey: 'delivery.faq1a' },
+  { id: '2', qKey: 'delivery.faq2q', aKey: 'delivery.faq2a' },
+  { id: '3', qKey: 'delivery.faq3q', aKey: 'delivery.faq3a' },
+  { id: '4', qKey: 'delivery.faq4q', aKey: 'delivery.faq4a' },
+] as const;
 
 export default function DeliverySupportScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useResponsiveLayout(1000);
   const user = useAuthStore((s) => s.user);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
     try {
       setTickets(await getSupportTickets(user.id));
     } catch (error) {
-      setTicketsError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل تذاكر الدعم.');
+      setTicketsError(error instanceof Error && error.message ? error.message : t('delivery.ticketsLoadFailed'));
     } finally {
       setTicketsLoading(false);
     }
@@ -82,15 +84,15 @@ export default function DeliverySupportScreen({ navigation }: any) {
   }, [loadTickets, user?.id]));
 
   const submitTicket = async () => {
-    if (!subject.trim() || !message.trim()) { Alert.alert('تنبيه', 'الرجاء إدخال الموضوع والتفاصيل'); return; }
+    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), t('delivery.supportFieldsRequired')); return; }
     if (!user?.id) return;
     setSending(true);
     try {
       await createSupportTicket({ user_id: user.id, subject: subject.trim(), category, message: message.trim() });
       setSubject(''); setMessage('');
-      Alert.alert('تم الإرسال ✅', 'تم فتح تذكرة دعم. يمكنك فتحها من القائمة لمتابعة الرد.');
+      Alert.alert(t('delivery.ticketSent'), t('delivery.ticketSentText'));
       await loadTickets();
-    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'تعذّر الإرسال'); }
+    } catch (e: any) { Alert.alert(t('shared.error'), e?.message ?? t('delivery.sendFailed')); }
     finally { setSending(false); }
   };
 
@@ -99,10 +101,10 @@ export default function DeliverySupportScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={UI.bgMobile} />
 
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.back')}>
           <Ionicons name="arrow-forward" size={24} color={UI.textDark} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>مركز المساعدة</Text>
+        <Text style={styles.headerTitle}>{t('delivery.helpCenter')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -114,23 +116,23 @@ export default function DeliverySupportScreen({ navigation }: any) {
             <View style={[styles.channelIcon, { backgroundColor: '#DCFCE7' }]}>
               <Ionicons name="logo-whatsapp" size={28} color="#059669" />
             </View>
-            <Text style={styles.channelTitle}>واتساب</Text>
-            <Text style={styles.channelSub}>غير مفعّل حالياً</Text>
+            <Text style={styles.channelTitle}>{t('delivery.whatsapp')}</Text>
+            <Text style={styles.channelSub}>{t('delivery.disabledNow')}</Text>
           </View>
 
           <View style={styles.channelCard}>
             <View style={[styles.channelIcon, { backgroundColor: COLORS.primarySoft }]}>
               <Ionicons name="call" size={28} color={UI.blue} />
             </View>
-            <Text style={styles.channelTitle}>الاتصال</Text>
-            <Text style={styles.channelSub}>استخدم تذكرة الدعم</Text>
+            <Text style={styles.channelTitle}>{t('delivery.call')}</Text>
+            <Text style={styles.channelSub}>{t('delivery.useSupportTicket')}</Text>
           </View>
         </View>
 
         {/* Ticket Form */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>فتح تذكرة دعم</Text>
-          <Text style={styles.sectionDesc}>وضّح لنا المشكلة وسيتواصل معك فريق الدعم قريباً</Text>
+          <Text style={styles.sectionTitle}>{t('delivery.openTicket')}</Text>
+          <Text style={styles.sectionDesc}>{t('delivery.openTicketSub')}</Text>
 
           <View style={styles.catRow}>
             {CATEGORIES.map((c) => (
@@ -140,33 +142,33 @@ export default function DeliverySupportScreen({ navigation }: any) {
                 onPress={() => setCategory(c.value)}
                 activeOpacity={0.7}
                 accessibilityRole="radio"
-                accessibilityLabel={c.label}
+                accessibilityLabel={t(c.labelKey)}
                 accessibilityState={{ checked: category === c.value }}
               >
-                <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{c.label}</Text>
+                <Text style={[styles.catChipText, category === c.value && styles.catChipTextActive]}>{t(c.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <TextInput
             style={styles.inputField}
-            placeholder="موضوع المشكلة..."
+            placeholder={t('delivery.subjectPlaceholder')}
             placeholderTextColor={UI.textMuted}
             value={subject}
             onChangeText={setSubject}
             textAlign="right"
-            accessibilityLabel="موضوع المشكلة"
+            accessibilityLabel={t('delivery.subjectA11y')}
           />
           <TextInput
             style={[styles.inputField, styles.textArea]}
-            placeholder="اشرح لنا تفاصيل المشكلة..."
+            placeholder={t('delivery.messagePlaceholder')}
             placeholderTextColor={UI.textMuted}
             value={message}
             onChangeText={setMessage}
             multiline
             textAlign="right"
             textAlignVertical="top"
-            accessibilityLabel="تفاصيل المشكلة"
+            accessibilityLabel={t('delivery.messageA11y')}
           />
 
           <TouchableOpacity
@@ -175,24 +177,24 @@ export default function DeliverySupportScreen({ navigation }: any) {
             disabled={sending}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel="إرسال تذكرة الدعم"
+            accessibilityLabel={t('delivery.sendTicketA11y')}
             accessibilityState={{ disabled: sending, busy: sending }}
           >
             {sending ? <ActivityIndicator color="#fff" size="small" /> : (
               <>
-                <Text style={styles.submitBtnText}>إرسال التذكرة</Text>
+                <Text style={styles.submitBtnText}>{t('delivery.sendTicket')}</Text>
                 <Ionicons name="paper-plane" size={18} color="#FFFFFF" />
               </>
             )}
           </TouchableOpacity>
         </View>
 
-        {ticketsLoading && <ActivityIndicator color={UI.blue} accessibilityLabel="جاري تحميل تذاكر الدعم" />}
+        {ticketsLoading && <ActivityIndicator color={UI.blue} accessibilityLabel={t('delivery.loadingTickets')} />}
         {ticketsError ? (
           <View style={styles.ticketErrorCard}>
             <Text style={styles.ticketErrorText}>{ticketsError}</Text>
-            <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة تحميل تذاكر الدعم">
-              <Text style={styles.retryText}>إعادة المحاولة</Text>
+            <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel={t('delivery.reloadTickets')}>
+              <Text style={styles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -200,11 +202,11 @@ export default function DeliverySupportScreen({ navigation }: any) {
         {/* Previous Tickets */}
         {tickets.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>تذاكري السابقة</Text>
+            <Text style={styles.sectionTitle}>{t('delivery.previousTickets')}</Text>
             {tickets.map((t, i) => {
               const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
               return (
-                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`فتح تذكرة ${t.subject}`}>
+                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`${t('delivery.openTicketA11y')} ${t.subject}`}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ticketSubject}>{t.subject}</Text>
                     <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
@@ -220,7 +222,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
 
         {/* FAQs */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>أسئلة شائعة</Text>
+          <Text style={styles.sectionTitle}>{t('delivery.faqTitle')}</Text>
           {FAQS.map((faq, index) => {
             const isOpen = expandedId === faq.id;
             return (
@@ -234,9 +236,9 @@ export default function DeliverySupportScreen({ navigation }: any) {
                   accessibilityState={{ expanded: isOpen }}
                 >
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={UI.textMuted} />
-                  <Text style={styles.faqQuestion}>{faq.q}</Text>
+                  <Text style={styles.faqQuestion}>{t(faq.qKey)}</Text>
                 </TouchableOpacity>
-                {isOpen && <Text style={styles.faqAnswer}>{faq.a}</Text>}
+                {isOpen && <Text style={styles.faqAnswer}>{t(faq.aKey)}</Text>}
               </View>
             );
           })}
