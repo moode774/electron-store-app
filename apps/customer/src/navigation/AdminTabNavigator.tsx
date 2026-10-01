@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../i18n';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 
 import ApiKeysScreen from '../screens/shared/ApiKeysScreen';
@@ -156,7 +157,7 @@ function DesktopSidebar() {
       </View>
 
       <View style={sidebarStyles.footer}>
-        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="تسجيل الخروج">
+        <TouchableOpacity style={sidebarStyles.menuItem} onPress={signOut} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={t('admin.signOut')}>
           <Ionicons name="log-out-outline" size={20} color="#94A3B8" />
         </TouchableOpacity>
       </View>
@@ -287,29 +288,29 @@ function DesktopTopHeader() {
     <View style={topHeaderStyles.topHeader}>
       {showFullNavigation ? (
       <View style={topHeaderStyles.navLinks}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel="الرئيسية">
-          <Text style={getStyle('AdminDashboard')}>الرئيسية</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminDashboard')} accessibilityRole="button" accessibilityLabel={t('navigation.home')}>
+          <Text style={getStyle('AdminDashboard')}>{t('navigation.home')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="الطلبات">
-          <Text style={getStyle('AdminOrders')}>الطلبات</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel={t('admin.orders')}>
+          <Text style={getStyle('AdminOrders')}>{t('admin.orders')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMerchants')} accessibilityRole="button" accessibilityLabel="المتاجر">
-          <Text style={getStyle('AdminMerchants')}>المتاجر</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMerchants')} accessibilityRole="button" accessibilityLabel={t('admin.merchants')}>
+          <Text style={getStyle('AdminMerchants')}>{t('admin.merchants')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminUsers')} accessibilityRole="button" accessibilityLabel="المستخدمون">
-          <Text style={getStyle('AdminUsers')}>المستخدمون</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminUsers')} accessibilityRole="button" accessibilityLabel={t('admin.users')}>
+          <Text style={getStyle('AdminUsers')}>{t('admin.users')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminDelivery' })} accessibilityRole="button" accessibilityLabel="السائقون">
-          <Text style={getStyle('AdminDelivery')}>السائقون</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminDelivery' })} accessibilityRole="button" accessibilityLabel={t('admin.drivers')}>
+          <Text style={getStyle('AdminDelivery')}>{t('admin.drivers')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminWallet' })} accessibilityRole="button" accessibilityLabel="السحب">
-          <Text style={getStyle('AdminWallet')}>السحب</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminWallet' })} accessibilityRole="button" accessibilityLabel={t('admin.withdrawals')}>
+          <Text style={getStyle('AdminWallet')}>{t('admin.withdrawals')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel="الإعدادات">
-          <Text style={getStyle('AdminSettings')}>الإعدادات</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel={t('admin.settings')}>
+          <Text style={getStyle('AdminSettings')}>{t('admin.settings')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSupport' })} accessibilityRole="button" accessibilityLabel="الدعم">
-          <Text style={getStyle('AdminSupport')}>الدعم</Text>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSupport' })} accessibilityRole="button" accessibilityLabel={t('admin.support')}>
+          <Text style={getStyle('AdminSupport')}>{t('admin.support')}</Text>
         </TouchableOpacity>
       </View>
       ) : (
@@ -319,14 +320,14 @@ function DesktopTopHeader() {
         </View>
       )}
       <View style={topHeaderStyles.headerRight}>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel="البحث">
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminOrders')} accessibilityRole="button" accessibilityLabel={t('admin.search')}>
           <Ionicons name="search-outline" size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })} accessibilityRole="button" accessibilityLabel="الإشعارات">
+        <TouchableOpacity style={topHeaderStyles.headerIconBtn} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminNotifications' })} accessibilityRole="button" accessibilityLabel={t('admin.notifications')}>
           <Ionicons name="notifications-outline" size={20} color={COLORS.textPrimary} />
           <View style={topHeaderStyles.notificationDot} />
         </TouchableOpacity>
-        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel="حساب المدير">
+        <TouchableOpacity style={topHeaderStyles.avatarMini} onPress={() => navigation.navigate('AdminMore', { screen: 'AdminSettings' })} accessibilityRole="button" accessibilityLabel={t('admin.adminAccount')}>
           <Ionicons name="person" size={17} color={COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -350,6 +351,7 @@ const topHeaderStyles = StyleSheet.create({
 
 // ---- Main Navigator ----
 export default function AdminTabNavigator() {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= BREAKPOINTS.desktop;
 
@@ -375,13 +377,13 @@ export default function AdminTabNavigator() {
       }}
     >
       <Tab.Screen name="AdminDashboard" component={AdminDashboardScreen}
-        options={{ tabBarLabel: 'الرئيسية', tabBarAccessibilityLabel: 'الرئيسية', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('navigation.home'), tabBarAccessibilityLabel: t('navigation.home'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMerchants" component={AdminMerchantsScreen}
-        options={{ tabBarLabel: 'التجار', tabBarAccessibilityLabel: 'التجار', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('admin.merchants'), tabBarAccessibilityLabel: t('admin.merchants'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'storefront' : 'storefront-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminOrders" component={AdminOrdersScreen}
-        options={{ tabBarLabel: 'الطلبات', tabBarAccessibilityLabel: 'الطلبات', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('admin.orders'), tabBarAccessibilityLabel: t('admin.orders'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminUsers" component={AdminUsersScreen}
-        options={{ tabBarLabel: 'المستخدمون', tabBarAccessibilityLabel: 'المستخدمون', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
+        options={{ tabBarLabel: t('admin.users'), tabBarAccessibilityLabel: t('admin.users'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} /> }} />
       <Tab.Screen name="AdminMore" component={MoreNavigator}
         options={{ tabBarLabel: 'الإدارة', tabBarAccessibilityLabel: 'إدارة التطبيق', tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'} size={22} color={color} /> }} />
     </Tab.Navigator>
