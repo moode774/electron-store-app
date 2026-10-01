@@ -121,7 +121,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
         <View style={styles.body}>
           <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{formatMoney(onSale ? item.sale_price : item.base_price)} <Text style={styles.currency}>ر.ي</Text></Text>
+            <Text style={styles.price}>{formatMoney(onSale ? item.sale_price : item.base_price)} <Text style={styles.currency}>{t('merchant.currencyYER')}</Text></Text>
             {onSale ? <Text style={styles.oldPrice}>{formatMoney(item.base_price)}</Text> : null}
           </View>
           <View style={styles.pills}>
@@ -156,7 +156,7 @@ export default function MerchantProductsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <ScreenHeader
         title={t('merchant.products')}
-        subtitle={loading ? t('merchant.loading') : `${products.length} منتج · ${counts.active ?? 0} معروض`}
+        subtitle={loading ? t('merchant.loading') : `${products.length} ${t('merchant.productsCountSuffix')} · ${counts.active ?? 0} ${t('merchant.displayed')}`}
         right={<IconButton icon="add" label={t('merchant.addProduct')} primary onPress={() => navigation.navigate('AddProduct')} />}
       />
 
