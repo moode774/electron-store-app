@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -21,13 +22,14 @@ const UI = {
 };
 
 const AUDIENCES = [
-  { id: '', label: 'الجميع', icon: 'people' },
-  { id: 'customer', label: 'العملاء فقط', icon: 'person' },
-  { id: 'merchant', label: 'التجار فقط', icon: 'storefront' },
-  { id: 'delivery', label: 'السائقين فقط', icon: 'bicycle' },
+  { id: '', labelKey: 'adminUi.audienceAll', icon: 'people' },
+  { id: 'customer', labelKey: 'adminUi.audienceCustomers', icon: 'person' },
+  { id: 'merchant', labelKey: 'adminUi.audienceMerchants', icon: 'storefront' },
+  { id: 'delivery', labelKey: 'adminUi.audienceDrivers', icon: 'bicycle' },
 ] as const;
 
 export default function AdminBroadcastScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const pagePadding = compact ? 12 : 24;
@@ -40,13 +42,13 @@ export default function AdminBroadcastScreen({ navigation }: any) {
 
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
-      Alert.alert('تنبيه', 'يرجى إدخال عنوان ونص الإشعار');
+      Alert.alert(t('adminUi.alert'), t('adminUi.notificationFieldsRequired'));
       return;
     }
     
-    Alert.alert('تأكيد الإرسال', 'هل أنت متأكد من إرسال هذا الإشعار للجمهور المحدد؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      { text: 'إرسال الآن', onPress: async () => {
+    Alert.alert(t('adminUi.sendConfirm'), t('adminUi.sendConfirmText'), [
+      { text: t('adminUi.cancel'), style: 'cancel' },
+      { text: t('adminUi.sendNow'), onPress: async () => {
         setSending(true);
         try {
           const fingerprint = JSON.stringify({ title: title.trim(), body: body.trim(), audience });
@@ -61,13 +63,13 @@ export default function AdminBroadcastScreen({ navigation }: any) {
             idempotencyKey: pendingCampaign.current.idempotencyKey,
           });
           pendingCampaign.current = null;
-          Alert.alert(result.sent > 0 ? 'تم إنشاء الإشعارات' : 'لا يوجد مستلمون', result.sent > 0
-            ? `تم إنشاء ${result.sent} إشعار داخل التطبيق من أصل ${result.matched} مستلم مطابق. لا يؤكد هذا وصول Push إلى الهاتف.`
-            : 'لم يوجد مستخدمون مطابقون للجمهور المحدد، ولم يُنشأ أي إشعار.');
+          Alert.alert(result.sent > 0 ? t('adminUi.notificationsCreated') : t('adminUi.noRecipients'), result.sent > 0
+            ? `${t('adminUi.notificationsCreatedText')} ${result.sent}/${result.matched}`
+            : t('adminUi.noMatchingRecipients'));
           setTitle('');
           setBody('');
         } catch {
-          Alert.alert('خطأ', 'فشل الإرسال. تأكد من تشغيل جدول SQL الخاص بالإشعارات.');
+          Alert.alert(t('adminUi.error'), t('adminUi.broadcastFailed'));
         } finally {
           setSending(false);
         }
@@ -82,17 +84,17 @@ export default function AdminBroadcastScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
             <Ionicons name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>حملات الإشعارات</Text>
+          <Text style={s.headerTitle}>{t('adminUi.campaignsTitle')}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingHorizontal: pagePadding }]} keyboardShouldPersistTaps="handled">
         <View style={[s.card, { width: contentWidth }]}>
-          <Text style={s.cardTitle}>إنشاء إشعار داخل التطبيق</Text>
-          <Text style={s.cardDesc}>يُنشئ هذا الإجراء إشعاراً في صندوق المستخدم. إرسال Push للهاتف يحتاج جهازاً مسجلاً ونتيجة منفصلة من خدمة الإرسال.</Text>
+          <Text style={s.cardTitle}>{t('adminUi.createInApp')}</Text>
+          <Text style={s.cardDesc}>{t('adminUi.createInAppDesc')}</Text>
           
           <View style={s.formGroup}>
-            <Text style={s.label}>الجمهور المستهدف</Text>
+            <Text style={s.label}>{t('adminUi.targetAudience')}</Text>
             <View style={s.audienceRow}>
               {AUDIENCES.map(aud => (
                 <TouchableOpacity 
@@ -101,17 +103,17 @@ export default function AdminBroadcastScreen({ navigation }: any) {
                   onPress={() => setAudience(aud.id)}
                 >
                   <Ionicons name={aud.icon as any} size={18} color={audience === aud.id ? UI.primary : UI.textMuted} />
-                  <Text style={[s.audText, audience === aud.id && s.audTextActive]}>{aud.label}</Text>
+                  <Text style={[s.audText, audience === aud.id && s.audTextActive]}>{t(aud.labelKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={s.formGroup}>
-            <Text style={s.label}>عنوان الإشعار</Text>
+            <Text style={s.label}>{t('adminUi.notificationTitle')}</Text>
             <TextInput 
               style={s.input} 
-              placeholder="مثال: خصم 50% بمناسبة العيد!" 
+              placeholder={t('adminUi.notificationTitleExample')} 
               value={title} 
               onChangeText={setTitle} 
               textAlign="right"
@@ -120,10 +122,10 @@ export default function AdminBroadcastScreen({ navigation }: any) {
           </View>
 
           <View style={s.formGroup}>
-            <Text style={s.label}>محتوى الإشعار</Text>
+            <Text style={s.label}>{t('adminUi.notificationBody')}</Text>
             <TextInput 
               style={[s.input, s.inputArea]} 
-              placeholder="اكتب تفاصيل الإشعار هنا..." 
+              placeholder={t('adminUi.notificationBodyPlaceholder')} 
               value={body} 
               onChangeText={setBody} 
               textAlign="right"
@@ -137,7 +139,7 @@ export default function AdminBroadcastScreen({ navigation }: any) {
           <TouchableOpacity style={s.sendBtn} onPress={handleSend} disabled={sending}>
             {sending ? <ActivityIndicator color="#FFF" /> : (
               <>
-                <Text style={s.sendBtnText}>إرسال الإشعار الآن</Text>
+                <Text style={s.sendBtnText}>{t('adminUi.sendNotificationNow')}</Text>
                 <Ionicons name="send" size={20} color="#FFF" />
               </>
             )}
