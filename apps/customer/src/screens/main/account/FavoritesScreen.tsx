@@ -69,7 +69,7 @@ export default function FavoritesScreen({
             onPress={() => navigation.goBack()}
             activeOpacity={0.72}
             accessibilityRole="button"
-            accessibilityLabel=t('merchant.back')
+            accessibilityLabel={t('merchant.back')}
           >
             <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
           </TouchableOpacity>
