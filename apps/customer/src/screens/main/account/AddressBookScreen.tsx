@@ -5,6 +5,7 @@ import { Card, Button } from '@marketplace/shared-ui';
 import { useAuthStore, getAddresses, deleteAddress, setDefaultAddress, Address } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { Alert } from '../../../components/appAlert';
+import { useTranslation } from '../../../i18n';
 
 export default function AddressBookScreen({ navigation }: any) {
   const layout = useCustomerLayout(1040);
@@ -34,7 +35,7 @@ export default function AddressBookScreen({ navigation }: any) {
 
   const handleDelete = (item: Address) => {
     Alert.alert('حذف العنوان', `هل تريد حذف "${item.full_address}"؟`, [
-      { text: 'تراجع', style: 'cancel' },
+      { text: t('merchant.undo'), style: 'cancel' },
       {
         text: 'حذف',
         style: 'destructive',
@@ -61,8 +62,8 @@ export default function AddressBookScreen({ navigation }: any) {
       <View style={styles.addressHeader}>
         <View style={styles.labelRow}>
           <Text style={styles.labelIcon}>{item.label === 'home' ? '🏠' : '🏢'}</Text>
-          <Text style={styles.labelText}>{item.label === 'home' ? 'المنزل' : item.label}</Text>
-          {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>الافتراضي</Text></View>}
+          <Text style={styles.labelText}>{item.label === 'home' ? t('customer.homeLabel') : item.label}</Text>
+          {item.is_default && <View style={styles.defaultBadge}><Text style={styles.defaultText}>{t('customer.defaultAddress')}</Text></View>}
         </View>
         {busyId === item.id ? (
           <ActivityIndicator size="small" color={COLORS.primary} />
@@ -89,7 +90,7 @@ export default function AddressBookScreen({ navigation }: any) {
           accessibilityRole="button"
           accessibilityLabel="تعيين كعنوان افتراضي"
         >
-          <Text style={styles.makeDefaultText}>تعيين كافتراضي</Text>
+          <Text style={styles.makeDefaultText}>{t('customer.makeDefault')}</Text>
         </TouchableOpacity>
       )}
     </Card>
@@ -102,10 +103,10 @@ export default function AddressBookScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Text style={styles.backIcon}>→</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>عناويني</Text>
+          <Text style={styles.headerTitle}>{t('customer.myAddresses')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -128,14 +129,14 @@ export default function AddressBookScreen({ navigation }: any) {
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>⚠️</Text>
               <Text style={styles.emptyText}>{loadError}</Text>
-              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة المحاولة">
-                <Text style={styles.retryText}>إعادة المحاولة</Text>
+              <TouchableOpacity onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel=t('common.retry')>
+                <Text style={styles.retryText}>{t('common.retry')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyEmoji}>📍</Text>
-              <Text style={styles.emptyText}>لم تقم بإضافة أي عناوين بعد</Text>
+              <Text style={styles.emptyText}>{t('customer.noAddresses')}</Text>
             </View>
           )
         }
@@ -145,7 +146,7 @@ export default function AddressBookScreen({ navigation }: any) {
       <View style={styles.bottomBar}>
         <View style={[styles.bottomBarInner, { paddingHorizontal: layout.gutter }]}>
           <Button
-            title="+ إضافة عنوان جديد"
+            title=t('customer.addNewAddress')
             onPress={() => navigation.navigate('AddAddress')}
           />
         </View>
