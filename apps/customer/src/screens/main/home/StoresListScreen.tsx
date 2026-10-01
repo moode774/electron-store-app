@@ -19,17 +19,18 @@ import { useCustomerLayout } from '../../../components/customer/CustomerResponsi
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../../../i18n';
+import { resources } from '../../../i18n/translations';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
 
 function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
   const label = name.toLowerCase();
-  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
-  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
-  if (label.includes('جمال') || label.includes('beauty') || label.includes('عطر')) return 'sparkles-outline';
-  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
-  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
+  if (label.includes(resources.ar.customer.categoryElectronicsToken) || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes(resources.ar.customer.categoryFashionToken) || label.includes(resources.ar.customer.categoryClothesToken) || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes(resources.ar.customer.categoryBeautyToken) || label.includes('beauty') || label.includes(resources.ar.customer.categoryPerfumeToken)) return 'sparkles-outline';
+  if (label.includes(resources.ar.customer.categoryHomeToken) || label.includes('home')) return 'home-outline';
+  if (label.includes(resources.ar.customer.categorySportsToken) || label.includes('sport')) return 'barbell-outline';
   return 'grid-outline';
 }
 
@@ -121,7 +122,7 @@ export default function StoresListScreen({ navigation, route }: any) {
     reviews_count: Number(s.total_reviews ?? 0),
     logo_url: s.store_logo_url,
     logo_bg: STORE_LOGO_COLORS[idx % STORE_LOGO_COLORS.length],
-    logo_text: s.store_name?.slice(0, 2) || 'متجر',
+    logo_text: s.store_name?.slice(0, 2) || t('customer.currentStoreFallback'),
     logo_text_color: '#172554',
     is_verified: s.is_approved === true,
   }));
@@ -332,7 +333,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                 <Ionicons name="storefront-outline" size={44} color="#CBD5E1" />
                 <Text style={styles.emptyStoresTitle}>{t('customer.noStores')}</Text>
                 <Text style={styles.emptyStoresSub}>
-                  لا توجد نتائج مطابقة الآن. جرّب تغيير البحث أو التصنيف.
+                  {t('customer.noStoreMatchesFull')}
                 </Text>
               </View>
             ) : (
