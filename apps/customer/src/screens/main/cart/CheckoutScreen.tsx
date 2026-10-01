@@ -34,43 +34,11 @@ import { useTranslation } from '../../../i18n';
 // PAYMENT_METHOD_UNAVAILABLE، لذا تُعرض الطرق الأخرى معطّلة كـ«قريباً» بدل
 // السماح باختيارها ثم إرسال cash خلف الكواليس.
 const PAYMENT_OPTIONS = [
-  {
-    id: 'cash',
-    name: t('customer.cashOnDelivery'),
-    subtitle: 'ادفع نقداً عند وصول المندوب إليك',
-    iconType: 'cash-outline',
-    brand: 'COD',
-    brandBg: '#059669',
-    available: true,
-  },
-  {
-    id: 'jawali',
-    name: 'محفظة جوالي',
-    subtitle: 'سيتوفر قريباً',
-    iconType: 'phone-portrait-outline',
-    brand: 'جوالي',
-    brandBg: '#94A3B8',
-    available: false,
-  },
-  {
-    id: 'kuraimi',
-    name: 'الكريمي',
-    subtitle: 'سيتوفر قريباً',
-    iconType: 'business-outline',
-    brand: 'كريمي',
-    brandBg: '#94A3B8',
-    available: false,
-  },
-  {
-    id: 'card',
-    name: 'بطاقة بنكية',
-    subtitle: 'سيتوفر قريباً',
-    iconType: 'card-outline',
-    brand: 'CARD',
-    brandBg: '#94A3B8',
-    available: false,
-  },
-];
+  { id: 'cash', nameKey: 'customer.cashOnDelivery', subtitleKey: 'customer.codSubtitle', iconType: 'cash-outline', brand: 'COD', brandBg: '#059669', available: true },
+  { id: 'jawali', nameKey: 'customer.jawaliWallet', subtitleKey: 'merchant.comingSoon', iconType: 'phone-portrait-outline', brand: 'Jawali', brandBg: '#94A3B8', available: false },
+  { id: 'kuraimi', nameKey: 'customer.kuraimi', subtitleKey: 'merchant.comingSoon', iconType: 'business-outline', brand: 'Kuraimi', brandBg: '#94A3B8', available: false },
+  { id: 'card', nameKey: 'customer.bankCard', subtitleKey: 'merchant.comingSoon', iconType: 'card-outline', brand: 'CARD', brandBg: '#94A3B8', available: false },
+] as const;
 
 export default function CheckoutScreen({ navigation, route }: any) {
   const { t } = useTranslation();
