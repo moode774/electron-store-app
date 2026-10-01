@@ -10,6 +10,7 @@ import {
   ApiKeyInfo, API_V1_URL,
 } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: '#1E3A8A', primaryLight: '#EEF2FF', bg: '#F8FAFC', card: '#FFFFFF',
@@ -17,8 +18,8 @@ const UI = {
   success: '#059669', danger: '#DC2626', warning: '#D97706',
 };
 
-const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+const fmtDate = (d: string | null | undefined, language: string) =>
+  d ? new Date(d).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 async function copyText(text: string): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -33,7 +34,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 export default function ApiKeysScreen() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const layout = useResponsiveLayout(960);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,7 @@ export default function ApiKeysScreen() {
 
   const load = useCallback(async () => {
     try { setKeys(await getMyApiKeys()); }
-    catch { Alert.alert('خطأ', t('shared.loadKeysFailed')); }
+    catch { Alert.alert(t('shared.error'), t('shared.loadKeysFailed')); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -61,31 +62,31 @@ export default function ApiKeysScreen() {
       await load();
     } catch (e: any) {
       const msg = String(e?.message ?? '');
-      Alert.alert('خطأ', msg.includes('max 10') ? t('shared.maxKeys') : t('shared.createKeyFailed'));
+      Alert.alert(t('shared.error'), msg.includes('max 10') ? t('shared.maxKeys') : t('shared.createKeyFailed'));
     } finally { setCreating(false); }
   };
 
   const handleRevoke = (k: ApiKeyInfo) => {
-    Alert.alert(t('shared.revokeKey'), `إلغاء "${k.name}"؟ أي تكامل يستخدمه سيتوقف فوراً.`, [
+    Alert.alert(t('shared.revokeKey'), `${t('shared.revokeConfirm')} (${k.name})`, [
       { text: t('merchant.undo'), style: 'cancel' },
       {
         text: t('shared.revokeKey'), style: 'destructive',
         onPress: async () => {
           try { await revokeApiKey(k.id); await load(); }
-          catch { Alert.alert('خطأ', t('shared.revokeKeyFailed')); }
+          catch { Alert.alert(t('shared.error'), t('shared.revokeKeyFailed')); }
         },
       },
     ]);
   };
 
   const handleDelete = (k: ApiKeyInfo) => {
-    Alert.alert(t('shared.deleteKey'), `حذف "${k.name}" نهائياً من السجل؟`, [
+    Alert.alert(t('shared.deleteKey'), `${t('shared.deleteConfirm')} (${k.name})`, [
       { text: t('merchant.undo'), style: 'cancel' },
       {
         text: t('shared.delete'), style: 'destructive',
         onPress: async () => {
           try { await deleteApiKey(k.id); await load(); }
-          catch { Alert.alert('خطأ', t('shared.deleteKeyFailed')); }
+          catch { Alert.alert(t('shared.error'), t('shared.deleteKeyFailed')); }
         },
       },
     ]);
@@ -101,7 +102,7 @@ export default function ApiKeysScreen() {
           <Text style={s.keyName}>{item.name}</Text>
           <Text style={s.keyPrefix}>{item.key_prefix}</Text>
           <Text style={s.keyMeta}>
-            {item.is_active ? `🟢 ${t('shared.active')}` : `🔴 ${t('shared.revoked')}`} · {t('shared.lastUsed')}: {fmtDate(item.last_used_at)}
+            {item.is_active ? `🟢 ${t('shared.active')}` : `🔴 ${t('shared.revoked')}`} · {t('shared.lastUsed')}: {fmtDate(item.last_used_at, language)}
           </Text>
         </View>
       </View>
