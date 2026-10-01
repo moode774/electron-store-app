@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, createProductWithImages, uploadImageToStorage, getCategories, getMerchantProfile, Category } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
+import { useTranslation } from '../../i18n';
 
 const MAX_IMAGES = 10;
 const NAME_MAX = 80;
@@ -119,6 +120,7 @@ function PreviewCard({ image, name, category, price, salePrice, store }: {
 }
 
 export default function AddProductScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -164,7 +166,7 @@ export default function AddProductScreen({ navigation }: any) {
     { label: 'صورة غلاف', tip: 'المنتجات بصورة واضحة تُفتح أكثر بكثير.', done: images.length > 0 },
     { label: '3 صور أو أكثر', tip: 'أضف زوايا مختلفة وصورة للتفاصيل.', done: images.length >= 3 },
     { label: 'اسم واضح', tip: 'اذكر النوع والماركة والميزة الأهم.', done: name.trim().length >= 12 },
-    { label: 'التصنيف', tip: 'يساعد العميل على إيجاد المنتج بالبحث.', done: !!categoryId },
+    { label: t('merchant.categoryLabel'), tip: 'يساعد العميل على إيجاد المنتج بالبحث.', done: !!categoryId },
     { label: 'وصف مفيد', tip: 'المقاس والخامة واللون تقلل الإرجاع.', done: description.trim().length >= 60 },
     { label: 'مخزون متاح', tip: 'المنتج بلا مخزون لا يمكن طلبه.', done: stockValue > 0 },
   ], [images.length, name, categoryId, description, stockValue]);
@@ -176,9 +178,9 @@ export default function AddProductScreen({ navigation }: any) {
 
   const leave = () => {
     if (!dirty || busy) { navigation.goBack(); return; }
-    Alert.alert('تجاهل التغييرات؟', 'لم يتم حفظ المنتج بعد.', [
-      { text: 'متابعة التعديل', style: 'cancel' },
-      { text: 'تجاهل', style: 'destructive', onPress: () => navigation.goBack() },
+    Alert.alert(t('merchant.discardChanges'), 'لم يتم حفظ المنتج بعد.', [
+      { text: t('merchant.continueEditing'), style: 'cancel' },
+      { text: t('merchant.discard'), style: 'destructive', onPress: () => navigation.goBack() },
     ]);
   };
 
@@ -189,7 +191,7 @@ export default function AddProductScreen({ navigation }: any) {
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (permission.status !== 'granted') {
-          Alert.alert('إذن مرفوض', 'اسمح للتطبيق بالوصول من الإعدادات ثم أعد المحاولة.');
+          Alert.alert(t('customer.locationPermission'), 'اسمح للتطبيق بالوصول من الإعدادات ثم أعد المحاولة.');
           return;
         }
       }
@@ -205,7 +207,7 @@ export default function AddProductScreen({ navigation }: any) {
         setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_IMAGES));
       }
     } catch {
-      Alert.alert('خطأ', source === 'camera' ? 'تعذّر فتح الكاميرا.' : 'تعذّر فتح مكتبة الصور.');
+      Alert.alert(t('merchant.saveFailed'), source === 'camera' ? 'تعذّر فتح الكاميرا.' : 'تعذّر فتح مكتبة الصور.');
     }
   };
 
@@ -221,10 +223,10 @@ export default function AddProductScreen({ navigation }: any) {
   const save = async (publish: boolean) => {
     setSubmitted(true);
     if (errors.name || errors.price || errors.sale) {
-      Alert.alert('أكمل البيانات', errors.name || errors.price || errors.sale);
+      Alert.alert(t('merchant.completeData'), errors.name || errors.price || errors.sale);
       return;
     }
-    if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً.'); return; }
+    if (!user?.id) { Alert.alert(t('merchant.saveFailed'), t('customer.loginFirst')); return; }
 
     try {
       const merchant = await getMerchantProfile(user.id);
@@ -258,7 +260,7 @@ export default function AddProductScreen({ navigation }: any) {
         [{ text: 'حسناً', onPress: () => navigation.goBack() }],
       );
     } catch (e: any) {
-      Alert.alert('تعذّر الحفظ', e?.message ?? 'فشل حفظ المنتج.');
+      Alert.alert(t('merchant.saveFailed'), e?.message ?? 'فشل حفظ المنتج.');
     } finally {
       setPhase('idle');
     }
@@ -266,14 +268,14 @@ export default function AddProductScreen({ navigation }: any) {
 
   const gallery = (
     <Section
-      title="الصور"
+      title=t('merchant.photos')
       hint={`${images.length}/${MAX_IMAGES} · الصورة الأولى هي الغلاف`}
     >
       {images.length ? (
         <>
           <View style={styles.cover}>
             <Image source={{ uri: images[0] }} style={styles.coverImage} resizeMode="cover" />
-            <View style={styles.coverTag}><Ionicons name="star" size={11} color={COLORS.surface} /><Text style={styles.coverTagText}>الغلاف</Text></View>
+            <View style={styles.coverTag}><Ionicons name="star" size={11} color={COLORS.surface} /><Text style={styles.coverTagText}>{t('merchant.cover')}</Text></View>
             <TouchableOpacity style={styles.coverRemove} onPress={() => removeImage(0)} accessibilityRole="button" accessibilityLabel="حذف صورة الغلاف">
               <Ionicons name="trash-outline" size={16} color={COLORS.surface} />
             </TouchableOpacity>
@@ -305,12 +307,12 @@ export default function AddProductScreen({ navigation }: any) {
           <View style={styles.dropzoneActions}>
             <TouchableOpacity style={styles.dropzoneBtnPrimary} onPress={() => void addImages('library')} accessibilityRole="button" accessibilityLabel="اختيار من المعرض">
               <Ionicons name="image-outline" size={17} color={COLORS.surface} />
-              <Text style={styles.dropzoneBtnPrimaryText}>من المعرض</Text>
+              <Text style={styles.dropzoneBtnPrimaryText}>{t('merchant.gallery')}</Text>
             </TouchableOpacity>
             {Platform.OS !== 'web' ? (
               <TouchableOpacity style={styles.dropzoneBtn} onPress={() => void addImages('camera')} accessibilityRole="button" accessibilityLabel="التصوير بالكاميرا">
                 <Ionicons name="camera-outline" size={17} color={COLORS.primary} />
-                <Text style={styles.dropzoneBtnText}>الكاميرا</Text>
+                <Text style={styles.dropzoneBtnText}>{t('merchant.camera')}</Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -320,16 +322,16 @@ export default function AddProductScreen({ navigation }: any) {
   );
 
   const basics = (
-    <Section title="الأساسيات">
+    <Section title=t('merchant.basics')>
       <Field
-        label="اسم المنتج"
+        label=t('merchant.productName')
         placeholder="مثال: حذاء رياضي نايكي للجري - مقاس 42"
         value={name}
         onChangeText={(v) => setName(v.slice(0, NAME_MAX))}
         counter={`${name.length}/${NAME_MAX}`}
         error={submitted ? errors.name : ''}
       />
-      <Text style={styles.fieldLabel}>التصنيف</Text>
+      <Text style={styles.fieldLabel}>{t('merchant.categoryLabel')}</Text>
       {categories.length ? (
         <View style={styles.chips}>
           {categories.map((cat) => {
@@ -357,7 +359,7 @@ export default function AddProductScreen({ navigation }: any) {
 
   const pricing = (
     <Section
-      title="السعر والمخزون"
+      title=t('merchant.priceStock')
       aside={(
         <TouchableOpacity
           style={[styles.toggle, hasSale && styles.toggleOn]}
@@ -409,7 +411,7 @@ export default function AddProductScreen({ navigation }: any) {
       <Text style={styles.fieldLabel}>الكمية المتوفرة</Text>
       <View style={styles.stockRow}>
         <View style={styles.stepper}>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(1)} accessibilityRole="button" accessibilityLabel="زيادة الكمية">
+          <TouchableOpacity style={styles.stepBtn} onPress={() => adjustStock(1)} accessibilityRole="button" accessibilityLabel=t('merchant.increaseQuantity')>
             <Ionicons name="add" size={18} color={COLORS.primary} />
           </TouchableOpacity>
           <TextInput
@@ -526,7 +528,7 @@ export default function AddProductScreen({ navigation }: any) {
           <Ionicons name={Platform.OS === 'web' ? 'arrow-forward' : 'arrow-back'} size={20} color={COLORS.ink} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>منتج جديد</Text>
+          <Text style={styles.headerTitle}>{t('merchant.newProduct')}</Text>
           <Text style={styles.headerSub}>{storeName}</Text>
         </View>
         {!isDesktop ? <ReadinessRing score={score} /> : <View style={{ width: 44 }} />}
