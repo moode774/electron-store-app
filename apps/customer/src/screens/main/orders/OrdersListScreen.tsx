@@ -37,8 +37,8 @@ const PAYMENT_LABELS: Record<string, string> = {
   wallet: 'المحفظة',
 };
 
-export default function OrdersListScreen({
-  const { t } = useTranslation(); navigation }: any) {
+export default function OrdersListScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const addToCart = useCartStore((s) => s.addToCart);
 
