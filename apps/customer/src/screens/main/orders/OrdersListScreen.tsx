@@ -28,13 +28,9 @@ import { useTranslation } from '../../../i18n';
 
 type FilterTab = 'all' | 'active' | 'delivering' | 'completed';
 
-const PAYMENT_LABELS: Record<string, string> = {
-  cash: t('customer.cashOnDelivery'),
-  cod: t('customer.cashOnDelivery'),
-  jawali: 'محفظة جوالي',
-  kuraimi: 'الكريمي',
-  card: 'بطاقة بنكية',
-  wallet: 'المحفظة',
+const PAYMENT_LABEL_KEYS: Record<string, string> = {
+  cash: 'customer.cashOnDelivery', cod: 'customer.cashOnDelivery', jawali: 'customer.jawaliWallet',
+  kuraimi: 'customer.kuraimi', card: 'customer.bankCard', wallet: 'merchant.wallet',
 };
 
 export default function OrdersListScreen({ navigation }: any) {
