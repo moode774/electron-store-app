@@ -8,6 +8,7 @@ import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { adminRequeueFailedDelivery, cancelOrder, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -23,44 +24,45 @@ const UI = {
 };
 
 const STATUS_FILTERS = [
-  { key: '', label: 'الكل' },
-  { key: 'pending', label: 'جديد' },
-  { key: 'preparing', label: 'تحضير' },
-  { key: 'ready', label: 'جاهز' },
-  { key: 'assigned', label: 'تعيين سائق' },
-  { key: 'picked_up', label: 'تم الاستلام' },
-  { key: 'on_the_way', label: 'في الطريق' },
-  { key: 'failed_delivery', label: 'تعذّر التسليم' },
-  { key: 'delivered', label: 'مسلّم' },
-  { key: 'cancelled', label: 'ملغي' },
+  { key: '', labelKey: 'adminUi.all' },
+  { key: 'pending', labelKey: 'adminUi.orderNew' },
+  { key: 'preparing', labelKey: 'adminUi.orderPreparingShort' },
+  { key: 'ready', labelKey: 'adminUi.orderReady' },
+  { key: 'assigned', labelKey: 'adminUi.orderAssignDriver' },
+  { key: 'picked_up', labelKey: 'adminUi.orderPickedUpShort' },
+  { key: 'on_the_way', labelKey: 'adminUi.orderOnWay' },
+  { key: 'failed_delivery', labelKey: 'adminUi.orderFailedDelivery' },
+  { key: 'delivered', labelKey: 'adminUi.orderDelivered' },
+  { key: 'cancelled', labelKey: 'adminUi.orderCancelled' },
 ];
 
 const FAILED_DELIVERY_STATUSES = new Set(['failed_delivery', 'rescheduled']);
 
-const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'جديد', color: '#D97706', bg: '#FEF3C7' },
-  confirmed: { label: 'مؤكد', color: '#2563EB', bg: '#DBEAFE' },
-  preparing: { label: 'يُحضَّر', color: '#7C3AED', bg: '#EDE9FE' },
-  ready: { label: 'جاهز', color: '#0891B2', bg: '#CFFAFE' },
-  assigned: { label: 'تعيين سائق', color: '#DB2777', bg: '#FCE7F3' },
-  picked_up: { label: 'تم الاستلام', color: '#EA580C', bg: '#FFEDD5' },
-  on_the_way: { label: 'في الطريق', color: '#059669', bg: '#D1FAE5' },
-  delivered: { label: 'مسلّم', color: '#059669', bg: '#A7F3D0' },
-  cancelled: { label: 'ملغي', color: '#DC2626', bg: '#FEE2E2' },
-  failed_delivery: { label: 'تعذّر التسليم', color: '#B91C1C', bg: '#FEE2E2' },
-  rescheduled: { label: 'معاد جدولته', color: '#7C3AED', bg: '#EDE9FE' },
-  disputed: { label: 'قيد النزاع', color: '#B45309', bg: '#FEF3C7' },
+const STATUS_LABELS: Record<string, { labelKey: string; color: string; bg: string }> = {
+  pending: { labelKey: 'adminUi.orderNew', color: '#D97706', bg: '#FEF3C7' },
+  confirmed: { labelKey: 'adminUi.orderConfirmed', color: '#2563EB', bg: '#DBEAFE' },
+  preparing: { labelKey: 'adminUi.orderPreparingNow', color: '#7C3AED', bg: '#EDE9FE' },
+  ready: { labelKey: 'adminUi.orderReady', color: '#0891B2', bg: '#CFFAFE' },
+  assigned: { labelKey: 'adminUi.orderAssignDriver', color: '#DB2777', bg: '#FCE7F3' },
+  picked_up: { labelKey: 'adminUi.orderPickedUpShort', color: '#EA580C', bg: '#FFEDD5' },
+  on_the_way: { labelKey: 'adminUi.orderOnWay', color: '#059669', bg: '#D1FAE5' },
+  delivered: { labelKey: 'adminUi.orderDelivered', color: '#059669', bg: '#A7F3D0' },
+  cancelled: { labelKey: 'adminUi.orderCancelled', color: '#DC2626', bg: '#FEE2E2' },
+  failed_delivery: { labelKey: 'adminUi.orderFailedDelivery', color: '#B91C1C', bg: '#FEE2E2' },
+  rescheduled: { labelKey: 'adminUi.orderRescheduledShort', color: '#7C3AED', bg: '#EDE9FE' },
+  disputed: { labelKey: 'adminUi.orderDisputed', color: '#B45309', bg: '#FEF3C7' },
 };
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: 'نقداً عند الاستلام', card: 'بطاقة', wallet: 'المحفظة', stc_pay: 'STC Pay', apple_pay: 'Apple Pay',
+  cash: 'adminUi.paymentCash', card: 'adminUi.paymentCard', wallet: 'adminUi.wallet', stc_pay: 'STC Pay', apple_pay: 'Apple Pay',
 };
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: 'بانتظار التحصيل', paid: 'مدفوع', failed: 'فشل الدفع', refunded: 'مسترد', partially_refunded: 'مسترد جزئياً',
+  pending: 'adminUi.paymentPendingCollection', paid: 'adminUi.paymentPaid', failed: 'adminUi.paymentFailed', refunded: 'adminUi.paymentRefunded', partially_refunded: 'adminUi.paymentPartiallyRefunded',
 };
 
 export default function AdminOrdersScreen({ navigation, route }: any) {
+  const { t, language } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -81,7 +83,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
     if (!selected || resolving) return;
     const reason = resolveReason.trim();
     if (reason.length < 3) {
-      Alert.alert('السبب مطلوب', 'اكتب سبب القرار قبل المتابعة.');
+      Alert.alert(t('adminUi.reasonRequired'), t('adminUi.orderDecisionReasonText'));
       return;
     }
     setResolving(true);
@@ -94,14 +96,14 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
       setSelected(null);
       setResolveReason('');
       Alert.alert(
-        'تم',
+        t('adminUi.done'),
         action === 'cancel'
-          ? 'أُلغي الطلب وأُعيدت الكمية للمخزون. تأكد من إرجاع البضاعة للتاجر.'
-          : 'أُعيد طرح الطلب للمناديب وأُلغي إسناده للمندوب السابق.',
+          ? t('adminUi.orderCancelSuccess')
+          : t('adminUi.orderRequeueSuccess'),
       );
       await load();
     } catch (e: unknown) {
-      Alert.alert('تعذّر تنفيذ القرار', e instanceof Error && e.message ? e.message : 'حاول مجددًا.');
+      Alert.alert(t('adminUi.orderDecisionFailed'), e instanceof Error && e.message ? e.message : t('adminUi.tryAgain'));
     } finally {
       setResolving(false);
     }
@@ -114,7 +116,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
       setOrders(data);
     } catch (e) {
       console.error('Failed to load admin orders:', e);
-      setError('تعذر تحميل الطلبات. تحقق من الاتصال ثم أعد المحاولة.');
+      setError(t('adminUi.ordersLoadFailed'));
     }
     finally { setLoading(false); setRefreshing(false); }
   }, [filter]);
@@ -136,7 +138,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
     : orders;
 
   const renderOrder = ({ item }: { item: any }) => {
-    const statusInfo = STATUS_LABELS[item.status] ?? { label: item.status, color: UI.textMuted, bg: '#F1F5F9' };
+    const statusInfo = STATUS_LABELS[item.status] ?? { labelKey: '', color: UI.textMuted, bg: '#F1F5F9' };
     const merchant = item.merchant_profiles;
     const address = item.addresses;
     const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -145,7 +147,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
       <View style={[s.card, !desktop && { padding: 14, borderRadius: 16, shadowOpacity: 0, elevation: 0 }]}>
         <View style={s.cardTop}>
           <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
-            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+            <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.labelKey ? t(statusInfo.labelKey) : item.status}</Text>
           </View>
           <View style={s.orderMeta}>
             <Text style={s.orderNum}>#{item.order_number ?? item.id.slice(0, 8)}</Text>
@@ -158,23 +160,23 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
         <View style={s.detailsBlock}>
           <View style={s.detailRow}>
             <View style={s.detailIcon}><Ionicons name="storefront" size={14} color={UI.primary} /></View>
-            <Text style={s.detailText}>{merchant?.store_name ?? 'غير متوفر'}</Text>
+            <Text style={s.detailText}>{merchant?.store_name ?? t('adminUi.unavailable')}</Text>
           </View>
           {address && (
             <View style={s.detailRow}>
               <View style={[s.detailIcon, { backgroundColor: '#F1F5F9' }]}><Ionicons name="location" size={14} color={UI.textMuted} /></View>
-              <Text style={s.detailText}>{address.full_address ?? address.city ?? 'غير متوفر'}</Text>
+              <Text style={s.detailText}>{address.full_address ?? address.city ?? t('adminUi.unavailable')}</Text>
             </View>
           )}
         </View>
 
         <View style={s.cardBottom}>
           <View style={s.amountWrap}>
-            <Text style={s.totalAmount}>{item.total_amount?.toFixed(2)} ر.ي</Text>
-            <Text style={s.deliveryFee}>التوصيل: {item.delivery_fee?.toFixed(2) ?? '0.00'} ر.ي</Text>
+            <Text style={s.totalAmount}>{item.total_amount?.toFixed(2)} {t('adminUi.yer')}</Text>
+            <Text style={s.deliveryFee}>{t('adminUi.deliveryFee')}: {item.delivery_fee?.toFixed(2) ?? '0.00'} {t('adminUi.yer')}</Text>
           </View>
-          <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)} accessibilityRole="button" accessibilityLabel={`تفاصيل الطلب ${item.order_number ?? item.id}`}>
-             <Text style={s.viewDetailsText}>التفاصيل</Text>
+          <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)} accessibilityRole="button" accessibilityLabel={`${t('adminUi.orderDetails')} ${item.order_number ?? item.id}`}>
+             <Text style={s.viewDetailsText}>{t('adminUi.details')}</Text>
              <Ionicons name="chevron-back" size={14} color={UI.primary} />
           </TouchableOpacity>
         </View>
@@ -191,9 +193,9 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
               <Ionicons name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
-            <Text style={s.headerTitle}>الطلبات</Text>
+            <Text style={s.headerTitle}>{t('adminUi.orders')}</Text>
           </View>
-          <Text style={s.headerCount}>{visibleOrders.length} طلب</Text>
+          <Text style={s.headerCount}>{visibleOrders.length} {t('adminUi.ordersCount')}</Text>
         </View>
         <View style={[s.searchBox, { width: contentWidth }]}>
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
@@ -201,12 +203,12 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
             style={s.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="رقم الطلب، العميل، الهاتف أو المتجر..."
+            placeholder={t('adminUi.orderSearchPlaceholder')}
             placeholderTextColor={UI.textMuted}
             textAlign="right"
-            accessibilityLabel="البحث في طلبات الإدارة"
+            accessibilityLabel={t('adminUi.adminOrdersSearchA11y')}
           />
-          {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel="مسح البحث"><Ionicons name="close-circle" size={20} color={UI.textMuted} /></TouchableOpacity>}
+          {!!search && <TouchableOpacity onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel={t('adminUi.clearSearch')}><Ionicons name="close-circle" size={20} color={UI.textMuted} /></TouchableOpacity>}
         </View>
       </View>
 
@@ -231,7 +233,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
         <View style={s.center} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={48} color={UI.danger} />
           <Text style={s.errorText}>{error}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }} accessibilityRole="button"><Text style={s.retryText}>{t('adminUi.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -246,7 +248,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
           ListEmptyComponent={
             <View style={s.center}>
               <Ionicons name="receipt-outline" size={48} color={UI.border} />
-              <Text style={s.emptyText}>لا توجد طلبات لعرضها</Text>
+              <Text style={s.emptyText}>{t('adminUi.noOrdersToShow')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -257,42 +259,42 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
         <View style={[s.modalOverlay, !compact && s.modalOverlayDesktop]}>
           <View style={[s.modalBox, !compact && s.modalBoxDesktop, { width: Math.min(Math.max(width - 24, 280), 720) }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>تفاصيل الطلب #{selected?.order_number ?? ''}</Text>
+              <Text style={s.modalTitle}>{t('adminUi.orderDetails')} #{selected?.order_number ?? ''}</Text>
               <TouchableOpacity onPress={() => setSelected(null)} style={s.closeBtn}>
                 <Ionicons name="close" size={22} color={UI.textMuted} />
               </TouchableOpacity>
             </View>
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingBottom: 20 }}>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>الحالة</Text>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.status')}</Text>
                   <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{STATUS_LABELS[selected.status]?.label ?? selected.status}</Text>
                 </View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المتجر</Text><Text style={s.detailVal}>{selected.merchant_profiles?.store_name ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>العميل</Text><Text style={s.detailVal}>{selected.customer?.full_name ?? selected.users?.full_name ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>هاتف العميل</Text><Text style={s.detailVal}>{selected.customer?.phone ?? selected.users?.phone ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المندوب</Text><Text style={s.detailVal}>{selected.delivery_profiles?.users?.full_name ?? selected.drivers?.full_name ?? 'لم يتم التعيين'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>العنوان</Text><Text style={s.detailVal}>{selected.addresses?.full_address ?? selected.addresses?.city ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>الإجمالي الفرعي</Text><Text style={s.detailVal}>{Number(selected.subtotal ?? 0).toFixed(2)} ر.ي</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>المبلغ الإجمالي</Text><Text style={s.detailVal}>{selected.total_amount?.toFixed(2)} ر.ي</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>رسوم التوصيل</Text><Text style={s.detailVal}>{selected.delivery_fee?.toFixed(2) ?? '0.00'} ر.ي</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>طريقة الدفع</Text><Text style={s.detailVal}>{PAYMENT_METHOD_LABELS[selected.payment_method] ?? selected.payment_method ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>حالة الدفع</Text><Text style={s.detailVal}>{PAYMENT_STATUS_LABELS[selected.payment_status] ?? selected.payment_status ?? '—'}</Text></View>
-                <View style={s.detailBlock}><Text style={s.detailLbl}>التاريخ</Text><Text style={s.detailVal}>{new Date(selected.created_at).toLocaleString('ar-SA')}</Text></View>
-                {selected.delivered_at ? <View style={s.detailBlock}><Text style={s.detailLbl}>وقت التسليم</Text><Text style={s.detailVal}>{new Date(selected.delivered_at).toLocaleString('ar-SA')}</Text></View> : null}
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.store')}</Text><Text style={s.detailVal}>{selected.merchant_profiles?.store_name ?? '—'}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.customer')}</Text><Text style={s.detailVal}>{selected.customer?.full_name ?? selected.users?.full_name ?? '—'}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.customerPhone')}</Text><Text style={s.detailVal}>{selected.customer?.phone ?? selected.users?.phone ?? '—'}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.courier')}</Text><Text style={s.detailVal}>{selected.delivery_profiles?.users?.full_name ?? selected.drivers?.full_name ?? t('adminUi.notAssigned')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.address')}</Text><Text style={s.detailVal}>{selected.addresses?.full_address ?? selected.addresses?.city ?? '—'}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.subtotal')}</Text><Text style={s.detailVal}>{Number(selected.subtotal ?? 0).toFixed(2)} {t('adminUi.yer')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.totalAmount')}</Text><Text style={s.detailVal}>{selected.total_amount?.toFixed(2)} {t('adminUi.yer')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.deliveryFee')}</Text><Text style={s.detailVal}>{selected.delivery_fee?.toFixed(2) ?? '0.00'} {t('adminUi.yer')}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.paymentMethod')}</Text><Text style={s.detailVal}>{PAYMENT_METHOD_LABELS[selected.payment_method] ? t(PAYMENT_METHOD_LABELS[selected.payment_method]) : selected.payment_method ?? '—'}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.paymentStatus')}</Text><Text style={s.detailVal}>{PAYMENT_STATUS_LABELS[selected.payment_status] ? t(PAYMENT_STATUS_LABELS[selected.payment_status]) : selected.payment_status ?? '—'}</Text></View>
+                <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.date')}</Text><Text style={s.detailVal}>{new Date(selected.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text></View>
+                {selected.delivered_at ? <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.deliveryTime')}</Text><Text style={s.detailVal}>{new Date(selected.delivered_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</Text></View> : null}
                 {Array.isArray(selected.order_items) && selected.order_items.length > 0 ? (
                   <View style={s.sectionBlock}>
-                    <Text style={s.sectionTitle}>العناصر</Text>
+                    <Text style={s.sectionTitle}>{t('adminUi.items')}</Text>
                     {selected.order_items.map((item: any) => (
                       <View key={item.id} style={s.itemRow}>
-                        <Text style={s.itemPrice}>{Number(item.total_price ?? ((item.unit_price ?? 0) * (item.quantity ?? 0))).toFixed(2)} ر.ي</Text>
-                        <Text style={s.itemName}>{item.product_name ?? item.products?.name ?? 'منتج'} × {item.quantity}</Text>
+                        <Text style={s.itemPrice}>{Number(item.total_price ?? ((item.unit_price ?? 0) * (item.quantity ?? 0))).toFixed(2)} {t('adminUi.yer')}</Text>
+                        <Text style={s.itemName}>{item.product_name ?? item.products?.name ?? t('adminUi.product')} × {item.quantity}</Text>
                       </View>
                     ))}
                   </View>
                 ) : null}
                 {Array.isArray(selected.order_tracking) && selected.order_tracking.length > 0 ? (
                   <View style={s.sectionBlock}>
-                    <Text style={s.sectionTitle}>سجل الحالة</Text>
+                    <Text style={s.sectionTitle}>{t('adminUi.statusHistory')}</Text>
                     {selected.order_tracking.map((entry: any) => (
                       <View key={entry.id} style={s.trackingRow}>
                         <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString('ar-SA')}</Text>
@@ -300,23 +302,23 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                       </View>
                     ))}
                   </View>
-                ) : <Text style={s.noTracking}>لا توجد أحداث تتبع مسجلة لهذا الطلب.</Text>}
-                {selected.notes ? <View style={s.detailBlock}><Text style={s.detailLbl}>ملاحظات</Text><Text style={s.detailVal}>{selected.notes}</Text></View> : null}
+                ) : <Text style={s.noTracking}>{t('adminUi.noTrackingEvents')}</Text>}
+                {selected.notes ? <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.notes')}</Text><Text style={s.detailVal}>{selected.notes}</Text></View> : null}
                 {FAILED_DELIVERY_STATUSES.has(selected.status) ? (
                   <View style={s.sectionBlock}>
-                    <Text style={s.sectionTitle}>معالجة تعذّر التسليم</Text>
-                    <Text style={s.detailLbl}>لم يُحصَّل أي مبلغ ولم تتم تسوية مالية لهذا الطلب.</Text>
+                    <Text style={s.sectionTitle}>{t('adminUi.failedDeliveryHandling')}</Text>
+                    <Text style={s.detailLbl}>{t('adminUi.failedDeliveryNoSettlement')}</Text>
                     <TextInput
                       style={s.resolveInput}
                       value={resolveReason}
                       onChangeText={setResolveReason}
-                      placeholder="سبب القرار (إلزامي)"
+                      placeholder={t('adminUi.decisionReasonRequiredPlaceholderShort')}
                       placeholderTextColor={UI.textMuted}
                       multiline
                       maxLength={1000}
                       editable={!resolving}
                       textAlign="right"
-                      accessibilityLabel="سبب قرار معالجة تعذّر التسليم"
+                      accessibilityLabel={t('adminUi.failedDeliveryReasonA11y')}
                     />
                     <View style={s.resolveRow}>
                       <TouchableOpacity
@@ -325,7 +327,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                         disabled={resolving}
                         accessibilityRole="button"
                       >
-                        <Text style={s.resolveBtnText}>إعادة الطرح لمندوب آخر</Text>
+                        <Text style={s.resolveBtnText}>{t('adminUi.requeueToCourier')}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[s.resolveBtn, { backgroundColor: UI.danger }, resolving && { opacity: 0.6 }]}
@@ -333,7 +335,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                         disabled={resolving}
                         accessibilityRole="button"
                       >
-                        {resolving ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={s.resolveBtnText}>إلغاء الطلب وإرجاع المخزون</Text>}
+                        {resolving ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={s.resolveBtnText}>{t('adminUi.cancelAndRestock')}</Text>}
                       </TouchableOpacity>
                     </View>
                   </View>
