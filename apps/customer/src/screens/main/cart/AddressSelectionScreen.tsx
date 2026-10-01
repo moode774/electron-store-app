@@ -20,24 +20,26 @@ import {
   getAddresses,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { useTranslation } from '../../../i18n';
 
 import * as Location from 'expo-location';
 
-const AREA_LABELS: Record<string, string> = {
-  [SERVICE_AREAS.SANAA]: 'صنعاء',
-  [SERVICE_AREAS.ADEN]: 'عدن',
-  [SERVICE_AREAS.IBB]: 'إب',
-  [SERVICE_AREAS.TAIZ]: 'تعز',
+const AREA_LABEL_KEYS: Record<string, string> = {
+  [SERVICE_AREAS.SANAA]: 'customer.sanaa',
+  [SERVICE_AREAS.ADEN]: 'customer.aden',
+  [SERVICE_AREAS.IBB]: 'customer.ibb',
+  [SERVICE_AREAS.TAIZ]: 'customer.taiz',
 };
 
 const ADDRESS_TYPES = [
-  { id: 'المنزل', label: 'المنزل', icon: 'home-outline', selectedIcon: 'home' },
-  { id: 'العمل', label: 'العمل', icon: 'briefcase-outline', selectedIcon: 'briefcase' },
-  { id: 'استلام شحنة', label: 'استلام شحنة', icon: 'cube-outline', selectedIcon: 'cube' },
-  { id: 'أخرى', label: 'أخرى', icon: 'ellipsis-horizontal-circle-outline', selectedIcon: 'ellipsis-horizontal-circle' },
-];
+  { id: 'home', labelKey: 'customer.homeLabel', icon: 'home-outline', selectedIcon: 'home' },
+  { id: 'work', labelKey: 'customer.workLabel', icon: 'briefcase-outline', selectedIcon: 'briefcase' },
+  { id: 'shipment', labelKey: 'customer.addressShipmentPickup', icon: 'cube-outline', selectedIcon: 'cube' },
+  { id: 'other', labelKey: 'customer.other', icon: 'ellipsis-horizontal-circle-outline', selectedIcon: 'ellipsis-horizontal-circle' },
+] as const;
 
 export default function AddressSelectionScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -47,7 +49,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
 
   // Address Input Form (Matching Mockup)
   const [selectedCity, setSelectedCity] = useState<string>(SERVICE_AREAS.SANAA);
-  const [addressType, setAddressType] = useState('المنزل');
+  const [addressType, setAddressType] = useState('home');
   const [streetAddress, setStreetAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -100,8 +102,8 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          'إذن الموقع',
-          'لم يتم السماح بالوصول إلى الموقع. يرجى تفعيل إذن الموقع من إعدادات المتصفح أو الجهاز.'
+          t('customer.locationPermission'),
+          t('customer.addressPermissionText')
         );
         return;
       }
@@ -142,40 +144,40 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             if (detectedStreet) {
               setStreetAddress(detectedStreet);
             } else {
-              setStreetAddress(`موقعك الحالي (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
+              setStreetAddress(`${t('customer.addressCurrentLocation')} (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
             }
             if (place.streetNumber || place.name) {
-              setLandmark(place.name || `مبنى ${place.streetNumber}`);
+              setLandmark(place.name || `${t('customer.addressBuilding')} ${place.streetNumber}`);
             }
             Alert.alert(
-              'تم تحديد موقعك 📍',
-              `تم تحديد الموقع داخل ${AREA_LABELS[matchedCity] ?? matchedCity} وتعبئة تفاصيل العنوان.`
+              t('customer.addressLocated'),
+              `${t('customer.addressLocatedText')} ${AREA_LABEL_KEYS[matchedCity] ? t(AREA_LABEL_KEYS[matchedCity]) : matchedCity}`
             );
           } else {
             setCurrentCoords(null);
             Alert.alert(
-              'الموقع خارج نطاق التوصيل',
-              `تم تحديد موقعك، لكن المدينة (${detectedCity || 'غير معروفة'}) ليست ضمن مناطق التوصيل المتاحة حالياً. اختر مدينة مدعومة وأدخل عنواناً داخلها.`
+              t('customer.addressOutOfRange'),
+              `${t('customer.addressOutOfRangeText')} (${detectedCity || t('customer.unspecified')})`
             );
           }
         } else {
           setCurrentCoords(null);
           Alert.alert(
-            'تعذّر تحديد مدينة مدعومة',
-            'تم الحصول على الإحداثيات، لكن لم نستطع مطابقتها مع منطقة توصيل مدعومة. اختر المدينة والعنوان يدويًا.'
+            t('customer.addressUnsupportedCity'),
+            t('customer.addressUnsupportedCityText')
           );
         }
       } catch {
         setCurrentCoords(null);
         Alert.alert(
-          'تعذّر التحقق من المدينة',
-          'تم الحصول على GPS لكن تعذّر التحقق من أن الموقع داخل منطقة توصيل مدعومة. اختر المدينة والعنوان يدويًا.'
+          t('customer.addressCityCheckFailed'),
+          t('customer.addressCityCheckFailedText')
         );
       }
     } catch (err: any) {
       Alert.alert(
-        'خطأ في تحديد الموقع',
-        'تعذّر جلب موقعك الحالي من الجهاز. تأكد من تفعيل خدمة GPS والسماح بالصلاحيات.'
+        t('customer.locationError'),
+        t('customer.locationErrorText')
       );
     } finally {
       setLocating(false);
@@ -184,7 +186,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
 
   const handleContinueToPayment = async () => {
     if (!user?.id) {
-      Alert.alert('تنبيه', 'يرجى تسجيل الدخول أولاً للمتابعة');
+      Alert.alert(t('auth.alert'), t('customer.addressLoginFirst'));
       return;
     }
 
@@ -193,7 +195,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
     // If new address form filled or no saved address selected
     if (useNewAddress || !targetAddressId || streetAddress.trim().length > 0) {
       if (!streetAddress.trim()) {
-        Alert.alert('تنبيه', 'يرجى كتابة الشارع والحي لعنوان التوصيل');
+        Alert.alert(t('auth.alert'), t('customer.addressStreetRequired'));
         return;
       }
 
@@ -211,7 +213,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         });
         targetAddressId = newAddr.id;
       } catch (err: any) {
-        Alert.alert('خطأ', err?.message || 'تعذّر حفظ العنوان الجديد، حاول مجدداً');
+        Alert.alert(t('shared.error'), err?.message || t('customer.addressSaveFailed'));
         setSubmitting(false);
         return;
       } finally {
@@ -236,8 +238,8 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <Ionicons name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>عنوان التوصيل</Text>
-            <Text style={styles.headerSub}>حدد مكان استلام طلبك</Text>
+            <Text style={styles.headerTitle}>{t('customer.addressSelectionTitle')}</Text>
+            <Text style={styles.headerSub}>{t('customer.addressSelectionSub')}</Text>
           </View>
           <View style={{ width: 42 }} />
         </View>
@@ -249,7 +251,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
               <Ionicons name="checkmark" size={14} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelDone]}>سلة المشتريات</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelDone]}>{t('customer.addressStepCart')}</Text>
           </View>
           <View style={[styles.stepLine, styles.stepLineDone]} />
 
@@ -258,7 +260,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleActive]}>
               <Ionicons name="location" size={15} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelActive]}>العنوان</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelActive]}>{t('customer.addressStepAddress')}</Text>
           </View>
           <View style={styles.stepLine} />
 
@@ -267,7 +269,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={styles.stepCircle}>
               <Ionicons name="card-outline" size={15} color="#94A3B8" />
             </View>
-            <Text style={styles.stepLabel}>الدفع</Text>
+            <Text style={styles.stepLabel}>{t('customer.addressStepPayment')}</Text>
           </View>
           <View style={styles.stepLine} />
 
@@ -276,7 +278,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={styles.stepCircle}>
               <Ionicons name="checkmark-done-outline" size={15} color="#94A3B8" />
             </View>
-            <Text style={styles.stepLabel}>تأكيد الطلب</Text>
+            <Text style={styles.stepLabel}>{t('customer.addressStepConfirm')}</Text>
           </View>
         </View>
       </View>
@@ -322,7 +324,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 1. المدينة */}
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="location-outline" size={16} color="#172554" />
-            <Text style={styles.sectionTitleText}>المدينة</Text>
+            <Text style={styles.sectionTitleText}>{t('customer.addressCity')}</Text>
           </View>
           <View style={styles.cityChipsRow}>
             {Object.values(SERVICE_AREAS).map((cityKey) => {
@@ -336,7 +338,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                 >
                   {isSelected && <Ionicons name="checkmark-circle" size={16} color="#172554" style={{ marginLeft: 4 }} />}
                   <Text style={[styles.cityChipText, isSelected && styles.cityChipTextSelected]}>
-                    {AREA_LABELS[cityKey] || cityKey}
+                    {AREA_LABEL_KEYS[cityKey] ? t(AREA_LABEL_KEYS[cityKey]) : cityKey}
                   </Text>
                 </TouchableOpacity>
               );
@@ -346,7 +348,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           {/* 2. نوع العنوان */}
           <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
             <Ionicons name="pricetag-outline" size={16} color="#172554" />
-            <Text style={styles.sectionTitleText}>نوع العنوان</Text>
+            <Text style={styles.sectionTitleText}>{t('customer.addressType')}</Text>
           </View>
           <View style={styles.typeChipsRow}>
             {ADDRESS_TYPES.map((typeObj) => {
@@ -365,7 +367,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                     style={{ marginLeft: 6 }}
                   />
                   <Text style={[styles.typeChipText, isSelected && styles.typeChipTextSelected]}>
-                    {typeObj.label}
+                    {t(typeObj.labelKey)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -378,10 +380,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <Ionicons name="location-outline" size={18} color="#94A3B8" />
             </View>
             <View style={styles.inputCol}>
-              <Text style={styles.inputLabelText}>الشارع والحي *</Text>
+              <Text style={styles.inputLabelText}>{t('customer.addressStreetDistrict')}</Text>
               <TextInput
                 style={styles.textInputStyle}
-                placeholder="مثال : شارع حدة - حي الروضة"
+                placeholder={t('customer.addressStreetExample')}
                 placeholderTextColor="#94A3B8"
                 value={streetAddress}
                 onChangeText={setStreetAddress}
@@ -396,10 +398,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <Ionicons name="business-outline" size={18} color="#94A3B8" />
             </View>
             <View style={styles.inputCol}>
-              <Text style={styles.inputLabelText}>أقرب معلم بارز (اختياري)</Text>
+              <Text style={styles.inputLabelText}>{t('customer.addressLandmarkOptional')}</Text>
               <TextInput
                 style={styles.textInputStyle}
-                placeholder="مثال : بجانب مسجد التقوى / خلف المول"
+                placeholder={t('customer.addressLandmarkExample')}
                 placeholderTextColor="#94A3B8"
                 value={landmark}
                 onChangeText={setLandmark}
@@ -414,10 +416,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               <Ionicons name="call-outline" size={18} color="#94A3B8" />
             </View>
             <View style={styles.inputCol}>
-              <Text style={styles.inputLabelText}>رقم هاتف جهة التواصل عند التوصيل (اختياري)</Text>
+              <Text style={styles.inputLabelText}>{t('customer.addressContactOptional')}</Text>
               <TextInput
                 style={styles.textInputStyle}
-                placeholder="مثال : 77XXXXXXX"
+                placeholder={t('customer.addressPhoneExample')}
                 placeholderTextColor="#94A3B8"
                 keyboardType="phone-pad"
                 value={contactPhone}
@@ -437,7 +439,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             />
             <View style={styles.switchRightTextWrap}>
               <Ionicons name="shield-checkmark-outline" size={16} color="#172554" style={{ marginLeft: 6 }} />
-              <Text style={styles.switchLabelText}>حفظ هذا العنوان لاستخدامه مستقبلاً في حسابك</Text>
+              <Text style={styles.switchLabelText}>{t('customer.addressSaveFuture')}</Text>
             </View>
           </View>
         </View>
@@ -446,7 +448,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="bookmark-outline" size={18} color="#172554" />
-            <Text style={styles.sectionTitleText}>العناوين المحفوظة</Text>
+            <Text style={styles.sectionTitleText}>{t('customer.addressSaved')}</Text>
           </View>
 
           {loadingAddresses ? (
@@ -455,7 +457,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <View style={styles.savedList}>
               {savedAddresses.map((item) => {
                 const isSelected = !useNewAddress && selectedAddressId === item.id;
-                const isHome = item.label?.includes('منزل') || item.label?.includes('المنزل');
+                const isHome = item.label === 'home' || item.label === t('customer.homeLabel');
                 return (
                   <TouchableOpacity
                     key={item.id}
@@ -474,7 +476,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                       style={styles.dotsBtn}
                       onPress={() => navigation.getParent()?.navigate('More', { screen: 'AddressBook' })}
                       accessibilityRole="button"
-                      accessibilityLabel="إدارة العناوين"
+                      accessibilityLabel={t('customer.addressManage')}
                     >
                       <Ionicons name="ellipsis-vertical" size={16} color="#94A3B8" />
                     </TouchableOpacity>
@@ -482,10 +484,10 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
                     {/* Middle Column: Details */}
                     <View style={styles.savedDetailsCol}>
                       <View style={styles.savedTitleRow}>
-                        <Text style={styles.savedLabelText}>{item.label || 'عنوان مخصص'}</Text>
+                        <Text style={styles.savedLabelText}>{item.label === 'home' ? t('customer.homeLabel') : item.label === 'work' ? t('customer.workLabel') : item.label === 'shipment' ? t('customer.addressShipmentPickup') : item.label || t('customer.addressCustom')}</Text>
                         {item.is_default && (
                           <View style={styles.preferredBadge}>
-                            <Text style={styles.preferredBadgeText}>مفضل</Text>
+                            <Text style={styles.preferredBadgeText}>{t('customer.addressPreferred')}</Text>
                           </View>
                         )}
                       </View>
@@ -512,7 +514,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
               })}
             </View>
           ) : (
-            <Text style={styles.noAddressesText}>لا توجد عناوين محفوظة سابقة. أدخل تفاصيل عنوانك أعلاه.</Text>
+            <Text style={styles.noAddressesText}>{t('customer.addressNoSaved')}</Text>
           )}
         </View>
       </ScrollView>
@@ -521,7 +523,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       <View style={styles.bottomBar}>
         <View style={styles.bottomSubRow}>
           <Ionicons name="shield-checkmark-outline" size={14} color="#64748B" />
-          <Text style={styles.bottomSubText}>سيتم استخدام هذا العنوان لإتمام الطلب</Text>
+          <Text style={styles.bottomSubText}>{t('customer.addressUsedForOrder')}</Text>
         </View>
 
         <TouchableOpacity
@@ -535,7 +537,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
           ) : (
             <View style={styles.continueBtnInner}>
               <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
-              <Text style={styles.continueBtnText}>المتابعة إلى الدفع</Text>
+              <Text style={styles.continueBtnText}>{t('customer.addressContinuePayment')}</Text>
             </View>
           )}
         </TouchableOpacity>
