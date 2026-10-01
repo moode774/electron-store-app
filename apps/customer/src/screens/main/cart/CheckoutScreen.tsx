@@ -28,6 +28,7 @@ import {
   isCartItemSelected,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
+import { useTranslation } from '../../../i18n';
 
 // السيرفر (place_order_group) يقبل الدفع نقداً فقط حالياً ويرفض غيره بـ
 // PAYMENT_METHOD_UNAVAILABLE، لذا تُعرض الطرق الأخرى معطّلة كـ«قريباً» بدل
@@ -35,7 +36,7 @@ import { Alert } from '../../../components/appAlert';
 const PAYMENT_OPTIONS = [
   {
     id: 'cash',
-    name: 'الدفع عند الاستلام',
+    name: t('customer.cashOnDelivery'),
     subtitle: 'ادفع نقداً عند وصول المندوب إليك',
     iconType: 'cash-outline',
     brand: 'COD',
@@ -72,6 +73,7 @@ const PAYMENT_OPTIONS = [
 ];
 
 export default function CheckoutScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const { items, getSelectedByStore, clearSelected } = useCartStore();
   const user = useAuthStore((s) => s.user);
   // يُطلب فقط ما حدده العميل في السلة
@@ -252,14 +254,14 @@ export default function CheckoutScreen({ navigation, route }: any) {
     setSubmitError('');
 
     if (!user?.id) {
-      Alert.alert('تنبيه', 'يجب تسجيل الدخول لطلب المنتجات');
+      Alert.alert(t('auth.alert'), 'يجب تسجيل الدخول لطلب المنتجات');
       return;
     }
 
     if (!selectedAddress) {
-      Alert.alert('تنبيه', 'يرجى تحديد عنوان التوصيل أولاً', [
+      Alert.alert(t('auth.alert'), 'يرجى تحديد عنوان التوصيل أولاً', [
         {
-          text: 'اختيار العنوان',
+          text: t('merchant.chooseAddress'),
           onPress: () => navigation.navigate('AddressSelection'),
         },
       ]);
@@ -267,7 +269,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
     }
 
     if (selectedItems.length === 0) {
-      Alert.alert('تنبيه', 'لم تحدد أي منتج للطلب. ارجع للسلة وحدد المنتجات المطلوبة.');
+      Alert.alert(t('auth.alert'), 'لم تحدد أي منتج للطلب. ارجع للسلة وحدد المنتجات المطلوبة.');
       return;
     }
 
@@ -370,8 +372,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <Ionicons name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
-            <Text style={styles.headerTitle}>الدفع</Text>
-            <Text style={styles.headerSub}>أنت على بعد خطوة واحدة من إتمام طلبك</Text>
+            <Text style={styles.headerTitle}>{t('customer.payment')}</Text>
+            <Text style={styles.headerSub}>{t('merchant.checkoutSubtitle')}</Text>
           </View>
           <View style={{ width: 42 }} />
         </View>
@@ -383,7 +385,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleDone]}>
               <Ionicons name="checkmark" size={14} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelDone]}>سلة المشتريات</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelDone]}>{t('customer.shoppingCart')}</Text>
           </View>
           <View style={[styles.stepLine, styles.stepLineDone]} />
 
@@ -401,7 +403,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={[styles.stepCircle, styles.stepCircleActive]}>
               <Ionicons name="card" size={15} color="#FFFFFF" />
             </View>
-            <Text style={[styles.stepLabel, styles.stepLabelActive]}>الدفع</Text>
+            <Text style={[styles.stepLabel, styles.stepLabelActive]}>{t('customer.payment')}</Text>
           </View>
           <View style={styles.stepLine} />
 
@@ -441,7 +443,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             </View>
           </View>
           <View style={styles.changeAddressBadge}>
-            <Text style={styles.changeAddressText}>تغيير</Text>
+            <Text style={styles.changeAddressText}>{t('merchant.change')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -458,7 +460,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               color="#64748B"
             />
             <View style={styles.summaryTitleWrap}>
-              <Text style={styles.cardTitle}>ملخص الطلب</Text>
+              <Text style={styles.cardTitle}>{t('customer.orderSummary')}</Text>
               <Text style={styles.itemsCountBadge}>{totalCount} منتجات</Text>
             </View>
           </TouchableOpacity>
@@ -490,7 +492,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                 <View style={styles.costsCol}>
                   <View style={styles.costItemRow}>
                     <Text style={styles.costValueText}>{cartTotal.toLocaleString()} ر.ي</Text>
-                    <Text style={styles.costLabelText}>المجموع الفرعي</Text>
+                    <Text style={styles.costLabelText}>{t('customer.subtotal')}</Text>
                   </View>
 
                   <View style={styles.costItemRow}>
@@ -515,7 +517,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   {couponApplied && (
                     <View style={styles.costItemRow}>
                       <Text style={styles.discountGreenText}>{discount.toLocaleString()}- ر.ي</Text>
-                      <Text style={styles.costLabelText}>كوبون خصم</Text>
+                      <Text style={styles.costLabelText}>{t('customer.discountCoupon')}</Text>
                     </View>
                   )}
 
@@ -535,7 +537,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                           : 'المبلغ النهائي يُحتسب عند تأكيد الطلب'}
                       </Text>
                     </View>
-                    <Text style={styles.totalCostLabel}>الإجمالي</Text>
+                    <Text style={styles.totalCostLabel}>{t('customer.total')}</Text>
                   </View>
                 </View>
               </View>
@@ -557,7 +559,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
               <Ionicons name="information-circle-outline" size={13} color="#64748B" />
               <Text style={styles.secureBadgeText}>المتاح حالياً: الدفع عند الاستلام</Text>
             </View>
-            <Text style={styles.cardTitle}>اختر طريقة الدفع</Text>
+            <Text style={styles.cardTitle}>{t('merchant.paymentMethod')}</Text>
           </View>
 
           <View style={styles.paymentMethodsList}>
@@ -592,7 +594,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                     </View>
                   ) : (
                     <View style={styles.pmSoonBadge}>
-                      <Text style={styles.pmSoonText}>قريباً</Text>
+                      <Text style={styles.pmSoonText}>{t('merchant.comingSoon')}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -615,7 +617,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="pricetag-outline" size={17} color="#172554" />
-            <Text style={styles.cardTitle}>كوبون خصم</Text>
+            <Text style={styles.cardTitle}>{t('customer.discountCoupon')}</Text>
           </View>
 
           {couponApplied ? (
@@ -628,7 +630,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   setCouponMsg('');
                 }}
               >
-                <Text style={styles.removeCouponText}>إلغاء</Text>
+                <Text style={styles.removeCouponText}>{t('customer.cancel')}</Text>
               </TouchableOpacity>
 
               <View style={styles.appliedCouponBadge}>
@@ -650,7 +652,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
                   {checkingCoupon ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.couponApplyBtnText}>تطبيق</Text>
+                    <Text style={styles.couponApplyBtnText}>{t('customer.apply')}</Text>
                   )}
                 </TouchableOpacity>
 
@@ -689,9 +691,9 @@ export default function CheckoutScreen({ navigation, route }: any) {
             <View style={styles.taxInvoiceRightCol}>
               <View style={styles.taxInvoiceTitleRow}>
                 <Ionicons name="receipt-outline" size={17} color="#172554" style={{ marginLeft: 6 }} />
-                <Text style={styles.taxInvoiceTitle}>فاتورة ضريبية</Text>
+                <Text style={styles.taxInvoiceTitle}>{t('merchant.taxInvoice')}</Text>
               </View>
-              <Text style={styles.taxInvoiceSub}>أريد الحصول على فاتورة ضريبية رسمية</Text>
+              <Text style={styles.taxInvoiceSub}>{t('merchant.wantTaxInvoice')}</Text>
             </View>
           </View>
         </View>
@@ -721,7 +723,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.bottomBarRow}>
           {/* Left Column: Total Cost */}
           <View style={styles.bottomTotalCol}>
-            <Text style={styles.bottomTotalLabel}>الإجمالي الكلي</Text>
+            <Text style={styles.bottomTotalLabel}>{t('customer.total')}</Text>
             <Text style={styles.bottomTotalValue}>{finalTotal.toLocaleString()} ر.ي</Text>
             <Text style={styles.bottomVatSub}>شامل رسوم التوصيل — يُحتسب النهائي عند التأكيد</Text>
           </View>
@@ -738,7 +740,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
             ) : (
               <View style={styles.checkoutBtnInner}>
                 <Ionicons name="lock-closed" size={16} color="#FFFFFF" />
-                <Text style={styles.checkoutBtnText}>إتمام الدفع</Text>
+                <Text style={styles.checkoutBtnText}>{t('customer.placeOrder')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -752,12 +754,12 @@ export default function CheckoutScreen({ navigation, route }: any) {
         <View style={styles.trustFooterBar}>
           <View style={styles.trustItem}>
             <Ionicons name="shield-checkmark-outline" size={13} color="#64748B" />
-            <Text style={styles.trustText}>دفع آمن 100%</Text>
+            <Text style={styles.trustText}>{t('customer.securePayment')}</Text>
           </View>
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
             <Ionicons name="bus-outline" size={13} color="#64748B" />
-            <Text style={styles.trustText}>توصيل سريع وآمن</Text>
+            <Text style={styles.trustText}>{t('customer.fastDelivery')}</Text>
           </View>
           <Text style={styles.trustDivider}>|</Text>
           <View style={styles.trustItem}>
