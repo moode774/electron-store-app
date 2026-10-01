@@ -11,80 +11,20 @@ import { useTranslation } from '../../i18n';
 
 type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
 const MENU_ITEMS = [
-  { title: 'إعدادات المنصة', description: 'العمولات ورسوم التوصيل ومناطق الخدمة', icon: 'settings-outline', screen: 'AdminSettings' as keyof AdminMoreStackParamList },
-  { title: 'مركز الإشعارات', description: 'متابعة تنبيهات المنصة', icon: 'notifications-outline', screen: 'AdminNotifications' as keyof AdminMoreStackParamList },
-  {
-    title: 'مراجعة المنتجات',
-    description: 'اعتماد المنتجات الجديدة أو إعادتها للتاجر مع سبب واضح',
-    icon: 'cube',
-    screen: 'AdminProducts' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'السائقون والمندوبين',
-    description: 'إدارة الموافقات ومتابعة أداء المندوبين',
-    icon: 'bicycle',
-    screen: 'AdminDelivery' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'طلبات السحب',
-    description: 'معالجة طلبات الأرباح للتجار والمندوبين',
-    icon: 'wallet',
-    screen: 'AdminWallet' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'مفاتيح API (ربط الذكاء الاصطناعي)',
-    description: 'إنشاء مفاتيح لربط النظام مع Claude أو أي نموذج AI',
-    icon: 'key',
-    screen: 'ApiKeys' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'طلبات الاسترجاع',
-    description: 'مراجعة الاسترجاعات والموافقة أو الرفض',
-    icon: 'refresh',
-    screen: 'AdminRefunds' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'الإرجاعات المادية',
-    description: 'مراجعة الكميات وجدولة الاستلام والفحص وإكمال الاسترداد',
-    icon: 'return-down-back',
-    screen: 'AdminPhysicalReturns' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'المطابقة المالية التاريخية',
-    description: 'تسوية الطلبات القديمة ذات السجل المالي الناقص قبل الاسترداد',
-    icon: 'git-compare',
-    screen: 'AdminFinancialReconciliation' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'تحصيلات الدفع عند الاستلام',
-    description: 'مراجعة عهدة النقد وإثباتات تحويل المندوبين والنزاعات',
-    icon: 'cash',
-    screen: 'AdminCodCollections' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'الدعم الفني والشكاوى',
-    description: 'متابعة ومعالجة تذاكر دعم المستخدمين',
-    icon: 'headset',
-    screen: 'AdminSupport' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'إدارة البنرات (CMS)',
-    description: 'إدارة الإعلانات والبنرات في التطبيق',
-    icon: 'images',
-    screen: 'AdminBanners' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'إدارة الكوبونات (Coupons)',
-    description: 'إنشاء ومتابعة الكوبونات الشاملة للتطبيق',
-    icon: 'ticket',
-    screen: 'AdminCoupons' as keyof AdminMoreStackParamList,
-  },
-  {
-    title: 'الحملات التسويقية (Broadcast)',
-    description: 'بث التنبيهات والإشعارات لمختلف المستخدمين',
-    icon: 'megaphone',
-    screen: 'AdminBroadcast' as keyof AdminMoreStackParamList,
-  },
+  { titleKey: 'adminUi.platformSettings', descriptionKey: 'adminUi.platformSettingsDesc', icon: 'settings-outline', screen: 'AdminSettings' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.notificationsCenter', descriptionKey: 'adminUi.notificationsCenterDesc', icon: 'notifications-outline', screen: 'AdminNotifications' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.reviewProducts', descriptionKey: 'adminUi.reviewProductsDesc', icon: 'cube', screen: 'AdminProducts' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.driversManagement', descriptionKey: 'adminUi.driversManagementDesc', icon: 'bicycle', screen: 'AdminDelivery' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.withdrawals', descriptionKey: 'adminUi.withdrawalsDesc', icon: 'wallet', screen: 'AdminWallet' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.apiKeys', descriptionKey: 'adminUi.apiKeysDesc', icon: 'key', screen: 'ApiKeys' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.refunds', descriptionKey: 'adminUi.refundsDesc', icon: 'refresh', screen: 'AdminRefunds' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.physicalReturns', descriptionKey: 'adminUi.physicalReturnsDesc', icon: 'return-down-back', screen: 'AdminPhysicalReturns' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.financialReconciliation', descriptionKey: 'adminUi.financialReconciliationDesc', icon: 'git-compare', screen: 'AdminFinancialReconciliation' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.codCollections', descriptionKey: 'adminUi.codCollectionsDesc', icon: 'cash', screen: 'AdminCodCollections' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.technicalSupport', descriptionKey: 'adminUi.technicalSupportDesc', icon: 'headset', screen: 'AdminSupport' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.bannersCms', descriptionKey: 'adminUi.bannersCmsDesc', icon: 'images', screen: 'AdminBanners' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.couponsManagement', descriptionKey: 'adminUi.couponsManagementDesc', icon: 'ticket', screen: 'AdminCoupons' as keyof AdminMoreStackParamList },
+  { titleKey: 'adminUi.broadcast', descriptionKey: 'adminUi.broadcastDesc', icon: 'megaphone', screen: 'AdminBroadcast' as keyof AdminMoreStackParamList },
 ];
 
 
