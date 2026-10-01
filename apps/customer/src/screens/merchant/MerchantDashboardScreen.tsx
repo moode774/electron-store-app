@@ -35,7 +35,7 @@ function OrderRow({ order, onPress, last }: { order: OrderSummary; onPress: () =
       onPress={onPress}
       activeOpacity={0.75}
       accessibilityRole="button"
-      accessibilityLabel={`فتح الطلب ${order.order_number}`}
+      accessibilityLabel={`${t('merchant.openOrderA11y')} ${order.order_number}`}
     >
       <View style={[mobile.orderIcon, { backgroundColor: st.background }]}>
         <Ionicons name={st.icon as any} size={18} color={st.color} />
@@ -43,11 +43,11 @@ function OrderRow({ order, onPress, last }: { order: OrderSummary; onPress: () =
       <View style={mobile.orderCopy}>
         <Text style={mobile.orderNumber} numberOfLines={1}>#{order.order_number}</Text>
         <Text style={mobile.orderMeta} numberOfLines={1}>
-          {order.customer_profiles?.full_name || t('merchant.customer')}{items ? ` · ${items} منتج` : ''} · {formatTime(order.created_at)}
+          {order.customer_profiles?.full_name || t('merchant.customer')}{items ? ` · ${items} ${t('merchant.itemsUnit')}` : ''} · {formatTime(order.created_at)}
         </Text>
       </View>
       <View style={mobile.orderEnd}>
-        <Text style={mobile.orderAmount}>{formatMoney(order.total_amount)} ر.ي</Text>
+        <Text style={mobile.orderAmount}>{formatMoney(order.total_amount)} {t('merchant.currencyYER')}</Text>
         <View style={[mobile.statusChip, { backgroundColor: st.background }]}>
           <Text style={[mobile.statusChipText, { color: st.color }]}>{st.label}</Text>
         </View>
@@ -90,7 +90,7 @@ function MobileDashboard({
       <ScrollView contentContainerStyle={[mobile.content, { paddingTop: insets.top + 16 }]} showsVerticalScrollIndicator={false}>
         <View style={mobile.header}>
           <View style={mobile.headerCopy}>
-            <Text style={mobile.greeting} numberOfLines={1}>مرحباً، {name}</Text>
+            <Text style={mobile.greeting} numberOfLines={1}>{t('merchant.welcome')}، {name}</Text>
             <Text style={mobile.date}>{today}</Text>
           </View>
           <TouchableOpacity
@@ -108,7 +108,7 @@ function MobileDashboard({
             <View style={styles.pausedIcon}><Ionicons name="warning" size={20} color={COLORS.error} /></View>
             <View style={styles.pausedCopy}>
               <Text style={styles.pausedTitle}>{t('merchant.pausedStore')}</Text>
-              <Text style={styles.pausedText}>السبب: {paused}. يرجى التواصل مع الإدارة.</Text>
+              <Text style={styles.pausedText}>{t('merchant.reasonPrefix')}: {paused}. {t('merchant.contactAdmin')}</Text>
             </View>
           </View>
         ) : null}
@@ -126,7 +126,7 @@ function MobileDashboard({
         <View style={mobile.summary}>
           <Text style={mobile.summaryLabel}>{t('merchant.todayOrderValue')}</Text>
           <Text style={mobile.summaryValue}>
-            {metricsLoading ? '—' : formatMoney(stats.todayRevenue)} <Text style={mobile.summaryCurrency}>ر.ي</Text>
+            {metricsLoading ? '—' : formatMoney(stats.todayRevenue)} <Text style={mobile.summaryCurrency}>{t('merchant.currencyYER')}</Text>
           </Text>
           <View style={mobile.summaryStats}>
             {[
@@ -163,7 +163,7 @@ function MobileDashboard({
             <View style={mobile.empty}>
               <View style={mobile.emptyIcon}><Ionicons name="checkmark-done" size={22} color={COLORS.statusOnline} /></View>
               <Text style={mobile.emptyTitle}>{t('merchant.noWaitingOrders')}</Text>
-              <Text style={mobile.emptyText}>ستظهر الطلبات الجديدة هنا فور وصولها.</Text>
+              <Text style={mobile.emptyText}>{t('merchant.newOrdersHere')}</Text>
             </View>
           )}
         </View>
@@ -180,7 +180,7 @@ function MobileDashboard({
         <View style={mobile.sectionHeader}>
           <Text style={mobile.sectionTitle}>{t('merchant.latestOrders')}</Text>
           <TouchableOpacity onPress={() => navigation.navigate('MerchantHistory')} accessibilityRole="button" accessibilityLabel={t('merchant.orderHistory')}>
-            <Text style={mobile.sectionLink}>السجل</Text>
+            <Text style={mobile.sectionLink}>{t('merchant.historyShort')}</Text>
           </TouchableOpacity>
         </View>
         <View style={mobile.card}>
@@ -308,7 +308,7 @@ export default function MerchantDashboardScreen() {
         setMetricsError(null);
       })
       .catch(() => {
-        if (!cancelled) setMetricsError('تعذر تحديث مؤشرات المتجر.');
+        if (!cancelled) setMetricsError(t('merchant.metricsUpdateFailed'));
       })
       .finally(() => {
         if (!cancelled) setMetricsLoading(false);
@@ -323,7 +323,7 @@ export default function MerchantDashboardScreen() {
         orders={orders}
         stats={stats}
         metricsLoading={metricsLoading}
-        paused={profile?.is_active === false ? (profile.pause_reason || 'غير محدد') : null}
+        paused={profile?.is_active === false ? (profile.pause_reason || t('customer.unspecified')) : null}
         error={ordersError ?? metricsError ?? realtimeError}
         onRetry={() => void refresh()}
       />
@@ -366,7 +366,7 @@ export default function MerchantDashboardScreen() {
           <View style={styles.errorBanner}>
             <Ionicons name="cloud-offline-outline" size={20} color="#B45309" />
             <Text style={styles.errorBannerText}>{ordersError ?? metricsError ?? realtimeError}</Text>
-            <TouchableOpacity onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel="إعادة تحميل لوحة التاجر">
+            <TouchableOpacity onPress={() => void refresh()} accessibilityRole="button" accessibilityLabel={t('merchant.reloadDashboard')}>
               <Text style={styles.errorRetryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
@@ -376,8 +376,8 @@ export default function MerchantDashboardScreen() {
         <View style={styles.welcomeRow}>
           <View style={styles.welcomeCopy}>
             <Text style={styles.welcomeOverline}>{t('merchant.dashboard')}</Text>
-            <Text style={styles.welcomeText}>مرحباً، <Text style={styles.welcomeName}>{user?.full_name ?? t('merchant.merchant')}</Text></Text>
-            <Text style={styles.welcomeSubtitle}>كل ما تحتاجه لإدارة الطلبات والأداء في مكان واحد.</Text>
+            <Text style={styles.welcomeText}>{t('merchant.welcome')}، <Text style={styles.welcomeName}>{user?.full_name ?? t('merchant.merchant')}</Text></Text>
+            <Text style={styles.welcomeSubtitle}>{t('merchant.dashboardSubtitle')}</Text>
           </View>
           <View style={styles.welcomeActions}>
             <View style={styles.datePicker}>
@@ -390,7 +390,7 @@ export default function MerchantDashboardScreen() {
                 onPress={() => navigation.navigate('MerchantProducts', { screen: 'AddProduct' })}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel="إضافة منتج جديد"
+                accessibilityLabel={t('merchant.addNewProductA11y')}
               >
                 <Ionicons name="add" size={18} color={UI.textDark} />
                 <Text style={styles.addBtnText}>{t('merchant.newProduct')}</Text>
@@ -409,11 +409,11 @@ export default function MerchantDashboardScreen() {
                 <Text style={styles.visaLogo}>{t('merchant.todayOrderValue')}</Text>
                 <View style={styles.heroIcon}><Ionicons name="sparkles" size={18} color={COLORS.textPrimary} /></View>
               </View>
-              <Text style={styles.visaSubtitle}>إجمالي قيمة الطلبات المسجلة اليوم</Text>
-              <Text style={styles.visaBalance}>{metricsLoading ? '...' : stats.todayRevenue.toLocaleString()} ر.ي</Text>
+              <Text style={styles.visaSubtitle}>{t('merchant.todayOrdersValueSubtitle')}</Text>
+              <Text style={styles.visaBalance}>{metricsLoading ? '...' : stats.todayRevenue.toLocaleString()} {t('merchant.currencyYER')}</Text>
               <View style={styles.visaBottom}>
-                <Text style={styles.visaText}>الطلبات: {stats.todayOrders}</Text>
-                <Text style={styles.visaText}>المنتجات: {stats.totalProducts}</Text>
+                <Text style={styles.visaText}>{t('merchant.ordersLabel')}: {stats.todayOrders}</Text>
+                <Text style={styles.visaText}>{t('merchant.productsLabel')}: {stats.totalProducts}</Text>
               </View>
             </View>
 
@@ -444,7 +444,7 @@ export default function MerchantDashboardScreen() {
               <View style={styles.chartAreaCentered}>
                 <BarChart w={col3Width - 48} h={160} points={chart} color={UI.primary} />
                 <View style={styles.chartLabelsX}>
-                  {['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس'].map((lbl, i) => (
+                  {[t('merchant.first'), t('merchant.second'), t('merchant.third'), t('merchant.fourth'), t('merchant.fifth'), t('merchant.sixth')].map((lbl, i) => (
                     <Text key={i} style={styles.chartLabel}>{lbl}</Text>
                   ))}
                 </View>
@@ -459,7 +459,7 @@ export default function MerchantDashboardScreen() {
                 <View style={styles.cardHeaderLeft}>
                   <Text style={styles.cardTitle}>{t('merchant.orderValueTrend')}</Text>
                 </View>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel="فتح التقارير"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('MerchantAccount', { screen: 'Reports' })} accessibilityRole="button" accessibilityLabel={t('merchant.openReports')}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
               </View>
               <Text style={styles.chartTotalValue}>{chart.reduce((s, v) => s + v, 0).toLocaleString()} ر.ي</Text>
               <View style={{ marginTop: 20, alignItems: 'center' }}>
@@ -475,7 +475,7 @@ export default function MerchantDashboardScreen() {
                <View style={styles.statRow}>
                  <Text style={styles.statValueLarge}>{stats.totalProducts}</Text>
                  <View style={styles.badgeGreen}>
-                  <Text style={styles.badgeGreenText}>نشط</Text>
+                  <Text style={styles.badgeGreenText}>{t('merchant.activeLabel')}</Text>
                 </View>
                </View>
             </View>
@@ -487,7 +487,7 @@ export default function MerchantDashboardScreen() {
         <View style={styles.tableCard}>
           <View style={styles.tableHeader}>
             <Text style={styles.tableTitle}>{t('merchant.latestOrders')}</Text>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel="فتح كل الطلبات"><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('MerchantOrders')} accessibilityRole="button" accessibilityLabel={t('merchant.openAllOrders')}><Ionicons name="arrow-up-outline" size={16} color={UI.textDark} /></TouchableOpacity>
           </View>
 
           {isDesktop ? (
@@ -504,7 +504,7 @@ export default function MerchantDashboardScreen() {
                 const st = getMerchantOrderStatusInfo(order.status);
                 const d = new Date(order.created_at);
                 return (
-                  <TouchableOpacity key={order.id} style={styles.tableRow} onPress={() => navigation.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId: order.id } })} accessibilityRole="button" accessibilityLabel={`فتح الطلب ${order.order_number}`}>
+                  <TouchableOpacity key={order.id} style={styles.tableRow} onPress={() => navigation.navigate('MerchantOrders', { screen: 'OrderDetails', params: { orderId: order.id } })} accessibilityRole="button" accessibilityLabel={`${t('merchant.openOrderA11y')} ${order.order_number}`}>
                     <View style={[{ flex: 2, flexDirection: 'row-reverse', alignItems: 'center', gap: 10 }]}>
                       <View style={styles.avatarMiniList}><Ionicons name="receipt" size={14} color={UI.textDark} /></View>
                       <View>
@@ -547,7 +547,7 @@ export default function MerchantDashboardScreen() {
           )}
 
           {recentOrders.length === 0 && (
-            <Text style={{ textAlign: 'center', color: UI.textMuted, padding: 30 }}>لا يوجد طلبات بعد</Text>
+            <Text style={{ textAlign: 'center', color: UI.textMuted, padding: 30 }}>{t('merchant.noOrdersYetPlain')}</Text>
           )}
         </View>
 
