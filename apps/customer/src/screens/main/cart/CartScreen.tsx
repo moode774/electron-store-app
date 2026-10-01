@@ -346,7 +346,7 @@ export default function CartScreen({ navigation }: any) {
                 <Text style={styles.grandTotalLabel}>{t('customer.total')}</Text>
                 <Text style={styles.vatText}>{t('customer.beforeDeliveryFees')}</Text>
               </View>
-              <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} ر.ي</Text>
+              <Text style={styles.grandTotalVal}>{totalPrice.toLocaleString()} {t('merchant.currencyYER')}</Text>
             </View>
           </View>
 
