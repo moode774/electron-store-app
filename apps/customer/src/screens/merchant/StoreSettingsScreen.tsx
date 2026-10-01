@@ -256,7 +256,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
       </View>
       <View style={s.pair}>
         <View style={s.pairItem}><InputField label={t('merchant.commercialRegister')} value={commercialRegister} onChangeText={setCommercialRegister} placeholder={t('merchant.optional')} keyboardType="numeric" /></View>
-        <View style={s.pairItem}><InputField label={t('merchant.taxNumber')} value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.taxNumber')} value={taxNumber} onChangeText={setTaxNumber} placeholder={t('merchant.optional')} keyboardType="numeric" /></View>
       </View>
     </Section>
   );
