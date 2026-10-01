@@ -38,6 +38,7 @@ import { CustomerProductCard } from '../../../components/customer/CustomerProduc
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
 import { useTranslation } from '../../../i18n';
+import { resources } from '../../../i18n/translations';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
@@ -47,12 +48,12 @@ const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE'
 
 function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
   const label = `${category.name_ar ?? ''} ${category.name ?? ''}`.toLowerCase();
-  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
-  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
-  if (label.includes('حذ') || label.includes('shoe')) return 'footsteps-outline';
-  if (label.includes('عطر') || label.includes('perfume')) return 'sparkles-outline';
-  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
-  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
+  if (label.includes(resources.ar.customer.categoryElectronicsToken) || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes(resources.ar.customer.categoryFashionToken) || label.includes(resources.ar.customer.categoryClothesToken) || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes(resources.ar.customer.categoryShoesToken) || label.includes('shoe')) return 'footsteps-outline';
+  if (label.includes(resources.ar.customer.categoryPerfumeToken) || label.includes('perfume')) return 'sparkles-outline';
+  if (label.includes(resources.ar.customer.categoryHomeToken) || label.includes('home')) return 'home-outline';
+  if (label.includes(resources.ar.customer.categorySportsToken) || label.includes('sport')) return 'barbell-outline';
   return 'grid-outline';
 }
 
@@ -69,9 +70,9 @@ const HERO_BANNERS = [
   {
     type: 'content',
     id: 'c1',
-    title: 'اكتشف الجديد',
-    sub: 'منتجات ومتاجر مختارة في مكان واحد',
-    btnText: 'تسوق الآن',
+    title: t('customer.discoverNew'),
+    sub: t('customer.curatedProductsStores'),
+    btnText: t('customer.shopNow'),
     img: require('../../../../assets/images/home/smool_bannar.png'),
     route: 'Offers',
   },
@@ -241,7 +242,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           store_name: s.store_name,
           logo_url: s.store_logo_url,
           logo_bg: STORE_LOGO_COLORS[idx % STORE_LOGO_COLORS.length],
-          logo_text: s.store_name?.slice(0, 2) || 'متجر',
+          logo_text: s.store_name?.slice(0, 2) || t('customer.currentStoreFallback'),
           logo_text_color: '#172554',
           is_verified: s.is_approved === true,
         }))
@@ -257,7 +258,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           {/* Top Row: Location Title & Bell Notification Button */}
           <View style={styles.headerTopRow}>
             <View style={styles.locationContainer}>
-              <Text style={styles.locationLabel}>الموقع</Text>
+              <Text style={styles.locationLabel}>{t('customer.location')}</Text>
               <TouchableOpacity
                 style={styles.locationPickerRow}
                 activeOpacity={0.8}
@@ -267,7 +268,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               >
                 <Ionicons name="location" size={17} color="#172554" />
                 <Text style={styles.locationValueText}>
-                  {defaultCity || 'اختر عنوان التوصيل'}
+                  {defaultCity || t('customer.chooseDeliveryAddress')}
                 </Text>
                 <Ionicons name="chevron-down" size={14} color="#64748B" />
               </TouchableOpacity>
@@ -458,7 +459,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
           </ScrollView>
 
           <CustomerSectionHeader
-            eyebrow="مختارة من المتاجر المتاحة"
+            eyebrow={t('customer.curatedStores')}
             title={t('common.products')}
             actionLabel={t('customer.explore')}
             onActionPress={() => navigation.navigate('Search')}
