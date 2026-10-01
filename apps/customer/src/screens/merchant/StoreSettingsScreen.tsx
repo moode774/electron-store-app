@@ -122,7 +122,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
   }, [user?.id, loadAttempt]);
 
   const handleSave = async (): Promise<boolean> => {
-    if (!storeName.trim()) { Alert.alert('تنبيه', t('merchant.storeNameRequired')); return false; }
+    if (!storeName.trim()) { Alert.alert(t('auth.alert'), t('merchant.storeNameRequired')); return false; }
     if (!user?.id) return false;
     setSaving(true);
     try {
@@ -146,7 +146,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
       Alert.alert(t('merchant.saveSuccess'), t('merchant.storeUpdated'));
       return true;
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? t('merchant.saveFailed'));
+      Alert.alert(t('common.error'), e?.message ?? t('merchant.saveFailed'));
       return false;
     } finally { setSaving(false); }
   };
@@ -161,12 +161,12 @@ export default function StoreSettingsScreen({ navigation }: any) {
   const dirty = !!savedSnapshot && snapshot !== savedSnapshot;
 
   const completeness = [
-    { label: 'اسم المتجر', done: !!storeName.trim() },
-    { label: 'وصف المتجر', done: description.trim().length >= 30 },
-    { label: 'المدينة والعنوان', done: !!city.trim() && !!address.trim() },
-    { label: 'رقم التواصل', done: !!storePhone.trim() || !!whatsapp.trim() },
-    { label: 'بيانات المالك', done: !!ownerName.trim() && !!nationalId.trim() },
-    { label: 'الحساب البنكي', done: !!bankName.trim() && !!bankAccount.trim() && !!bankAccountName.trim() },
+    { label: t('merchant.storeNameCheck'), done: !!storeName.trim() },
+    { label: t('merchant.storeDescriptionCheck'), done: description.trim().length >= 30 },
+    { label: t('merchant.cityAddressCheck'), done: !!city.trim() && !!address.trim() },
+    { label: t('merchant.contactNumberCheck'), done: !!storePhone.trim() || !!whatsapp.trim() },
+    { label: t('merchant.ownerDataCheck'), done: !!ownerName.trim() && !!nationalId.trim() },
+    { label: t('merchant.bankAccountCheck'), done: !!bankName.trim() && !!bankAccount.trim() && !!bankAccountName.trim() },
   ];
   const score = Math.round((completeness.filter((c) => c.done).length / completeness.length) * 100);
   const missing = completeness.filter((c) => !c.done).map((c) => c.label);
@@ -188,7 +188,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
       <View style={ui.screen}>
         <ScreenHeader title={t('merchant.storeData')} onBack={() => navigation.goBack()} />
         <View style={ui.content}>
-          <EmptyState icon="cloud-offline-outline" title="تعذّر تحميل البيانات" text={loadError} action={{ label: t('common.retry'), onPress: () => setLoadAttempt((v) => v + 1) }} />
+          <EmptyState icon="cloud-offline-outline" title={t('merchant.loadDataFailed')} text={loadError} action={{ label: t('common.retry'), onPress: () => setLoadAttempt((v) => v + 1) }} />
         </View>
       </View>
     );
@@ -221,8 +221,8 @@ export default function StoreSettingsScreen({ navigation }: any) {
           <Text style={s.ringText}>{score}%</Text>
         </View>
         <View style={s.flexEnd}>
-          <Text style={ui.cardTitle}>{score === 100 ? 'ملف المتجر مكتمل' : 'اكتمال ملف المتجر'}</Text>
-          <Text style={ui.muted}>{missing.length ? `ينقص: ${missing.join('، ')}` : 'بيانات كاملة تزيد ثقة العملاء وتسرّع صرف أرباحك.'}</Text>
+          <Text style={ui.cardTitle}>{score === 100 ? t('merchant.profileComplete') : t('merchant.profileCompletion')}</Text>
+          <Text style={ui.muted}>{missing.length ? `${t('merchant.missingPrefix')}: ${missing.join(', ')}` : t('merchant.completeDataTrust')}</Text>
         </View>
       </View>
       <View style={s.bar}><View style={[s.barFill, { width: `${score}%` }]} /></View>
@@ -230,41 +230,41 @@ export default function StoreSettingsScreen({ navigation }: any) {
   );
 
   const basics = (
-    <Section title={t('merchant.identity')} icon="storefront-outline" hint="تظهر للعملاء في صفحة المتجر">
-      <InputField label={t('merchant.commercialName')} value={storeName} onChangeText={setStoreName} placeholder="اسم المتجر" />
-      <InputField label={t('merchant.category')} value={storeCategory} onChangeText={setStoreCategory} placeholder="مثال: أزياء، إلكترونيات" />
-      <InputField label={t('merchant.storeBio')} value={description} onChangeText={setDescription} multiline placeholder="ماذا تبيع؟ ولماذا يشتري منك العميل؟" />
+    <Section title={t('merchant.identity')} icon="storefront-outline" hint={t('merchant.storeIdentityHint')}>
+      <InputField label={t('merchant.commercialName')} value={storeName} onChangeText={setStoreName} placeholder={t('merchant.storeNamePlaceholder')} />
+      <InputField label={t('merchant.category')} value={storeCategory} onChangeText={setStoreCategory} placeholder={t('merchant.categoryPlaceholder')} />
+      <InputField label={t('merchant.storeBio')} value={description} onChangeText={setDescription} multiline placeholder={t('merchant.storeBioPlaceholder')} />
     </Section>
   );
 
   const contact = (
-    <Section title={t('merchant.locationContact')} icon="location-outline" hint="يستخدمه المندوب للاستلام">
+    <Section title={t('merchant.locationContact')} icon="location-outline" hint={t('merchant.locationHint')}>
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label={t('merchant.city')} value={city} onChangeText={setCity} placeholder="صنعاء" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.city')} value={city} onChangeText={setCity} placeholder={t('customer.sanaa')} /></View>
         <View style={s.pairItem}><InputField label={t('merchant.storePhone')} value={storePhone} onChangeText={setStorePhone} placeholder="7XXXXXXXX" keyboardType="phone-pad" /></View>
       </View>
-      <InputField label={t('merchant.detailedAddress')} value={address} onChangeText={setAddress} placeholder="الحي، الشارع، أقرب معلم" />
-      <InputField label="واتساب (اختياري)" value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
+      <InputField label={t('merchant.detailedAddress')} value={address} onChangeText={setAddress} placeholder={t('merchant.addressPlaceholder')} />
+      <InputField label={t('merchant.whatsappOptional')} value={whatsapp} onChangeText={setWhatsapp} placeholder="7XXXXXXXX" keyboardType="phone-pad" />
     </Section>
   );
 
   const legal = (
-    <Section title={t('merchant.officialData')} icon="document-text-outline" hint="سرّية، تُستخدم للتحقق فقط">
+    <Section title={t('merchant.officialData')} icon="document-text-outline" hint={t('merchant.confidentialHint')}>
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label={t('merchant.ownerName')} value={ownerName} onChangeText={setOwnerName} placeholder="الاسم الكامل" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.ownerName')} value={ownerName} onChangeText={setOwnerName} placeholder={t('customer.fullName')} /></View>
         <View style={s.pairItem}><InputField label={t('merchant.nationalId')} value={nationalId} onChangeText={setNationalId} placeholder={t('merchant.nationalId')} keyboardType="numeric" /></View>
       </View>
       <View style={s.pair}>
-        <View style={s.pairItem}><InputField label={t('merchant.commercialRegister')} value={commercialRegister} onChangeText={setCommercialRegister} placeholder="اختياري" keyboardType="numeric" /></View>
+        <View style={s.pairItem}><InputField label={t('merchant.commercialRegister')} value={commercialRegister} onChangeText={setCommercialRegister} placeholder={t('merchant.optional')} keyboardType="numeric" /></View>
         <View style={s.pairItem}><InputField label={t('merchant.taxNumber')} value={taxNumber} onChangeText={setTaxNumber} placeholder="اختياري" keyboardType="numeric" /></View>
       </View>
     </Section>
   );
 
   const bank = (
-    <Section title={t('merchant.receiveEarnings')} icon="wallet-outline" hint="تُحوَّل طلبات السحب إلى هذا الحساب">
-      <InputField label={t('merchant.bankWallet')} value={bankName} onChangeText={setBankName} placeholder="مثال: بنك الكريمي" />
-      <InputField label={t('merchant.accountHolder')} value={bankAccountName} onChangeText={setBankAccountName} placeholder="كما هو في الحساب" />
+    <Section title={t('merchant.receiveEarnings')} icon="wallet-outline" hint={t('merchant.receiveEarningsHint')}>
+      <InputField label={t('merchant.bankWallet')} value={bankName} onChangeText={setBankName} placeholder={t('merchant.bankExample')} />
+      <InputField label={t('merchant.accountHolder')} value={bankAccountName} onChangeText={setBankAccountName} placeholder={t('merchant.accountNamePlaceholder')} />
       <InputField label={t('merchant.accountNumber')} value={bankAccount} onChangeText={setBankAccount} placeholder={t('merchant.accountNumber')} keyboardType="numeric" />
     </Section>
   );
@@ -281,7 +281,7 @@ export default function StoreSettingsScreen({ navigation }: any) {
         accessibilityState={{ disabled: saving || !dirty }}
       >
         {saving ? <ActivityIndicator color={COLORS.surface} size="small" /> : <Ionicons name="checkmark" size={18} color={COLORS.surface} />}
-        <Text style={ui.primaryBtnText}>حفظ</Text>
+        <Text style={ui.primaryBtnText}>{t('common.save')}</Text>
       </TouchableOpacity>
     </View>
   );
