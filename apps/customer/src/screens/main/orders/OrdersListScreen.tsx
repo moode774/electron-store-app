@@ -334,7 +334,7 @@ export default function OrdersListScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <Text style={[styles.tabChipText, activeTab === 'all' && styles.tabChipTextActive]}>
-                الكل
+                {t('customer.ordersAll')}
               </Text>
             </TouchableOpacity>
 
@@ -344,7 +344,7 @@ export default function OrdersListScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <Text style={[styles.tabChipText, activeTab === 'active' && styles.tabChipTextActive]}>
-                نشطة
+                {t('customer.ordersActive')}
               </Text>
             </TouchableOpacity>
 
@@ -359,7 +359,7 @@ export default function OrdersListScreen({ navigation }: any) {
                   activeTab === 'delivering' && styles.tabChipTextActive,
                 ]}
               >
-                قيد التوصيل
+                {t('customer.ordersDelivery')}
               </Text>
             </TouchableOpacity>
 
@@ -374,7 +374,7 @@ export default function OrdersListScreen({ navigation }: any) {
                   activeTab === 'completed' && styles.tabChipTextActive,
                 ]}
               >
-                مكتملة
+                {t('customer.ordersCompleted')}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -407,7 +407,7 @@ export default function OrdersListScreen({ navigation }: any) {
                 {errorMessage || t('customer.noOrders')}
               </Text>
               <Text style={styles.emptySubText}>
-                تصفح المنتجات في المتجر وأضف مشترياتك المفضلة للسلة!
+                {t('customer.ordersEmptyText')}
               </Text>
               {errorMessage ? (
                 <TouchableOpacity style={styles.retryBtn} onPress={() => loadOrders()}>
