@@ -45,7 +45,7 @@ const UI = {
 const softShadow = {};
 
 function formatDate(iso: string | null) {
-  if (!iso) return 'بلا انتهاء';
+  if (!iso) return t('merchant.noExpiry');
   const d = new Date(iso);
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
@@ -86,12 +86,12 @@ export default function MerchantCouponsScreen({ navigation }: any) {
     setLoadError('');
     try {
       const profile = await getMerchantProfile(user.id);
-      if (!profile?.id) throw new Error('ملف المتجر غير موجود.');
+      if (!profile?.id) throw new Error(t('merchant.storeFileMissing'));
       setMerchantProfileId(profile.id);
       const data = await getMerchantCoupons(profile.id);
       setCoupons(data);
     } catch (error: any) {
-      setLoadError(error?.message ?? 'تعذّر تحميل كوبونات المتجر.');
+      setLoadError(error?.message ?? t('merchant.loadCouponsFailed'));
     } finally {
       setLoading(false);
     }
@@ -112,10 +112,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
   async function handleCreate() {
     const trimmedCode = code.trim().toUpperCase();
-    if (!trimmedCode) { Alert.alert('خطأ', 'أدخل كود الكوبون'); return; }
+    if (!trimmedCode) { Alert.alert(t('merchant.saveFailed'), t('merchant.enterCouponCode')); return; }
     const numValue = parseFloat(value);
-    if (!numValue || numValue <= 0) { Alert.alert('خطأ', 'أدخل قيمة صحيحة'); return; }
-    if (type === 'percentage' && numValue > 100) { Alert.alert('خطأ', 'النسبة لا تتجاوز 100%'); return; }
+    if (!numValue || numValue <= 0) { Alert.alert(t('merchant.saveFailed'), t('merchant.enterValidValue')); return; }
+    if (type === 'percentage' && numValue > 100) { Alert.alert(t('merchant.saveFailed'), t('merchant.maxPercentage')); return; }
     if (!merchantProfileId) return;
 
     setSaving(true);
@@ -133,7 +133,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
       setShowModal(false);
       load();
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message ?? 'فشل إنشاء الكوبون');
+      Alert.alert(t('merchant.saveFailed'), e?.message ?? t('merchant.createCouponFailed'));
     } finally {
       setSaving(false);
     }
@@ -146,7 +146,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
       await updateMerchantCoupon(coupon.id, { is_active: !coupon.is_active });
       await load();
     } catch (e: any) {
-      Alert.alert('لم يتم التحديث', e?.message ?? 'تعذر تغيير حالة الكوبون.');
+      Alert.alert(t('merchant.updateCouponFailed'), e?.message ?? t('merchant.updateCouponFailed'));
     } finally {
       setUpdatingId(null);
     }
@@ -154,8 +154,8 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
   function confirmDelete(coupon: MerchantCoupon) {
     Alert.alert(
-      'حذف الكوبون',
-      `هل أنت متأكد من حذف كوبون "${coupon.code}"؟`,
+      t('merchant.deleteCoupon'),
+      t('merchant.deleteCouponConfirm'),
       [
         { text: t('merchant.undo'), style: 'cancel' },
         {
@@ -167,7 +167,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               await deleteMerchantCoupon(coupon.id);
               await load();
             } catch (e: any) {
-              Alert.alert('تعذر الحذف', e?.message ?? 'لم يتم حذف الكوبون. أعد المحاولة.');
+              Alert.alert(t('merchant.deleteFailed'), e?.message ?? t('merchant.couponNotDeleted'));
             }
           },
         },
@@ -176,10 +176,10 @@ export default function MerchantCouponsScreen({ navigation }: any) {
   }
 
   function getStatusInfo(coupon: MerchantCoupon) {
-    if (isExpired(coupon.end_date)) return { label: 'منتهي', color: UI.red };
-    if (!coupon.is_active) return { label: 'متوقف', color: UI.textMuted };
-    if (coupon.max_uses && coupon.used_count >= coupon.max_uses) return { label: 'نفد', color: UI.yellow };
-    return { label: 'فعّال', color: UI.green };
+    if (isExpired(coupon.end_date)) return { label: t('merchant.expired'), color: UI.red };
+    if (!coupon.is_active) return { label: t('merchant.stopped'), color: UI.textMuted };
+    if (coupon.max_uses && coupon.used_count >= coupon.max_uses) return { label: t('merchant.exhausted'), color: UI.yellow };
+    return { label: t('merchant.active'), color: UI.green };
   }
 
   const renderCoupon = ({ item }: { item: MerchantCoupon }) => {
@@ -202,7 +202,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               onPress={() => toggleActive(item)}
               disabled={!!updatingId}
               accessibilityRole="button"
-              accessibilityLabel={`${item.is_active ? 'إيقاف' : 'تفعيل'} الكوبون ${item.code}`}
+              accessibilityLabel={`${item.is_active ? t('merchant.disable') : t('merchant.enable')} الكوبون ${item.code}`}
               accessibilityState={{ disabled: !!updatingId, busy: updatingId === item.id }}
               activeOpacity={0.7}
             >
@@ -264,19 +264,19 @@ export default function MerchantCouponsScreen({ navigation }: any) {
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
               <Text style={styles.statNum}>{coupons.length}</Text>
-              <Text style={styles.statLabel}>إجمالي</Text>
+              <Text style={styles.statLabel}>{t('merchant.total')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={[styles.statNum, { color: UI.green }]}>
                 {coupons.filter((c) => c.is_active && !isExpired(c.end_date)).length}
               </Text>
-              <Text style={styles.statLabel}>فعّالة</Text>
+              <Text style={styles.statLabel}>{t('merchant.active')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNum}>{coupons.reduce((s, c) => s + c.used_count, 0)}</Text>
-              <Text style={styles.statLabel}>استخدام</Text>
+              <Text style={styles.statLabel}>{t('merchant.usage')}</Text>
             </View>
           </View>
         )}
@@ -328,7 +328,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {/* Code */}
-              <Text style={styles.fieldLabel}>كود الكوبون *</Text>
+              <Text style={styles.fieldLabel}>{t('merchant.couponCode')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="SUMMER20"
@@ -339,21 +339,21 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               />
 
               {/* Type */}
-              <Text style={styles.fieldLabel}>نوع الخصم *</Text>
+              <Text style={styles.fieldLabel}>{t('merchant.discountType')}</Text>
               <View style={styles.typeRow}>
                 <TouchableOpacity
                   style={[styles.typeBtn, type === 'percentage' && styles.typeBtnActive]}
                   onPress={() => setType('percentage')}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.typeBtnText, type === 'percentage' && styles.typeBtnTextActive]}>نسبة مئوية %</Text>
+                  <Text style={[styles.typeBtnText, type === 'percentage' && styles.typeBtnTextActive]}>{t('merchant.percentage')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.typeBtn, type === 'fixed' && styles.typeBtnActive]}
                   onPress={() => setType('fixed')}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.typeBtnText, type === 'fixed' && styles.typeBtnTextActive]}>مبلغ ثابت ر.ي</Text>
+                  <Text style={[styles.typeBtnText, type === 'fixed' && styles.typeBtnTextActive]}>{t('merchant.fixedAmount')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -371,7 +371,7 @@ export default function MerchantCouponsScreen({ navigation }: any) {
               />
 
               {/* Min Order */}
-              <Text style={styles.fieldLabel}>الحد الأدنى للطلب (اختياري)</Text>
+              <Text style={styles.fieldLabel}>{t('merchant.minimumOrderOptional')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="مثال: 100"
