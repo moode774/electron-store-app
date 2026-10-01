@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore, updateUserProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
 import { Input } from '@marketplace/shared-ui';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 export default function EditProfileScreen({ navigation }: any) {
   const layout = useCustomerLayout(720);
@@ -49,7 +50,7 @@ export default function EditProfileScreen({ navigation }: any) {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('تنبيه', 'الرجاء إدخال الاسم');
+      Alert.alert(t('auth.alert'), 'الرجاء إدخال الاسم');
       return;
     }
     if (!user?.id) { Alert.alert('خطأ', 'يجب تسجيل الدخول أولاً'); return; }
@@ -75,10 +76,10 @@ export default function EditProfileScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel=t('merchant.back')>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>تعديل الملف الشخصي</Text>
+          <Text style={styles.headerTitle}>{t('customer.editProfile')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -108,16 +109,16 @@ export default function EditProfileScreen({ navigation }: any) {
           </View>
         </View>
 
-        <Input label="الاسم الكامل" placeholder="اسمك" value={name} onChangeText={setName} />
-        <Input label="البريد الإلكتروني (اختياري)" placeholder="example@mail.com" keyboardType="email-address" value={email ?? ''} onChangeText={setEmail} />
+        <Input label=t('customer.fullName') placeholder="اسمك" value={name} onChangeText={setName} />
+        <Input label=t('customer.emailOptional') placeholder="example@mail.com" keyboardType="email-address" value={email ?? ''} onChangeText={setEmail} />
 
         {/* Phone (read-only) */}
-        <Text style={styles.label}>رقم الجوال</Text>
+        <Text style={styles.label}>{t('customer.phone')}</Text>
         <View style={styles.phoneBox}>
           <Text style={styles.phoneText}>{user?.phone ?? '+967xxxxxxxxx'}</Text>
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={14} color="#059669" />
-            <Text style={styles.verifiedText}>موثّق</Text>
+            <Text style={styles.verifiedText}>{t('customer.verified')}</Text>
           </View>
         </View>
 
@@ -130,7 +131,7 @@ export default function EditProfileScreen({ navigation }: any) {
           {isSaving ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.saveBtnText}>حفظ التغييرات</Text>
+            <Text style={styles.saveBtnText}>{t('customer.saveChangesProfile')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
