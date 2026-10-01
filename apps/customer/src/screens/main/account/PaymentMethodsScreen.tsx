@@ -14,7 +14,8 @@ const METHODS = [
   { id: 'card', title: 'بطاقة ائتمانية', sub: 'فيزا / ماستركارد', icon: 'card-outline', color: COLORS.primary, available: false },
 ];
 
-export default function PaymentMethodsScreen({ navigation }: any) {
+export default function PaymentMethodsScreen({
+  const { t } = useTranslation(); navigation }: any) {
   const layout = useCustomerLayout(820);
   const user = useAuthStore((s) => s.user);
   const [saved, setSaved] = useState<PaymentMethod[]>([]);
