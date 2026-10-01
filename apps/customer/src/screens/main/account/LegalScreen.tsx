@@ -3,55 +3,57 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
-const CONTENT = {
+const CONTENT_KEYS = {
   privacy: {
-    title: 'سياسة الخصوصية',
+    title: 'customer.privacyTitle',
     sections: [
-      { h: '1. جمع البيانات', p: 'نجمع رقم جوالك واسمك وعناوين التوصيل فقط لغرض تنفيذ طلباتك وتحسين تجربتك داخل التطبيق.' },
-      { h: '2. استخدام البيانات', p: 'تُستخدم بياناتك لمعالجة الطلبات والتواصل معك بخصوصها وإرسال الإشعارات المتعلقة بالخدمة. لا نبيع بياناتك لأي طرف ثالث.' },
-      { h: '3. مشاركة البيانات', p: 'نشارك اسمك وعنوانك ورقمك مع المتجر والمندوب المعنيين بطلبك فقط، وبالقدر اللازم لإتمام التوصيل.' },
-      { h: '4. حماية البيانات', p: 'نستخدم تشفيراً وتقنيات حماية حديثة لتأمين بياناتك وجلساتك داخل التطبيق.' },
-      { h: '5. حقوقك', p: 'يمكنك طلب تعديل بياناتك أو حذف حسابك نهائياً في أي وقت عبر التواصل مع الدعم.' },
+      { h: 'customer.privacy1h', p: 'customer.privacy1p' },
+      { h: 'customer.privacy2h', p: 'customer.privacy2p' },
+      { h: 'customer.privacy3h', p: 'customer.privacy3p' },
+      { h: 'customer.privacy4h', p: 'customer.privacy4p' },
+      { h: 'customer.privacy5h', p: 'customer.privacy5p' },
     ],
   },
   terms: {
-    title: 'الشروط والأحكام',
+    title: 'customer.termsTitle',
     sections: [
-      { h: '1. استخدام التطبيق', p: 'باستخدامك التطبيق فأنت توافق على هذه الشروط. يجب أن تكون المعلومات المقدمة عند التسجيل صحيحة ودقيقة.' },
-      { h: '2. الطلبات والأسعار', p: 'الأسعار المعروضة تحددها المتاجر وقد تتغير. يُعد الطلب مؤكداً بعد قبول المتجر له.' },
-      { h: '3. التوصيل', p: 'رسوم التوصيل تُحسب حسب المنطقة وتظهر قبل تأكيد الطلب. مدة التوصيل تقديرية وقد تتأثر بظروف خارجة عن إرادتنا.' },
-      { h: '4. الإرجاع والاسترداد', p: 'يمكن طلب إرجاع المنتج خلال 3 أيام من الاستلام بشرط بقائه بحالته الأصلية، وفق سياسة كل متجر.' },
-      { h: '5. المسؤولية', p: 'التطبيق وسيط بين العميل والمتاجر. جودة المنتجات مسؤولية المتجر، ونلتزم بمساعدتك في حل أي نزاع.' },
-      { h: '6. إلغاء الحساب', p: 'نحتفظ بحق تعليق أي حساب يسيء استخدام الخدمة أو ينتهك هذه الشروط.' },
+      { h: 'customer.terms1h', p: 'customer.terms1p' },
+      { h: 'customer.terms2h', p: 'customer.terms2p' },
+      { h: 'customer.terms3h', p: 'customer.terms3p' },
+      { h: 'customer.terms4h', p: 'customer.terms4p' },
+      { h: 'customer.terms5h', p: 'customer.terms5p' },
+      { h: 'customer.terms6h', p: 'customer.terms6p' },
     ],
   },
 } as const;
 
 export default function LegalScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(820);
   const type: 'privacy' | 'terms' = route?.params?.type ?? 'terms';
-  const content = CONTENT[type];
+  const content = CONTENT_KEYS[type];
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{content.title}</Text>
+          <Text style={styles.headerTitle}>{t(content.title)}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.gutter }]} showsVerticalScrollIndicator={false}>
-        <Text style={styles.updated}>آخر تحديث: يونيو 2026</Text>
+        <Text style={styles.updated}>{t('customer.lastUpdated')}</Text>
         {content.sections.map((s, i) => (
           <View key={i} style={styles.section}>
-            <Text style={styles.sectionTitle}>{s.h}</Text>
-            <Text style={styles.sectionBody}>{s.p}</Text>
+            <Text style={styles.sectionTitle}>{t(s.h)}</Text>
+            <Text style={styles.sectionBody}>{t(s.p)}</Text>
           </View>
         ))}
         <View style={{ height: 40 }} />
