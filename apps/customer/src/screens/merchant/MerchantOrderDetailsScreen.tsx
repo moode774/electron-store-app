@@ -333,7 +333,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       ))}
       <View style={styles.totalLine}>
         <Text style={styles.totalLabel}>{t('customer.total')}</Text>
-        <Text style={styles.totalValue}>{formatMoney(order.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount))} <Text style={styles.totalCurrency}>ر.ي</Text></Text>
+        <Text style={styles.totalValue}>{formatMoney(order.total_amount ?? (subtotal + deliveryFee + taxAmount - discountAmount))} <Text style={styles.totalCurrency}>{t('merchant.currencyYER')}</Text></Text>
       </View>
     </View>
   );
