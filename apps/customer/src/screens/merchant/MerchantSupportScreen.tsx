@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { ScreenHeader } from './merchantUi';
+import { useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -26,7 +27,7 @@ const CATEGORIES = [
   { value: 'payment', label: 'المدفوعات والمحفظة' },
   { value: 'order', label: 'الطلبات' },
   { value: 'account', label: 'حساب المتجر' },
-  { value: 'other', label: 'أخرى' },
+  { value: 'other', label: t('customer.other') },
 ];
 
 const TICKET_STATUS: Record<string, { label: string, color: string }> = {
@@ -45,6 +46,7 @@ const FAQS = [
 ];
 
 export default function MerchantSupportScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [subject, setSubject] = useState('');
@@ -78,7 +80,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
   }, [loadTickets, user?.id]));
 
   const submitTicket = async () => {
-    if (!subject.trim() || !message.trim()) { Alert.alert('تنبيه', 'الرجاء إدخال الموضوع والتفاصيل'); return; }
+    if (!subject.trim() || !message.trim()) { Alert.alert(t('auth.alert'), 'الرجاء إدخال الموضوع والتفاصيل'); return; }
     if (!user?.id) return;
     setSending(true);
     try {
@@ -94,7 +96,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
     <View style={[styles.container, isDesktop && { backgroundColor: UI.bg }]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       
-      <ScreenHeader title="مركز المساعدة" subtitle="افتح تذكرة وتابع ردود فريق الدعم" onBack={() => navigation.goBack()} />
+      <ScreenHeader title=t('merchant.supportCenter') subtitle=t('merchant.supportSubtitle') onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, isCompact && styles.scrollContentCompact, isDesktop && styles.scrollContentDesktop]} showsVerticalScrollIndicator={false}>
         
@@ -104,7 +106,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
            <View style={[styles.mainCol, isDesktop && { flex: 3 }]}>
               {/* Ticket Form */}
               <View style={[styles.card, isCompact && styles.cardCompact]}>
-                <Text style={styles.sectionTitle}>فتح تذكرة دعم فني</Text>
+                <Text style={styles.sectionTitle}>{t('merchant.openSupportTicket')}</Text>
                 <Text style={styles.sectionDesc}>وضّح المشكلة والطلب المرتبط بها إن وجد، ثم تابع حالة التذكرة والردود من القائمة أدناه:</Text>
                 
                 <View style={styles.catRow}>
@@ -115,13 +117,13 @@ export default function MerchantSupportScreen({ navigation }: any) {
                   ))}
                 </View>
 
-                <TextInput style={styles.inputField} placeholder="عنوان المشكلة" placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
-                <TextInput style={[styles.inputField, styles.textArea]} placeholder="اشرح تفاصيل المشكلة ورقم الطلب إن وُجد" placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
+                <TextInput style={styles.inputField} placeholder=t('merchant.ticketSubject') placeholderTextColor={UI.textMuted} value={subject} onChangeText={setSubject} textAlign="right" accessibilityLabel="عنوان تذكرة الدعم" />
+                <TextInput style={[styles.inputField, styles.textArea]} placeholder=t('merchant.ticketDetails') placeholderTextColor={UI.textMuted} value={message} onChangeText={setMessage} multiline textAlign="right" textAlignVertical="top" accessibilityLabel="تفاصيل تذكرة الدعم" />
                 
                 <TouchableOpacity style={[styles.submitBtn, sending && { opacity: 0.6 }]} onPress={submitTicket} disabled={sending} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="إرسال تذكرة الدعم" accessibilityState={{ disabled: sending, busy: sending }}>
                   {sending ? <ActivityIndicator color="#fff" size="small" /> : (
                     <>
-                       <Text style={styles.submitBtnText}>إرسال التذكرة لفريق الدعم</Text>
+                       <Text style={styles.submitBtnText}>{t('merchant.sendSupportTeam')}</Text>
                        <Ionicons name="paper-plane" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
                     </>
                   )}
@@ -134,13 +136,13 @@ export default function MerchantSupportScreen({ navigation }: any) {
                 <View style={styles.ticketErrorCard} accessibilityRole="alert">
                   <Text style={styles.ticketErrorText}>{ticketsError}</Text>
                   <TouchableOpacity onPress={() => void loadTickets()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="إعادة تحميل تذاكر الدعم">
-                    <Text style={styles.retryText}>إعادة المحاولة</Text>
+                    <Text style={styles.retryText}>{t('common.retry')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : null}
               {tickets.length > 0 && (
                 <View style={[styles.card, isCompact && styles.cardCompact]}>
-                  <Text style={styles.sectionTitle}>تذاكري السابقة</Text>
+                  <Text style={styles.sectionTitle}>{t('merchant.previousTickets')}</Text>
                   {tickets.map((t, i) => {
                     const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
                     return (
@@ -162,7 +164,7 @@ export default function MerchantSupportScreen({ navigation }: any) {
            <View style={[styles.sideCol, isDesktop && { flex: 2 }]}>
               {/* FAQs */}
               <View style={[styles.card, isCompact && styles.cardCompact]}>
-                <Text style={styles.sectionTitle}>الأسئلة الشائعة للتجار</Text>
+                <Text style={styles.sectionTitle}>{t('merchant.merchantFaq')}</Text>
                 {FAQS.map((faq, index) => {
                   const isOpen = expandedId === faq.id;
                   return (
