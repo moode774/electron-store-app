@@ -158,7 +158,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
           <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text style={styles.modalTitle}>رد المتجر على طلب الاسترداد</Text>
             <Text style={styles.modalHint}>اكتب حالة تجهيز الطلب أو أي معلومة تساعد الإدارة. هذا الرد لا يرفض الطلب ولا يغير حالته.</Text>
-            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder="تفاصيل رد المتجر..." placeholderTextColor="#94A3B8" accessibilityLabel=t('merchant.merchantResponse') />
+            <TextInput style={styles.input} value={response} onChangeText={setResponse} multiline maxLength={2000} textAlign="right" placeholder="تفاصيل رد المتجر..." placeholderTextColor="#94A3B8" accessibilityLabel={t('merchant.merchantResponse')} />
             <View style={[styles.modalActions, isCompact && styles.modalActionsCompact]}>
               <TouchableOpacity style={styles.cancel} onPress={() => setSelected(null)} disabled={sending}><Text style={styles.cancelText}>{t('customer.cancel')}</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.confirm, (!response.trim() || sending) && { opacity: 0.5 }]} onPress={sendResponse} disabled={!response.trim() || sending}>
