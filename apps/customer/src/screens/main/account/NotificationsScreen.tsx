@@ -5,8 +5,10 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../../components/NotificationPreferencesCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 export default function NotificationsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(1120);
   const columns = layout.desktop ? 2 : 1;
   const gap = layout.compact ? 10 : 14;
@@ -20,7 +22,7 @@ export default function NotificationsScreen({ navigation }: any) {
     if (!user?.id) { setLoading(false); return; }
     setLoadError('');
     try { setNotifications(await getNotifications(user.id)); }
-    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : 'تعذّر تحميل الإشعارات.'); }
+    catch (error) { setLoadError(error instanceof Error && error.message ? error.message : t('customer.loadNotificationsFailed')); }
     finally { setLoading(false); }
   }, [user?.id]);
 
@@ -63,10 +65,10 @@ export default function NotificationsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="العودة">
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
             <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>الإشعارات</Text>
+          <Text style={styles.headerTitle}>{t('common.notifications')}</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
@@ -79,7 +81,7 @@ export default function NotificationsScreen({ navigation }: any) {
         <View style={styles.errorState} accessibilityRole="alert">
           <Ionicons name="cloud-offline-outline" size={46} color="#B91C1C" />
           <Text style={styles.errorText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); void load(); }} accessibilityRole="button"><Text style={styles.retryText}>{t('common.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -92,7 +94,7 @@ export default function NotificationsScreen({ navigation }: any) {
           ListHeaderComponent={<NotificationPreferencesCard />}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
-              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>لا توجد إشعارات</Text>
+              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>{t('customer.noNotifications')}</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -101,7 +103,7 @@ export default function NotificationsScreen({ navigation }: any) {
               activeOpacity={0.7}
               onPress={() => openNotification(item)}
               accessibilityRole="button"
-              accessibilityLabel={`${item.title ?? 'إشعار'}. ${item.body ?? ''}`}
+              accessibilityLabel={`${item.title ?? t('customer.notification')}. ${item.body ?? ''}`}
               accessibilityState={{ selected: !item.is_read }}
             >
               <View style={[styles.iconWrap, { backgroundColor: `${COLORS.primary}15` }]}>
