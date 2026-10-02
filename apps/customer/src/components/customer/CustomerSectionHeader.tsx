@@ -33,7 +33,7 @@ export function CustomerSectionHeader({
           accessibilityLabel={actionLabel}
         >
           <Text style={styles.actionText}>{actionLabel}</Text>
-          <DirectionalIcon name="arrow-back" size={15} color="#5B5BF7" />
+          <DirectionalIcon name="arrow-back" size={15} color="#2F5BFF" />
         </TouchableOpacity>
       ) : null}
     </View>
@@ -42,12 +42,12 @@ export function CustomerSectionHeader({
 
 const styles = directional(StyleSheet.create({
   container: {
-    minHeight: 50,
+    minHeight: 46,
     flexDirection: 'row-reverse',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: 30,
-    marginBottom: 13,
+    marginTop: 26,
+    marginBottom: 12,
     gap: 12,
   },
   titleWrap: {
@@ -55,31 +55,30 @@ const styles = directional(StyleSheet.create({
     alignItems: 'flex-end',
   },
   eyebrow: {
-    color: '#5B5BF7',
-    fontFamily: FONTS.bold,
+    color: '#2F5BFF',
+    fontFamily: FONTS.semiBold,
     fontSize: 10.5,
-    letterSpacing: 0.2,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   title: {
-    color: '#111318',
+    color: '#17191F',
     fontFamily: FONTS.bold,
-    fontSize: 20,
+    fontSize: 19,
     textAlign: 'right',
   },
   action: {
-    minHeight: 38,
+    minHeight: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingHorizontal: 11,
-    borderRadius: 12,
-    backgroundColor: '#F0F1FF',
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
   },
   actionText: {
-    color: '#4F46E5',
+    color: '#2F5BFF',
     fontFamily: FONTS.semiBold,
-    fontSize: 11.5,
+    fontSize: 12,
   },
 }), 'rtl');
