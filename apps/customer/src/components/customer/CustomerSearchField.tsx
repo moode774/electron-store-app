@@ -37,7 +37,7 @@ export function CustomerSearchField({
   const content = (
     <>
       <View style={styles.searchIcon}>
-        <Ionicons name="search" size={19} color="#5B5BF7" />
+        <Ionicons name="search" size={19} color="#2F5BFF" />
       </View>
       {onPress ? (
         <Text style={styles.placeholder} numberOfLines={1}>{resolvedPlaceholder}</Text>
@@ -93,27 +93,27 @@ export function CustomerSearchField({
 
 const styles = directional(StyleSheet.create({
   container: {
-    minHeight: 52,
+    minHeight: 50,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     borderWidth: 1,
-    borderColor: '#E8EAF1',
-    borderRadius: 17,
-    backgroundColor: '#F8F9FC',
+    borderColor: '#E8EBF0',
+    borderRadius: 15,
+    backgroundColor: '#F7F8FA',
   },
   searchIcon: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#EEEEFF',
+    borderRadius: 11,
+    backgroundColor: '#EEF2FF',
   },
   placeholder: {
     flex: 1,
-    color: '#8B91A2',
+    color: '#9398A3',
     fontFamily: FONTS.regular,
     fontSize: 13,
     textAlign: 'right',
@@ -122,28 +122,23 @@ const styles = directional(StyleSheet.create({
     flex: 1,
     minWidth: 0,
     paddingVertical: 0,
-    color: '#17191F',
+    color: '#1B1D22',
     fontFamily: FONTS.medium,
     fontSize: 14,
     textAlign: 'right',
   },
   trailingButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterButton: {
     width: 42,
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 13,
-    backgroundColor: '#111318',
-    shadowColor: '#111318',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.14,
-    shadowRadius: 9,
-    elevation: 3,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#2F5BFF',
   },
 }), 'rtl');
