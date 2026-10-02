@@ -10,9 +10,10 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { FONTS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
 import { directional } from '../../i18n/directionalStyles';
+import { CT, CT_RADIUS } from '../../theme/customerTheme';
 
 type Props = Omit<TextInputProps, 'style'> & {
   containerStyle?: StyleProp<ViewStyle>;
@@ -36,9 +37,7 @@ export function CustomerSearchField({
   const resolvedPlaceholder = placeholder || t('customer.searchPlaceholder');
   const content = (
     <>
-      <View style={styles.searchIcon}>
-        <Ionicons name="search" size={19} color="#2F5BFF" />
-      </View>
+      <Ionicons name="search-outline" size={20} color={CT.navy} style={styles.searchIcon} />
       {onPress ? (
         <Text style={styles.placeholder} numberOfLines={1}>{resolvedPlaceholder}</Text>
       ) : (
@@ -46,7 +45,7 @@ export function CustomerSearchField({
           {...inputProps}
           value={value}
           placeholder={resolvedPlaceholder}
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={CT.inkMuted}
           style={styles.input}
         />
       )}
@@ -58,7 +57,7 @@ export function CustomerSearchField({
           accessibilityLabel={t('customer.clearSearchAccessibility')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
+          <Ionicons name="close-circle" size={18} color={CT.inkMuted} />
         </TouchableOpacity>
       ) : null}
       {showFilter && onFilterPress ? (
@@ -68,7 +67,7 @@ export function CustomerSearchField({
           accessibilityRole="button"
           accessibilityLabel={t('customer.sortOptions')}
         >
-          <Ionicons name="options-outline" size={18} color="#FFFFFF" />
+          <Ionicons name="options-outline" size={18} color={CT.surface} />
         </TouchableOpacity>
       ) : null}
     </>
@@ -96,49 +95,45 @@ const styles = directional(StyleSheet.create({
     minHeight: 50,
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 9,
+    gap: 8,
+    paddingLeft: 6,
+    paddingRight: 14,
     borderWidth: 1,
-    borderColor: '#E8EBF0',
-    borderRadius: 15,
-    backgroundColor: '#F7F8FA',
+    borderColor: CT.hairline,
+    borderRadius: CT_RADIUS.md,
+    backgroundColor: CT.surface,
   },
   searchIcon: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 11,
-    backgroundColor: '#EEF2FF',
+    marginLeft: 2,
   },
   placeholder: {
     flex: 1,
-    color: '#9398A3',
+    color: CT.inkMuted,
     fontFamily: FONTS.regular,
-    fontSize: 13,
+    fontSize: 13.5,
     textAlign: 'right',
   },
   input: {
     flex: 1,
     minWidth: 0,
     paddingVertical: 0,
-    color: '#1B1D22',
+    color: CT.ink,
     fontFamily: FONTS.medium,
     fontSize: 14,
     textAlign: 'right',
   },
   trailingButton: {
-    width: 42,
-    height: 42,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },
   filterButton: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#2F5BFF',
+    borderRadius: CT_RADIUS.sm,
+    backgroundColor: CT.navy,
   },
 }), 'rtl');

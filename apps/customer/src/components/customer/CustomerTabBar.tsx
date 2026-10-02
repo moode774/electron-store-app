@@ -3,7 +3,8 @@ import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'r
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@marketplace/shared-hooks';
-import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { BREAKPOINTS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { CT, CT_SHADOW } from '../../theme/customerTheme';
 import { useTranslation } from '../../i18n';
 import { directional } from '../../i18n/directionalStyles';
 
@@ -48,7 +49,7 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
                 <Ionicons
                   name={focused ? item.active : item.idle}
                   size={21}
-                  color={focused ? COLORS.primary : COLORS.textMuted}
+                  color={focused ? CT.navy : CT.inkMuted}
                 />
                 {badge > 0 ? (
                   <View style={styles.badge}>
@@ -70,13 +71,13 @@ const styles = directional(StyleSheet.create({
     paddingTop: 6,
     paddingHorizontal: 10,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderTopColor: CT.hairline,
+    backgroundColor: CT.surface,
   },
   shellFloating: {
     paddingTop: 10,
     borderTopWidth: 0,
-    backgroundColor: COLORS.background,
+    backgroundColor: CT.paper,
   },
   bar: {
     minHeight: 62,
@@ -92,14 +93,10 @@ const styles = directional(StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: CT.hairline,
     borderRadius: RADIUS.xl,
-    backgroundColor: COLORS.surface,
-    shadowColor: COLORS.primaryDark,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    elevation: 5,
+    backgroundColor: CT.surface,
+    ...CT_SHADOW.floating,
   },
   item: {
     flex: 1,
@@ -116,16 +113,16 @@ const styles = directional(StyleSheet.create({
     borderRadius: RADIUS.full,
   },
   iconWrapFocused: {
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: CT.navySoft,
   },
   label: {
-    color: COLORS.textMuted,
+    color: CT.inkMuted,
     fontFamily: FONTS.medium,
     fontSize: 10.5,
     textAlign: 'center',
   },
   labelFocused: {
-    color: COLORS.primary,
+    color: CT.navy,
     fontFamily: FONTS.semiBold,
   },
   badge: {
@@ -138,12 +135,12 @@ const styles = directional(StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
     borderWidth: 1.5,
-    borderColor: COLORS.surface,
+    borderColor: CT.surface,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.accentCoral,
+    backgroundColor: CT.sand,
   },
   badgeText: {
-    color: COLORS.surface,
+    color: CT.navyDeep,
     fontFamily: FONTS.bold,
     fontSize: 8,
   },

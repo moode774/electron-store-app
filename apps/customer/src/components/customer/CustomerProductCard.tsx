@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ProductSummary } from '@marketplace/shared-hooks';
-import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { FONTS } from '@marketplace/shared-utils';
 import { useTranslation, localized } from '../../i18n';
 import { directional } from '../../i18n/directionalStyles';
+import { CT, CT_RADIUS, formatAmount } from '../../theme/customerTheme';
 
 type Props = {
   product: ProductSummary;
@@ -55,6 +56,7 @@ export function CustomerProductCard({
   const discount = product.sale_price && product.base_price > 0
     ? Math.max(0, Math.round(((product.base_price - product.sale_price) / product.base_price) * 100))
     : 0;
+  const rating = Number(product.rating ?? 0);
   const isList = variant === 'list';
 
   return (
@@ -63,7 +65,7 @@ export function CustomerProductCard({
       activeOpacity={0.9}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${displayName}, ${t('customer.priceLabel')} ${price} ${t('customer.yemeniRial')}`}
+      accessibilityLabel={`${displayName}, ${t('customer.priceLabel')} ${formatAmount(price)} ${t('customer.yemeniRial')}`}
     >
       <View style={[styles.media, isList && styles.mediaList]}>
         {imageUrl ? (
@@ -75,7 +77,7 @@ export function CustomerProductCard({
           />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Ionicons name="bag-handle-outline" size={isList ? 30 : 40} color={COLORS.primaryLight} />
+            <Ionicons name="bag-handle-outline" size={isList ? 26 : 34} color={CT.navyTint} />
           </View>
         )}
         {discount > 0 ? (
@@ -93,11 +95,12 @@ export function CustomerProductCard({
             accessibilityRole="button"
             accessibilityLabel={favorite ? t('customer.removeFavorite') : t('customer.addFavorite')}
             accessibilityState={{ selected: favorite }}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           >
             <Ionicons
               name={favorite ? 'heart' : 'heart-outline'}
-              size={18}
-              color={favorite ? "#2F5BFF" : "#6F7580"}
+              size={17}
+              color={favorite ? CT.danger : CT.ink}
             />
           </TouchableOpacity>
         ) : null}
@@ -108,68 +111,84 @@ export function CustomerProductCard({
           <Text style={styles.storeName} numberOfLines={1}>{product.merchant_profiles.store_name}</Text>
         ) : null}
         <Text style={[styles.name, isList && styles.nameList]} numberOfLines={2}>{displayName}</Text>
-        <View style={styles.ratingRow}>
-          <Ionicons name="star" size={13} color="#F4B740" />
-          <Text style={styles.ratingText}>{Number(product.rating ?? 0).toFixed(1)}</Text>
-          {product.total_sold > 0 ? <Text style={styles.soldText}>• {product.total_sold} {t('customer.soldCount')}</Text> : null}
-        </View>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{price} <Text style={styles.currency}>{t('merchant.currencyYER')}</Text></Text>
-          {product.sale_price ? <Text style={styles.oldPrice}>{product.base_price}</Text> : null}
+
+        {rating > 0 || product.total_sold > 0 ? (
+          <View style={styles.metaRow}>
+            {rating > 0 ? (
+              <View style={styles.ratingChip}>
+                <Ionicons name="star" size={11} color={CT.star} />
+                <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+              </View>
+            ) : null}
+            {product.total_sold > 0 ? (
+              <Text style={styles.soldText} numberOfLines={1}>
+                {formatAmount(product.total_sold)} {t('customer.soldCount')}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        <View style={styles.footerRow}>
+          <View style={styles.priceCol}>
+            <Text style={styles.price} numberOfLines={1}>
+              {formatAmount(price)}
+              <Text style={styles.currency}> {t('merchant.currencyYER')}</Text>
+            </Text>
+            {product.sale_price ? (
+              <Text style={styles.oldPrice} numberOfLines={1}>{formatAmount(product.base_price)}</Text>
+            ) : null}
+          </View>
+          {onQuickAction ? (
+            <TouchableOpacity
+              style={[styles.quickButton, quickActionDisabled && styles.quickButtonDisabled]}
+              onPress={(event) => {
+                event.stopPropagation();
+                onQuickAction();
+              }}
+              disabled={quickActionDisabled}
+              activeOpacity={0.82}
+              accessibilityRole="button"
+              accessibilityLabel={quickActionNeedsOptions ? `${t('customer.chooseOptions')} ${displayName}` : `${t('customer.addToCartAccessibility')} ${displayName}`}
+              accessibilityState={{ disabled: quickActionDisabled }}
+            >
+              <Ionicons
+                name="add"
+                size={22}
+                color={quickActionDisabled ? CT.inkMuted : CT.surface}
+              />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
-
-      {onQuickAction ? (
-        <TouchableOpacity
-          style={[styles.quickButton, quickActionDisabled && styles.quickButtonDisabled]}
-          onPress={(event) => {
-            event.stopPropagation();
-            onQuickAction();
-          }}
-          disabled={quickActionDisabled}
-          activeOpacity={0.82}
-          accessibilityRole="button"
-          accessibilityLabel={quickActionNeedsOptions ? `${t('customer.chooseOptions')} ${displayName}` : `${t('customer.addToCartAccessibility')} ${displayName}`}
-          accessibilityState={{ disabled: quickActionDisabled }}
-        >
-          <Ionicons
-            name={quickActionNeedsOptions ? 'options-outline' : 'bag-add-outline'}
-            size={18}
-            color={COLORS.surface}
-          />
-        </TouchableOpacity>
-      ) : null}
     </TouchableOpacity>
   );
 }
 
 const styles = directional(StyleSheet.create({
   card: {
-    position: 'relative',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E9ECF1',
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    borderColor: CT.hairline,
+    borderRadius: CT_RADIUS.lg,
+    backgroundColor: CT.surface,
   },
   cardList: {
-    minHeight: 132,
     flexDirection: 'row-reverse',
     alignItems: 'stretch',
     padding: 10,
   },
   media: {
     width: '100%',
-    aspectRatio: 1.06,
+    aspectRatio: 1,
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#F5F6F8',
+    backgroundColor: CT.surfaceMuted,
   },
   mediaList: {
-    width: 112,
-    minWidth: 112,
+    width: 108,
+    minWidth: 108,
     aspectRatio: 1,
-    borderRadius: 14,
+    borderRadius: CT_RADIUS.md,
   },
   image: {
     width: '100%',
@@ -179,125 +198,131 @@ const styles = directional(StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F5F8',
   },
   discountBadge: {
     position: 'absolute',
     top: 10,
     right: 10,
-    minHeight: 24,
+    height: 22,
     justifyContent: 'center',
     paddingHorizontal: 8,
-    borderRadius: 7,
-    backgroundColor: '#17191F',
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.navy,
   },
   discountText: {
-    color: '#FFFFFF',
+    color: CT.ivory,
     fontFamily: FONTS.bold,
-    fontSize: 10,
+    fontSize: 10.5,
   },
   favoriteButton: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 36,
-    height: 36,
+    top: 8,
+    left: 8,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E9ECF1',
-    borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: 'rgba(255,255,255,0.94)',
   },
   info: {
-    minHeight: 140,
     alignItems: 'flex-end',
-    padding: 12,
-    paddingBottom: 54,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   infoList: {
     flex: 1,
-    minHeight: 112,
     justifyContent: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    paddingLeft: 58,
+    paddingVertical: 2,
+    paddingHorizontal: 12,
   },
   storeName: {
     maxWidth: '100%',
-    color: '#8A909B',
-    fontFamily: FONTS.semiBold,
-    fontSize: 10,
-    marginBottom: 3,
+    color: CT.inkMuted,
+    fontFamily: FONTS.medium,
+    fontSize: 10.5,
+    marginBottom: 2,
     textAlign: 'right',
   },
   name: {
     width: '100%',
-    minHeight: 40,
-    color: '#1B1D22',
+    minHeight: 38,
+    color: CT.ink,
     fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: 'right',
   },
   nameList: {
     minHeight: 0,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 21,
   },
-  ratingRow: {
+  metaRow: {
     width: '100%',
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
     marginTop: 6,
   },
+  ratingChip: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 3,
+  },
   ratingText: {
-    color: '#353941',
+    color: CT.ink,
     fontFamily: FONTS.semiBold,
     fontSize: 11,
   },
   soldText: {
-    color: '#969BA5',
+    flexShrink: 1,
+    color: CT.inkMuted,
     fontFamily: FONTS.regular,
-    fontSize: 10,
+    fontSize: 10.5,
   },
-  priceRow: {
+  footerRow: {
     width: '100%',
     flexDirection: 'row-reverse',
-    alignItems: 'baseline',
-    gap: 7,
-    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 10,
+  },
+  priceCol: {
+    flex: 1,
+    minHeight: 36,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   price: {
-    color: '#17191F',
+    color: CT.navy,
     fontFamily: FONTS.bold,
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'right',
   },
   currency: {
-    color: '#777D89',
+    color: CT.inkSecondary,
     fontFamily: FONTS.medium,
     fontSize: 10,
   },
   oldPrice: {
-    color: '#9DA2AC',
+    color: CT.inkMuted,
     fontFamily: FONTS.regular,
     fontSize: 11,
     textDecorationLine: 'line-through',
+    marginTop: 1,
   },
   quickButton: {
-    position: 'absolute',
-    left: 12,
-    bottom: 12,
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#2F5BFF',
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.navy,
   },
   quickButtonDisabled: {
-    opacity: 0.4,
+    backgroundColor: CT.surfaceMuted,
   },
 }), 'rtl');

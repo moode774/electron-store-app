@@ -31,20 +31,22 @@ import {
   useAuthStore,
   useCartStore,
 } from '@marketplace/shared-hooks';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { FONTS } from '@marketplace/shared-utils';
 import { HomeStackParamList } from '../../../navigation/types';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
+import { CustomerHorizontalList } from '../../../components/customer/CustomerHorizontalList';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { useTranslation, localized } from '../../../i18n';
 import { directional } from '../../../i18n/directionalStyles';
+import { CT, CT_RADIUS } from '../../../theme/customerTheme';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
 
-// ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
-const STORE_LOGO_COLORS = ['#F3F5F8', '#F6F7F9', '#F1F4F8', '#F5F6F8', '#F2F4F7', '#F7F8FA'];
+const LOGO_MARK = require('../../../../assets/images/logo.png');
 
 function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
   const label = `${category.name_ar ?? ''} ${category.name ?? ''}`.toLowerCase();
@@ -235,54 +237,54 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
     Alert.alert(t('customer.added'), t('customer.addedToCart'));
   };
 
-  const displayStores =
-    stores.length > 0
-      ? stores.map((s, idx) => ({
-          id: s.id,
-          store_name: s.store_name,
-          logo_url: s.store_logo_url,
-          logo_bg: STORE_LOGO_COLORS[idx % STORE_LOGO_COLORS.length],
-          logo_text: s.store_name?.slice(0, 2) || t('customer.currentStoreFallback'),
-          logo_text_color: '#172554',
-          is_verified: s.is_approved === true,
-        }))
-      : [];
+  const displayStores = stores.map((s) => ({
+    id: s.id,
+    store_name: s.store_name,
+    logo_url: s.store_logo_url,
+    logo_text: s.store_name?.trim().slice(0, 1) || t('customer.currentStoreFallback'),
+    city: s.city ?? '',
+    rating: Number(s.rating ?? 0),
+    is_verified: s.is_approved === true,
+  }));
+
+  const heroWidth = layout.usableWidth || 340;
+  const heroHeight = Math.min(300, Math.max(168, Math.round(heroWidth / 1.9)));
 
   return (
     <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={CT.surface} />
 
-      {/* Clean Minimalist Top Header */}
-      <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 10) }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 10) + 4 }]}>
         <CustomerResponsiveShell>
-          {/* Top Row: Location Title & Bell Notification Button */}
-          <View style={styles.headerTopRow}>
-            <View style={styles.locationContainer}>
-              <Text style={styles.locationLabel}>{t('customer.location')}</Text>
-              <TouchableOpacity
-                style={styles.locationPickerRow}
-                activeOpacity={0.8}
-                onPress={() => openTab('More', 'AddressBook')}
-                accessibilityRole="button"
-                accessibilityLabel={t('customer.changeDeliveryAddress')}
-              >
-                <Ionicons name="location" size={17} color="#17191F" />
-                <Text style={styles.locationValueText}>
-                  {defaultCity || t('customer.chooseDeliveryAddress')}
-                </Text>
-                <Ionicons name="chevron-down" size={14} color="#7C8290" />
-              </TouchableOpacity>
-            </View>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              style={styles.brandRow}
+              activeOpacity={0.8}
+              onPress={() => openTab('More', 'AddressBook')}
+              accessibilityRole="button"
+              accessibilityLabel={t('customer.changeDeliveryAddress')}
+            >
+              <Image source={LOGO_MARK} style={styles.brandMark} resizeMode="contain" />
+              <View style={styles.locationCol}>
+                <Text style={styles.locationLabel}>{t('customer.deliverTo')}</Text>
+                <View style={styles.locationRow}>
+                  <Text style={styles.locationValue} numberOfLines={1}>
+                    {defaultCity || t('customer.chooseDeliveryAddress')}
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={CT.inkSecondary} />
+                </View>
+              </View>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.notifCircleBtn}
+              style={styles.iconButton}
               activeOpacity={0.8}
               onPress={() => openTab('More', 'Notifications')}
               accessibilityRole="button"
               accessibilityLabel={t('customer.notifications')}
             >
-              <Ionicons name="notifications" size={20} color="#17191F" />
-              {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
+              <Ionicons name="notifications-outline" size={21} color={CT.ink} />
+              {unreadCount > 0 && <View style={styles.unreadDot} />}
             </TouchableOpacity>
           </View>
 
@@ -299,22 +301,17 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#2F5BFF" />
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={CT.navy} />
         }
       >
         <CustomerResponsiveShell>
-
-          {/* Swipable Hero Carousel (Content Cards + Full Image Banners) */}
           <ScrollView
             ref={heroScrollRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.heroCarouselScroll}
             onScroll={(e) => {
-              const offsetX = e.nativeEvent.contentOffset.x;
-              const cardW = layout.usableWidth || 340;
-              const index = Math.round(offsetX / cardW);
+              const index = Math.round(e.nativeEvent.contentOffset.x / heroWidth);
               setHeroIndex(Math.max(0, Math.min(HERO_BANNERS.length - 1, index)));
             }}
             scrollEventThrottle={16}
@@ -324,42 +321,53 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 return (
                   <TouchableOpacity
                     key={banner.id}
-                    style={[styles.heroFullImageCard, { width: layout.usableWidth || '100%' }]}
+                    style={[styles.heroCard, { width: heroWidth, height: heroHeight }]}
                     activeOpacity={0.92}
                     onPress={() => navigation.navigate(banner.route as any)}
+                    accessibilityRole="button"
                   >
-                    <Image source={banner.img} style={styles.heroFullImage} resizeMode="cover" />
+                    <Image source={banner.img} style={styles.heroImage} resizeMode="cover" />
                   </TouchableOpacity>
                 );
               }
 
               return (
-                <View key={banner.id} style={[styles.heroCollectionCard, { width: layout.usableWidth || '100%' }]}>
-                  <View style={styles.heroCollectionContent}>
-                    <Text style={styles.heroCollectionTitle}>{t(banner.title)}</Text>
-                    <Text style={styles.heroCollectionSub}>{t(banner.sub)}</Text>
+                <View key={banner.id} style={[styles.heroCard, styles.heroFeature, { width: heroWidth, height: heroHeight }]}>
+                  <View style={styles.heroFeatureText}>
+                    <View style={styles.heroChip}>
+                      <Text style={styles.heroChipText}>{t('onboarding.appName')}</Text>
+                    </View>
+                    <Text style={styles.heroTitle} numberOfLines={2}>{t(banner.title)}</Text>
+                    <Text style={styles.heroSub} numberOfLines={2}>{t(banner.sub)}</Text>
                     <TouchableOpacity
-                      style={styles.shopNowBtn}
+                      style={styles.heroButton}
                       onPress={() => navigation.navigate(banner.route as any)}
                       activeOpacity={0.88}
+                      accessibilityRole="button"
                     >
-                      <Text style={styles.shopNowBtnText}>{t(banner.btnText)}</Text>
+                      <Text style={styles.heroButtonText}>{t(banner.btnText)}</Text>
+                      <DirectionalIcon name="arrow-back" size={15} color={CT.navy} />
                     </TouchableOpacity>
                   </View>
-                  <View style={styles.heroCollectionMedia}>
-                    <Image source={banner.img} style={styles.heroCollectionImage} resizeMode="cover" />
+                  <View style={styles.heroFeatureMedia}>
+                    <Image source={banner.img} style={styles.heroImage} resizeMode="cover" />
                   </View>
                 </View>
               );
             })}
           </ScrollView>
 
-          {/* 3 Fixed Aesthetic Carousel Dots */}
-          <View style={styles.heroDotsContainer}>
-            <View style={heroIndex % 3 === 0 ? styles.dotActiveDark : styles.dotInactive} />
-            <View style={heroIndex % 3 === 1 ? styles.dotActiveDark : styles.dotInactive} />
-            <View style={heroIndex % 3 === 2 ? styles.dotActiveDark : styles.dotInactive} />
-          </View>
+          {HERO_BANNERS.length > 1 ? (
+            <View style={styles.heroDots}>
+              {HERO_BANNERS.length <= 6 ? (
+                HERO_BANNERS.map((banner, index) => (
+                  <View key={banner.id} style={index === heroIndex ? styles.dotActive : styles.dot} />
+                ))
+              ) : (
+                <Text style={styles.heroCounter}>{`${heroIndex + 1} / ${HERO_BANNERS.length}`}</Text>
+              )}
+            </View>
+          ) : null}
 
           <CustomerSectionHeader
             title={t('customer.categories')}
@@ -367,41 +375,38 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesCircleScroll}
-          >
+          <CustomerHorizontalList contentContainerStyle={styles.categoriesRow}>
             {categories.length === 0 ? (
               <TouchableOpacity
-                style={styles.categoryCircleItem}
+                style={styles.categoryItem}
                 onPress={() => navigation.navigate('StoresList', {})}
-                activeOpacity={0.82}
+                activeOpacity={0.8}
               >
-                <View style={styles.categoryCircleWrap}>
-                  <Ionicons name="grid-outline" size={24} color={COLORS.primary} />
+                <View style={styles.categoryIcon}>
+                  <Ionicons name="grid-outline" size={23} color={CT.navy} />
                 </View>
-                <Text style={styles.categoryCircleName}>{t('customer.all')}</Text>
+                <Text style={styles.categoryName}>{t('customer.all')}</Text>
               </TouchableOpacity>
-            ) : categories.slice(0, 8).map((item) => (
+            ) : categories.slice(0, 10).map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={styles.categoryCircleItem}
+                style={styles.categoryItem}
                 onPress={() => navigation.navigate('StoresList', {
                   categoryId: item.id,
                   filter: item.name_ar ?? item.name,
                 })}
-                activeOpacity={0.82}
+                activeOpacity={0.8}
+                accessibilityRole="button"
               >
-                <View style={styles.categoryCircleWrap}>
-                  <Ionicons name={categoryIcon(item)} size={24} color={COLORS.primary} />
+                <View style={styles.categoryIcon}>
+                  <Ionicons name={categoryIcon(item)} size={23} color={CT.navy} />
                 </View>
-                <Text style={styles.categoryCircleName} numberOfLines={1}>
+                <Text style={styles.categoryName} numberOfLines={1}>
                   {localized(item.name_ar, item.name)}
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </CustomerHorizontalList>
 
           <CustomerSectionHeader
             title={t('common.stores')}
@@ -409,54 +414,49 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
             onActionPress={() => navigation.navigate('StoresList', {})}
           />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.storesContent}
-          >
+          <CustomerHorizontalList contentContainerStyle={styles.storesRow}>
             {displayStores.length === 0 && (
-              <View style={styles.storesEmptyState}>
-                <Ionicons name="storefront-outline" size={22} color="#94A3B8" />
+              <View style={styles.storesEmpty}>
+                <Ionicons name="storefront-outline" size={20} color={CT.inkMuted} />
                 <Text style={styles.storesEmptyText}>{t('customer.noStores')}</Text>
               </View>
             )}
-            {displayStores.map((store: any) => (
+            {displayStores.map((store) => (
               <TouchableOpacity
                 key={store.id}
-                style={styles.storeCircleItem}
-                activeOpacity={0.82}
+                style={styles.storeCard}
+                activeOpacity={0.85}
                 onPress={() => navigation.navigate('StoreDetails', { storeId: store.id })}
+                accessibilityRole="button"
+                accessibilityLabel={store.store_name}
               >
-                <View style={styles.storeCircleWrap}>
+                <View style={styles.storeLogoWrap}>
                   {store.logo_url ? (
-                    <Image source={{ uri: store.logo_url }} style={styles.storeCircleLogo} />
-                  ) : store.logo_bg ? (
-                    <View style={[styles.storeCircleLogoFallback, { backgroundColor: store.logo_bg }]}>
-                      <Text
-                        style={[
-                          styles.storeCircleLogoFallbackText,
-                          store.logo_text_color && { color: store.logo_text_color },
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {store.logo_text}
-                      </Text>
-                    </View>
+                    <Image source={{ uri: store.logo_url }} style={styles.storeLogo} />
                   ) : (
-                    <Ionicons name="storefront-outline" size={24} color="#17191F" />
+                    <Text style={styles.storeLogoText}>{store.logo_text}</Text>
                   )}
                   {store.is_verified ? (
-                    <View style={styles.verifiedCircleBadge}>
-                      <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                    <View style={styles.verifiedBadge}>
+                      <Ionicons name="checkmark" size={10} color={CT.surface} />
                     </View>
                   ) : null}
                 </View>
-                <Text style={styles.storeCircleName} numberOfLines={1}>
-                  {store.store_name}
-                </Text>
+                <Text style={styles.storeName} numberOfLines={2}>{store.store_name}</Text>
+                <View style={styles.storeMeta}>
+                  {store.rating > 0 ? (
+                    <View style={styles.storeRating}>
+                      <Ionicons name="star" size={11} color={CT.star} />
+                      <Text style={styles.storeRatingText}>{store.rating.toFixed(1)}</Text>
+                    </View>
+                  ) : null}
+                  {store.city ? (
+                    <Text style={styles.storeCity} numberOfLines={1}>{store.city}</Text>
+                  ) : null}
+                </View>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </CustomerHorizontalList>
 
           <CustomerSectionHeader
             eyebrow={t('customer.curatedStores')}
@@ -467,12 +467,12 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color={COLORS.primary} size="large" />
+              <ActivityIndicator color={CT.navy} size="large" />
             </View>
           ) : products.length === 0 ? (
-            <View style={styles.productsEmptyState}>
+            <View style={styles.productsEmpty}>
               <View style={styles.productsEmptyIcon}>
-                <Ionicons name="bag-handle-outline" size={28} color={COLORS.primary} />
+                <Ionicons name="bag-handle-outline" size={26} color={CT.navy} />
               </View>
               <Text style={styles.productsEmptyTitle}>{t('customer.noProducts')}</Text>
               <Text style={styles.productsEmptyText}>{t('customer.tryRefresh')}</Text>
@@ -515,242 +515,204 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 const styles = directional(StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FAFAFB',
+    backgroundColor: CT.paper,
   },
-  headerContainer: {
-    backgroundColor: '#FFFFFF',
+  header: {
+    backgroundColor: CT.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF0F3',
+    borderBottomColor: CT.hairline,
     paddingBottom: 14,
   },
-  headerTopRow: {
+  headerRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  locationContainer: {
+  brandRow: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+  },
+  brandMark: {
+    width: 40,
+    height: 40,
+    marginLeft: -2,
+  },
+  locationCol: {
+    flex: 1,
     alignItems: 'flex-end',
   },
   locationLabel: {
+    color: CT.inkMuted,
     fontFamily: FONTS.medium,
     fontSize: 11,
-    color: '#9398A3',
-    marginBottom: 2,
+    marginBottom: 1,
   },
-  locationPickerRow: {
+  locationRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
-  locationValueText: {
+  locationValue: {
+    flexShrink: 1,
+    color: CT.ink,
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#17191F',
   },
-  notifCircleBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.surface,
     borderWidth: 1,
-    borderColor: '#E8EBF0',
+    borderColor: CT.hairline,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
-  notifCircleBadgeDot: {
+  unreadDot: {
     position: 'absolute',
-    top: 9,
-    right: 10,
+    top: 10,
+    right: 11,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#2F5BFF',
+    backgroundColor: CT.sand,
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  searchRowContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchInputBox: {
-    flex: 1,
-    height: 50,
-    borderRadius: 15,
-    backgroundColor: '#F6F7F9',
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    gap: 10,
-  },
-  searchPlaceholderText: {
-    flex: 1,
-    color: '#9398A3',
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    textAlign: 'right',
-  },
-  darkFilterBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#2F5BFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: CT.surface,
   },
   scrollContent: {
-    paddingBottom: 100,
-    paddingTop: 12,
+    paddingTop: 16,
+    paddingBottom: 110,
   },
-  heroCarouselScroll: {
-    paddingBottom: 2,
-  },
-  heroFullImageCard: {
-    borderRadius: 20,
+  heroCard: {
+    borderRadius: CT_RADIUS.xl,
     overflow: 'hidden',
-    minHeight: 166,
-    maxHeight: 166,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E7EAF0',
-    backgroundColor: '#F6F7F9',
+    backgroundColor: CT.navySoft,
   },
-  heroFullImage: {
+  heroImage: {
     width: '100%',
     height: '100%',
   },
-  heroCollectionCard: {
-    borderRadius: 20,
-    backgroundColor: '#F4F6FA',
-    borderWidth: 1,
-    borderColor: '#E6E9EF',
-    padding: 18,
+  heroFeature: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 166,
-    marginBottom: 10,
+    gap: 14,
+    padding: 20,
+    backgroundColor: CT.navy,
   },
-  heroCollectionContent: {
+  heroFeatureText: {
     flex: 1,
     alignItems: 'flex-end',
   },
-  heroCollectionTitle: {
-    color: '#17191F',
+  heroChip: {
+    paddingHorizontal: 10,
+    height: 22,
+    justifyContent: 'center',
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: 'rgba(200,163,106,0.18)',
+    marginBottom: 10,
+  },
+  heroChipText: {
+    color: CT.sand,
+    fontFamily: FONTS.semiBold,
+    fontSize: 10.5,
+  },
+  heroTitle: {
+    color: CT.ivory,
     fontFamily: FONTS.bold,
-    fontSize: 22,
-    lineHeight: 29,
+    fontSize: 21,
+    lineHeight: 28,
     textAlign: 'right',
   },
-  heroCollectionSub: {
-    color: '#737987',
+  heroSub: {
+    color: 'rgba(248,246,241,0.72)',
     fontFamily: FONTS.regular,
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 5,
+    marginTop: 4,
     textAlign: 'right',
   },
-  shopNowBtn: {
-    backgroundColor: '#2F5BFF',
-    paddingHorizontal: 18,
-    height: 38,
-    borderRadius: 12,
+  heroButton: {
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.ivory,
     marginTop: 14,
   },
-  shopNowBtnText: {
-    color: '#FFFFFF',
+  heroButtonText: {
+    color: CT.navy,
     fontFamily: FONTS.bold,
     fontSize: 12.5,
   },
-  heroCollectionMedia: {
-    width: 118,
-    height: 118,
-    borderRadius: 16,
+  heroFeatureMedia: {
+    width: 108,
+    height: 108,
+    borderRadius: CT_RADIUS.lg,
     overflow: 'hidden',
-    backgroundColor: '#ECEFF4',
+    backgroundColor: CT.navyDeep,
   },
-  heroCollectionImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroDotsContainer: {
+  heroDots: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: 5,
+    marginTop: 12,
   },
-  dotInactive: {
+  heroCounter: {
+    color: CT.inkMuted,
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+  dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#D5D8DF',
+    backgroundColor: CT.navyTint,
   },
-  dotActiveDark: {
+  dotActive: {
     width: 18,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#2F5BFF',
+    backgroundColor: CT.navy,
   },
-  sectionHeader: {
+  categoriesRow: {
     flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  sectionTitleBold: {
-    color: '#17191F',
-    fontFamily: FONTS.bold,
-    fontSize: 18,
-    textAlign: 'right',
-  },
-  seeAllLink: {
-    color: '#2F5BFF',
-    fontFamily: FONTS.semiBold,
-    fontSize: 12.5,
-  },
-  categoriesCircleScroll: {
-    flexDirection: 'row-reverse',
-    gap: 10,
+    gap: 6,
     paddingVertical: 2,
   },
-  categoryCircleItem: {
+  categoryItem: {
+    width: 76,
     alignItems: 'center',
-    width: 82,
-    minHeight: 92,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E9ECF1',
+    paddingVertical: 4,
   },
-  categoryCircleWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F2F5FF',
+  categoryIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.navySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoryCircleName: {
-    color: '#343840',
-    fontFamily: FONTS.semiBold,
+  categoryName: {
+    width: '100%',
+    color: CT.ink,
+    fontFamily: FONTS.medium,
     fontSize: 11.5,
-    marginTop: 7,
+    marginTop: 8,
     textAlign: 'center',
   },
-  storesContent: {
+  storesRow: {
     flexDirection: 'row-reverse',
     gap: 10,
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
-  storesEmptyState: {
+  storesEmpty: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 8,
@@ -759,279 +721,117 @@ const styles = directional(StyleSheet.create({
   },
   storesEmptyText: {
     fontSize: 13,
-    color: '#9398A3',
+    color: CT.inkMuted,
     fontFamily: FONTS.medium,
   },
-  storeCircleItem: {
-    alignItems: 'center',
-    width: 110,
-    minHeight: 118,
-    padding: 10,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+  storeCard: {
+    width: 150,
+    padding: 12,
+    alignItems: 'flex-end',
+    borderRadius: CT_RADIUS.lg,
+    backgroundColor: CT.surface,
     borderWidth: 1,
-    borderColor: '#E9ECF1',
+    borderColor: CT.hairline,
   },
-  storeCircleWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: '#F6F7F9',
+  storeLogoWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: CT_RADIUS.md,
+    backgroundColor: CT.navySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#ECEEF2',
-    position: 'relative',
+    overflow: 'visible',
   },
-  storeCircleLogo: {
+  storeLogo: {
     width: '100%',
     height: '100%',
-    borderRadius: 15,
+    borderRadius: CT_RADIUS.md,
     resizeMode: 'cover',
   },
-  storeCircleLogoFallback: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 4,
-  },
-  storeCircleLogoFallbackText: {
+  storeLogoText: {
+    color: CT.navy,
     fontFamily: FONTS.bold,
-    fontSize: 11,
-    textAlign: 'center',
+    fontSize: 18,
   },
-  verifiedCircleBadge: {
+  verifiedBadge: {
     position: 'absolute',
-    bottom: -4,
-    left: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 7,
-    backgroundColor: '#2F5BFF',
+    bottom: -5,
+    left: -5,
+    width: 19,
+    height: 19,
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.navy,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: CT.surface,
   },
-  storeCircleName: {
+  storeName: {
     width: '100%',
-    color: '#272A31',
+    minHeight: 36,
+    color: CT.ink,
     fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  flashHeaderRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 22,
-    marginBottom: 12,
-  },
-  flashTitleCol: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-  },
-  timerBadge: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: '#F2F5FF',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#E2E8FF',
-  },
-  timerText: {
-    color: '#2F5BFF',
-    fontFamily: FONTS.bold,
-    fontSize: 11.5,
-  },
-  flashFilterScroll: {
-    flexDirection: 'row-reverse',
-    gap: 8,
-    marginBottom: 16,
-  },
-  flashPill: {
-    paddingHorizontal: 15,
-    paddingVertical: 7,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E9ECF1',
-  },
-  flashPillSelected: {
-    backgroundColor: '#2F5BFF',
-    borderColor: '#2F5BFF',
-  },
-  flashPillText: {
-    color: '#626874',
-    fontFamily: FONTS.medium,
     fontSize: 12.5,
+    lineHeight: 18,
+    marginTop: 10,
+    textAlign: 'right',
   },
-  flashPillTextSelected: {
-    color: '#FFFFFF',
-    fontFamily: FONTS.bold,
+  storeMeta: {
+    width: '100%',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  storeRating: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 3,
+  },
+  storeRatingText: {
+    color: CT.ink,
+    fontFamily: FONTS.semiBold,
+    fontSize: 11,
+  },
+  storeCity: {
+    flexShrink: 1,
+    color: CT.inkMuted,
+    fontFamily: FONTS.regular,
+    fontSize: 11,
   },
   productsGrid: {
     flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     paddingBottom: 8,
   },
-  productCard: {
-    overflow: 'hidden',
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E9ECF1',
-  },
-  productMedia: {
-    position: 'relative',
-    width: '100%',
-    aspectRatio: 1.08,
-    backgroundColor: '#F5F6F8',
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-  },
-  productImageFallback: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F3F5F8',
-  },
-  discountBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    minHeight: 24,
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    borderRadius: 7,
-    backgroundColor: '#17191F',
-  },
-  discountText: {
-    color: '#FFFFFF',
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.96)',
-    borderWidth: 1,
-    borderColor: '#E9ECF1',
-  },
-  productBody: {
-    minHeight: 126,
-    padding: 12,
-    alignItems: 'flex-end',
-  },
-  productStore: {
-    maxWidth: '100%',
-    color: '#8A909B',
-    fontFamily: FONTS.semiBold,
-    fontSize: 10.5,
-    marginBottom: 3,
-  },
-  productName: {
-    width: '100%',
-    minHeight: 38,
-    color: '#1B1D22',
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'right',
-  },
-  ratingRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  ratingText: {
-    color: '#353941',
-    fontFamily: FONTS.bold,
-    fontSize: 11.5,
-  },
-  soldText: {
-    color: '#969BA5',
-    fontFamily: FONTS.regular,
-    fontSize: 10.5,
-  },
-  priceActionRow: {
-    width: '100%',
-    marginTop: 10,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  priceCol: {
-    alignItems: 'flex-end',
-  },
-  priceText: {
-    color: '#17191F',
-    fontFamily: FONTS.bold,
-    fontSize: 15.5,
-  },
-  currencyText: {
-    color: '#777D89',
-    fontFamily: FONTS.medium,
-    fontSize: 10.5,
-  },
-  oldPriceText: {
-    color: '#9DA2AC',
-    fontFamily: FONTS.regular,
-    fontSize: 10.5,
-    textDecorationLine: 'line-through',
-    marginTop: 2,
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2F5BFF',
-  },
-  productsEmptyState: {
+  productsEmpty: {
     minHeight: 220,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E9ECF1',
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    borderColor: CT.hairline,
+    borderRadius: CT_RADIUS.lg,
+    backgroundColor: CT.surface,
   },
   productsEmptyIcon: {
     width: 54,
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: '#F2F5FF',
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.navySoft,
     marginBottom: 12,
   },
   productsEmptyTitle: {
-    color: '#17191F',
+    color: CT.ink,
     fontFamily: FONTS.bold,
     fontSize: 16,
   },
   productsEmptyText: {
     maxWidth: 360,
     marginTop: 6,
-    color: '#858B96',
+    color: CT.inkSecondary,
     fontFamily: FONTS.regular,
     fontSize: 12.5,
     lineHeight: 20,
@@ -1040,14 +840,14 @@ const styles = directional(StyleSheet.create({
   productsEmptyButton: {
     minHeight: 42,
     marginTop: 16,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#2F5BFF',
+    borderRadius: CT_RADIUS.pill,
+    backgroundColor: CT.navy,
   },
   productsEmptyButtonText: {
-    color: '#FFFFFF',
+    color: CT.ivory,
     fontFamily: FONTS.bold,
     fontSize: 12.5,
   },
