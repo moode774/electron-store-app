@@ -1,3 +1,4 @@
+import { translate } from '../../i18n';
 export const DELIVERY_PROOF_MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 export const DELIVERY_PROOF_LOCATION_MAX_AGE_MS = 5 * 60 * 1000;
 
@@ -37,22 +38,22 @@ export function getDeliveryProofValidationError(
   draft: DeliveryProofDraft,
   now = Date.now(),
 ): string | null {
-  if (!draft.photoUri?.trim()) return 'التقط صورة واضحة للتسليم أولًا.';
+  if (!draft.photoUri?.trim()) return translate('deliveryErrors.captureDeliveryProofFirst');
 
   if (draft.photoMimeType && !SUPPORTED_PHOTO_MIME_TYPES.has(draft.photoMimeType.toLowerCase())) {
-    return 'صيغة الصورة غير مدعومة. استخدم صورة JPEG أو PNG.';
+    return translate('deliveryErrors.unsupportedDeliveryImage');
   }
 
   if (Number.isFinite(draft.photoSize) && (draft.photoSize as number) > DELIVERY_PROOF_MAX_PHOTO_BYTES) {
-    return 'حجم صورة الإثبات كبير جدًا. التقط صورة بحجم أقل من 10 ميجابايت.';
+    return translate('deliveryErrors.deliveryImageTooLarge');
   }
 
   if (!hasValidDeliveryCoordinates(draft.latitude, draft.longitude)) {
-    return 'حدّث موقعك الحالي لإرفاقه بإثبات التسليم.';
+    return translate('deliveryErrors.refreshLocationForProof');
   }
 
   if (!hasFreshDeliveryLocation(draft.locationTimestamp, now)) {
-    return 'موقع إثبات التسليم قديم. حدّث الموقع ثم حاول مجددًا.';
+    return translate('deliveryErrors.staleProofLocation');
   }
 
   return null;
