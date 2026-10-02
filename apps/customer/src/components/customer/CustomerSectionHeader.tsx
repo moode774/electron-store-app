@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { DirectionalIcon } from '../DirectionalIcon';
-import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { FONTS } from '@marketplace/shared-utils';
 import { directional } from '../../i18n/directionalStyles';
+import { CT } from '../../theme/customerTheme';
 
 type Props = {
   title: string;
@@ -28,12 +28,13 @@ export function CustomerSectionHeader({
         <TouchableOpacity
           style={styles.action}
           onPress={onActionPress}
-          activeOpacity={0.72}
+          activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={styles.actionText}>{actionLabel}</Text>
-          <DirectionalIcon name="arrow-back" size={15} color="#2F5BFF" />
+          <DirectionalIcon name="chevron-back" size={14} color={CT.navy} />
         </TouchableOpacity>
       ) : null}
     </View>
@@ -42,12 +43,11 @@ export function CustomerSectionHeader({
 
 const styles = directional(StyleSheet.create({
   container: {
-    minHeight: 46,
     flexDirection: 'row-reverse',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: 26,
-    marginBottom: 12,
+    marginTop: 28,
+    marginBottom: 14,
     gap: 12,
   },
   titleWrap: {
@@ -55,30 +55,28 @@ const styles = directional(StyleSheet.create({
     alignItems: 'flex-end',
   },
   eyebrow: {
-    color: '#2F5BFF',
-    fontFamily: FONTS.semiBold,
-    fontSize: 10.5,
-    marginBottom: 2,
+    color: CT.inkMuted,
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    marginBottom: 3,
+    textAlign: 'right',
   },
   title: {
-    color: '#17191F',
+    color: CT.ink,
     fontFamily: FONTS.bold,
-    fontSize: 19,
+    fontSize: 18,
+    lineHeight: 24,
     textAlign: 'right',
   },
   action: {
-    minHeight: 36,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: 4,
-    borderRadius: 10,
-    backgroundColor: 'transparent',
+    gap: 2,
+    paddingBottom: 2,
   },
   actionText: {
-    color: '#2F5BFF',
+    color: CT.navy,
     fontFamily: FONTS.semiBold,
-    fontSize: 12,
+    fontSize: 12.5,
   },
 }), 'rtl');
