@@ -18,6 +18,7 @@ import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../components/appAlert';
 import { useTranslation } from '../../i18n';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 const MENU_ITEMS = [
   { id: '1', titleKey: 'merchant.storeData', icon: 'storefront-outline', screen: 'StoreSettings', params: undefined },
@@ -349,6 +350,11 @@ function MerchantAccountDesktop({ navigation }: any) {
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
+        </View>
+
+        {/* Language */}
+        <View style={[styles.menuCard, { paddingHorizontal: 16, paddingVertical: 8, marginTop: 12 }]}>
+          <LanguageSwitcher />
         </View>
 
         {/* Logout Button */}

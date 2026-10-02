@@ -25,6 +25,7 @@ import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation, translate } from '../../../i18n';
 import { directional } from '../../../i18n/directionalStyles';
+import LanguageSwitcher from '../../../components/LanguageSwitcher';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -278,6 +279,11 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                   {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
                 </React.Fragment>
               ))}
+            </View>
+
+            {/* Language */}
+            <View style={[styles.menuCard, { paddingHorizontal: 16, paddingVertical: 8, marginTop: 12 }]}>
+              <LanguageSwitcher />
             </View>
 
             {/* Logout Button */}

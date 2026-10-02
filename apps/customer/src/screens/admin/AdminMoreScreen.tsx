@@ -9,6 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AdminMoreStackParamList } from '../../navigation/AdminTabNavigator';
 import { BREAKPOINTS, COLORS, FONTS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 type Nav = NativeStackNavigationProp<AdminMoreStackParamList>;
 const MENU_ITEMS = [
@@ -69,10 +70,12 @@ export default function AdminMoreScreen() {
       </View>;
     })}
     {!matches.length && <Text style={s.empty}>{t('adminUi.noMatchingTools')}</Text>}
+    <View style={s.languageCard}><LanguageSwitcher /></View>
     <TouchableOpacity onPress={signOut} style={s.logout} accessibilityRole="button"><Ionicons name="log-out-outline" size={20} color={COLORS.error} /><Text style={s.logoutText}>{t('adminUi.signOut')}</Text></TouchableOpacity>
   </ScrollView>;
 }
 const s = StyleSheet.create({
+  languageCard: { backgroundColor: COLORS.surface, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 16, paddingVertical: 8 },
   root: { flex: 1, backgroundColor: COLORS.background },
   content: { width: '100%', maxWidth: 1180, alignSelf: 'center', paddingHorizontal: 18, paddingBottom: 36, gap: 14 },
   heading: { flexDirection: 'row-reverse', alignItems: 'center', gap: 12, paddingVertical: 6 },

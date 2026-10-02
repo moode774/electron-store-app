@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 import { useTranslation } from '../../i18n';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 const MENU_ITEMS = [
   { id: '1', titleKey: 'delivery.profileVehicle', icon: 'bicycle-outline', screen: 'DeliveryProfile', params: undefined },
@@ -136,6 +137,11 @@ export default function DeliveryAccountScreen({ navigation }: any) {
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
+        </View>
+
+        {/* Language */}
+        <View style={[styles.menuCard, { paddingHorizontal: 16, paddingVertical: 8, marginTop: 12 }]}>
+          <LanguageSwitcher />
         </View>
 
         {/* Logout Button */}
