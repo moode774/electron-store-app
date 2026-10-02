@@ -7,8 +7,8 @@ import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
 
-export default function ReviewsScreen({
-  const { t } = useTranslation(); navigation }: any) {
+export default function ReviewsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(1040);
   const columns = layout.desktop ? 2 : 1;
   const gap = layout.compact ? 12 : 16;
