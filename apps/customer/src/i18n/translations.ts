@@ -1161,6 +1161,7 @@ export const resources = {
       manageApp: 'إدارة التطبيق',
     },
     onboarding: {
+      introBuy: 'اشترِ', introSell: 'بِع', introDeliver: 'وصّل', introEarn: 'اكسب', appName: 'درب',
       luxuryWorld: 'عالم من الفخامة', luxuryBody: 'تسوّق أرقى المنتجات من أفضل المتاجر بلمسة من الفخامة والتميز.',
       clearTracking: 'متابعة واضحة للطلب', clearTrackingBody: 'تابع حالة طلبك من التجهيز حتى التسليم من داخل التطبيق.',
       securityTrust: 'أمان وموثوقية', securityTrustBody: 'الدفع عند الاستلام مع عرض التكلفة كاملة قبل تأكيد الطلب.',
@@ -2831,6 +2832,7 @@ export const resources = {
       manageApp: 'Manage App',
     },
     onboarding: {
+      introBuy: 'Buy', introSell: 'Sell', introDeliver: 'Deliver', introEarn: 'Earn', appName: 'Darb',
       luxuryWorld: 'A World of Luxury', luxuryBody: 'Shop premium products from top stores with a refined experience.',
       clearTracking: 'Clear Order Tracking', clearTrackingBody: 'Follow your order from preparation through delivery inside the app.',
       securityTrust: 'Security & Trust', securityTrustBody: 'Cash on delivery with the full cost shown before confirmation.',

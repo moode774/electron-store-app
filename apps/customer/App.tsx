@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Platform, View, ActivityIndicator, AppState, Text, TextInput, TouchableOpacity } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { enableScreens } from 'react-native-screens';
@@ -30,8 +29,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, useCartStore, getMerchantProfile, getDeliveryProfile, setSharedTranslator } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
 
-import SplashScreen from './src/screens/auth/SplashScreen';
-import OnboardingScreen from './src/screens/auth/OnboardingScreen';
+import IntroScreen from './src/screens/auth/IntroScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import OtpScreen from './src/screens/auth/OtpScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
@@ -52,7 +50,6 @@ setSharedTranslator((key, fallback) => {
 
 SplashScreenExpo.preventAutoHideAsync();
 
-const ONBOARDING_KEY = 'marketplace_onboarding_done';
 
 // Screens that are hidden tabs — reset to home when app comes to foreground
 const HIDDEN_MERCHANT_TABS = ['MerchantStoreSettings', 'MerchantWallet', 'MerchantSupport'];
@@ -89,23 +86,6 @@ function openPushDestination(data: Record<string, unknown>, role: string | null)
     else if (role === USER_ROLES.DELIVERY) navRef.navigate('DeliveryEarnings');
   }
 }
-
-// تخزين بسيط متوافق مع الويب والجوال
-const storage = {
-  get: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') {
-      return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
-    }
-    return SecureStore.getItemAsync(key);
-  },
-  set: async (key: string, value: string): Promise<void> => {
-    if (Platform.OS === 'web') {
-      if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
-      return;
-    }
-    return SecureStore.setItemAsync(key, value);
-  },
-};
 
 type AuthStackParamList = {
   Login: undefined;
@@ -267,9 +247,8 @@ function RootNavigator(): React.JSX.Element {
 }
 
 export default function App(): React.JSX.Element | null {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showIntro, setShowIntro] = useState(true);
   const [appReady, setAppReady] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const initialize = useAuthStore((s) => s.initialize);
   const initializeLanguage = useLanguageStore((s) => s.initializeLanguage);
   const languageHydrated = useLanguageStore((s) => s.hydrated);
@@ -321,7 +300,7 @@ export default function App(): React.JSX.Element | null {
 
   // Preload the Arabic text font and the Ionicons font together.  Ionicons are
   // glyphs, so this prevents their late "pop in" on the web.
-  useFonts({
+  const [fontsLoaded] = useFonts({
     IBMPlexSansArabic_400Regular,
     IBMPlexSansArabic_500Medium,
     IBMPlexSansArabic_600SemiBold,
@@ -347,8 +326,6 @@ export default function App(): React.JSX.Element | null {
       try {
         await initializeLanguage();
         await initialize();
-        const done = await storage.get(ONBOARDING_KEY);
-        setShowOnboarding(done !== '1');
       } catch (e) {
         console.error('Failed to initialize auth:', e);
       } finally {
@@ -359,13 +336,8 @@ export default function App(): React.JSX.Element | null {
     prepare();
   }, [initialize, initializeLanguage]);
 
-  const handleSplashFinish = useCallback(() => {
-    setShowSplash(false);
-  }, []);
-
-  const handleOnboardingFinish = useCallback(() => {
-    setShowOnboarding(false);
-    storage.set(ONBOARDING_KEY, '1').catch(() => {});
+  const handleIntroFinish = useCallback(() => {
+    setShowIntro(false);
   }, []);
 
   // Never keep the application on a blank screen if a browser delays a font.
@@ -378,19 +350,13 @@ export default function App(): React.JSX.Element | null {
     return <LoginScreen />;
   }
 
-  if (showSplash) {
-    return <SplashScreen onFinish={handleSplashFinish} />;
-  }
-
-  if (showOnboarding) {
-    return <OnboardingScreen onFinish={handleOnboardingFinish} />;
-  }
-
+  // The brand intro plays over the app and dissolves into it.
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
       <NavigationContainer ref={navRef} onReady={openPendingPushDestination}>
         <RootNavigator />
       </NavigationContainer>
+      {showIntro && <IntroScreen ready={fontsLoaded} onFinish={handleIntroFinish} />}
     </SafeAreaProvider>
   );
 }
