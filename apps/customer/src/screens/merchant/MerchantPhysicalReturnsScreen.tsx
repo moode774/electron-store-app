@@ -33,7 +33,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation, translate } from '../../i18n';
+import { useTranslation, translate, appLocale } from '../../i18n';
 
 type Recommendation = 'approve' | 'reject';
 type Disposition = 'restock' | 'discard' | 'repair' | 'return_to_vendor' | 'rejected';
@@ -590,7 +590,7 @@ export default function MerchantPhysicalReturnsScreen({ navigation }: MerchantPh
         {item.pickup_scheduled_at ? (
           <View style={styles.scheduleBox}>
             <Ionicons name="calendar-outline" size={17} color="#6D28D9" />
-            <Text style={styles.scheduleText}>{t('merchant.pickupDate')}: {new Date(item.pickup_scheduled_at).toLocaleString('ar-SA')}</Text>
+            <Text style={styles.scheduleText}>{t('merchant.pickupDate')}: {new Date(item.pickup_scheduled_at).toLocaleString(appLocale())}</Text>
           </View>
         ) : null}
 

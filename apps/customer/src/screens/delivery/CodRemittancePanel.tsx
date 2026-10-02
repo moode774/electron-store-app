@@ -19,7 +19,7 @@ import { supabase, useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 
 import { Alert } from '../../components/appAlert';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 import {
   availableCodRemittanceAmount,
   CodCollection,
@@ -85,7 +85,7 @@ interface PendingAttempt {
 }
 
 function money(value: number): string {
-  return value.toLocaleString('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return value.toLocaleString(appLocale(), { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function dateLabel(value: string | null | undefined): string {

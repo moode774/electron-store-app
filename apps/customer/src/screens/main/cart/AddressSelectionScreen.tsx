@@ -24,6 +24,7 @@ import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
 
 import * as Location from 'expo-location';
+import { directional } from '../../../i18n/directionalStyles';
 
 const AREA_LABEL_KEYS: Record<string, string> = {
   [SERVICE_AREAS.SANAA]: 'customer.sanaa',
@@ -547,7 +548,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -1002,4 +1003,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

@@ -9,7 +9,8 @@ import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, getReviews, ProductDetail } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
@@ -106,7 +107,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const variantAdd = selectedVariant?.price_modifier ?? 0;
   const PRODUCT = {
     id: product?.id ?? productId,
-    name: product?.name ?? t('customer.productFallback'),
+    name: localized((product as any)?.name_ar, product?.name) || t('customer.productFallback'),
     price: basePrice + variantAdd,
     oldPrice: product?.sale_price ? product.base_price + variantAdd : null,
     description: product?.description ?? '',
@@ -322,7 +323,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#FFFFFF' 
@@ -645,4 +646,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-});
+}), 'ltr');

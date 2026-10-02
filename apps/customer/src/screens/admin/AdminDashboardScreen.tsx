@@ -14,7 +14,7 @@ import { DirectionalIcon } from '../../components/DirectionalIcon';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect, Line } from 'react-native-svg';
 import { getAdminStats, AdminStats, useAuthStore, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 // Admin semantic aliases keep the operational data contract separate from presentation.
 const UI = {
@@ -221,7 +221,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // ── Chart data ──
   const chartPoints = stats?.chartData?.map(d => d.count) ?? [];
   const chartLabels = stats?.chartData?.map(d =>
-    new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString('ar-SA', { weekday: 'short' })
+    new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString(appLocale(), { weekday: 'short' })
   ) ?? [];
   const chartTotal = chartPoints.reduce((s, v) => s + v, 0);
 
@@ -312,7 +312,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             </TouchableOpacity>
             <View style={styles.datePicker}>
               <Ionicons name="calendar-outline" size={16} color={UI.textDark} />
-              <Text style={styles.dateText}>{new Date().toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+              <Text style={styles.dateText}>{new Date().toLocaleDateString(appLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
             </View>
           </View>
         </View>

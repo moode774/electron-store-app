@@ -9,6 +9,7 @@ import { useAuthStore, updateUserProfile, uploadImageToStorage } from '@marketpl
 import { Input } from '@marketplace/shared-ui';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 export default function EditProfileScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -141,7 +142,7 @@ export default function EditProfileScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
   headerInner: { width: '100%', maxWidth: 720, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -174,4 +175,4 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
   saveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-});
+}), 'ltr');

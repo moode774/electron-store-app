@@ -17,6 +17,7 @@ import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 export default function FavoritesScreen({ navigation }: any): React.JSX.Element {
   const { t } = useTranslation();
@@ -156,7 +157,7 @@ export default function FavoritesScreen({ navigation }: any): React.JSX.Element 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -295,4 +296,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   removeButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-});
+}), 'rtl');

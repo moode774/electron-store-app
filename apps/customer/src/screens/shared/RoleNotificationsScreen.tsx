@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform
 import { Ionicons } from '@expo/vector-icons';
 import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
@@ -126,7 +126,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
                   {!item.is_read && <View style={styles.unreadDot} />}
                 </View>
                 <Text style={styles.body} numberOfLines={2}>{item.body}</Text>
-                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString(appLocale())}</Text>
               </View>
             </TouchableOpacity>
           )}

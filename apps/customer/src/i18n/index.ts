@@ -89,3 +89,13 @@ export function useTranslation() {
 export function translate(key: string): string {
   return getPath(useLanguageStore.getState().language, key);
 }
+
+// Picks the database field matching the active language, falling back to the other one.
+export function localized(ar?: string | null, en?: string | null): string {
+  const language = useLanguageStore.getState().language;
+  return (language === 'en' ? en || ar : ar || en) ?? '';
+}
+
+export function appLocale(): string {
+  return useLanguageStore.getState().language === 'ar' ? 'ar-SA' : 'en-US';
+}

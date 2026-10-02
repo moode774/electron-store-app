@@ -8,6 +8,7 @@ import { useAuthStore, createAddress } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
 import { resources } from '../../../i18n/translations';
+import { directional } from '../../../i18n/directionalStyles';
 
 export default function AddAddressScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -190,7 +191,7 @@ export default function AddAddressScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingTop: 48, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   headerInner: { width: '100%', maxWidth: 820, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -219,4 +220,4 @@ const styles = StyleSheet.create({
   areaChipTextActive: { color: COLORS.surface },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
   bottomBarInner: { width: '100%', maxWidth: 820, alignSelf: 'center', paddingTop: 12, paddingBottom: 24 },
-});
+}), 'ltr');

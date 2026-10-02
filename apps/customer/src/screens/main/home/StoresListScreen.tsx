@@ -19,7 +19,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
@@ -233,7 +234,7 @@ export default function StoresListScreen({ navigation, route }: any) {
             <Text style={[styles.chipText, !activeCategory && styles.chipTextActive]}>{t('merchant.all')}</Text>
           </TouchableOpacity>
           {categories.map((category) => {
-            const label = category.name_ar ?? category.name;
+            const label = localized(category.name_ar, category.name);
             const isActive = activeCategory === category.id;
             return (
               <TouchableOpacity
@@ -346,7 +347,7 @@ export default function StoresListScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -708,4 +709,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}), 'rtl');

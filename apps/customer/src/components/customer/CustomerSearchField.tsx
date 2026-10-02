@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
+import { directional } from '../../i18n/directionalStyles';
 
 type Props = Omit<TextInputProps, 'style'> & {
   containerStyle?: StyleProp<ViewStyle>;
@@ -90,7 +91,7 @@ export function CustomerSearchField({
   return <View style={[styles.container, containerStyle]}>{content}</View>;
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     minHeight: 50,
     flexDirection: 'row-reverse',
@@ -145,4 +146,4 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: COLORS.primarySoft,
   },
-});
+}), 'rtl');

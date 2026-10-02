@@ -6,6 +6,7 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const CARD_COLORS = [COLORS.primary, '#059669', '#7C3AED', '#D97706'];
 
@@ -125,7 +126,7 @@ export default function OffersScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
   errorText: { color: '#991B1B', textAlign: 'center' },
@@ -163,4 +164,4 @@ const styles = StyleSheet.create({
   copyBtnText: { fontSize: 11.5, fontWeight: '700', color: COLORS.primary },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 14, color: '#9CA3AF' },
-});
+}), 'ltr');

@@ -24,6 +24,7 @@ import { AccountStackParamList } from '../../../navigation/types';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation, translate } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -332,7 +333,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background, // #FFFFFF
@@ -754,4 +755,4 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-});
+}), 'rtl');

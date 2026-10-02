@@ -7,7 +7,7 @@ import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const UI = {
   primary: '#111827',
@@ -210,7 +210,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
                 <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`${t('delivery.openTicketA11y')} ${ticket.subject}`}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ticketSubject}>{ticket.subject}</Text>
-                    <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString('ar-SA')}</Text>
+                    <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString(appLocale())}</Text>
                   </View>
                   <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
                     <Text style={[styles.ticketStatusText, { color: st.color }]}>{t(st.labelKey)}</Text>

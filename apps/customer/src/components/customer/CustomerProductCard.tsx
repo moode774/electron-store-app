@@ -11,7 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ProductSummary } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, localized } from '../../i18n';
+import { directional } from '../../i18n/directionalStyles';
 
 type Props = {
   product: ProductSummary;
@@ -49,7 +50,7 @@ export function CustomerProductCard({
   const images = useMemo(() => imageCandidates(product), [product]);
   const [imageIndex, setImageIndex] = useState(0);
   const imageUrl = images[imageIndex];
-  const displayName = product.name_ar || product.name;
+  const displayName = localized(product.name_ar, product.name);
   const price = product.sale_price ?? product.base_price;
   const discount = product.sale_price && product.base_price > 0
     ? Math.max(0, Math.round(((product.base_price - product.sale_price) / product.base_price) * 100))
@@ -142,7 +143,7 @@ export function CustomerProductCard({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   card: {
     position: 'relative',
     overflow: 'hidden',
@@ -309,4 +310,4 @@ const styles = StyleSheet.create({
   quickButtonDisabled: {
     opacity: 0.4,
   },
-});
+}), 'rtl');

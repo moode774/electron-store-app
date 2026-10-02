@@ -23,7 +23,8 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { translate, useTranslation } from '../../../i18n';
+import { translate, useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 // اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
 interface Recommendation {
@@ -38,7 +39,7 @@ interface Recommendation {
 
 const toRecommendation = (p: ProductSummary): Recommendation => ({
   id: p.id,
-  name: p.name_ar || p.name,
+  name: localized(p.name_ar, p.name),
   price: Number(p.sale_price ?? p.base_price),
   oldPrice: p.sale_price ? Number(p.base_price) : null,
   image:
@@ -371,7 +372,7 @@ export default function CartScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -912,4 +913,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

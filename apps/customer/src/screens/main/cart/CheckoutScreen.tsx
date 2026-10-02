@@ -30,6 +30,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 // السيرفر (place_order_group) يقبل الدفع نقداً فقط حالياً ويرفض غيره بـ
 // PAYMENT_METHOD_UNAVAILABLE، لذا تُعرض الطرق الأخرى معطّلة كـ«قريباً» بدل
@@ -762,7 +763,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -1407,4 +1408,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

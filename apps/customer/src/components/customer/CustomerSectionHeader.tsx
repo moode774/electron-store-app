@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DirectionalIcon } from '../DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { directional } from '../../i18n/directionalStyles';
 
 type Props = {
   title: string;
@@ -39,7 +40,7 @@ export function CustomerSectionHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     minHeight: 48,
     flexDirection: 'row-reverse',
@@ -80,4 +81,4 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 12,
   },
-});
+}), 'rtl');

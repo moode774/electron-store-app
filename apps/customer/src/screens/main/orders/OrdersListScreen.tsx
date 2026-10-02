@@ -25,7 +25,8 @@ import {
   supabase,
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, appLocale } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type FilterTab = 'all' | 'active' | 'delivering' | 'completed';
 
@@ -155,7 +156,7 @@ export default function OrdersListScreen({ navigation }: any) {
   const formatDate = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString('ar-SA', {
+      return d.toLocaleDateString(appLocale(), {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -271,7 +272,7 @@ export default function OrdersListScreen({ navigation }: any) {
           <View style={styles.cardBottom}>
             <View style={styles.priceWrap}>
               <Text style={styles.priceAmountText}>
-                {item.total_amount ? Number(item.total_amount).toLocaleString('ar-SA') : '0'}
+                {item.total_amount ? Number(item.total_amount).toLocaleString(appLocale()) : '0'}
               </Text>
               <Text style={styles.currencyText}>{t('merchant.currencyYER')}</Text>
             </View>
@@ -423,7 +424,7 @@ export default function OrdersListScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F8' },
   header: {
     backgroundColor: '#FFFFFF', paddingTop: Platform.OS === 'ios' ? 48 : 22,
@@ -505,4 +506,4 @@ const styles = StyleSheet.create({
   emptySubText: { fontFamily: FONTS.regular, fontSize: 12, color: '#7C8494', marginTop: 7, textAlign: 'center', lineHeight: 19 },
   retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 11, borderRadius: 13, backgroundColor: '#172554' },
   retryBtnText: { fontFamily: FONTS.bold, fontSize: 13, color: '#FFFFFF' },
-});
+}), 'rtl');

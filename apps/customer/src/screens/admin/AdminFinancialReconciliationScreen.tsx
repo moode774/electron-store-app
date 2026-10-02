@@ -24,7 +24,7 @@ import {
   reconcileLegacyDeliveredOrder,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const C = {
   primary: COLORS.primary,
@@ -227,7 +227,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           </View>
           <View style={s.orderTitleWrap}>
             <Text style={s.orderNumber}>{t('adminUi.order')} {item.order_number}</Text>
-            <Text style={s.meta}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+            <Text style={s.meta}>{new Date(item.created_at).toLocaleString(appLocale())}</Text>
           </View>
         </View>
 

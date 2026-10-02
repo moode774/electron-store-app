@@ -37,7 +37,8 @@ import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
@@ -222,7 +223,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
     addToCart({
       id: product.id,
       productId: product.id,
-      name: product.name_ar || product.name,
+      name: localized(product.name_ar, product.name),
       price: product.sale_price ?? product.base_price,
       emoji: '🛍️',
       quantity: 1,
@@ -396,7 +397,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                   <Ionicons name={categoryIcon(item)} size={24} color={COLORS.primary} />
                 </View>
                 <Text style={styles.categoryCircleName} numberOfLines={1}>
-                  {item.name_ar ?? item.name}
+                  {localized(item.name_ar, item.name)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -511,7 +512,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -1052,4 +1053,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}), 'rtl');

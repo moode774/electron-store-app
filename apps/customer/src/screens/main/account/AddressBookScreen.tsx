@@ -6,6 +6,7 @@ import { useAuthStore, getAddresses, deleteAddress, setDefaultAddress, Address }
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 export default function AddressBookScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -156,7 +157,7 @@ export default function AddressBookScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingTop: 48, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   headerInner: { width: '100%', maxWidth: 1040, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -187,4 +188,4 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 16, color: COLORS.textMuted },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
   bottomBarInner: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingTop: 12, paddingBottom: 24 },
-});
+}), 'ltr');

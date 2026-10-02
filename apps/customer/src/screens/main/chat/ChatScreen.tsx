@@ -9,7 +9,8 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, appLocale } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 export default function ChatScreen({ navigation, route }: any) {
   const { t } = useTranslation();
@@ -91,7 +92,7 @@ export default function ChatScreen({ navigation, route }: any) {
         <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
           <Text style={[styles.bubbleText, mine && { color: '#FFFFFF' }]}>{item.message}</Text>
           <Text style={[styles.bubbleTime, mine && { color: 'rgba(255,255,255,0.7)' }]}>
-            {new Date(item.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(item.created_at).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
       </View>
@@ -162,7 +163,7 @@ export default function ChatScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
     paddingTop: Platform.OS === 'ios' ? 48 : 32,
@@ -197,4 +198,4 @@ const styles = StyleSheet.create({
     minHeight: 44, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textPrimary, maxHeight: 120,
   },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-});
+}), 'ltr');

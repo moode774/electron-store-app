@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { adminRequeueFailedDelivery, cancelOrder, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -142,7 +142,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
     const statusInfo = STATUS_LABELS[item.status] ?? { labelKey: '', color: UI.textMuted, bg: '#F1F5F9' };
     const merchant = item.merchant_profiles;
     const address = item.addresses;
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const date = new Date(item.created_at).toLocaleDateString(appLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     return (
       <View style={[s.card, !desktop && { padding: 14, borderRadius: 16, shadowOpacity: 0, elevation: 0 }]}>
@@ -298,7 +298,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                     <Text style={s.sectionTitle}>{t('adminUi.statusHistory')}</Text>
                     {selected.order_tracking.map((entry: any) => (
                       <View key={entry.id} style={s.trackingRow}>
-                        <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString('ar-SA')}</Text>
+                        <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString(appLocale())}</Text>
                         <Text style={s.trackingStatus}>{STATUS_LABELS[entry.status] ? t(STATUS_LABELS[entry.status].labelKey) : entry.status}</Text>
                       </View>
                     ))}

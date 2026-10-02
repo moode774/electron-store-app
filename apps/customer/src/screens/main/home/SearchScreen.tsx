@@ -16,7 +16,8 @@ import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const ALL_CATEGORY_ID = '';
 const SORTS = [
@@ -48,7 +49,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
     getCategories()
       .then((items: Category[]) => setCategories([
         { id: ALL_CATEGORY_ID, name: t('merchant.all') },
-        ...items.map((item) => ({ id: item.id, name: item.name_ar ?? item.name })),
+        ...items.map((item) => ({ id: item.id, name: localized(item.name_ar, item.name) })),
       ]))
       .catch(() => setCategoriesError(t('customer.categoriesLoadSearchFailed')));
   }, []);
@@ -223,7 +224,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -445,4 +446,4 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontSize: 11,
   },
-});
+}), 'rtl');

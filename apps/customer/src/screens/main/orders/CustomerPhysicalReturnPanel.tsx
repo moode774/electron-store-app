@@ -16,6 +16,7 @@ import {
 import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const ACTIVE_STATUSES = new Set(['requested', 'approved', 'pickup_scheduled', 'picked_up', 'received', 'inspected']);
@@ -367,7 +368,7 @@ export default function CustomerPhysicalReturnPanel({ order, userId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   loading: { marginTop: 12, padding: 14, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8 },
   loadingText: { color: '#64748B', fontSize: 12 },
   sectionIntro: { marginTop: 18, padding: 14, borderRadius: RADIUS.md, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
@@ -410,4 +411,4 @@ const styles = StyleSheet.create({
   submitText: { color: '#FFFFFF', fontWeight: '900' },
   dismissBtn: { minHeight: 44, paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
   dismissText: { color: '#64748B', fontWeight: '800' },
-});
+}), 'rtl');

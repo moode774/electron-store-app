@@ -11,6 +11,7 @@ import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -373,7 +374,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#F9FAFB' 
@@ -585,4 +586,4 @@ const styles = StyleSheet.create({
   reviewRow: { marginTop: 8 },
   reviewStars: { fontSize: 14, color: '#FBBF24' },
   reviewComment: { fontSize: 12.5, color: '#6B7280', marginTop: 2, lineHeight: 18 },
-});
+}), 'ltr');

@@ -19,6 +19,7 @@ import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
 import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 import {
   useAuthStore,
   getOrderById,
@@ -841,7 +842,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -1465,4 +1466,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');
