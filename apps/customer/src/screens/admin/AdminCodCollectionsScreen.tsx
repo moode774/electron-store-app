@@ -29,6 +29,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { translate, useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -54,63 +55,64 @@ type ActionState =
   | { kind: 'submission'; decision: ReviewDecision; submission: CodRemittanceSubmission }
   | { kind: 'collection'; disputed: boolean };
 
-const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: 'needs_review', label: 'تحتاج مراجعة' },
-  { value: 'disputed', label: 'نزاعات' },
-  { value: 'collected', label: 'غير محولة' },
-  { value: 'partially_remitted', label: 'محولة جزئيًا' },
-  { value: 'remitted', label: 'مكتملة' },
-  { value: 'all', label: 'الكل' },
+const FILTERS: Array<{ value: Filter; labelKey: string }> = [
+  { value: 'needs_review', labelKey: 'adminUi.codNeedsReview' },
+  { value: 'disputed', labelKey: 'adminUi.codDisputes' },
+  { value: 'collected', labelKey: 'adminUi.codNotRemitted' },
+  { value: 'partially_remitted', labelKey: 'adminUi.codPartiallyRemitted' },
+  { value: 'remitted', labelKey: 'adminUi.codCompleted' },
+  { value: 'all', labelKey: 'adminUi.all' },
 ];
 
-const COLLECTION_STATUS: Record<CodCollectionStatus, { label: string; color: string; background: string }> = {
-  collected: { label: 'في عهدة المندوب', color: UI.warning, background: UI.warningSoft },
-  partially_remitted: { label: 'تحويل جزئي', color: UI.primary, background: UI.primarySoft },
-  remitted: { label: 'محولة بالكامل', color: UI.success, background: UI.successSoft },
-  disputed: { label: 'قيد النزاع', color: UI.danger, background: UI.dangerSoft },
+const COLLECTION_STATUS: Record<CodCollectionStatus, { labelKey: string; color: string; background: string }> = {
+  collected: { labelKey: 'adminUi.codInCourierCustody', color: UI.warning, background: UI.warningSoft },
+  partially_remitted: { labelKey: 'adminUi.codPartialTransfer', color: UI.primary, background: UI.primarySoft },
+  remitted: { labelKey: 'adminUi.codFullyRemitted', color: UI.success, background: UI.successSoft },
+  disputed: { labelKey: 'adminUi.codUnderDispute', color: UI.danger, background: UI.dangerSoft },
 };
 
-const SUBMISSION_STATUS: Record<CodRemittanceStatus, { label: string; color: string; background: string }> = {
-  pending: { label: 'بانتظار المراجعة', color: UI.warning, background: UI.warningSoft },
-  approved: { label: 'معتمد', color: UI.success, background: UI.successSoft },
-  rejected: { label: 'مرفوض', color: UI.danger, background: UI.dangerSoft },
-  disputed: { label: 'متنازع عليه', color: UI.purple, background: UI.purpleSoft },
+const SUBMISSION_STATUS: Record<CodRemittanceStatus, { labelKey: string; color: string; background: string }> = {
+  pending: { labelKey: 'adminUi.awaitingReview', color: UI.warning, background: UI.warningSoft },
+  approved: { labelKey: 'adminUi.approved', color: UI.success, background: UI.successSoft },
+  rejected: { labelKey: 'adminUi.productRejected', color: UI.danger, background: UI.dangerSoft },
+  disputed: { labelKey: 'adminUi.codSubmissionDisputed', color: UI.purple, background: UI.purpleSoft },
 };
 
-const DECISION_META: Record<ReviewDecision, { label: string; title: string; color: string }> = {
-  approved: { label: 'اعتماد التحويل', title: 'اعتماد إثبات التحويل', color: UI.success },
-  rejected: { label: 'رفض التحويل', title: 'رفض إثبات التحويل', color: UI.danger },
-  disputed: { label: 'فتح نزاع', title: 'تعليق التحويل وفتح نزاع', color: UI.purple },
+const DECISION_META: Record<ReviewDecision, { labelKey: string; titleKey: string; color: string }> = {
+  approved: { labelKey: 'adminUi.codApproveTransfer', titleKey: 'adminUi.codApproveProof', color: UI.success },
+  rejected: { labelKey: 'adminUi.codRejectTransfer', titleKey: 'adminUi.codRejectProof', color: UI.danger },
+  disputed: { labelKey: 'adminUi.codOpenDispute', titleKey: 'adminUi.codSuspendOpenDispute', color: UI.purple },
 };
 
 function money(value?: number | null): string {
-  return `${Number(value ?? 0).toFixed(2)} ر.ي`;
+  return `${Number(value ?? 0).toFixed(2)} ${translate('adminUi.yer')}`;
 }
 
 function dateTime(value?: string | null): string {
   if (!value) return '—';
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('ar-SA');
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString(translate('adminUi.locale'));
 }
 
 function errorText(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? '');
   if (/proof object was not found|invalid COD remittance proof|proof.*missing/i.test(message)) {
-    return 'تعذر اعتماد التحويل لأن ملف الإثبات الخاص غير موجود أو غير صالح. لم تُنقل أي أموال؛ اطلب من المندوب رفع إثبات جديد.';
+    return translate('adminUi.codProofMissingError');
   }
   if (/resolve disputed remittance submissions/i.test(message)) {
-    return 'لا يمكن إغلاق نزاع التحصيل قبل حسم كل إثبات تحويل متنازع عليه بالاعتماد أو الرفض.';
+    return translate('adminUi.codResolveProofsFirst');
   }
   if (/already terminal/i.test(message)) {
-    return 'حُسم هذا الإثبات مسبقًا. حدّث القائمة لمشاهدة حالته الحالية.';
+    return translate('adminUi.codProofAlreadyResolved');
   }
   if (/exceed collected cash/i.test(message)) {
-    return 'قيمة التحويل تتجاوز النقد المتبقي في عهدة المندوب، لذلك أوقفت قاعدة البيانات العملية.';
+    return translate('adminUi.codAmountExceedsCustody');
   }
-  return message || 'تعذر تنفيذ العملية. لم تتغير عهدة النقد؛ حدّث البيانات ثم حاول مجددًا.';
+  return message || translate('adminUi.codGenericError');
 }
 
 export default function AdminCodCollectionsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -201,7 +203,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       })
       .catch((error) => {
         if (generation === proofGeneration.current) {
-          setProofError(`تعذر إنشاء روابط الإثباتات الخاصة: ${errorText(error)}`);
+          setProofError(`${t('adminUi.codProofLinksFailed')}: ${errorText(error)}`);
         }
       })
       .finally(() => {
@@ -223,7 +225,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
     if (!selected || !action || processing) return;
     const cleanReason = reason.trim();
     if (cleanReason.length < 5) {
-      Alert.alert('سبب القرار مطلوب', 'اكتب سببًا واضحًا من 5 أحرف على الأقل ليبقى القرار مفهومًا في سجل التدقيق وللمندوب.');
+      Alert.alert(t('adminUi.withdrawDecisionReasonRequired'), t('adminUi.codDecisionReasonText'));
       return;
     }
     setProcessing(true);
@@ -235,18 +237,18 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       }
       const successMessage = action.kind === 'submission'
         ? action.decision === 'approved'
-          ? 'اعتمد التحويل ونُقلت العهدة في القيد المالي مرة واحدة.'
+          ? t('adminUi.codSuccessApproved')
           : action.decision === 'rejected'
-            ? 'رُفض الإثبات مع حفظ السبب وإبلاغ المندوب.'
-            : 'عُلّق الإثبات والتحصيل لحين حسم النزاع.'
+            ? t('adminUi.codSuccessRejected')
+            : t('adminUi.codSuccessDisputed'),
         : action.disputed
-          ? 'عُلّق التحصيل النقدي وجرى إبلاغ المندوب بسبب النزاع.'
-          : 'أُغلق نزاع التحصيل بعد التحقق من حسم الإثباتات المرتبطة.';
+          ? t('adminUi.codCollectionDisputed')
+          : t('adminUi.codDisputeClosed'),;
       closeDetails();
       await load();
-      Alert.alert('تم حفظ القرار', successMessage);
+      Alert.alert(t('adminUi.codDecisionSaved'), successMessage);
     } catch (error) {
-      Alert.alert('لم يُحفظ القرار', errorText(error));
+      Alert.alert(t('adminUi.codDecisionNotSaved'), errorText(error));
     } finally {
       setProcessing(false);
     }
@@ -255,10 +257,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
   const renderSummary = () => (
     <View>
       <View style={s.summaryGrid}>
-        <SummaryCard label="النقد المتبقي" value={money(summary.outstanding)} color={UI.warning} icon="cash-outline" />
-        <SummaryCard label="قيد المراجعة" value={money(summary.pending)} color={UI.primary} icon="hourglass-outline" />
-        <SummaryCard label="إثباتات معلقة" value={String(summary.reviews)} color={UI.purple} icon="document-attach-outline" />
-        <SummaryCard label="نزاعات مفتوحة" value={String(summary.disputes)} color={UI.danger} icon="alert-circle-outline" />
+        <SummaryCard label={t('adminUi.codOutstandingCash')} value={money(summary.outstanding)} color={UI.warning} icon="cash-outline" />
+        <SummaryCard label={t('adminUi.refundPending')} value={money(summary.pending)} color={UI.primary} icon="hourglass-outline" />
+        <SummaryCard label={t('adminUi.codPendingProofs')} value={String(summary.reviews)} color={UI.purple} icon="document-attach-outline" />
+        <SummaryCard label={t('adminUi.codOpenDisputes')} value={String(summary.disputes)} color={UI.danger} icon="alert-circle-outline" />
       </View>
       <ScrollView
         horizontal
@@ -282,7 +284,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           <Ionicons name="alert-circle-outline" size={20} color={UI.danger} />
           <View style={s.errorContent}>
             <Text style={s.errorText}>{loadError}</Text>
-            <TouchableOpacity onPress={() => void load()}><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => void load()}><Text style={s.retryText}>{t('adminUi.retry')}</Text></TouchableOpacity>
           </View>
         </View>
       ) : null}
@@ -297,33 +299,33 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       <TouchableOpacity style={s.collectionCard} onPress={() => openDetails(item)} activeOpacity={0.8}>
         <View style={s.cardTopRow}>
           <View style={[s.statusBadge, { backgroundColor: meta.background }]}>
-            <Text style={[s.statusBadgeText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[s.statusBadgeText, { color: meta.color }]}>{t(meta.labelKey)}</Text>
           </View>
           <View style={s.orderInfo}>
-            <Text style={s.orderNumber}>طلب {item.order_number ?? item.order_id.slice(0, 8)}</Text>
-            <Text style={s.cardDate}>استُلم النقد: {dateTime(item.collected_at)}</Text>
+            <Text style={s.orderNumber}>{t('adminUi.order')} {item.order_number ?? item.order_id.slice(0, 8)}</Text>
+            <Text style={s.cardDate}>{t('adminUi.codCashReceived')}: {dateTime(item.collected_at)}</Text>
           </View>
         </View>
 
         <View style={s.identityRow}>
           <Ionicons name="bicycle-outline" size={17} color={UI.muted} />
-          <Text style={s.identityText}>المندوب: {item.delivery_name || item.delivery_id.slice(0, 8)}</Text>
+          <Text style={s.identityText}>{t('adminUi.courier')}: {item.delivery_name || item.delivery_id.slice(0, 8)}</Text>
         </View>
 
         <View style={s.amountGrid}>
-          <AmountCell label="المُحصّل" value={money(item.amount_collected)} />
-          <AmountCell label="المعتمد" value={money(item.amount_remitted)} />
-          <AmountCell label="المتبقي" value={money(item.amount_outstanding)} emphasized />
+          <AmountCell label={t('adminUi.codCollected')} value={money(item.amount_collected)} />
+          <AmountCell label={t('adminUi.codApprovedAmount')} value={money(item.amount_remitted)} />
+          <AmountCell label={t('adminUi.codRemaining')} value={money(item.amount_outstanding)} emphasized />
         </View>
 
         <View style={s.cardFooter}>
           <View style={[s.reviewPill, reviewCount > 0 && s.reviewPillActive]}>
             <Text style={[s.reviewPillText, reviewCount > 0 && s.reviewPillTextActive]}>
-              {reviewCount > 0 ? `${reviewCount} إثبات يحتاج قرارًا` : `${item.submissions.length} تحويل مسجل`}
+              {reviewCount > 0 ? `${reviewCount} ${t('adminUi.codProofsNeedDecision')}` : `${item.submissions.length} ${t('adminUi.codRecordedTransfers')}`}
             </Text>
           </View>
           <View style={s.detailsLink}>
-            <Text style={s.detailsLinkText}>التفاصيل والمراجعة</Text>
+            <Text style={s.detailsLinkText}>{t('adminUi.codDetailsReview')}</Text>
             <Ionicons name="chevron-back" size={17} color={UI.primary} />
           </View>
         </View>
@@ -335,10 +337,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <View style={s.headerText}>
-          <Text style={s.title}>تحصيلات الدفع عند الاستلام</Text>
-          <Text style={s.subtitle}>مراجعة عهدة النقد وإثباتات تحويل المندوبين</Text>
+          <Text style={s.title}>{t('adminUi.codCollectionsTitle')}</Text>
+          <Text style={s.subtitle}>{t('adminUi.codCollectionsSubtitle')}</Text>
         </View>
-        <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()} accessibilityLabel="العودة">
+        <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()} accessibilityLabel={t('adminUi.back')}>
           <Ionicons name="arrow-forward" size={22} color={UI.text} />
         </TouchableOpacity>
       </View>
@@ -346,7 +348,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
       {loading && collections.length === 0 ? (
         <View style={s.centerState}>
           <ActivityIndicator size="large" color={UI.primary} />
-          <Text style={s.stateText}>جارٍ تحميل سجل العهدة النقدية…</Text>
+          <Text style={s.stateText}>{t('adminUi.codLoading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -360,8 +362,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={s.emptyState}>
               <Ionicons name="checkmark-done-circle-outline" size={48} color={UI.success} />
-              <Text style={s.emptyTitle}>لا توجد تحصيلات في هذا القسم</Text>
-              <Text style={s.emptyText}>غيّر المرشح أو اسحب للأسفل لتحديث البيانات.</Text>
+              <Text style={s.emptyTitle}>{t('adminUi.codEmptyTitle')}</Text>
+              <Text style={s.emptyText}>{t('adminUi.codEmptyText')}</Text>
             </View>
           }
           refreshControl={
@@ -385,8 +387,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                 <Ionicons name="close" size={22} color={UI.text} />
               </TouchableOpacity>
               <View style={s.modalHeaderText}>
-                <Text style={s.modalTitle}>تفاصيل عهدة التحصيل</Text>
-                <Text style={s.modalSubtitle}>طلب {selected?.order_number ?? selected?.order_id.slice(0, 8)}</Text>
+                <Text style={s.modalTitle}>{t('adminUi.codCustodyDetails')}</Text>
+                <Text style={s.modalSubtitle}>{t('adminUi.order')} {selected?.order_number ?? selected?.order_id.slice(0, 8)}</Text>
               </View>
             </View>
 
@@ -398,8 +400,8 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                   <View style={s.disputeBanner}>
                     <Ionicons name="warning-outline" size={22} color={UI.danger} />
                     <View style={s.disputeBannerText}>
-                      <Text style={s.disputeTitle}>هذا التحصيل معلّق بسبب نزاع</Text>
-                      <Text style={s.disputeReason}>{selected.dispute_reason || 'لم يُسجّل سبب ظاهر.'}</Text>
+                      <Text style={s.disputeTitle}>{t('adminUi.codCollectionDisputeTitle')}</Text>
+                      <Text style={s.disputeReason}>{selected.dispute_reason || t('adminUi.codNoVisibleReason')}</Text>
                     </View>
                   </View>
                 ) : null}
@@ -411,7 +413,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                       onPress={() => startCollectionAction(false)}
                     >
                       <Ionicons name="checkmark-circle-outline" size={18} color={UI.success} />
-                      <Text style={[s.outlineActionText, { color: UI.success }]}>إنهاء نزاع التحصيل</Text>
+                      <Text style={[s.outlineActionText, { color: UI.success }]}>{t('adminUi.codCloseDispute')}</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
@@ -419,20 +421,20 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                       onPress={() => startCollectionAction(true)}
                     >
                       <Ionicons name="alert-circle-outline" size={18} color={UI.danger} />
-                      <Text style={[s.outlineActionText, { color: UI.danger }]}>فتح نزاع على التحصيل</Text>
+                      <Text style={[s.outlineActionText, { color: UI.danger }]}>{t('adminUi.codOpenCollectionDispute')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
 
                 <View style={s.sectionHeader}>
-                  <Text style={s.sectionTitle}>إثباتات التحويل ({selected.submissions.length})</Text>
+                  <Text style={s.sectionTitle}>{t('adminUi.codTransferProofs')} ({selected.submissions.length})</Text>
                   {proofLoading ? <ActivityIndicator size="small" color={UI.primary} /> : null}
                 </View>
                 {proofError ? <Text style={s.inlineError}>{proofError}</Text> : null}
 
                 {selected.submissions.length === 0 ? (
                   <View style={s.noSubmissions}>
-                    <Text style={s.emptyText}>لم يرسل المندوب أي إثبات تحويل حتى الآن.</Text>
+                    <Text style={s.emptyText}>{t('adminUi.codNoTransferProofs')}</Text>
                   </View>
                 ) : selected.submissions.map((submission) => {
                   const submissionMeta = SUBMISSION_STATUS[submission.status];
@@ -450,10 +452,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                         </View>
                       </View>
 
-                      <InfoLine label="مرجع التحويل" value={submission.reference || '—'} selectable />
-                      <InfoLine label="مسار الإثبات الخاص" value={submission.proof_path} selectable />
-                      {submission.review_note ? <InfoLine label="ملاحظة القرار" value={submission.review_note} /> : null}
-                      {submission.ledger_entry_id ? <InfoLine label="القيد المالي" value={submission.ledger_entry_id} selectable /> : null}
+                      <InfoLine label={t('adminUi.transferReference')} value={submission.reference || '—'} selectable />
+                      <InfoLine label={t('adminUi.codPrivateProofPath')} value={submission.proof_path} selectable />
+                      {submission.review_note ? <InfoLine label={t('adminUi.refundDecisionNoteOptional')} value={submission.review_note} /> : null}
+                      {submission.ledger_entry_id ? <InfoLine label={t('adminUi.codLedgerEntry')} value={submission.ledger_entry_id} selectable /> : null}
 
                       {proofLink ? (
                         <TouchableOpacity
@@ -461,10 +463,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                           onPress={() => void Linking.openURL(proofLink.signedUrl)}
                         >
                           <Ionicons name="open-outline" size={18} color={UI.primary} />
-                          <Text style={s.proofButtonText}>فتح الإثبات برابط خاص مؤقت</Text>
+                          <Text style={s.proofButtonText}>{t('adminUi.codOpenPrivateProof')}</Text>
                         </TouchableOpacity>
                       ) : !proofLoading ? (
-                        <Text style={s.proofUnavailable}>تعذر تجهيز رابط الإثبات؛ المرجع والمسار ظاهران للمراجعة.</Text>
+                        <Text style={s.proofUnavailable}>{t('adminUi.codProofLinkUnavailable')}</Text>
                       ) : null}
 
                       {reviewable ? (
@@ -478,7 +480,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                                 onPress={() => startSubmissionAction(submission, decision)}
                               >
                                 <Text style={[s.smallActionText, { color: DECISION_META[decision].color }]}>
-                                  {DECISION_META[decision].label}
+                                  {t(DECISION_META[decision].labelKey)}
                                 </Text>
                               </TouchableOpacity>
                             ))}
@@ -492,20 +494,20 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                   <View style={s.decisionPanel}>
                     <Text style={s.decisionTitle}>
                       {action.kind === 'submission'
-                        ? DECISION_META[action.decision].title
-                        : action.disputed ? 'فتح نزاع على كامل التحصيل' : 'إنهاء نزاع التحصيل'}
+                        ? t(DECISION_META[action.decision].titleKey)
+                        : action.disputed ? t('adminUi.codOpenFullDispute') : t('adminUi.codCloseDispute')}
                     </Text>
                     {action.kind === 'submission' ? (
                       <Text style={s.decisionContext}>
-                        المبلغ: {money(action.submission.amount)} — المرجع: {action.submission.reference}
+                        {t('adminUi.amount')}: {money(action.submission.amount)} — {t('adminUi.transferReference')}: {action.submission.reference}
                       </Text>
                     ) : null}
-                    <Text style={s.inputLabel}>سبب القرار (إلزامي)</Text>
+                    <Text style={s.inputLabel}>{t('adminUi.decisionReasonRequiredPlaceholderShort')}</Text>
                     <TextInput
                       style={s.reasonInput}
                       value={reason}
                       onChangeText={setReason}
-                      placeholder="اكتب ما تحققت منه وسبب القرار بوضوح…"
+                      placeholder={t('adminUi.codDecisionReasonPlaceholder')}
                       placeholderTextColor="#94A3B8"
                       multiline
                       maxLength={2000}
@@ -515,7 +517,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                     <Text style={s.characterCount}>{reason.trim().length}/2000</Text>
                     <View style={s.decisionButtons}>
                       <TouchableOpacity style={s.cancelButton} onPress={() => { setAction(null); setReason(''); }} disabled={processing}>
-                        <Text style={s.cancelButtonText}>إلغاء</Text>
+                        <Text style={s.cancelButtonText}>{t('adminUi.cancel')}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[s.confirmButton, processing && s.disabledButton]}
@@ -523,7 +525,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                         disabled={processing}
                       >
                         {processing ? <ActivityIndicator size="small" color="#FFFFFF" /> : null}
-                        <Text style={s.confirmButtonText}>تأكيد وحفظ القرار</Text>
+                        <Text style={s.confirmButtonText}>{t('adminUi.codConfirmSaveDecision')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -573,19 +575,19 @@ function CollectionOverview({ collection }: { collection: CodCollection }) {
     <View style={s.overviewCard}>
       <View style={s.overviewHeader}>
         <View style={[s.statusBadge, { backgroundColor: meta.background }]}>
-          <Text style={[s.statusBadgeText, { color: meta.color }]}>{meta.label}</Text>
+          <Text style={[s.statusBadgeText, { color: meta.color }]}>{t(meta.labelKey)}</Text>
         </View>
-        <Text style={s.overviewOrder}>طلب {collection.order_number ?? collection.order_id.slice(0, 8)}</Text>
+        <Text style={s.overviewOrder}>{t('adminUi.order')} {collection.order_number ?? collection.order_id.slice(0, 8)}</Text>
       </View>
-      <InfoLine label="المندوب" value={collection.delivery_name || collection.delivery_id} />
-      <InfoLine label="تاريخ استلام النقد" value={dateTime(collection.collected_at)} />
+      <InfoLine label={t('adminUi.courier')} value={collection.delivery_name || collection.delivery_id} />
+      <InfoLine label={t('adminUi.codCashReceivedDate')} value={dateTime(collection.collected_at)} />
       <View style={s.amountGrid}>
-        <AmountCell label="المُحصّل" value={money(collection.amount_collected)} />
-        <AmountCell label="المعتمد" value={money(collection.amount_remitted)} />
-        <AmountCell label="المتبقي" value={money(collection.amount_outstanding)} emphasized />
+        <AmountCell label={t('adminUi.codCollected')} value={money(collection.amount_collected)} />
+        <AmountCell label={t('adminUi.codApprovedAmount')} value={money(collection.amount_remitted)} />
+        <AmountCell label={t('adminUi.codRemaining')} value={money(collection.amount_outstanding)} emphasized />
       </View>
       {Number(collection.amount_pending_review) > 0 ? (
-        <Text style={s.pendingNote}>مبالغ تنتظر قرار الإدارة: {money(collection.amount_pending_review)}</Text>
+        <Text style={s.pendingNote}>{t('adminUi.codAmountsAwaitingAdmin')}: {money(collection.amount_pending_review)}</Text>
       ) : null}
     </View>
   );
