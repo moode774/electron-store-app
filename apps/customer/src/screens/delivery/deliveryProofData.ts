@@ -1,3 +1,4 @@
+import { translate } from '../../i18n';
 import { supabase } from '@marketplace/shared-hooks';
 
 const DELIVERY_PROOF_BUCKET = 'orders';
@@ -62,7 +63,7 @@ export async function uploadDeliveryProofPhoto({
   const body = await response.arrayBuffer();
 
   if (body.byteLength === 0) {
-    throw new Error('تعذّر قراءة صورة إثبات التسليم. التقط صورة جديدة وحاول مجددًا.');
+    throw new Error(translate('deliveryErrors.readDeliveryProofFailed'));
   }
 
   const { error } = await supabase.storage
@@ -90,7 +91,7 @@ export async function completeDeliveryWithProof({
   });
 
   if (isMissingCompletionRpc(error)) {
-    throw new Error('ميزة إثبات التسليم لم تُفعّل على الخادم بعد. لم تتغير حالة الطلب ولم يُسجّل التسليم.');
+    throw new Error(translate('deliveryErrors.deliveryProofUnavailable'));
   }
   if (error) throw error;
 }
