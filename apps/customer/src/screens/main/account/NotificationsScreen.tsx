@@ -93,7 +93,7 @@ export default function NotificationsScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           columnWrapperStyle={columns > 1 ? [styles.listRow, { gap }] : undefined}
           contentContainerStyle={[styles.listContent, { paddingHorizontal: layout.gutter, gap }]}
-          ListHeaderComponent={<NotificationPreferencesCard />}
+          ListHeaderComponent={<NotificationPreferencesCard collapsible />}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Text style={{ color: '#9CA3AF', fontSize: 14 }}>{t('customer.noNotifications')}</Text>
