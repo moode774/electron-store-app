@@ -20,6 +20,7 @@ import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase, useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
+import { translate, useTranslation } from '../../i18n';
 
 import { Alert } from '../../components/appAlert';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
@@ -42,11 +43,11 @@ import {
 type JobFilter = 'active' | 'completed';
 
 const REASON_LABELS: Record<DeliveryReturnJob['reason'], string> = {
-  damaged: 'المنتج تالف',
-  not_as_described: 'غير مطابق للوصف',
-  wrong_item: 'منتج مختلف',
-  changed_mind: 'تغيير الرأي',
-  other: 'سبب آخر',
+  damaged: 'deliveryReturns.reasonDamaged',
+  not_as_described: 'deliveryReturns.reasonNotAsDescribed',
+  wrong_item: 'deliveryReturns.reasonWrongItem',
+  changed_mind: 'deliveryReturns.reasonChangedMind',
+  other: 'deliveryReturns.reasonOther',
 };
 
 interface StepAttempt {
@@ -66,19 +67,19 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 function dateTime(value: string | null | undefined): string {
-  if (!value) return 'غير محدد';
+  if (!value) return translate('deliveryReturns.unspecified');
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'غير محدد';
-  return date.toLocaleString('ar-EG-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' });
+  if (Number.isNaN(date.getTime())) return translate('deliveryReturns.unspecified');
+  return date.toLocaleString(translate('adminUi.locale'), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function locationLabel(job: DeliveryReturnJob, destination: 'customer' | 'merchant'): string {
   if (destination === 'customer') {
-    if (!job.address) return `عنوان العميل (${job.address_id.slice(-8)})`;
-    return [job.address.full_address, job.address.area, job.address.city].filter(Boolean).join('، ');
+    if (!job.address) return `${translate('deliveryReturns.customerAddress')} (${job.address_id.slice(-8)})`;
+    return [job.address.full_address, job.address.area, job.address.city].filter(Boolean).join(', ');
   }
-  if (!job.merchant) return `المتجر (${job.merchant_id.slice(-8)})`;
-  return [job.merchant.address, job.merchant.city].filter(Boolean).join('، ') || job.merchant.store_name;
+  if (!job.merchant) return `${translate('deliveryReturns.store')} (${job.merchant_id.slice(-8)})`;
+  return [job.merchant.address, job.merchant.city].filter(Boolean).join(', ') || job.merchant.store_name;
 }
 
 function stepFingerprint(
@@ -108,6 +109,7 @@ function hasReachedTarget(current: string | null, target: DeliveryReturnTargetSt
 }
 
 export default function DeliveryReturnsScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const isTabRoot = route?.name === 'DeliveryReturnsTab';
   const layout = useResponsiveLayout(1120);
   const user = useAuthStore((state) => state.user);
@@ -142,7 +144,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       setJobs(rows);
       return rows;
     } catch (error) {
-      setLoadError(errorMessage(error, 'تعذّر تحميل مهام الإرجاع المسندة إليك.'));
+      setLoadError(errorMessage(error, t('deliveryReturns.loadFailed')));
       return null;
     } finally {
       setLoading(false);
@@ -190,7 +192,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== 'granted') {
-        throw new Error('اسمح بالوصول إلى الموقع لتوثيق مكان تنفيذ خطوة الإرجاع.');
+        throw new Error(t('deliveryReturns.locationPermissionRequired'));
       }
       const current = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
@@ -201,7 +203,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
         timestamp: current.timestamp || Date.now(),
       });
     } catch (error) {
-      setProofError(errorMessage(error, 'تعذّر تحديد موقعك الحالي.'));
+      setProofError(errorMessage(error, t('deliveryReturns.locationFailed')));
     } finally {
       locationLock.current = false;
       setLocating(false);
@@ -240,7 +242,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       if (Platform.OS !== 'web') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (permission.status !== 'granted') {
-          throw new Error('اسمح باستخدام الكاميرا لالتقاط إثبات الإرجاع.');
+          throw new Error(t('deliveryReturns.cameraPermissionRequired'));
         }
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -256,9 +258,9 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       const supported = mimeType
         ? ['image/jpeg', 'image/jpg', 'image/png'].includes(mimeType)
         : /[.](jpe?g|png)$/.test(sourceName);
-      if (!supported) throw new Error('صيغة الصورة غير مدعومة. التقط صورة JPEG أو PNG.');
+      if (!supported) throw new Error(t('deliveryReturns.unsupportedImage'));
       if (Number.isFinite(asset.fileSize) && (asset.fileSize as number) > RETURN_PROOF_MAX_BYTES) {
-        throw new Error('حجم صورة الإثبات أكبر من 10 ميجابايت.');
+        throw new Error(t('deliveryReturns.imageTooLarge'));
       }
 
       setProofPhoto({
@@ -269,7 +271,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       });
       await refreshProofLocation();
     } catch (error) {
-      setProofError(errorMessage(error, 'تعذّر التقاط صورة الإثبات.'));
+      setProofError(errorMessage(error, t('deliveryReturns.captureFailed')));
     } finally {
       setCapturing(false);
     }
@@ -278,25 +280,25 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
   const submitStep = useCallback(async () => {
     if (!selectedJob || !targetStatus || !user?.id || submitLock.current || submitting) return;
     if (!proofPhoto) {
-      setProofError('التقط صورة واضحة قبل تأكيد الخطوة.');
+      setProofError(t('deliveryReturns.captureBeforeConfirm'));
       return;
     }
     if (!proofLocation || !hasValidDeliveryCoordinates(
       proofLocation.latitude,
       proofLocation.longitude,
     )) {
-      setProofError('حدّث موقعك الحالي قبل تأكيد الخطوة.');
+      setProofError(t('deliveryReturns.refreshLocationBeforeConfirm'));
       return;
     }
     if (!hasFreshDeliveryLocation(proofLocation.timestamp)) {
-      setProofError('الموقع المسجل قديم. حدّث الموقع ثم أعد الإرسال.');
+      setProofError(t('deliveryReturns.staleLocation'));
       return;
     }
     if (
       (selectedJob.status === 'pickup_scheduled' && targetStatus !== 'picked_up')
       || (selectedJob.status === 'picked_up' && targetStatus !== 'received')
     ) {
-      setProofError('تغيّرت خطوة المهمة. أغلق النافذة وحدّث القائمة.');
+      setProofError(t('deliveryReturns.stepChanged'));
       return;
     }
 
@@ -339,7 +341,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       const latestStatus = await getDeliveryReturnStatus(selectedJob.id);
       confirmed = hasReachedTarget(latestStatus, targetStatus);
       if (!confirmed) {
-        setProofError(errorMessage(error, 'تعذّر تأكيد الخطوة. أعد المحاولة بنفس الإثبات.'));
+        setProofError(errorMessage(error, t('deliveryReturns.confirmFailed')));
         return;
       }
     } finally {
@@ -357,10 +359,10 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
     setProofLocation(null);
     setProofError('');
     Alert.alert(
-      completedTarget === 'picked_up' ? 'تم استلام المرتجع' : 'تم تسليم المرتجع للتاجر',
+      completedTarget === 'picked_up' ? t('deliveryReturns.pickupRecorded') : t('deliveryReturns.deliveryRecorded'),
       completedTarget === 'picked_up'
-        ? 'سُجّل إثبات الاستلام وأصبحت المهمة الآن قيد النقل إلى التاجر.'
-        : 'سُجّل إثبات التسليم، وينتظر المرتجع تأكيد الاستلام والفحص من التاجر.',
+        ? t('deliveryReturns.pickupRecordedText')
+        : t('deliveryReturns.deliveryRecordedText'),
     );
   }, [
     loadJobs,
@@ -381,14 +383,14 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       ? `${latitude},${longitude}`
       : fallbackAddress;
     if (!query) {
-      Alert.alert('العنوان غير مكتمل', 'لا توجد إحداثيات أو تفاصيل عنوان كافية لهذه الوجهة.');
+      Alert.alert(t('deliveryReturns.incompleteAddress'), t('deliveryReturns.incompleteAddressText'));
       return;
     }
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     try {
       await Linking.openURL(url);
     } catch {
-      Alert.alert('تعذّر فتح الخريطة', 'انسخ العنوان الظاهر وحاول فتحه في تطبيق الخرائط.');
+      Alert.alert(t('deliveryReturns.mapOpenFailed'), t('deliveryReturns.mapOpenFailedText'));
     }
   }, []);
 
@@ -413,14 +415,14 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.orderNumber}>طلب {job.order_number}</Text>
-            <Text style={styles.reason}>{REASON_LABELS[job.reason]} · {quantity} قطعة</Text>
+            <Text style={styles.orderNumber}>{t('adminUi.order')} {job.order_number}</Text>
+            <Text style={styles.reason}>{t(REASON_LABELS[job.reason])} · {quantity} {t('deliveryReturns.items')}</Text>
           </View>
           <Text style={[styles.jobStatus, {
             color: received ? '#047857' : inTransit ? COLORS.primary : '#92400E',
             backgroundColor: received ? '#D1FAE5' : inTransit ? COLORS.primarySoft : '#FEF3C7',
           }]}>
-            {received ? 'وصل للتاجر' : inTransit ? 'قيد النقل' : 'بانتظار الاستلام'}
+            {received ? t('deliveryReturns.reachedMerchant') : inTransit ? t('deliveryReturns.inTransit') : t('deliveryReturns.awaitingPickup')}
           </Text>
         </View>
 
@@ -429,27 +431,27 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
             <View style={[styles.timelineDot, (inTransit || received) && styles.timelineDotDone]}>
               {(inTransit || received) ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
             </View>
-            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>استلام العميل</Text>
+            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>{t('deliveryReturns.customerPickup')}</Text>
           </View>
           <View style={[styles.timelineLine, (inTransit || received) && styles.timelineLineDone]} />
           <View style={styles.timelineStep}>
             <View style={[styles.timelineDot, inTransit && styles.timelineDotCurrent, received && styles.timelineDotDone]}>
               {received ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
             </View>
-            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>قيد النقل</Text>
+            <Text style={[styles.timelineLabel, (inTransit || received) && styles.timelineLabelDone]}>{t('deliveryReturns.inTransit')}</Text>
           </View>
           <View style={[styles.timelineLine, received && styles.timelineLineDone]} />
           <View style={styles.timelineStep}>
             <View style={[styles.timelineDot, received && styles.timelineDotDone]}>
               {received ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
             </View>
-            <Text style={[styles.timelineLabel, received && styles.timelineLabelDone]}>تسليم التاجر</Text>
+            <Text style={[styles.timelineLabel, received && styles.timelineLabelDone]}>{t('deliveryReturns.merchantDelivery')}</Text>
           </View>
         </View>
 
         <View style={styles.scheduleBox}>
           <Ionicons name="calendar-outline" size={17} color="#6B7280" />
-          <Text style={styles.scheduleText}>الموعد: {dateTime(job.scheduled_at)}</Text>
+          <Text style={styles.scheduleText}>{t('deliveryReturns.appointment')}: {dateTime(job.scheduled_at)}</Text>
         </View>
 
         <View style={styles.destinationCard}>
@@ -458,7 +460,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
               <Ionicons name="person-outline" size={18} color="#92400E" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.destinationTitle}>الاستلام من العميل</Text>
+              <Text style={styles.destinationTitle}>{t('deliveryReturns.pickupFromCustomer')}</Text>
               <Text style={styles.destinationAddress}>{customerLocation}</Text>
             </View>
             <TouchableOpacity
@@ -469,7 +471,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                 customerLocation,
               )}
               accessibilityRole="button"
-              accessibilityLabel="فتح عنوان العميل في الخريطة"
+              accessibilityLabel={t('deliveryReturns.openCustomerMap')}
             >
               <Ionicons name="navigate-outline" size={18} color={COLORS.primary} />
             </TouchableOpacity>
@@ -482,7 +484,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
               <Ionicons name="storefront-outline" size={18} color={COLORS.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.destinationTitle}>{job.merchant?.store_name ?? 'التاجر'}</Text>
+              <Text style={styles.destinationTitle}>{job.merchant?.store_name ?? t('adminUi.roleMerchant')}</Text>
               <Text style={styles.destinationAddress}>{merchantLocation}</Text>
               {job.merchant?.store_phone ? (
                 <Text style={styles.destinationPhone}>{job.merchant.store_phone}</Text>
@@ -496,7 +498,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                 merchantLocation,
               )}
               accessibilityRole="button"
-              accessibilityLabel="فتح عنوان التاجر في الخريطة"
+              accessibilityLabel={t('deliveryReturns.openMerchantMap')}
             >
               <Ionicons name="navigate-outline" size={18} color={COLORS.primary} />
             </TouchableOpacity>
@@ -509,17 +511,17 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
             onPress={() => openStep(job)}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={pickupPending ? 'تأكيد استلام المرتجع من العميل' : 'تأكيد تسليم المرتجع للتاجر'}
+            accessibilityLabel={pickupPending ? t('deliveryReturns.confirmCustomerPickup') : t('deliveryReturns.confirmMerchantDelivery')}
           >
             <Ionicons name="camera-outline" size={19} color="#FFFFFF" />
             <Text style={styles.primaryActionText}>
-              {pickupPending ? 'توثيق الاستلام من العميل' : 'توثيق التسليم للتاجر'}
+              {pickupPending ? t('deliveryReturns.documentCustomerPickup') : t('deliveryReturns.documentMerchantDelivery')}
             </Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.completedBox}>
             <Ionicons name="shield-checkmark-outline" size={18} color="#047857" />
-            <Text style={styles.completedText}>اكتملت عهدة المندوب وينتظر المرتجع فحص التاجر.</Text>
+            <Text style={styles.completedText}>{t('deliveryReturns.custodyComplete')}</Text>
           </View>
         )}
       </View>
@@ -535,21 +537,21 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
-            accessibilityLabel="العودة"
+            accessibilityLabel={t('adminUi.back')}
           >
             <Ionicons name="arrow-forward" size={23} color={COLORS.ink} />
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>مهام الإرجاع</Text>
-          <Text style={styles.headerSubtitle}>مسار مستقل لاستلام المرتجعات وتسليمها للتاجر</Text>
+          <Text style={styles.headerTitle}>{t('deliveryReturns.title')}</Text>
+          <Text style={styles.headerSubtitle}>{t('deliveryReturns.subtitle')}</Text>
         </View>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={() => void loadJobs(true)}
           disabled={refreshing}
           accessibilityRole="button"
-          accessibilityLabel="تحديث مهام الإرجاع"
+          accessibilityLabel={t('deliveryReturns.refreshA11y')}
         >
           {refreshing
             ? <ActivityIndicator size="small" color={COLORS.primary} />
@@ -564,7 +566,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
           accessibilityRole="button"
         >
           <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>
-            الجارية ({activeCount})
+            {t('deliveryReturns.active')} ({activeCount})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -573,7 +575,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
           accessibilityRole="button"
         >
           <Text style={[styles.filterText, filter === 'completed' && styles.filterTextActive]}>
-            المسلّمة ({completedCount})
+            {t('deliveryReturns.completed')} ({completedCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -581,7 +583,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.centerText}>جاري تحميل مهام الإرجاع…</Text>
+          <Text style={styles.centerText}>{t('deliveryReturns.loading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -600,7 +602,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
               <Ionicons name="alert-circle-outline" size={19} color="#B91C1C" />
               <Text style={styles.errorText}>{loadError}</Text>
               <TouchableOpacity onPress={() => void loadJobs()} accessibilityRole="button">
-                <Text style={styles.retryText}>إعادة المحاولة</Text>
+                <Text style={styles.retryText}>{t('adminUi.retry')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -612,9 +614,9 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                 color={filter === 'active' ? '#9CA3AF' : '#059669'}
               />
               <Text style={styles.emptyTitle}>
-                {filter === 'active' ? 'لا توجد مهام إرجاع جارية' : 'لا توجد مهام مسلّمة بعد'}
+                {filter === 'active' ? t('deliveryReturns.noActive') : t('deliveryReturns.noCompleted')}
               </Text>
-              <Text style={styles.emptyText}>تظهر المهمة بعد اعتمادها وإسنادها إليك من الإدارة.</Text>
+              <Text style={styles.emptyText}>{t('deliveryReturns.emptyHint')}</Text>
             </View>
           )}
         />
@@ -627,16 +629,16 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
               <View style={styles.modalHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modalTitle}>
-                    {targetStatus === 'picked_up' ? 'إثبات استلام المرتجع' : 'إثبات تسليم المرتجع'}
+                    {targetStatus === 'picked_up' ? t('deliveryReturns.pickupProofTitle') : t('deliveryReturns.deliveryProofTitle')}
                   </Text>
-                  <Text style={styles.modalSubtitle}>طلب {selectedJob?.order_number}</Text>
+                  <Text style={styles.modalSubtitle}>{t('adminUi.order')} {selectedJob?.order_number}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={closeStep}
                   disabled={submitting}
                   accessibilityRole="button"
-                  accessibilityLabel="إغلاق إثبات خطوة الإرجاع"
+                  accessibilityLabel={t('deliveryReturns.closeProofA11y')}
                 >
                   <Ionicons name="close" size={21} color="#374151" />
                 </TouchableOpacity>
@@ -646,8 +648,8 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                 <Ionicons name="information-circle-outline" size={19} color={COLORS.primary} />
                 <Text style={styles.instructionText}>
                   {targetStatus === 'picked_up'
-                    ? 'التقط صورة واضحة للمرتجع عند استلامه من العميل. بعد التأكيد ستتحول المهمة تلقائيًا إلى «قيد النقل».'
-                    : 'التقط صورة واضحة عند تسليم المرتجع للتاجر. يجب أن تكون في موقع المتجر وقت التأكيد.'}
+                    ? t('deliveryReturns.pickupProofHint')
+                    : t('deliveryReturns.deliveryProofHint')}
                 </Text>
               </View>
 
@@ -656,7 +658,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                 onPress={() => void captureProof()}
                 disabled={capturing || submitting}
                 accessibilityRole="button"
-                accessibilityLabel="التقاط صورة إثبات الإرجاع"
+                accessibilityLabel={t('deliveryReturns.captureProofA11y')}
               >
                 {proofPhoto ? (
                   <Image source={{ uri: proofPhoto.uri }} style={styles.proofPreview} resizeMode="cover" />
@@ -665,14 +667,14 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                     {capturing
                       ? <ActivityIndicator size="large" color={COLORS.primary} />
                       : <Ionicons name="camera-outline" size={38} color={COLORS.primary} />}
-                    <Text style={styles.captureTitle}>التقط صورة الإثبات</Text>
-                    <Text style={styles.captureSubtitle}>JPEG أو PNG · حتى 10 ميجابايت</Text>
+                    <Text style={styles.captureTitle}>{t('deliveryReturns.captureProof')}</Text>
+                    <Text style={styles.captureSubtitle}>{t('deliveryReturns.imageRequirements')}</Text>
                   </View>
                 )}
                 {proofPhoto ? (
                   <View style={styles.retakeBadge}>
                     <Ionicons name="camera-outline" size={15} color="#FFFFFF" />
-                    <Text style={styles.retakeText}>إعادة الالتقاط</Text>
+                    <Text style={styles.retakeText}>{t('deliveryReturns.retake')}</Text>
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -692,13 +694,13 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.locationTitle}>
                     {proofLocation && hasFreshDeliveryLocation(proofLocation.timestamp)
-                      ? 'الموقع الحالي موثّق'
-                      : 'يلزم تحديث الموقع الحالي'}
+                      ? t('deliveryReturns.locationVerified')
+                      : t('deliveryReturns.locationNeedsRefresh')}
                   </Text>
                   <Text style={styles.locationSubtitle}>
                     {proofLocation
                       ? `${proofLocation.latitude.toFixed(5)}, ${proofLocation.longitude.toFixed(5)}`
-                      : 'لا توجد إحداثيات صالحة بعد'}
+                      : t('deliveryReturns.noValidCoordinates')}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -706,7 +708,7 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                   onPress={() => void refreshProofLocation()}
                   disabled={locating || submitting}
                   accessibilityRole="button"
-                  accessibilityLabel="تحديث موقع إثبات الإرجاع"
+                  accessibilityLabel={t('deliveryReturns.refreshProofLocationA11y')}
                 >
                   {locating
                     ? <ActivityIndicator size="small" color={COLORS.primary} />
@@ -734,10 +736,10 @@ export default function DeliveryReturnsScreen({ navigation, route }: any) {
                   : <Ionicons name="shield-checkmark-outline" size={19} color="#FFFFFF" />}
                 <Text style={styles.confirmButtonText}>
                   {submitting
-                    ? 'جاري حفظ الإثبات…'
+                    ? t('deliveryReturns.savingProof')
                     : targetStatus === 'picked_up'
-                      ? 'تأكيد الاستلام وبدء النقل'
-                      : 'تأكيد التسليم للتاجر'}
+                      ? t('deliveryReturns.confirmPickupStartTransit')
+                      : t('deliveryReturns.confirmDeliveryToMerchant')}
                 </Text>
               </TouchableOpacity>
             </View>
