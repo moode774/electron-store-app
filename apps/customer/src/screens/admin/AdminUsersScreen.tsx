@@ -11,6 +11,7 @@ import {
   adminBlockUser, adminUnblockUser, adminSetUserActive, adminUpdateUser,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { translate, useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -27,63 +28,64 @@ const UI = {
 };
 
 const ROLE_FILTERS = [
-  { key: '', label: 'الكل' },
-  { key: 'customer', label: 'عملاء' },
-  { key: 'merchant', label: 'تجار' },
-  { key: 'delivery', label: 'سائقون' },
-  { key: 'admin', label: 'مدراء' },
+  { key: '', labelKey: 'adminUi.all' },
+  { key: 'customer', labelKey: 'adminUi.usersCustomers' },
+  { key: 'merchant', labelKey: 'adminUi.usersMerchants' },
+  { key: 'delivery', labelKey: 'adminUi.usersCouriers' },
+  { key: 'admin', labelKey: 'adminUi.usersAdmins' },
 ];
 
-const ROLE_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  customer: { label: 'عميل', color: UI.primary, bg: UI.primaryLight, icon: 'person' },
-  merchant: { label: 'تاجر', color: UI.primary, bg: UI.primaryLight, icon: 'storefront' },
-  delivery: { label: 'سائق', color: UI.primary, bg: UI.primaryLight, icon: 'bicycle' },
-  admin: { label: 'مدير', color: UI.primary, bg: UI.primaryLight, icon: 'shield-checkmark' },
+const ROLE_META: Record<string, { labelKey: string; color: string; bg: string; icon: string }> = {
+  customer: { labelKey: 'adminUi.roleCustomer', color: UI.primary, bg: UI.primaryLight, icon: 'person' },
+  merchant: { labelKey: 'adminUi.roleMerchant', color: UI.primary, bg: UI.primaryLight, icon: 'storefront' },
+  delivery: { labelKey: 'adminUi.roleCourier', color: UI.primary, bg: UI.primaryLight, icon: 'bicycle' },
+  admin: { labelKey: 'adminUi.roleAdmin', color: UI.primary, bg: UI.primaryLight, icon: 'shield-checkmark' },
 };
 
 const BLOCK_DURATIONS = [
-  { hours: 24, label: '24 ساعة' },
-  { hours: 72, label: '3 أيام' },
-  { hours: 168, label: 'أسبوع' },
-  { hours: 720, label: 'شهر' },
+  { hours: 24, labelKey: 'adminUi.block24Hours' },
+  { hours: 72, labelKey: 'adminUi.block3Days' },
+  { hours: 168, labelKey: 'adminUi.blockWeek' },
+  { hours: 720, labelKey: 'adminUi.blockMonth' },
 ];
 
-// ترجمة أحداث سجل التحركات
+// Activity log labels.
 const ACTIVITY_LABELS: Record<string, string> = {
-  order_created: 'أنشأ طلباً',
-  order_pending: 'طلب قيد الانتظار',
-  order_preparing: 'طلب قيد التجهيز',
-  order_ready: 'طلب جاهز',
-  order_on_the_way: 'طلب في الطريق',
-  order_delivered: 'تم تسليم طلبه',
-  order_cancelled: 'أُلغي طلبه',
-  review_created: 'كتب تقييماً',
-  support_ticket_created: 'فتح تذكرة دعم',
-  refund_requested: 'طلب استرجاعاً',
-  complaint_created: 'قدّم شكوى',
-  wallet_credit: 'إيداع في المحفظة',
-  wallet_debit: 'خصم من المحفظة',
-  blocked_permanent: '🚫 حُظر نهائياً',
-  blocked_temporary: '⏳ حُظر مؤقتاً',
-  unblocked: '✅ فُك حظره',
-  deactivated: '⛔ عُطّل حسابه',
-  activated: '✅ فُعّل حسابه',
+  order_created: 'adminUi.activityOrderCreated',
+  order_pending: 'adminUi.activityOrderPending',
+  order_preparing: 'adminUi.activityOrderPreparing',
+  order_ready: 'adminUi.activityOrderReady',
+  order_on_the_way: 'adminUi.activityOrderOnWay',
+  order_delivered: 'adminUi.activityOrderDelivered',
+  order_cancelled: 'adminUi.activityOrderCancelled',
+  review_created: 'adminUi.activityReviewCreated',
+  support_ticket_created: 'adminUi.activitySupportCreated',
+  refund_requested: 'adminUi.activityRefundRequested',
+  complaint_created: 'adminUi.activityComplaintCreated',
+  wallet_credit: 'adminUi.activityWalletCredit',
+  wallet_debit: 'adminUi.activityWalletDebit',
+  blocked_permanent: 'adminUi.activityBlockedPermanent',
+  blocked_temporary: 'adminUi.activityBlockedTemporary',
+  unblocked: 'adminUi.activityUnblocked',
+  deactivated: 'adminUi.activityDeactivated',
+  activated: 'adminUi.activityActivated',
 };
 
-type UserStatus = { label: string; color: string; bg: string };
+type UserStatus = { labelKey: string; color: string; bg: string };
 
 const userStatus = (u: AdminUser): UserStatus => {
-  if (u.is_blocked) return { label: 'محظور نهائياً', color: UI.danger, bg: '#FEF2F2' };
+  if (u.is_blocked) return { labelKey: 'adminUi.userBlockedPermanent', color: UI.danger, bg: '#FEF2F2' };
   if (u.blocked_until && new Date(u.blocked_until) > new Date())
-    return { label: 'حظر مؤقت', color: UI.warning, bg: '#FFFBEB' };
-  if (!u.is_active) return { label: 'معطّل', color: UI.textMuted, bg: '#F1F5F9' };
-  return { label: 'نشط', color: UI.success, bg: '#ECFDF5' };
+    return { labelKey: 'adminUi.userBlockedTemporary', color: UI.warning, bg: '#FFFBEB' };
+  if (!u.is_active) return { labelKey: 'adminUi.userInactive', color: UI.textMuted, bg: '#F1F5F9' };
+  return { labelKey: 'adminUi.active', color: UI.success, bg: '#ECFDF5' };
 };
 
 const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  d ? new Date(d).toLocaleString(translate('adminUi.locale'), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 export default function AdminUsersScreen() {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -110,7 +112,7 @@ export default function AdminUsersScreen() {
     try {
       const data = await getAdminUsers(roleFilter || undefined);
       setUsers(data);
-    } catch { Alert.alert('خطأ', 'فشل تحميل المستخدمين'); }
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.usersLoadFailed')); }
     finally { setLoading(false); setRefreshing(false); }
   }, [roleFilter]);
 
@@ -129,7 +131,7 @@ export default function AdminUsersScreen() {
     try {
       const d = await getAdminUserDetails(u.id);
       setDetails(d);
-    } catch { Alert.alert('خطأ', 'فشل تحميل تفاصيل المستخدم'); }
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.userDetailsLoadFailed')); }
     finally { setDetailsLoading(false); }
   };
 
@@ -152,15 +154,15 @@ export default function AdminUsersScreen() {
     try {
       await fn();
       await refreshAfterAction();
-      Alert.alert('تم', successMsg);
-    } catch { Alert.alert('خطأ', 'فشلت العملية'); }
+      Alert.alert(t('adminUi.done'), successMsg);
+    } catch { Alert.alert(t('adminUi.error'), t('adminUi.operationFailed')); }
     finally { setProcessing(false); }
   };
 
   const confirmAction = (title: string, message: string, action: () => void, destructive = false) => {
     Alert.alert(title, message, [
-      { text: 'إلغاء', style: 'cancel' },
-      { text: 'تأكيد', style: destructive ? 'destructive' : 'default', onPress: action },
+      { text: t('adminUi.cancel'), style: 'cancel' },
+      { text: t('adminUi.confirm'), style: destructive ? 'destructive' : 'default', onPress: action },
     ]);
   };
 
@@ -170,9 +172,9 @@ export default function AdminUsersScreen() {
   );
 
   const renderUser = ({ item }: { item: AdminUser }) => {
-    const meta = ROLE_META[item.role] ?? { label: item.role, color: UI.textMuted, bg: '#F1F5F9', icon: 'person' };
+    const meta = ROLE_META[item.role] ?? { labelKey: '', color: UI.textMuted, bg: '#F1F5F9', icon: 'person' };
     const status = userStatus(item);
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const date = new Date(item.created_at).toLocaleDateString(translate('adminUi.locale'), { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
       <TouchableOpacity style={[s.card, !desktop && { padding: 14, borderRadius: 16, shadowOpacity: 0, elevation: 0 }]} activeOpacity={0.7} onPress={() => openDetails(item)}>
         <View style={s.cardRow}>
@@ -183,16 +185,16 @@ export default function AdminUsersScreen() {
             <Text style={s.userName}>{item.full_name}</Text>
             <View style={s.userPhoneRow}>
               <Ionicons name="call-outline" size={12} color={UI.textMuted} />
-              <Text style={s.userPhone}>{item.phone ?? 'غير متوفر'}</Text>
+              <Text style={s.userPhone}>{item.phone ?? t('adminUi.unavailable')}</Text>
             </View>
-            <Text style={s.userDate}>تاريخ الانضمام: {date}</Text>
+            <Text style={s.userDate}>{t('adminUi.joinDate')}: {date}</Text>
           </View>
           <View style={s.badgeCol}>
             <View style={[s.roleBadge, { backgroundColor: meta.bg }]}>
-              <Text style={[s.roleText, { color: meta.color }]}>{meta.label}</Text>
+              <Text style={[s.roleText, { color: meta.color }]}>{meta.labelKey ? t(meta.labelKey) : item.role}</Text>
             </View>
             <View style={[s.roleBadge, { backgroundColor: status.bg }]}>
-              <Text style={[s.roleText, { color: status.color }]}>{status.label}</Text>
+              <Text style={[s.roleText, { color: status.color }]}>{t(status.labelKey)}</Text>
             </View>
           </View>
         </View>
@@ -205,7 +207,7 @@ export default function AdminUsersScreen() {
     count: f.key === '' ? users.length : users.filter(u => u.role === f.key).length,
   }));
 
-  // ---------- تفاصيل المستخدم (المودال) ----------
+  // ---------- User details modal ----------
   const renderDetailsModal = () => {
     if (!selected) return null;
     const status = userStatus(selected);
@@ -224,8 +226,8 @@ export default function AdminUsersScreen() {
               </TouchableOpacity>
               <View style={{ alignItems: 'flex-end', flex: 1 }}>
                 <Text style={s.modalTitle}>{selected.full_name}</Text>
-                <Text style={[s.modalStatus, { color: status.color }]}>{status.label}
-                  {selected.blocked_until && new Date(selected.blocked_until) > new Date() ? ` حتى ${fmtDate(selected.blocked_until)}` : ''}
+                <Text style={[s.modalStatus, { color: status.color }]}>{t(status.labelKey)}
+                  {selected.blocked_until && new Date(selected.blocked_until) > new Date() ? ` ${t('adminUi.until')} ${fmtDate(selected.blocked_until)}` : ''}
                 </Text>
               </View>
             </View>
@@ -235,91 +237,91 @@ export default function AdminUsersScreen() {
             ) : (
               <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
 
-                {/* معلومات أساسية */}
-                <Section title="المعلومات الأساسية" icon="information-circle-outline">
-                  <InfoRow label="الهاتف" value={selected.phone ?? '—'} />
-                  <InfoRow label="الدور" value={ROLE_META[selected.role]?.label ?? selected.role} />
-                  <InfoRow label="البريد الداخلي" value={details?.auth?.email ?? '—'} />
-                  <InfoRow label="آخر دخول" value={fmtDate(details?.auth?.last_sign_in_at)} />
-                  <InfoRow label="تاريخ التسجيل" value={fmtDate(selected.created_at)} />
-                  {selected.blocked_reason ? <InfoRow label="سبب الحظر" value={selected.blocked_reason} danger /> : null}
+                {/* Basic information */}
+                <Section title={t('adminUi.basicInformation')} icon="information-circle-outline">
+                  <InfoRow label={t('adminUi.phone')} value={selected.phone ?? '—'} />
+                  <InfoRow label={t('adminUi.role')} value={ROLE_META[selected.role]?.labelKey ? t(ROLE_META[selected.role].labelKey) : selected.role} />
+                  <InfoRow label={t('adminUi.internalEmail')} value={details?.auth?.email ?? '—'} />
+                  <InfoRow label={t('adminUi.lastSignIn')} value={fmtDate(details?.auth?.last_sign_in_at)} />
+                  <InfoRow label={t('adminUi.registrationDate')} value={fmtDate(selected.created_at)} />
+                  {selected.blocked_reason ? <InfoRow label={t('adminUi.blockReason')} value={selected.blocked_reason} danger /> : null}
                 </Section>
 
-                {/* إحصائيات */}
+                {/* Statistics */}
                 {st && (
-                  <Section title="الإحصائيات" icon="stats-chart-outline">
+                  <Section title={t('adminUi.statistics')} icon="stats-chart-outline">
                     <View style={s.statsGrid}>
-                      <StatBox label="الطلبات" value={String(st.orders_count)} />
-                      <StatBox label="إجمالي الإنفاق" value={`${Number(st.total_spent).toFixed(0)} ر.ي`} />
-                      <StatBox label="طلبات ملغاة" value={String(st.cancelled_orders)} />
-                      <StatBox label="التقييمات" value={String(st.reviews_count)} />
-                      <StatBox label="الشكاوى" value={String(st.complaints_count)} />
-                      <StatBox label="الاسترجاعات" value={String(st.refunds_count)} />
+                      <StatBox label={t('adminUi.orders')} value={String(st.orders_count)} />
+                      <StatBox label={t('adminUi.totalSpent')} value={`${Number(st.total_spent).toFixed(0)} ${t('adminUi.yer')}`} />
+                      <StatBox label={t('adminUi.cancelledOrders')} value={String(st.cancelled_orders)} />
+                      <StatBox label={t('adminUi.reviews')} value={String(st.reviews_count)} />
+                      <StatBox label={t('adminUi.complaints')} value={String(st.complaints_count)} />
+                      <StatBox label={t('adminUi.refunds')} value={String(st.refunds_count)} />
                     </View>
                   </Section>
                 )}
 
-                {/* بروفايل حسب الدور */}
+                {/* Role-specific profile */}
                 {details?.profile && selected.role === 'merchant' && (
-                  <Section title="بيانات المتجر" icon="storefront-outline">
-                    <InfoRow label="المتجر" value={details.profile.store_name} />
-                    <InfoRow label="المدينة" value={details.profile.city ?? '—'} />
-                    <InfoRow label="معتمد" value={details.profile.is_approved ? 'نعم' : 'لا'} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
+                  <Section title={t('adminUi.storeData')} icon="storefront-outline">
+                    <InfoRow label={t('adminUi.store')} value={details.profile.store_name} />
+                    <InfoRow label={t('adminUi.city')} value={details.profile.city ?? '—'} />
+                    <InfoRow label={t('adminUi.approved')} value={details.profile.is_approved ? t('adminUi.yes') : t('adminUi.no')} />
+                    <InfoRow label={t('adminUi.walletBalance')} value={`${details.profile.wallet_balance ?? 0} ${t('adminUi.yer')}`} />
                   </Section>
                 )}
                 {details?.profile && selected.role === 'delivery' && (
-                  <Section title="بيانات المندوب" icon="bicycle-outline">
-                    <InfoRow label="المركبة" value={details.profile.vehicle_type ?? '—'} />
-                    <InfoRow label="اللوحة" value={details.profile.vehicle_plate ?? '—'} />
-                    <InfoRow label="معتمد" value={details.profile.is_approved ? 'نعم' : 'لا'} />
-                    <InfoRow label="متصل الآن" value={details.profile.is_online ? 'نعم' : 'لا'} />
-                    <InfoRow label="التوصيلات" value={String(details.profile.total_deliveries ?? 0)} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
+                  <Section title={t('adminUi.courierData')} icon="bicycle-outline">
+                    <InfoRow label={t('adminUi.vehicle')} value={details.profile.vehicle_type ?? '—'} />
+                    <InfoRow label={t('adminUi.plate')} value={details.profile.vehicle_plate ?? '—'} />
+                    <InfoRow label={t('adminUi.approved')} value={details.profile.is_approved ? t('adminUi.yes') : t('adminUi.no')} />
+                    <InfoRow label={t('adminUi.onlineNow')} value={details.profile.is_online ? t('adminUi.yes') : t('adminUi.no')} />
+                    <InfoRow label={t('adminUi.deliveries')} value={String(details.profile.total_deliveries ?? 0)} />
+                    <InfoRow label={t('adminUi.walletBalance')} value={`${details.profile.wallet_balance ?? 0} ${t('adminUi.yer')}`} />
                   </Section>
                 )}
                 {details?.profile && selected.role === 'customer' && (
-                  <Section title="بيانات العميل" icon="person-outline">
-                    <InfoRow label="نقاط الولاء" value={String(details.profile.loyalty_points ?? 0)} />
-                    <InfoRow label="رصيد المحفظة" value={`${details.profile.wallet_balance ?? 0} ر.ي`} />
+                  <Section title={t('adminUi.customerData')} icon="person-outline">
+                    <InfoRow label={t('adminUi.loyaltyPoints')} value={String(details.profile.loyalty_points ?? 0)} />
+                    <InfoRow label={t('adminUi.walletBalance')} value={`${details.profile.wallet_balance ?? 0} ${t('adminUi.yer')}`} />
                   </Section>
                 )}
 
-                {/* ======= أدوات السيطرة ======= */}
+                {/* ======= Admin controls ======= */}
                 {!isAdminUser && (
-                  <Section title="أدوات التحكم" icon="shield-half-outline">
+                  <Section title={t('adminUi.controlTools')} icon="shield-half-outline">
 
-                    {/* تعديل البيانات */}
+                    {/* Edit data */}
                     <TouchableOpacity style={s.editToggle} onPress={() => setShowEdit(!showEdit)}>
                       <Ionicons name={showEdit ? 'chevron-up' : 'create-outline'} size={18} color={UI.primary} />
-                      <Text style={s.editToggleText}>تعديل البيانات</Text>
+                      <Text style={s.editToggleText}>{t('adminUi.editData')}</Text>
                     </TouchableOpacity>
                     {showEdit && (
                       <View style={s.editBox}>
-                        <TextInput style={s.input} value={editName} onChangeText={setEditName} placeholder="الاسم الكامل" textAlign="right" />
-                        <TextInput style={s.input} value={editPhone} onChangeText={setEditPhone} placeholder="رقم الهاتف" textAlign="right" keyboardType="phone-pad" />
+                        <TextInput style={s.input} value={editName} onChangeText={setEditName} placeholder={t('adminUi.fullName')} textAlign={translate('adminUi.locale') === 'ar-SA' ? 'right' : 'left'} />
+                        <TextInput style={s.input} value={editPhone} onChangeText={setEditPhone} placeholder={t('adminUi.phoneNumber')} textAlign={translate('adminUi.locale') === 'ar-SA' ? 'right' : 'left'} keyboardType="phone-pad" />
                         <ActionBtn
-                          label="حفظ التعديلات" color={UI.primary} disabled={processing}
+                          label={t('adminUi.saveChanges')} color={UI.primary} disabled={processing}
                           onPress={() => doAction(
                             () => adminUpdateUser(selected.id, { full_name: editName.trim(), phone: editPhone.trim() || undefined }),
-                            'تم تحديث البيانات'
+                            t('adminUi.dataUpdated')
                           )}
                         />
                       </View>
                     )}
 
-                    {/* الحظر */}
+                    {/* Blocking */}
                     {!isBlocked ? (
                       <>
                         <TextInput
                           style={s.input}
                           value={blockReason}
                           onChangeText={setBlockReason}
-                          placeholder="سبب الحظر (اختياري)"
+                          placeholder={t('adminUi.blockReasonOptional')}
                           placeholderTextColor={UI.textMuted}
-                          textAlign="right"
+                          textAlign={translate('adminUi.locale') === 'ar-SA' ? 'right' : 'left'}
                         />
-                        <Text style={s.subLabel}>حظر مؤقت:</Text>
+                        <Text style={s.subLabel}>{t('adminUi.temporaryBlock')}:</Text>
                         <View style={s.durationRow}>
                           {BLOCK_DURATIONS.map(d => (
                             <TouchableOpacity
@@ -327,9 +329,9 @@ export default function AdminUsersScreen() {
                               style={s.durationBtn}
                               disabled={processing}
                               onPress={() => confirmAction(
-                                'حظر مؤقت',
-                                `حظر "${selected.full_name}" لمدة ${d.label}؟`,
-                                () => doAction(() => adminBlockUser(selected.id, d.hours, blockReason.trim() || undefined), `تم الحظر لمدة ${d.label}`),
+                                t('adminUi.temporaryBlock'),
+                                `${t('adminUi.blockUserPrefix')} "${selected.full_name}" ${t('adminUi.forDuration')} ${t(d.labelKey)}?`,
+                                () => doAction(() => adminBlockUser(selected.id, d.hours, blockReason.trim() || undefined), `${t('adminUi.blockedFor')} ${t(d.labelKey)}`),
                                 true
                               )}
                             >
@@ -338,104 +340,104 @@ export default function AdminUsersScreen() {
                           ))}
                         </View>
                         <ActionBtn
-                          label="🚫 حظر نهائي" color={UI.danger} disabled={processing}
+                          label={t('adminUi.blockPermanent')} color={UI.danger} disabled={processing}
                           onPress={() => confirmAction(
-                            'حظر نهائي',
-                            `حظر "${selected.full_name}" نهائياً؟ لن يستطيع الدخول أبداً حتى فك الحظر.`,
-                            () => doAction(() => adminBlockUser(selected.id, null, blockReason.trim() || undefined), 'تم الحظر النهائي'),
+                            t('adminUi.blockPermanentTitle'),
+                            `${t('adminUi.blockPermanentConfirmPrefix')} "${selected.full_name}"? ${t('adminUi.blockPermanentConfirmSuffix')}`,
+                            () => doAction(() => adminBlockUser(selected.id, null, blockReason.trim() || undefined), t('adminUi.blockPermanentSuccess')),
                             true
                           )}
                         />
                       </>
                     ) : (
                       <ActionBtn
-                        label="✅ فك الحظر" color={UI.success} disabled={processing}
+                        label={t('adminUi.unblock')} color={UI.success} disabled={processing}
                         onPress={() => confirmAction(
-                          'فك الحظر',
-                          `فك الحظر عن "${selected.full_name}"؟`,
-                          () => doAction(() => adminUnblockUser(selected.id), 'تم فك الحظر')
+                          t('adminUi.unblockTitle'),
+                          `${t('adminUi.unblockConfirm')} "${selected.full_name}"?`,
+                          () => doAction(() => adminUnblockUser(selected.id), t('adminUi.unblockSuccess'))
                         )}
                       />
                     )}
 
-                    {/* تفعيل / تعطيل */}
+                    {/* Activation */}
                     <ActionBtn
-                      label={selected.is_active ? '⛔ تعطيل الحساب' : '✅ تفعيل الحساب'}
+                      label={selected.is_active ? t('adminUi.deactivateAccount') : t('adminUi.activateAccount')}
                       color={selected.is_active ? UI.warning : UI.success}
                       disabled={processing}
                       onPress={() => confirmAction(
-                        selected.is_active ? 'تعطيل الحساب' : 'تفعيل الحساب',
-                        `${selected.is_active ? 'تعطيل' : 'تفعيل'} حساب "${selected.full_name}"؟`,
-                        () => doAction(() => adminSetUserActive(selected.id, !selected.is_active), 'تم بنجاح'),
+                        selected.is_active ? t('adminUi.deactivateAccountTitle') : t('adminUi.activateAccountTitle'),
+                        `${selected.is_active ? t('adminUi.deactivate') : t('adminUi.activate')} ${t('adminUi.accountOf')} "${selected.full_name}"?`,
+                        () => doAction(() => adminSetUserActive(selected.id, !selected.is_active), t('adminUi.operationSuccess')),
                         selected.is_active
                       )}
                     />
                   </Section>
                 )}
 
-                {/* سجل التحركات */}
-                <Section title="سجل التحركات" icon="footsteps-outline">
+                {/* Activity log */}
+                <Section title={t('adminUi.activityLog')} icon="footsteps-outline">
                   {details?.activity?.length ? details.activity.map((a: any, i: number) => (
                     <View key={i} style={s.activityRow}>
                       <Text style={s.activityTime}>{fmtDate(a.created_at)}</Text>
                       <Text style={s.activityAction}>
-                        {ACTIVITY_LABELS[a.action] ?? a.action}
+                        {ACTIVITY_LABELS[a.action] ? t(ACTIVITY_LABELS[a.action]) : a.action}
                         {a.details?.order_number ? ` (${a.details.order_number})` : ''}
-                        {a.details?.total ? ` — ${a.details.total} ر.ي` : ''}
-                        {a.details?.amount ? ` — ${a.details.amount} ر.ي` : ''}
+                        {a.details?.total ? ` — ${a.details.total} ${t('adminUi.yer')}` : ''}
+                        {a.details?.amount ? ` — ${a.details.amount} ${t('adminUi.yer')}` : ''}
                       </Text>
                     </View>
-                  )) : <Text style={s.emptySmall}>لا توجد تحركات مسجلة بعد</Text>}
+                  )) : <Text style={s.emptySmall}>{t('adminUi.noActivity')}</Text>}
                 </Section>
 
-                {/* آخر الطلبات */}
-                <Section title="آخر الطلبات" icon="receipt-outline">
+                {/* Latest orders */}
+                <Section title={t('adminUi.latestOrders')} icon="receipt-outline">
                   {details?.recent_orders?.length ? details.recent_orders.map((o: any) => (
                     <View key={o.id} style={s.activityRow}>
                       <Text style={s.activityTime}>{o.status}</Text>
-                      <Text style={s.activityAction}>{o.order_number} — {o.total_amount} ر.ي</Text>
+                      <Text style={s.activityAction}>{o.order_number} — {o.total_amount} {t('adminUi.yer')}</Text>
                     </View>
-                  )) : <Text style={s.emptySmall}>لا توجد طلبات</Text>}
+                  )) : <Text style={s.emptySmall}>{t('adminUi.noOrders')}</Text>}
                 </Section>
 
-                {/* عمليات البحث والمشاهدات */}
-                <Section title="نشاط التصفح" icon="eye-outline">
+                {/* Browsing activity */}
+                <Section title={t('adminUi.browsingActivity')} icon="eye-outline">
                   {details?.recent_searches?.length ? (
                     <>
-                      <Text style={s.subLabel}>آخر عمليات البحث:</Text>
+                      <Text style={s.subLabel}>{t('adminUi.recentSearches')}:</Text>
                       {details.recent_searches.map((q: any, i: number) => (
-                        <Text key={i} style={s.browsing}>🔍 "{q.query}" ({q.results_count} نتيجة)</Text>
+                        <Text key={i} style={s.browsing}>🔍 "{q.query}" ({q.results_count} {t('adminUi.results')})</Text>
                       ))}
                     </>
                   ) : null}
                   {details?.recent_views?.length ? (
                     <>
-                      <Text style={s.subLabel}>آخر المنتجات المشاهدة:</Text>
+                      <Text style={s.subLabel}>{t('adminUi.recentViewedProducts')}:</Text>
                       {details.recent_views.map((v: any, i: number) => (
                         <Text key={i} style={s.browsing}>👁 {v.product_name}</Text>
                       ))}
                     </>
                   ) : null}
                   {!details?.recent_searches?.length && !details?.recent_views?.length && (
-                    <Text style={s.emptySmall}>لا يوجد نشاط تصفح</Text>
+                    <Text style={s.emptySmall}>{t('adminUi.noBrowsingActivity')}</Text>
                   )}
                 </Section>
 
-                {/* المحفظة */}
-                <Section title="حركات المحفظة" icon="wallet-outline">
+                {/* Wallet */}
+                <Section title={t('adminUi.walletTransactions')} icon="wallet-outline">
                   {details?.wallet_transactions?.length ? details.wallet_transactions.map((w: any, i: number) => (
                     <View key={i} style={s.activityRow}>
                       <Text style={s.activityTime}>{fmtDate(w.created_at)}</Text>
-                      <Text style={s.activityAction}>{w.type === 'credit' ? '⬆️ إيداع' : '⬇️ خصم'} {w.amount} ر.ي (الرصيد: {w.balance_after})</Text>
+                      <Text style={s.activityAction}>{w.type === 'credit' ? t('adminUi.deposit') : t('adminUi.debit')} {w.amount} {t('adminUi.yer')} ({t('adminUi.balance')}: {w.balance_after})</Text>
                     </View>
-                  )) : <Text style={s.emptySmall}>لا توجد حركات</Text>}
+                  )) : <Text style={s.emptySmall}>{t('adminUi.noTransactions')}</Text>}
                 </Section>
 
-                {/* العناوين */}
-                <Section title="العناوين" icon="location-outline">
+                {/* Addresses */}
+                <Section title={t('adminUi.addresses')} icon="location-outline">
                   {details?.addresses?.length ? details.addresses.map((a: any) => (
                     <Text key={a.id} style={s.browsing}>📍 {a.label ? `${a.label}: ` : ''}{a.full_address} — {a.city}</Text>
-                  )) : <Text style={s.emptySmall}>لا توجد عناوين</Text>}
+                  )) : <Text style={s.emptySmall}>{t('adminUi.noAddresses')}</Text>}
                 </Section>
 
               </ScrollView>
@@ -451,8 +453,8 @@ export default function AdminUsersScreen() {
       {/* Modern Header */}
       <View style={[s.header, !desktop && { paddingTop: Platform.OS === 'web' ? 18 : 52, paddingBottom: 14 }]}>
         <View style={[s.headerContent, { width: contentWidth, paddingHorizontal: 0 }]}>
-          <Text style={s.headerCount}>{users.length} مستخدم</Text>
-          <Text style={s.headerTitle}>المستخدمين</Text>
+          <Text style={s.headerCount}>{users.length} {t('adminUi.usersCount')}</Text>
+          <Text style={s.headerTitle}>{t('adminUi.users')}</Text>
         </View>
 
         {/* Search Input */}
@@ -460,11 +462,11 @@ export default function AdminUsersScreen() {
           <Ionicons name="search-outline" size={20} color={UI.textMuted} />
           <TextInput
             style={s.searchInput}
-            placeholder="البحث برقم الهاتف أو الاسم..."
+            placeholder={t('adminUi.searchUsersPlaceholder')}
             placeholderTextColor={UI.textMuted}
             value={search}
             onChangeText={setSearch}
-            textAlign="right"
+            textAlign={translate('adminUi.locale') === 'ar-SA' ? 'right' : 'left'}
           />
         </View>
       </View>
@@ -486,7 +488,7 @@ export default function AdminUsersScreen() {
                 onPress={() => setRoleFilter(f.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.filterText, isActive && s.filterTextActive]}>{f.label}</Text>
+                <Text style={[s.filterText, isActive && s.filterTextActive]}>{t(f.labelKey)}</Text>
                 {count > 0 && (
                   <View style={[s.filterCount, isActive && s.filterCountActive]}>
                     <Text style={[s.filterCountText, isActive && s.filterCountTextActive]}>{count}</Text>
@@ -513,7 +515,7 @@ export default function AdminUsersScreen() {
           ListEmptyComponent={
             <View style={s.center}>
                <Ionicons name="people-outline" size={48} color={UI.border} />
-               <Text style={s.emptyText}>لا يوجد مستخدمون حالياً</Text>
+               <Text style={s.emptyText}>{t('adminUi.noUsers')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -525,7 +527,7 @@ export default function AdminUsersScreen() {
   );
 }
 
-// ---------- مكونات مساعدة ----------
+// ---------- Helper components ----------
 function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
     <View style={s.section}>
