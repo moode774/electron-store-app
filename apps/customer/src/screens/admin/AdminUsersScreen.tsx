@@ -335,7 +335,7 @@ export default function AdminUsersScreen() {
                                 true
                               )}
                             >
-                              <Text style={s.durationText}>{d.label}</Text>
+                              <Text style={s.durationText}>{t(d.labelKey)}</Text>
                             </TouchableOpacity>
                           ))}
                         </View>

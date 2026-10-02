@@ -331,7 +331,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
       <View style={s.card}>
         <View style={s.cardHeader}>
           <View style={[s.statusBadge, { backgroundColor: status.bg }]}>
-            <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
+            <Text style={[s.statusText, { color: status.color }]}>{t(status.labelKey)}</Text>
           </View>
           <View style={s.cardTitleGroup}>
             <Text style={s.orderNumber}>{t('adminUi.order')} #{bundle.order.order_number}</Text>
@@ -421,7 +421,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             style={[s.filterButton, filter === item.value && s.filterButtonActive]}
             accessibilityState={{ selected: filter === item.value }}
           >
-            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
+            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{t(item.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

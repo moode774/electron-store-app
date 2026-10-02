@@ -178,7 +178,7 @@ export default function RegisterScreen(): React.JSX.Element {
                             <Image source={opt.image} style={styles.roleImage} />
                           ) : (
                             <Ionicons
-                              name={opt.icon ?? 'person'}
+                              name={(('icon' in opt && opt.icon) || 'person') as keyof typeof Ionicons.glyphMap}
                               size={30}
                               color={isActive ? '#111827' : '#4B5563'}
                             />

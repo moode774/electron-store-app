@@ -88,6 +88,11 @@ export default function AdminNotificationsScreen({ navigation }: any) {
     );
   };
 
+  const quickTemplates = (['Update', 'Offers', 'Alert', 'Thanks'] as const).map((k) => ({
+    title: t(`adminUi.tpl${k}Title`),
+    body: t(`adminUi.tpl${k}Body`),
+  }));
+
   const applyTemplate = (t: { title: string; body: string }) => {
     setTitle(t.title);
     setBody(t.body);
@@ -133,7 +138,7 @@ export default function AdminNotificationsScreen({ navigation }: any) {
                 <View style={[s.audienceIcon, { backgroundColor: audience === opt.key ? opt.color : '#F1F5F9' }]}>
                   <Ionicons name={opt.icon as any} size={20} color={audience === opt.key ? '#FFFFFF' : UI.textMuted} />
                 </View>
-                <Text style={[s.audienceLabel, audience === opt.key && { color: opt.color, fontWeight: '800' }]}>{opt.label}</Text>
+                <Text style={[s.audienceLabel, audience === opt.key && { color: opt.color, fontWeight: '800' }]}>{t(opt.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -142,10 +147,10 @@ export default function AdminNotificationsScreen({ navigation }: any) {
         <View style={s.card}>
           <Text style={s.sectionTitle}>{t('adminUi.readyTemplates')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.templatesRow}>
-            {QUICK_TEMPLATES.map((t, idx) => (
-              <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(t)} activeOpacity={0.8}>
+            {quickTemplates.map((tpl, idx) => (
+              <TouchableOpacity key={idx} style={s.templateChip} onPress={() => applyTemplate(tpl)} activeOpacity={0.8}>
                 <Ionicons name="flash" size={14} color={UI.primary} />
-                <Text style={s.templateChipText}>{t.title}</Text>
+                <Text style={s.templateChipText}>{tpl.title}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>

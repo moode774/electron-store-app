@@ -275,7 +275,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
           <View style={s.chipGrid}>
             {STORE_CATEGORIES.map((cat) => (
               <TouchableOpacity key={cat.value} style={[s.chip, storeCategory === cat.value && s.chipActive]} onPress={() => setStoreCategory(cat.value)} activeOpacity={0.7}>
-                <Text style={[s.chipText, storeCategory === cat && s.chipTextActive]}>{t(cat.labelKey)}</Text>
+                <Text style={[s.chipText, storeCategory === cat.value && s.chipTextActive]}>{t(cat.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -516,7 +516,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
                     }
                   </View>
                   <Text style={[s.sidebarStepLabel, isAct && s.sidebarStepLabelActive, isDone && { color: UI.green }]}>
-                    {m.label}
+                    {t(m.labelKey)}
                   </Text>
                 </View>
               );

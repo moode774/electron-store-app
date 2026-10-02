@@ -46,10 +46,11 @@ function applyDirection(language: AppLanguage) {
   I18nManager.allowRTL(true);
   I18nManager.forceRTL(rtl);
 
-  if (Platform.OS === 'web' && typeof document !== 'undefined') {
-    document.documentElement.lang = language;
-    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
-    document.body?.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+  const doc = (globalThis as any).document;
+  if (Platform.OS === 'web' && doc) {
+    doc.documentElement.lang = language;
+    doc.documentElement.dir = rtl ? 'rtl' : 'ltr';
+    doc.body?.setAttribute('dir', rtl ? 'rtl' : 'ltr');
   }
 }
 

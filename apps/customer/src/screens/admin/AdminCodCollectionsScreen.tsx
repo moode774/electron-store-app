@@ -276,7 +276,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
             accessibilityRole="button"
             accessibilityState={{ selected: filter === item.value }}
           >
-            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
+            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{t(item.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -445,7 +445,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                     <View key={submission.id} style={s.submissionCard}>
                       <View style={s.submissionHeader}>
                         <View style={[s.statusBadge, { backgroundColor: submissionMeta.background }]}>
-                          <Text style={[s.statusBadgeText, { color: submissionMeta.color }]}>{submissionMeta.label}</Text>
+                          <Text style={[s.statusBadgeText, { color: submissionMeta.color }]}>{t(submissionMeta.labelKey)}</Text>
                         </View>
                         <View style={s.submissionAmountWrap}>
                           <Text style={s.submissionAmount}>{money(submission.amount)}</Text>
@@ -571,6 +571,7 @@ function InfoLine({ label, value, selectable = false }: { label: string; value: 
 }
 
 function CollectionOverview({ collection }: { collection: CodCollection }) {
+  const { t } = useTranslation();
   const meta = COLLECTION_STATUS[collection.status];
   return (
     <View style={s.overviewCard}>

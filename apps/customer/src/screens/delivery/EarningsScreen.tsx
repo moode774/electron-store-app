@@ -217,7 +217,7 @@ export default function EarningsScreen() {
                           { color: statusInfo.color, backgroundColor: statusInfo.backgroundColor },
                         ]}
                       >
-                        {statusInfo.label}
+                        {t(statusInfo.labelKey)}
                       </Text>
                     </View>
                   );

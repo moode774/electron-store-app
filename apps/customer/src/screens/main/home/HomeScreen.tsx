@@ -38,7 +38,6 @@ import { CustomerProductCard } from '../../../components/customer/CustomerProduc
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { CustomerSectionHeader } from '../../../components/customer/CustomerSectionHeader';
 import { useTranslation } from '../../../i18n';
-import { resources } from '../../../i18n/translations';
 
 type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
@@ -48,12 +47,12 @@ const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE'
 
 function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
   const label = `${category.name_ar ?? ''} ${category.name ?? ''}`.toLowerCase();
-  if (label.includes(resources.ar.customer.categoryElectronicsToken) || label.includes('elect')) return 'hardware-chip-outline';
-  if (label.includes(resources.ar.customer.categoryFashionToken) || label.includes(resources.ar.customer.categoryClothesToken) || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
-  if (label.includes(resources.ar.customer.categoryShoesToken) || label.includes('shoe')) return 'footsteps-outline';
-  if (label.includes(resources.ar.customer.categoryPerfumeToken) || label.includes('perfume')) return 'sparkles-outline';
-  if (label.includes(resources.ar.customer.categoryHomeToken) || label.includes('home')) return 'home-outline';
-  if (label.includes(resources.ar.customer.categorySportsToken) || label.includes('sport')) return 'barbell-outline';
+  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes('حذ') || label.includes('shoe')) return 'footsteps-outline';
+  if (label.includes('عطر') || label.includes('perfume')) return 'sparkles-outline';
+  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
+  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
   return 'grid-outline';
 }
 
@@ -70,9 +69,9 @@ const HERO_BANNERS = [
   {
     type: 'content',
     id: 'c1',
-    title: t('customer.discoverNew'),
-    sub: t('customer.curatedProductsStores'),
-    btnText: t('customer.shopNow'),
+    title: 'customer.discoverNew',
+    sub: 'customer.curatedProductsStores',
+    btnText: 'customer.shopNow',
     img: require('../../../../assets/images/home/smool_bannar.png'),
     route: 'Offers',
   },
@@ -336,14 +335,14 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               return (
                 <View key={banner.id} style={[styles.heroCollectionCard, { width: layout.usableWidth || '100%' }]}>
                   <View style={styles.heroCollectionContent}>
-                    <Text style={styles.heroCollectionTitle}>{banner.title}</Text>
-                    <Text style={styles.heroCollectionSub}>{banner.sub}</Text>
+                    <Text style={styles.heroCollectionTitle}>{t(banner.title)}</Text>
+                    <Text style={styles.heroCollectionSub}>{t(banner.sub)}</Text>
                     <TouchableOpacity
                       style={styles.shopNowBtn}
                       onPress={() => navigation.navigate(banner.route as any)}
                       activeOpacity={0.88}
                     >
-                      <Text style={styles.shopNowBtnText}>{banner.btnText}</Text>
+                      <Text style={styles.shopNowBtnText}>{t(banner.btnText)}</Text>
                     </TouchableOpacity>
                   </View>
                   <View style={styles.heroCollectionMedia}>

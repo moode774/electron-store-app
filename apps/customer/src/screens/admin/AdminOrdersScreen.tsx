@@ -222,7 +222,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
               onPress={() => setFilter(f.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{t(f.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -268,7 +268,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingBottom: 20 }}>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.status')}</Text>
-                  <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{STATUS_LABELS[selected.status]?.label ?? selected.status}</Text>
+                  <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{STATUS_LABELS[selected.status] ? t(STATUS_LABELS[selected.status].labelKey) : selected.status}</Text>
                 </View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.store')}</Text><Text style={s.detailVal}>{selected.merchant_profiles?.store_name ?? '—'}</Text></View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.customer')}</Text><Text style={s.detailVal}>{selected.customer?.full_name ?? selected.users?.full_name ?? '—'}</Text></View>
@@ -299,7 +299,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                     {selected.order_tracking.map((entry: any) => (
                       <View key={entry.id} style={s.trackingRow}>
                         <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString('ar-SA')}</Text>
-                        <Text style={s.trackingStatus}>{STATUS_LABELS[entry.status]?.label ?? entry.status}</Text>
+                        <Text style={s.trackingStatus}>{STATUS_LABELS[entry.status] ? t(STATUS_LABELS[entry.status].labelKey) : entry.status}</Text>
                       </View>
                     ))}
                   </View>

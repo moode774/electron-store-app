@@ -256,7 +256,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
         <View style={styles.periodRow}>
           {PERIODS.map((p, idx) => (
             <TouchableOpacity
-              key={p.label}
+              key={p.labelKey}
               style={[styles.periodChip, periodIndex === idx && styles.periodChipActive]}
               onPress={() => handlePeriodChange(idx)}
               activeOpacity={0.8}
@@ -264,7 +264,7 @@ export default function MerchantReportsScreen({ navigation }: any) {
               accessibilityLabel={`${t('merchant.viewReport')} ${t(p.labelKey)}`}
               accessibilityState={{ selected: periodIndex === idx }}
             >
-              <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{p.label}</Text>
+              <Text style={[styles.periodText, periodIndex === idx && styles.periodTextActive]}>{t(p.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </View>

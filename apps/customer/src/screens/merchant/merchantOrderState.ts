@@ -1,6 +1,5 @@
 import { ORDER_STATUS } from '@marketplace/shared-utils';
 import { translate } from '../../i18n';
-import { resources } from '../../i18n/translations';
 
 export const ACTIVE_MERCHANT_ORDER_STATUSES = new Set<string>([
   ORDER_STATUS.PENDING,
@@ -61,7 +60,7 @@ export function getMerchantOrderStatusInfo(status: string): MerchantOrderStatusI
 
 export function getOrderTransitionErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? '');
-  if (message.includes(resources.ar.merchant.transitionDeniedDb1) || message.includes(resources.ar.merchant.transitionDeniedDb2) || message.includes(resources.en.merchant.transitionDeniedDb1) || message.includes(resources.en.merchant.transitionDeniedDb2)) {
+  if (message.includes('انتقال حالة غير مسموح') || message.includes('غير مسموح لهذه الجهة')) {
     return translate('merchant.transitionNotAllowed');
   }
   if (message.toLowerCase().includes('network') || message.toLowerCase().includes('fetch')) {

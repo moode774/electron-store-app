@@ -20,18 +20,17 @@ import { useCustomerLayout } from '../../../components/customer/CustomerResponsi
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../../../i18n';
-import { resources } from '../../../i18n/translations';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
 
 function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
   const label = name.toLowerCase();
-  if (label.includes(resources.ar.customer.categoryElectronicsToken) || label.includes('elect')) return 'hardware-chip-outline';
-  if (label.includes(resources.ar.customer.categoryFashionToken) || label.includes(resources.ar.customer.categoryClothesToken) || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
-  if (label.includes(resources.ar.customer.categoryBeautyToken) || label.includes('beauty') || label.includes(resources.ar.customer.categoryPerfumeToken)) return 'sparkles-outline';
-  if (label.includes(resources.ar.customer.categoryHomeToken) || label.includes('home')) return 'home-outline';
-  if (label.includes(resources.ar.customer.categorySportsToken) || label.includes('sport')) return 'barbell-outline';
+  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes('جمال') || label.includes('beauty') || label.includes('عطر')) return 'sparkles-outline';
+  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
+  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
   return 'grid-outline';
 }
 

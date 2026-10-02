@@ -5,10 +5,12 @@ import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
 
 const CARD_COLORS = [COLORS.primary, '#059669', '#7C3AED', '#D97706'];
 
 export default function OffersScreen({ navigation }: any) {
+  const { t, language } = useTranslation();
   const layout = useCustomerLayout();
   const columns = layout.wide ? 3 : layout.tablet ? 2 : 1;
   const gap = layout.compact ? 12 : 16;

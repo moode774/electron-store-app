@@ -552,8 +552,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
                   {/* Middle: Method Info (RTL) */}
                   <View style={styles.pmInfoCol}>
-                    <Text style={styles.pmNameText}>{method.name}</Text>
-                    <Text style={styles.pmSubText}>{method.subtitle}</Text>
+                    <Text style={styles.pmNameText}>{t(method.nameKey)}</Text>
+                    <Text style={styles.pmSubText}>{t(method.subtitleKey)}</Text>
                   </View>
 
                   {/* Right Side: Radio Check */}

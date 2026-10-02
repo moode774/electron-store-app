@@ -57,7 +57,7 @@ export default function AdminMoreScreen() {
     </View>
     <Text style={s.subtitle}>{matches.length} {t('adminUi.adminTools')}</Text>
     {GROUPS.map(group => {
-      const items = matches.filter(item => group.screens.includes(item.screen));
+      const items = matches.filter(item => (group.screens as readonly string[]).includes(item.screen));
       if (!items.length) return null;
       return <View key={group.titleKey} style={s.section}>
         <Text style={s.sectionTitle}>{t(group.titleKey)}</Text>

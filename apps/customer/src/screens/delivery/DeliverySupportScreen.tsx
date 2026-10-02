@@ -204,8 +204,8 @@ export default function DeliverySupportScreen({ navigation }: any) {
         {tickets.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t('delivery.previousTickets')}</Text>
-            {tickets.map((t, i) => {
-              const st = TICKET_STATUS[ticket.status] || { label: ticket.status, color: UI.textGrey };
+            {tickets.map((ticket, i) => {
+              const st = TICKET_STATUS[ticket.status] || { labelKey: ticket.status, color: UI.textGrey };
               return (
                 <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`${t('delivery.openTicketA11y')} ${ticket.subject}`}>
                   <View style={{ flex: 1 }}>
@@ -213,7 +213,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
                     <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString('ar-SA')}</Text>
                   </View>
                   <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
-                    <Text style={[styles.ticketStatusText, { color: st.color }]}>{st.label}</Text>
+                    <Text style={[styles.ticketStatusText, { color: st.color }]}>{t(st.labelKey)}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -233,7 +233,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
                   onPress={() => setExpandedId(isOpen ? null : faq.id)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={faq.q}
+                  accessibilityLabel={t(faq.qKey)}
                   accessibilityState={{ expanded: isOpen }}
                 >
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={UI.textMuted} />

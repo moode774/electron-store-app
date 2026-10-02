@@ -375,7 +375,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     color: '#475569', background: '#F8FAFC', border: '#CBD5E1',
   }) : null;
   const refundReason = refundRequest
-    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.labelKey ? t(REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)!.labelKey) : undefined ?? refundRequest.reason)
+    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.labelKey ? t(REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)!.labelKey) : refundRequest.reason)
     : '';
 
   if (loading) {
@@ -534,7 +534,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                           isCurrent && styles.stepTitleCurrent,
                         ]}
                       >
-                        {step.label}
+                        {t(step.labelKey)}
                       </Text>
                       {isCurrent && (
                         <View style={styles.currentStatusBadge}>
@@ -747,7 +747,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                 >
-                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{r.label}</Text>
+                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{t(r.labelKey)}</Text>
                   <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? COLORS.primary : '#94A3B8'} />
                 </TouchableOpacity>
               );

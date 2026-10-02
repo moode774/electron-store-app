@@ -23,7 +23,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { translate, useTranslation } from '../../../i18n';
 
 // اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
 interface Recommendation {
@@ -47,7 +47,7 @@ const toRecommendation = (p: ProductSummary): Recommendation => ({
     p.og_image_url ??
     null,
   storeId: p.merchant_id,
-  storeName: (p as any).merchant_profiles?.store_name ?? t('customer.store'),
+  storeName: (p as any).merchant_profiles?.store_name ?? translate('customer.store'),
 });
 
 export default function CartScreen({ navigation }: any) {

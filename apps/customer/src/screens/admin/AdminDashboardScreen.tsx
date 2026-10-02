@@ -121,6 +121,7 @@ function BarChart({ w, h, points, color }: { w: number; h: number; points: numbe
 }
 
 export default function AdminDashboardScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -227,7 +228,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // ── Order row render ──
   const renderOrderRow = (item: any, index: number) => {
     const statusMeta = ORDER_STATUS_META[item.status] ?? { labelKey: '', color: UI.textMuted };
-    const statusLabel = statusMeta.label;
+    const statusLabel = t(statusMeta.labelKey);
     const statusColor = statusMeta.color;
     const d = new Date(item.created_at);
     return (
@@ -585,7 +586,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: UI.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: UI.border },
   limeCard: { backgroundColor: UI.card, borderColor: UI.border },
   mintCard: { backgroundColor: UI.card, borderColor: UI.border },
-  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primaryDark, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.02, shadowRadius: 24, elevation: 1 },
+  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primary, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.02, shadowRadius: 24, elevation: 1 },
   heroContent: { zIndex: 2 },
   heroOrbLime: { position: 'absolute', width: 132, height: 132, borderRadius: 66, backgroundColor: UI.lime, left: -45, top: -52, opacity: 0.92 },
   heroOrbCoral: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: UI.coral, right: -24, bottom: -24, opacity: 0.85 },
