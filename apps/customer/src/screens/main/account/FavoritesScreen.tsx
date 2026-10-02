@@ -17,8 +17,8 @@ import { CustomerProductCard } from '../../../components/customer/CustomerProduc
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
 
-export default function FavoritesScreen({
-  const { t } = useTranslation(); navigation }: any): React.JSX.Element {
+export default function FavoritesScreen({ navigation }: any): React.JSX.Element {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const layout = useCustomerLayout();
   const columns = layout.width < 680 ? 1 : layout.width < 980 ? 2 : layout.width < 1320 ? 3 : 4;

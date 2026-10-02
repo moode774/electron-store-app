@@ -35,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#172554'
+    backgroundColor: '#070B1F'
   },
   ios: {
     supportsTablet: false,
@@ -51,7 +51,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#1B2B4B'
+      backgroundColor: '#070B1F'
     },
     package: 'com.marketplace.customer',
     permissions: [
@@ -73,7 +73,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-location',
     'expo-image-picker',
-    ['expo-notifications', { color: '#172554' }],
+    ['expo-notifications', { color: '#070B1F' }],
   ],
   extra: {
     supportsRTL: true,

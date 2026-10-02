@@ -240,10 +240,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           ? t('adminUi.codSuccessApproved')
           : action.decision === 'rejected'
             ? t('adminUi.codSuccessRejected')
-            : t('adminUi.codSuccessDisputed'),
+            : t('adminUi.codSuccessDisputed')
         : action.disputed
           ? t('adminUi.codCollectionDisputed')
-          : t('adminUi.codDisputeClosed'),;
+          : t('adminUi.codDisputeClosed');
       closeDetails();
       await load();
       Alert.alert(t('adminUi.codDecisionSaved'), successMessage);
