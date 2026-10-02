@@ -69,6 +69,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
       {/* Slides */}
       <FlatList
         ref={listRef}
+        style={styles.list}
         data={SLIDES}
         keyExtractor={(item) => item.id}
         horizontal
@@ -121,13 +122,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 10,
   },
+  list: { flex: 1 },
   skipText: { fontSize: 15, fontWeight: '700', color: '#CBD5E1', letterSpacing: 0.5 },
   slide: {
     width,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 40,
-    marginTop: -80,
+    paddingTop: Math.max(24, height * 0.06),
   },
   iconCircle: {
     width: 100,
