@@ -37,7 +37,7 @@ export function CustomerSearchField({
   const content = (
     <>
       <View style={styles.searchIcon}>
-        <Ionicons name="search" size={19} color={COLORS.primary} />
+        <Ionicons name="search" size={19} color="#5B5BF7" />
       </View>
       {onPress ? (
         <Text style={styles.placeholder} numberOfLines={1}>{resolvedPlaceholder}</Text>
@@ -68,7 +68,7 @@ export function CustomerSearchField({
           accessibilityRole="button"
           accessibilityLabel={t('customer.sortOptions')}
         >
-          <Ionicons name="options-outline" size={18} color={COLORS.textPrimary} />
+          <Ionicons name="options-outline" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       ) : null}
     </>
@@ -93,32 +93,27 @@ export function CustomerSearchField({
 
 const styles = directional(StyleSheet.create({
   container: {
-    minHeight: 50,
+    minHeight: 52,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
-    shadowColor: COLORS.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.025,
-    shadowRadius: 8,
-    elevation: 0,
+    borderColor: '#E8EAF1',
+    borderRadius: 17,
+    backgroundColor: '#F8F9FC',
   },
   searchIcon: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 11,
-    backgroundColor: COLORS.primarySoft,
+    borderRadius: 12,
+    backgroundColor: '#EEEEFF',
   },
   placeholder: {
     flex: 1,
-    color: COLORS.textMuted,
+    color: '#8B91A2',
     fontFamily: FONTS.regular,
     fontSize: 13,
     textAlign: 'right',
@@ -127,7 +122,7 @@ const styles = directional(StyleSheet.create({
     flex: 1,
     minWidth: 0,
     paddingVertical: 0,
-    color: COLORS.textPrimary,
+    color: '#17191F',
     fontFamily: FONTS.medium,
     fontSize: 14,
     textAlign: 'right',
@@ -139,11 +134,16 @@ const styles = directional(StyleSheet.create({
     justifyContent: 'center',
   },
   filterButton: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 13,
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: '#111318',
+    shadowColor: '#111318',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.14,
+    shadowRadius: 9,
+    elevation: 3,
   },
 }), 'rtl');
