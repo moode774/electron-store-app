@@ -27,7 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 (TextInput as any).defaultProps.style = { fontFamily: 'IBMPlexSansArabic_400Regular' };
 
 
-import { useAuthStore, useCartStore, getMerchantProfile, getDeliveryProfile } from '@marketplace/shared-hooks';
+import { useAuthStore, useCartStore, getMerchantProfile, getDeliveryProfile, setSharedTranslator } from '@marketplace/shared-hooks';
 import { USER_ROLES } from '@marketplace/shared-utils';
 
 import SplashScreen from './src/screens/auth/SplashScreen';
@@ -42,7 +42,13 @@ import MerchantOnboardingScreen from './src/screens/onboarding/MerchantOnboardin
 import DeliveryOnboardingScreen from './src/screens/onboarding/DeliveryOnboardingScreen';
 import AdminTabNavigator from './src/navigation/AdminTabNavigator';
 import { configurePushNotifications, installForegroundNotificationHandler } from './src/services/pushNotifications';
-import { useLanguageStore, useTranslation } from './src/i18n';
+import { translate, useLanguageStore, useTranslation } from './src/i18n';
+
+setSharedTranslator((key, fallback) => {
+  const fullKey = `shared.${key}`;
+  const value = translate(fullKey);
+  return value === fullKey ? fallback : value;
+});
 
 SplashScreenExpo.preventAutoHideAsync();
 
