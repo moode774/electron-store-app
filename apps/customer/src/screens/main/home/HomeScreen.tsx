@@ -44,7 +44,7 @@ type Navigation = NativeStackNavigationProp<HomeStackParamList, 'HomeMain'>;
 type Props = { navigation: Navigation };
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
-const STORE_LOGO_COLORS = ['#EEF2FF', '#F0F4FF', '#EEF7FF', '#F5F3FF', '#F1F5FF', '#EEF2F8'];
+const STORE_LOGO_COLORS = ['#F3F5F8', '#F6F7F9', '#F1F4F8', '#F5F6F8', '#F2F4F7', '#F7F8FA'];
 
 function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
   const label = `${category.name_ar ?? ''} ${category.name ?? ''}`.toLowerCase();
@@ -266,11 +266,11 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                 accessibilityRole="button"
                 accessibilityLabel={t('customer.changeDeliveryAddress')}
               >
-                <Ionicons name="location" size={17} color="#172554" />
+                <Ionicons name="location" size={17} color="#17191F" />
                 <Text style={styles.locationValueText}>
                   {defaultCity || t('customer.chooseDeliveryAddress')}
                 </Text>
-                <Ionicons name="chevron-down" size={14} color="#64748B" />
+                <Ionicons name="chevron-down" size={14} color="#7C8290" />
               </TouchableOpacity>
             </View>
 
@@ -281,7 +281,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
               accessibilityRole="button"
               accessibilityLabel={t('customer.notifications')}
             >
-              <Ionicons name="notifications" size={20} color="#172554" />
+              <Ionicons name="notifications" size={20} color="#17191F" />
               {unreadCount > 0 && <View style={styles.notifCircleBadgeDot} />}
             </TouchableOpacity>
           </View>
@@ -299,7 +299,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#172554" />
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#2F5BFF" />
         }
       >
         <CustomerResponsiveShell>
@@ -443,7 +443,7 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
                       </Text>
                     </View>
                   ) : (
-                    <Ionicons name="storefront-outline" size={24} color="#172554" />
+                    <Ionicons name="storefront-outline" size={24} color="#17191F" />
                   )}
                   {store.is_verified ? (
                     <View style={styles.verifiedCircleBadge}>
@@ -515,19 +515,19 @@ export default function HomeScreen({ navigation }: Props): React.JSX.Element {
 const styles = directional(StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F7F8FC',
+    backgroundColor: '#FAFAFB',
   },
   headerContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#ECEEF5',
-    paddingBottom: 16,
+    borderBottomColor: '#EEF0F3',
+    paddingBottom: 14,
   },
   headerTopRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   locationContainer: {
     alignItems: 'flex-end',
@@ -535,8 +535,8 @@ const styles = directional(StyleSheet.create({
   locationLabel: {
     fontFamily: FONTS.medium,
     fontSize: 11,
-    color: '#8A90A2',
-    marginBottom: 3,
+    color: '#9398A3',
+    marginBottom: 2,
   },
   locationPickerRow: {
     flexDirection: 'row-reverse',
@@ -546,15 +546,15 @@ const styles = directional(StyleSheet.create({
   locationValueText: {
     fontFamily: FONTS.bold,
     fontSize: 15,
-    color: '#111318',
+    color: '#17191F',
   },
   notifCircleBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: '#F4F6FB',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#EAECF2',
+    borderColor: '#E8EBF0',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -563,11 +563,11 @@ const styles = directional(StyleSheet.create({
     position: 'absolute',
     top: 9,
     right: 10,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: '#4F46E5',
-    borderWidth: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2F5BFF',
+    borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
   searchRowContainer: {
@@ -578,8 +578,8 @@ const styles = directional(StyleSheet.create({
   searchInputBox: {
     flex: 1,
     height: 50,
-    borderRadius: 16,
-    backgroundColor: '#F6F7FB',
+    borderRadius: 15,
+    backgroundColor: '#F6F7F9',
     flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: 14,
@@ -587,78 +587,65 @@ const styles = directional(StyleSheet.create({
   },
   searchPlaceholderText: {
     flex: 1,
-    color: '#9298A8',
+    color: '#9398A3',
     fontFamily: FONTS.regular,
     fontSize: 13,
     textAlign: 'right',
   },
   darkFilterBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: '#111318',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#2F5BFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#111318',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 4,
   },
   scrollContent: {
-    paddingBottom: 104,
-    paddingTop: 14,
+    paddingBottom: 100,
+    paddingTop: 12,
   },
   heroCarouselScroll: {
-    paddingBottom: 4,
+    paddingBottom: 2,
   },
   heroFullImageCard: {
-    borderRadius: 26,
+    borderRadius: 20,
     overflow: 'hidden',
-    minHeight: 176,
-    maxHeight: 176,
-    marginBottom: 12,
-    backgroundColor: '#111318',
-    shadowColor: '#15172A',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 5,
+    minHeight: 166,
+    maxHeight: 166,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E7EAF0',
+    backgroundColor: '#F6F7F9',
   },
   heroFullImage: {
     width: '100%',
     height: '100%',
   },
   heroCollectionCard: {
-    borderRadius: 26,
-    backgroundColor: '#121525',
-    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#F4F6FA',
+    borderWidth: 1,
+    borderColor: '#E6E9EF',
+    padding: 18,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 176,
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#15172A',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    elevation: 5,
+    minHeight: 166,
+    marginBottom: 10,
   },
   heroCollectionContent: {
     flex: 1,
     alignItems: 'flex-end',
-    zIndex: 2,
   },
   heroCollectionTitle: {
-    color: '#FFFFFF',
+    color: '#17191F',
     fontFamily: FONTS.bold,
-    fontSize: 23,
-    lineHeight: 30,
+    fontSize: 22,
+    lineHeight: 29,
     textAlign: 'right',
   },
   heroCollectionSub: {
-    color: '#C8CCDB',
+    color: '#737987',
     fontFamily: FONTS.regular,
     fontSize: 12,
     lineHeight: 18,
@@ -666,18 +653,13 @@ const styles = directional(StyleSheet.create({
     textAlign: 'right',
   },
   shopNowBtn: {
-    backgroundColor: '#5B5BF7',
-    paddingHorizontal: 20,
-    height: 40,
-    borderRadius: 14,
+    backgroundColor: '#2F5BFF',
+    paddingHorizontal: 18,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 15,
-    shadowColor: '#5B5BF7',
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    elevation: 4,
+    marginTop: 14,
   },
   shopNowBtnText: {
     color: '#FFFFFF',
@@ -685,12 +667,11 @@ const styles = directional(StyleSheet.create({
     fontSize: 12.5,
   },
   heroCollectionMedia: {
-    width: 126,
-    height: 126,
-    borderRadius: 22,
+    width: 118,
+    height: 118,
+    borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#22263B',
-    marginLeft: 4,
+    backgroundColor: '#ECEFF4',
   },
   heroCollectionImage: {
     width: '100%',
@@ -707,13 +688,13 @@ const styles = directional(StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#D6D9E2',
+    backgroundColor: '#D5D8DF',
   },
   dotActiveDark: {
-    width: 22,
+    width: 18,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#5B5BF7',
+    backgroundColor: '#2F5BFF',
   },
   sectionHeader: {
     flexDirection: 'row-reverse',
@@ -723,43 +704,42 @@ const styles = directional(StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitleBold: {
-    color: '#111318',
+    color: '#17191F',
     fontFamily: FONTS.bold,
-    fontSize: 19,
+    fontSize: 18,
     textAlign: 'right',
   },
   seeAllLink: {
-    color: '#5B5BF7',
-    fontFamily: FONTS.bold,
+    color: '#2F5BFF',
+    fontFamily: FONTS.semiBold,
     fontSize: 12.5,
   },
   categoriesCircleScroll: {
     flexDirection: 'row-reverse',
     gap: 10,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   categoryCircleItem: {
     alignItems: 'center',
-    justifyContent: 'center',
-    width: 86,
-    minHeight: 94,
+    width: 82,
+    minHeight: 92,
     paddingVertical: 10,
     paddingHorizontal: 6,
-    borderRadius: 20,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ECEEF5',
+    borderColor: '#E9ECF1',
   },
   categoryCircleWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor: '#F0F1FF',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F2F5FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryCircleName: {
-    color: '#2A2D36',
+    color: '#343840',
     fontFamily: FONTS.semiBold,
     fontSize: 11.5,
     marginTop: 7,
@@ -768,7 +748,7 @@ const styles = directional(StyleSheet.create({
   storesContent: {
     flexDirection: 'row-reverse',
     gap: 10,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   storesEmptyState: {
     flexDirection: 'row-reverse',
@@ -779,47 +759,40 @@ const styles = directional(StyleSheet.create({
   },
   storesEmptyText: {
     fontSize: 13,
-    color: '#9197A7',
+    color: '#9398A3',
     fontFamily: FONTS.medium,
   },
   storeCircleItem: {
     alignItems: 'center',
-    justifyContent: 'center',
-    width: 116,
-    minHeight: 124,
+    width: 110,
+    minHeight: 118,
     padding: 10,
-    borderRadius: 22,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ECEEF5',
-    shadowColor: '#15172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.035,
-    shadowRadius: 14,
-    elevation: 1,
+    borderColor: '#E9ECF1',
   },
   storeCircleWrap: {
-    width: 62,
-    height: 62,
-    borderRadius: 19,
-    backgroundColor: '#F7F8FC',
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    backgroundColor: '#F6F7F9',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#ECEEF5',
+    borderColor: '#ECEEF2',
     position: 'relative',
-    overflow: 'visible',
   },
   storeCircleLogo: {
     width: '100%',
     height: '100%',
-    borderRadius: 18,
+    borderRadius: 15,
     resizeMode: 'cover',
   },
   storeCircleLogoFallback: {
     width: '100%',
     height: '100%',
-    borderRadius: 18,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
@@ -833,10 +806,10 @@ const styles = directional(StyleSheet.create({
     position: 'absolute',
     bottom: -4,
     left: -4,
-    width: 21,
-    height: 21,
+    width: 20,
+    height: 20,
     borderRadius: 7,
-    backgroundColor: '#5B5BF7',
+    backgroundColor: '#2F5BFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -844,10 +817,10 @@ const styles = directional(StyleSheet.create({
   },
   storeCircleName: {
     width: '100%',
-    color: '#1A1C22',
+    color: '#272A31',
     fontFamily: FONTS.semiBold,
     fontSize: 12,
-    marginTop: 9,
+    marginTop: 8,
     textAlign: 'center',
   },
   flashHeaderRow: {
@@ -864,15 +837,15 @@ const styles = directional(StyleSheet.create({
   timerBadge: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: '#F0F1FF',
+    backgroundColor: '#F2F5FF',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#E3E4FF',
+    borderColor: '#E2E8FF',
   },
   timerText: {
-    color: '#4F46E5',
+    color: '#2F5BFF',
     fontFamily: FONTS.bold,
     fontSize: 11.5,
   },
@@ -882,19 +855,19 @@ const styles = directional(StyleSheet.create({
     marginBottom: 16,
   },
   flashPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ECEEF5',
+    borderColor: '#E9ECF1',
   },
   flashPillSelected: {
-    backgroundColor: '#111318',
-    borderColor: '#111318',
+    backgroundColor: '#2F5BFF',
+    borderColor: '#2F5BFF',
   },
   flashPillText: {
-    color: '#626879',
+    color: '#626874',
     fontFamily: FONTS.medium,
     fontSize: 12.5,
   },
@@ -909,21 +882,16 @@ const styles = directional(StyleSheet.create({
   },
   productCard: {
     overflow: 'hidden',
-    borderRadius: 22,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ECEEF5',
-    shadowColor: '#15172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 18,
-    elevation: 2,
+    borderColor: '#E9ECF1',
   },
   productMedia: {
     position: 'relative',
     width: '100%',
     aspectRatio: 1.08,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: '#F5F6F8',
   },
   productImage: {
     width: '100%',
@@ -933,7 +901,7 @@ const styles = directional(StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F1FF',
+    backgroundColor: '#F3F5F8',
   },
   discountBadge: {
     position: 'absolute',
@@ -942,8 +910,8 @@ const styles = directional(StyleSheet.create({
     minHeight: 24,
     justifyContent: 'center',
     paddingHorizontal: 8,
-    borderRadius: 8,
-    backgroundColor: '#111318',
+    borderRadius: 7,
+    backgroundColor: '#17191F',
   },
   discountText: {
     color: '#FFFFFF',
@@ -956,12 +924,12 @@ const styles = directional(StyleSheet.create({
     left: 10,
     width: 34,
     height: 34,
-    borderRadius: 11,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.96)',
     borderWidth: 1,
-    borderColor: '#EAECF2',
+    borderColor: '#E9ECF1',
   },
   productBody: {
     minHeight: 126,
@@ -970,7 +938,7 @@ const styles = directional(StyleSheet.create({
   },
   productStore: {
     maxWidth: '100%',
-    color: '#858B9C',
+    color: '#8A909B',
     fontFamily: FONTS.semiBold,
     fontSize: 10.5,
     marginBottom: 3,
@@ -978,7 +946,7 @@ const styles = directional(StyleSheet.create({
   productName: {
     width: '100%',
     minHeight: 38,
-    color: '#16181E',
+    color: '#1B1D22',
     fontFamily: FONTS.bold,
     fontSize: 13,
     lineHeight: 18,
@@ -991,12 +959,12 @@ const styles = directional(StyleSheet.create({
     marginTop: 4,
   },
   ratingText: {
-    color: '#252832',
+    color: '#353941',
     fontFamily: FONTS.bold,
     fontSize: 11.5,
   },
   soldText: {
-    color: '#969BAA',
+    color: '#969BA5',
     fontFamily: FONTS.regular,
     fontSize: 10.5,
   },
@@ -1012,17 +980,17 @@ const styles = directional(StyleSheet.create({
     alignItems: 'flex-end',
   },
   priceText: {
-    color: '#111318',
+    color: '#17191F',
     fontFamily: FONTS.bold,
     fontSize: 15.5,
   },
   currencyText: {
-    color: '#7B8192',
+    color: '#777D89',
     fontFamily: FONTS.medium,
     fontSize: 10.5,
   },
   oldPriceText: {
-    color: '#A0A5B3',
+    color: '#9DA2AC',
     fontFamily: FONTS.regular,
     fontSize: 10.5,
     textDecorationLine: 'line-through',
@@ -1031,10 +999,10 @@ const styles = directional(StyleSheet.create({
   addButton: {
     width: 40,
     height: 40,
-    borderRadius: 13,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#5B5BF7',
+    backgroundColor: '#2F5BFF',
   },
   productsEmptyState: {
     minHeight: 220,
@@ -1042,41 +1010,41 @@ const styles = directional(StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
     borderWidth: 1,
-    borderColor: '#ECEEF5',
-    borderRadius: 24,
+    borderColor: '#E9ECF1',
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
   },
   productsEmptyIcon: {
-    width: 56,
-    height: 56,
+    width: 54,
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 18,
-    backgroundColor: '#F0F1FF',
+    borderRadius: 16,
+    backgroundColor: '#F2F5FF',
     marginBottom: 12,
   },
   productsEmptyTitle: {
-    color: '#111318',
+    color: '#17191F',
     fontFamily: FONTS.bold,
     fontSize: 16,
   },
   productsEmptyText: {
     maxWidth: 360,
     marginTop: 6,
-    color: '#848A9B',
+    color: '#858B96',
     fontFamily: FONTS.regular,
     fontSize: 12.5,
     lineHeight: 20,
     textAlign: 'center',
   },
   productsEmptyButton: {
-    minHeight: 44,
+    minHeight: 42,
     marginTop: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: '#5B5BF7',
+    borderRadius: 12,
+    backgroundColor: '#2F5BFF',
   },
   productsEmptyButtonText: {
     color: '#FFFFFF',
