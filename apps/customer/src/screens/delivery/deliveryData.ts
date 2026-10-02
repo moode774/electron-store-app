@@ -1,10 +1,11 @@
+import { translate } from '../../i18n';
 import { OrderSummary, supabase } from '@marketplace/shared-hooks';
 
 export interface DeliveryRuntimeProfile {
   id: string;
   is_online: boolean;
   is_approved: boolean;
-  /** مدينة عمل المندوب — تُستخدم لترتيب العروض القريبة أولاً */
+  /** Courier work city, used to rank nearby offers first. */
   work_city?: string | null;
 }
 
@@ -64,5 +65,5 @@ export async function recordDeliveryLocation(
     p_longitude: coordinates.longitude,
     p_speed: coordinates.speed ?? null,
   });
-  if (error) throw new Error(`تعذّر حفظ تحديث الموقع: ${error.message}`);
+  if (error) throw new Error(`${translate('deliveryErrors.saveLocationFailed')}: ${error.message}`);
 }
