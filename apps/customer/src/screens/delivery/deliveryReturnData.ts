@@ -1,3 +1,4 @@
+import { translate } from '../../i18n';
 import {
   DeliveryPhysicalReturnJob,
   getMyDeliveryReturns,
@@ -84,7 +85,7 @@ function resolvePhotoFormat(photo: DeliveryReturnProofPhoto): { extension: 'jpg'
   ) {
     return { extension: 'jpg', contentType: 'image/jpeg' };
   }
-  throw new Error('صيغة إثبات الإرجاع غير مدعومة. التقط صورة JPEG أو PNG.');
+  throw new Error(translate('deliveryErrors.unsupportedReturnImage'));
 }
 
 function friendlyReturnError(error: unknown): Error {
@@ -95,28 +96,28 @@ function friendlyReturnError(error: unknown): Error {
   const lower = raw.toLowerCase();
 
   if (source.code === 'PGRST202' || /schema cache|could not find the function/.test(lower)) {
-    return new Error('ميزة مهام الإرجاع لم تُفعّل على الخادم بعد.');
+    return new Error(translate('deliveryErrors.returnFeatureUnavailable'));
   }
   if (/only the assigned courier/.test(lower)) {
-    return new Error('هذه المهمة غير مسندة إلى حساب المندوب الحالي.');
+    return new Error(translate('deliveryErrors.returnNotAssigned'));
   }
   if (/illegal courier return transition/.test(lower)) {
-    return new Error('تغيّرت حالة مهمة الإرجاع. حدّث القائمة ثم نفّذ الخطوة المتاحة.');
+    return new Error(translate('deliveryErrors.returnStatusChanged'));
   }
   if (/proof object was not found|invalid return proof/.test(lower)) {
-    return new Error('لم يتحقق الخادم من صورة الإثبات. التقط صورة جديدة ثم حاول مجددًا.');
+    return new Error(translate('deliveryErrors.returnProofNotVerified'));
   }
   if (/idempotency key was reused/.test(lower)) {
-    return new Error('تعارضت محاولة سابقة مع هذا الإثبات. التقط صورة جديدة وأعد المحاولة.');
+    return new Error(translate('deliveryErrors.returnProofConflict'));
   }
   if (/approved delivery authorization required|actor_not_active|account.*blocked|user.*blocked/.test(lower)) {
-    return new Error('حساب المندوب غير متاح لتنفيذ مهام الإرجاع حاليًا.');
+    return new Error(translate('deliveryErrors.courierUnavailable'));
   }
   if (/row-level security|permission denied/.test(lower)) {
-    return new Error('لا يملك حساب المندوب صلاحية تنفيذ هذه الخطوة أو رفع إثباتها.');
+    return new Error(translate('deliveryErrors.returnPermissionDenied'));
   }
 
-  return new Error(raw || 'تعذّر تحديث مهمة الإرجاع.');
+  return new Error(raw || translate('deliveryErrors.returnUpdateFailed'));
 }
 
 export function createDeliveryReturnIdempotencyKey(): string {
@@ -139,7 +140,7 @@ export async function loadDeliveryReturnJobs(): Promise<DeliveryReturnJob[]> {
     ...job,
     address: job.address ? {
       id: job.address.id,
-      label: job.address.label || 'عنوان العميل',
+      label: job.address.label || translate('deliveryErrors.customerAddress'),
       full_address: job.address.full_address || '',
       city: job.address.city || null,
       area: job.address.area || null,
@@ -148,7 +149,7 @@ export async function loadDeliveryReturnJobs(): Promise<DeliveryReturnJob[]> {
     } : null,
     merchant: job.merchant ? {
       id: job.merchant.id,
-      store_name: job.merchant.store_name || 'المتجر',
+      store_name: job.merchant.store_name || translate('deliveryErrors.store'),
       address: job.merchant.address || null,
       city: job.merchant.city || null,
       store_phone: job.merchant.store_phone || null,
@@ -180,10 +181,10 @@ export async function uploadDeliveryReturnProof({
   const body = await response.arrayBuffer();
 
   if (body.byteLength < 1) {
-    throw new Error('تعذّرت قراءة صورة إثبات الإرجاع. التقط صورة جديدة.');
+    throw new Error(translate('deliveryErrors.readReturnProofFailed'));
   }
   if (body.byteLength > RETURN_PROOF_MAX_BYTES) {
-    throw new Error('حجم صورة إثبات الإرجاع أكبر من 10 ميجابايت.');
+    throw new Error(translate('deliveryErrors.returnProofTooLarge'));
   }
 
   const { error } = await supabase.storage
