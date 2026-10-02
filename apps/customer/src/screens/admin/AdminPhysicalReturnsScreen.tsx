@@ -33,6 +33,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../components/appAlert';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
+import { translate, useTranslation } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary, bg: COLORS.background, card: COLORS.surface, text: COLORS.textPrimary,
@@ -48,47 +49,47 @@ type ActionState = {
   idempotencyKey: string;
 };
 
-const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: 'requested', label: 'تحتاج مراجعة' },
-  { value: 'approved', label: 'تحتاج جدولة' },
-  { value: 'pickup_scheduled', label: 'مجدولة' },
-  { value: 'picked_up', label: 'مع المندوب' },
-  { value: 'received', label: 'وصلت المتجر' },
-  { value: 'inspected', label: 'تحتاج إكمال' },
-  { value: 'completed', label: 'مكتملة' },
-  { value: 'rejected', label: 'مرفوضة' },
-  { value: 'cancelled', label: 'ملغاة' },
-  { value: 'all', label: 'الكل' },
+const FILTERS: Array<{ value: Filter; labelKey: string }> = [
+  { value: 'requested', labelKey: 'adminUi.returnNeedsReview' },
+  { value: 'approved', labelKey: 'adminUi.returnNeedsScheduling' },
+  { value: 'pickup_scheduled', labelKey: 'adminUi.returnScheduled' },
+  { value: 'picked_up', labelKey: 'adminUi.returnWithCourier' },
+  { value: 'received', labelKey: 'adminUi.returnReachedStore' },
+  { value: 'inspected', labelKey: 'adminUi.returnNeedsCompletion' },
+  { value: 'completed', labelKey: 'adminUi.returnCompletedPlural' },
+  { value: 'rejected', labelKey: 'adminUi.returnRejectedPlural' },
+  { value: 'cancelled', labelKey: 'adminUi.returnCancelledPlural' },
+  { value: 'all', labelKey: 'adminUi.all' },
 ];
 
-const STATUS_META: Record<PhysicalReturnStatus, { label: string; color: string; bg: string }> = {
-  requested: { label: 'قيد المراجعة', color: UI.warning, bg: '#FFFBEB' },
-  approved: { label: 'مقبول', color: UI.info, bg: '#EFF6FF' },
-  rejected: { label: 'مرفوض', color: UI.danger, bg: '#FEF2F2' },
-  cancelled: { label: 'ملغى', color: UI.muted, bg: '#F1F5F9' },
-  pickup_scheduled: { label: 'تمت الجدولة', color: UI.purple, bg: '#F5F3FF' },
-  picked_up: { label: 'مع المندوب', color: '#0369A1', bg: '#E0F2FE' },
-  received: { label: 'وصل المتجر', color: '#0F766E', bg: '#CCFBF1' },
-  inspected: { label: 'تم الفحص', color: '#A16207', bg: '#FEF9C3' },
-  completed: { label: 'مكتمل', color: UI.success, bg: '#ECFDF5' },
+const STATUS_META: Record<PhysicalReturnStatus, { labelKey: string; color: string; bg: string }> = {
+  requested: { labelKey: 'adminUi.refundPending', color: UI.warning, bg: '#FFFBEB' },
+  approved: { labelKey: 'adminUi.refundApproved', color: UI.info, bg: '#EFF6FF' },
+  rejected: { labelKey: 'adminUi.productRejected', color: UI.danger, bg: '#FEF2F2' },
+  cancelled: { labelKey: 'adminUi.returnCancelled', color: UI.muted, bg: '#F1F5F9' },
+  pickup_scheduled: { labelKey: 'adminUi.returnScheduledStatus', color: UI.purple, bg: '#F5F3FF' },
+  picked_up: { labelKey: 'adminUi.returnWithCourier', color: '#0369A1', bg: '#E0F2FE' },
+  received: { labelKey: 'adminUi.returnReachedStore', color: '#0F766E', bg: '#CCFBF1' },
+  inspected: { labelKey: 'adminUi.returnInspected', color: '#A16207', bg: '#FEF9C3' },
+  completed: { labelKey: 'adminUi.refundCompleteShort', color: UI.success, bg: '#ECFDF5' },
 };
 
 const REASON_LABELS: Record<string, string> = {
-  damaged: 'تالف', not_as_described: 'غير مطابق للوصف', wrong_item: 'منتج خاطئ',
-  changed_mind: 'تغيير رأي', other: 'سبب آخر',
+  damaged: 'adminUi.returnReasonDamaged', not_as_described: 'adminUi.returnReasonNotDescribed', wrong_item: 'adminUi.returnReasonWrongItem',
+  changed_mind: 'adminUi.returnReasonChangedMind', other: 'adminUi.returnReasonOther',
 };
 
 const ACTION_TITLES: Record<ActionKind, string> = {
-  details: 'تفاصيل الإرجاع المادي', approve: 'قبول الإرجاع والكميات',
-  reject: 'رفض طلب الإرجاع', schedule: 'جدولة استلام المرتجع',
-  complete: 'إكمال الإرجاع والاسترداد',
+  details: 'adminUi.returnActionDetails', approve: 'adminUi.returnActionApprove',
+  reject: 'adminUi.returnActionReject', schedule: 'adminUi.returnActionSchedule',
+  complete: 'adminUi.returnActionComplete',
 };
 
 function returnItemName(item: AdminPhysicalReturnBundle['items'][number], index: number): string {
   return item.order_items?.product_name
     || item.products?.name_ar
     || item.products?.name
-    || `الصنف ${index + 1}`;
+    || `${translate('adminUi.item')} ${index + 1}`;
 }
 
 function returnItemVariant(item: AdminPhysicalReturnBundle['items'][number]): string | null {
@@ -99,34 +100,35 @@ function returnItemVariant(item: AdminPhysicalReturnBundle['items'][number]): st
       .map(([key, value]) => `${key}: ${String(value)}`);
     if (values.length) return values.join(' • ');
   }
-  return item.variant_id ? `متغير #${item.variant_id.slice(0, 8)}` : null;
+  return item.variant_id ? `${translate('adminUi.variant')} #${item.variant_id.slice(0, 8)}` : null;
 }
 
 function formatDate(value?: string | null): string {
   if (!value) return '—';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('ar-SA');
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(translate('adminUi.locale'));
 }
 
 function formatMoney(value?: number | null): string {
-  return `${Number(value ?? 0).toFixed(2)} ر.ي`;
+  return `${Number(value ?? 0).toFixed(2)} ${translate('adminUi.yer')}`;
 }
 
 function errorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? '');
   if (/verified order settlement is missing|legacy return requires reconciliation/i.test(message)) {
-    return 'لا توجد تسوية مالية موثقة لهذا الطلب القديم. يجب إجراء مطابقة مالية قبل الإكمال، ولن يخمّن النظام أي مبلغ.';
+    return translate('adminUi.returnNoVerifiedSettlement');
   }
   if (/approved, active, and online|online courier/i.test(message)) {
-    return 'المندوب المختار غير معتمد أو غير متصل الآن. اختر مندوبًا متاحًا ثم أعد المحاولة.';
+    return translate('adminUi.returnCourierUnavailable');
   }
   if (/idempotency key was reused/i.test(message)) {
-    return 'تغيّرت تفاصيل العملية بعد إرسالها. أغلق النافذة وافتحها مجددًا لإنشاء عملية جديدة.';
+    return translate('adminUi.returnIdempotencyReused');
   }
-  return message || 'تعذر تنفيذ العملية. تحقق من الاتصال وحالة الطلب ثم حاول مجددًا.';
+  return message || translate('adminUi.returnGenericError');
 }
 
 export default function AdminPhysicalReturnsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < BREAKPOINTS.compact;
   const columns = width >= BREAKPOINTS.desktop ? 2 : 1;
@@ -257,7 +259,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
           || item.approved_quantity < 0
           || item.approved_quantity > action.bundle.items[index].requested_quantity
         )) || approvedItems.every((item) => item.approved_quantity === 0)) {
-          Alert.alert('راجع الكميات', 'يجب تحديد كل كمية برقم صحيح ضمن الكمية المطلوبة، وقبول وحدة واحدة على الأقل.');
+          Alert.alert(t('adminUi.returnReviewQuantities'), t('adminUi.returnReviewQuantitiesText'));
           return;
         }
         await adminReviewPhysicalReturn({
@@ -268,7 +270,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
         });
       } else if (action.kind === 'reject') {
         if (cleanNotes.length < 3) {
-          Alert.alert('سبب الرفض مطلوب', 'اكتب سببًا واضحًا ليظهر للعميل والتاجر.');
+          Alert.alert(t('adminUi.rejectionReasonRequired'), t('adminUi.returnRejectReasonText'));
           return;
         }
         await adminReviewPhysicalReturn({
@@ -280,11 +282,11 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
       } else if (action.kind === 'schedule') {
         const timestamp = new Date(scheduledAt);
         if (Number.isNaN(timestamp.getTime()) || timestamp.getTime() < Date.now() - 60_000) {
-          Alert.alert('موعد غير صالح', 'اكتب موعدًا مستقبليًا بصيغة صحيحة أو استخدم أحد الاختصارات.');
+          Alert.alert(t('adminUi.returnInvalidSchedule'), t('adminUi.returnInvalidScheduleText'));
           return;
         }
         if (request.pickup_method === 'courier_pickup' && !selectedDriverId) {
-          Alert.alert('اختر مندوبًا', 'لا يمكن جدولة الاستلام من العميل دون مندوب معتمد ومتصل.');
+          Alert.alert(t('adminUi.returnChooseCourier'), t('adminUi.returnChooseCourierText'));
           return;
         }
         await adminSchedulePhysicalReturn({
@@ -300,7 +302,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
           0,
         );
         if (acceptedTotal > 0 && request.refund_method === 'original_payment' && !externalReference.trim()) {
-          Alert.alert('مرجع التحويل مطلوب', 'أدخل مرجع الاسترداد من بوابة الدفع قبل الإكمال.');
+          Alert.alert(t('adminUi.withdrawReferenceRequired'), t('adminUi.returnRefundReferenceText'));
           return;
         }
         await adminCompletePhysicalReturn({
@@ -312,10 +314,10 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
       }
 
       setAction(null);
-      Alert.alert('تمت العملية', 'حُفظت حالة الإرجاع وسجل التدقيق بنجاح.');
+      Alert.alert(t('adminUi.returnOperationDone'), t('adminUi.returnOperationDoneText'));
       await load(true);
     } catch (error) {
-      Alert.alert('تعذر تنفيذ الإجراء', errorMessage(error));
+      Alert.alert(t('adminUi.returnActionFailed'), errorMessage(error));
     } finally {
       setProcessingId(null);
     }
@@ -331,63 +333,63 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             <Text style={[s.statusText, { color: status.color }]}>{status.label}</Text>
           </View>
           <View style={s.cardTitleGroup}>
-            <Text style={s.orderNumber}>طلب #{bundle.order.order_number}</Text>
-            <Text style={s.returnId}>إرجاع {request.id.slice(0, 8)}</Text>
+            <Text style={s.orderNumber}>{t('adminUi.order')} #{bundle.order.order_number}</Text>
+            <Text style={s.returnId}>{t('adminUi.returnLabel')} {request.id.slice(0, 8)}</Text>
           </View>
         </View>
 
         <View style={s.partyRow}>
-          <Info icon="person-outline" label="العميل" value={bundle.customer.full_name || bundle.customer.phone || 'غير محدد'} />
-          <Info icon="storefront-outline" label="التاجر" value={bundle.merchant?.store_name || 'غير محدد'} />
+          <Info icon="person-outline" label={t('adminUi.customer')} value={bundle.customer.full_name || bundle.customer.phone || t('adminUi.unspecified')} />
+          <Info icon="storefront-outline" label={t('adminUi.roleMerchant')} value={bundle.merchant?.store_name || t('adminUi.unspecified')} />
         </View>
         <View style={s.metaGrid}>
-          <Meta label="السبب" value={REASON_LABELS[request.reason] ?? request.reason} />
-          <Meta label="طريقة التسليم" value={request.pickup_method === 'courier_pickup' ? 'استلام مندوب' : 'تسليم للمتجر'} />
-          <Meta label="طريقة الاسترداد" value={request.refund_method === 'wallet' ? 'المحفظة' : 'وسيلة الدفع الأصلية'} />
-          <Meta label="تاريخ الطلب" value={formatDate(request.created_at)} />
+          <Meta label={t('adminUi.reason')} value={REASON_LABELS[request.reason] ? t(REASON_LABELS[request.reason]) : request.reason} />
+          <Meta label={t('adminUi.returnDeliveryMethod')} value={request.pickup_method === 'courier_pickup' ? t('adminUi.returnCourierPickup') : t('adminUi.returnStoreDropoff')} />
+          <Meta label={t('adminUi.refundMethod')} value={request.refund_method === 'wallet' ? t('adminUi.wallet') : t('adminUi.originalPaymentMethod')} />
+          <Meta label={t('adminUi.orderDate')} value={formatDate(request.created_at)} />
         </View>
 
         {request.description ? <Text style={s.description}>{request.description}</Text> : null}
         <View style={s.itemSummary}>
           <Ionicons name="cube-outline" size={18} color={UI.primary} />
           <Text style={s.itemSummaryText}>
-            {bundle.items.length} صنف · {bundle.items.reduce((sum, item) => sum + item.requested_quantity, 0)} وحدة مطلوبة
+            {bundle.items.length} {t('adminUi.itemsCount')} · {bundle.items.reduce((sum, item) => sum + item.requested_quantity, 0)} {t('adminUi.requestedUnits')}
           </Text>
-          <Text style={s.evidenceCount}>{request.evidence_images?.length ?? 0} دليل</Text>
+          <Text style={s.evidenceCount}>{request.evidence_images?.length ?? 0} {t('adminUi.evidenceCount')}</Text>
         </View>
 
         {request.merchant_recommendation ? (
           <View style={s.merchantResponse}>
             <Text style={s.merchantResponseTitle}>
-              توصية التاجر: {request.merchant_recommendation === 'approve' ? 'قبول' : 'رفض'}
+              {t('adminUi.merchantRecommendation')}: {request.merchant_recommendation === 'approve' ? t('adminUi.approve') : t('adminUi.reject')}
             </Text>
-            <Text style={s.merchantResponseText}>{request.merchant_response || 'بدون تفاصيل'}</Text>
+            <Text style={s.merchantResponseText}>{request.merchant_response || t('adminUi.noDetails')}</Text>
           </View>
         ) : null}
 
         <View style={s.actions}>
           <TouchableOpacity style={s.detailsButton} onPress={() => openAction(bundle, 'details')}>
             <Ionicons name="eye-outline" size={18} color={UI.primary} />
-            <Text style={s.detailsButtonText}>التفاصيل والأدلة</Text>
+            <Text style={s.detailsButtonText}>{t('adminUi.returnDetailsEvidence')}</Text>
           </TouchableOpacity>
           {request.status === 'requested' ? (
             <>
               <TouchableOpacity style={s.rejectButton} onPress={() => openAction(bundle, 'reject')}>
-                <Text style={s.rejectButtonText}>رفض</Text>
+                <Text style={s.rejectButtonText}>{t('adminUi.reject')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.primaryButton} onPress={() => openAction(bundle, 'approve')}>
-                <Text style={s.primaryButtonText}>مراجعة وقبول</Text>
+                <Text style={s.primaryButtonText}>{t('adminUi.returnReviewApprove')}</Text>
               </TouchableOpacity>
             </>
           ) : null}
           {request.status === 'approved' ? (
             <TouchableOpacity style={s.primaryButton} onPress={() => openAction(bundle, 'schedule')}>
-              <Text style={s.primaryButtonText}>جدولة التسليم</Text>
+              <Text style={s.primaryButtonText}>{t('adminUi.returnScheduleDelivery')}</Text>
             </TouchableOpacity>
           ) : null}
           {request.status === 'inspected' ? (
             <TouchableOpacity style={[s.primaryButton, { backgroundColor: UI.success }]} onPress={() => openAction(bundle, 'complete')}>
-              <Text style={s.primaryButtonText}>إكمال الاسترداد</Text>
+              <Text style={s.primaryButtonText}>{t('adminUi.returnCompleteRefund')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -398,14 +400,14 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel="العودة">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel={t('adminUi.back')}>
           <Ionicons name="arrow-forward" size={22} color={UI.text} />
         </TouchableOpacity>
         <View style={s.headerCopy}>
-          <Text style={s.title}>الإرجاعات المادية</Text>
-          <Text style={s.subtitle}>مراجعة الكميات ومسار الاستلام والفحص والاسترداد</Text>
+          <Text style={s.title}>{t('adminUi.physicalReturns')}</Text>
+          <Text style={s.subtitle}>{t('adminUi.returnSubtitle')}</Text>
         </View>
-        <TouchableOpacity onPress={() => void load(true)} style={s.headerButton} accessibilityLabel="تحديث">
+        <TouchableOpacity onPress={() => void load(true)} style={s.headerButton} accessibilityLabel={t('adminUi.refresh')}>
           <Ionicons name="refresh" size={21} color={UI.primary} />
         </TouchableOpacity>
       </View>
@@ -429,7 +431,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
         <View style={s.center}>
           <Ionicons name="alert-circle-outline" size={44} color={UI.danger} />
           <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryButton} onPress={() => void load()}><Text style={s.retryText}>إعادة المحاولة</Text></TouchableOpacity>
+          <TouchableOpacity style={s.retryButton} onPress={() => void load()}><Text style={s.retryText}>{t('adminUi.retry')}</Text></TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -444,8 +446,8 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
           ListEmptyComponent={(
             <View style={s.empty}>
               <Ionicons name="checkmark-done-circle-outline" size={50} color={UI.success} />
-              <Text style={s.emptyTitle}>لا توجد إرجاعات في هذه المرحلة</Text>
-              <Text style={s.emptyText}>ستظهر الطلبات هنا فور انتقالها إلى الحالة المحددة.</Text>
+              <Text style={s.emptyTitle}>{t('adminUi.returnEmptyTitle')}</Text>
+              <Text style={s.emptyText}>{t('adminUi.returnEmptyText')}</Text>
             </View>
           )}
         />
@@ -455,11 +457,11 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
         <View style={[s.modalBackdrop, !compact && s.modalBackdropDesktop]}>
           <View style={[s.modalCard, !compact && s.modalCardDesktop, { width: Math.min(Math.max(width - 24, 280), 820) }]}>
             <View style={s.modalHeader}>
-              <TouchableOpacity onPress={closeAction} style={s.modalClose} disabled={!!processingId} accessibilityLabel="إغلاق">
+              <TouchableOpacity onPress={closeAction} style={s.modalClose} disabled={!!processingId} accessibilityLabel={t('adminUi.close')}>
                 <Ionicons name="close" size={23} color={UI.text} />
               </TouchableOpacity>
               <View style={s.modalHeaderCopy}>
-                <Text style={s.modalTitle}>{action ? ACTION_TITLES[action.kind] : ''}</Text>
+                <Text style={s.modalTitle}>{action ? t(ACTION_TITLES[action.kind]) : ''}</Text>
                 <Text style={s.modalSubtitle}>{action ? `#${action.bundle.order.order_number}` : ''}</Text>
               </View>
             </View>
@@ -467,17 +469,17 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             {action ? (
               <ScrollView contentContainerStyle={s.modalContent} keyboardShouldPersistTaps="handled">
                 <View style={s.summaryBox}>
-                  <Meta label="الحالة" value={STATUS_META[action.bundle.return.status].label} />
-                  <Meta label="العميل" value={action.bundle.customer.full_name || action.bundle.customer.phone || '—'} />
-                  <Meta label="المتجر" value={action.bundle.merchant?.store_name || '—'} />
-                  <Meta label="قيمة الطلب" value={formatMoney(action.bundle.order.total_amount)} />
+                  <Meta label={t('adminUi.status')} value={t(STATUS_META[action.bundle.return.status].labelKey)} />
+                  <Meta label={t('adminUi.customer')} value={action.bundle.customer.full_name || action.bundle.customer.phone || '—'} />
+                  <Meta label={t('adminUi.store')} value={action.bundle.merchant?.store_name || '—'} />
+                  <Meta label={t('adminUi.orderValue')} value={formatMoney(action.bundle.order.total_amount)} />
                 </View>
 
-                <SectionTitle title="الأدلة" />
+                <SectionTitle title={t('adminUi.evidence')} />
                 {evidenceLoading ? <ActivityIndicator color={UI.primary} /> : evidenceError ? (
                   <Text style={s.inlineError}>{evidenceError}</Text>
                 ) : evidenceLinks.length === 0 ? (
-                  <Text style={s.mutedText}>لا توجد مرفقات لهذا السبب.</Text>
+                  <Text style={s.mutedText}>{t('adminUi.returnNoAttachments')}</Text>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.evidenceRow}>
                     {evidenceLinks.map((link, index) => {
@@ -489,16 +491,16 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                           ) : (
                             <Image source={{ uri: link.signedUrl }} style={s.evidenceImage} />
                           )}
-                          <Text style={s.evidenceLabel} numberOfLines={1}>دليل {index + 1}</Text>
+                          <Text style={s.evidenceLabel} numberOfLines={1}>{t('adminUi.evidence')} {index + 1}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
                 )}
 
-                <SectionTitle title="إثباتات عهدة المندوب" />
+                <SectionTitle title={t('adminUi.returnCourierCustodyProofs')} />
                 {evidenceLoading ? <ActivityIndicator color={UI.primary} /> : evidenceError ? null : proofLinks.length === 0 ? (
-                  <Text style={s.mutedText}>لا توجد إثباتات عهدة في هذه المرحلة.</Text>
+                  <Text style={s.mutedText}>{t('adminUi.returnNoCustodyProofs')}</Text>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.evidenceRow}>
                     {proofLinks.map((link) => {
@@ -507,7 +509,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                         <TouchableOpacity key={link.path} style={s.evidenceCard} onPress={() => void Linking.openURL(link.signedUrl)}>
                           <Image source={{ uri: link.signedUrl }} style={s.evidenceImage} />
                           <Text style={s.evidenceLabel} numberOfLines={1}>
-                            {proof?.proof_type === 'pickup' ? 'إثبات الاستلام' : 'إثبات التسليم'}
+                            {proof?.proof_type === 'pickup' ? t('adminUi.returnPickupProof') : t('adminUi.returnDeliveryProof')}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -515,18 +517,18 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                   </ScrollView>
                 )}
 
-                <SectionTitle title="الكميات" />
+                <SectionTitle title={t('adminUi.quantities')} />
                 {action.bundle.items.map((item, index) => (
                   <View key={item.id} style={s.returnItem}>
                     <View style={s.itemCopy}>
                       <Text style={s.itemTitle}>{returnItemName(item, index)}</Text>
                       {returnItemVariant(item) ? <Text style={s.itemDetail}>{returnItemVariant(item)}</Text> : null}
                       <Text style={s.itemDetail}>
-                        مشتراة {item.purchased_quantity} · مطلوبة {item.requested_quantity}
-                        {item.approved_quantity !== null ? ` · مقبولة إداريًا ${item.approved_quantity}` : ''}
-                        {item.accepted_quantity !== null ? ` · مقبولة بعد الفحص ${item.accepted_quantity}` : ''}
+                        {t('adminUi.purchased')} {item.purchased_quantity} · {t('adminUi.requested')} {item.requested_quantity}
+                        {item.approved_quantity !== null ? ` · ${t('adminUi.adminApprovedQty')} ${item.approved_quantity}` : ''}
+                        {item.accepted_quantity !== null ? ` · ${t('adminUi.inspectionAcceptedQty')} ${item.accepted_quantity}` : ''}
                       </Text>
-                      {item.disposition ? <Text style={s.itemDetail}>التصرف: {item.disposition}</Text> : null}
+                      {item.disposition ? <Text style={s.itemDetail}>{t('adminUi.disposition')}: {item.disposition}</Text> : null}
                     </View>
                     {action.kind === 'approve' ? (
                       <TextInput
@@ -534,7 +536,7 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                         onChangeText={(value) => setQuantities((current) => ({ ...current, [item.id]: value.replace(/[^0-9]/g, '') }))}
                         keyboardType="number-pad"
                         style={s.quantityInput}
-                        accessibilityLabel={`الكمية المقبولة للصنف ${index + 1}`}
+                        accessibilityLabel={`${t('adminUi.acceptedQtyItem')} ${index + 1}`}
                       />
                     ) : null}
                   </View>
@@ -542,11 +544,11 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
 
                 {action.kind === 'schedule' ? (
                   <>
-                    <SectionTitle title="الموعد" />
+                    <SectionTitle title={t('adminUi.appointment')} />
                     <View style={s.quickScheduleRow}>
                       {[1, 3, 24].map((hours) => (
                         <TouchableOpacity key={hours} style={s.quickScheduleButton} onPress={() => setScheduleOffset(hours)}>
-                          <Text style={s.quickScheduleText}>{hours === 24 ? 'غدًا' : `بعد ${hours} س`}</Text>
+                          <Text style={s.quickScheduleText}>{hours === 24 ? t('adminUi.tomorrow') : `${t('adminUi.after')} ${hours} ${t('adminUi.hoursShort')}`}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -557,15 +559,15 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                       autoCapitalize="none"
                       placeholder="2026-07-14T12:00:00+03:00"
                     />
-                    <Text style={s.inputHint}>المعاينة: {formatDate(scheduledAt)}</Text>
+                    <Text style={s.inputHint}>{t('adminUi.preview')}: {formatDate(scheduledAt)}</Text>
 
                     {action.bundle.return.pickup_method === 'courier_pickup' ? (
                       <>
-                        <SectionTitle title="المندوب المتصل" />
+                        <SectionTitle title={t('adminUi.onlineCourier')} />
                         {onlineDrivers.length === 0 ? (
                           <View style={s.warningBox}>
                             <Ionicons name="warning-outline" size={20} color={UI.warning} />
-                            <Text style={s.warningText}>لا يوجد مندوب معتمد ومتصل الآن. لا يمكن تجاوز هذا الشرط.</Text>
+                            <Text style={s.warningText}>{t('adminUi.returnNoOnlineCourier')}</Text>
                           </View>
                         ) : onlineDrivers.map((driver) => (
                           <TouchableOpacity
@@ -576,30 +578,30 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                             <Ionicons name={selectedDriverId === driver.id ? 'radio-button-on' : 'radio-button-off'} size={21} color={UI.primary} />
                             <View style={s.driverCopy}>
                               <Text style={s.driverName}>{driver.users?.full_name || driver.users?.phone || driver.id.slice(0, 8)}</Text>
-                              <Text style={s.driverMeta}>{driver.vehicle_type || 'مركبة'} · {driver.vehicle_plate || 'بدون لوحة'}</Text>
+                              <Text style={s.driverMeta}>{driver.vehicle_type || t('adminUi.vehicle')} · {driver.vehicle_plate || t('adminUi.noPlate')}</Text>
                             </View>
                           </TouchableOpacity>
                         ))}
                       </>
                     ) : (
-                      <View style={s.infoBox}><Text style={s.infoText}>العميل سيسلّم المرتجع للمتجر؛ لن يتم إسناد مندوب.</Text></View>
+                      <View style={s.infoBox}><Text style={s.infoText}>{t('adminUi.returnCustomerDropoffInfo')}</Text></View>
                     )}
                   </>
                 ) : null}
 
                 {action.kind === 'complete' ? (
                   <>
-                    <SectionTitle title="الاسترداد" />
+                    <SectionTitle title={t('adminUi.refunds')} />
                     {action.bundle.items.reduce((total, item) => total + Number(item.accepted_quantity ?? 0), 0) === 0 ? (
                       <View style={s.infoBox}>
                         <Text style={s.infoText}>
-                          رفض الفحص جميع الكميات. سيُغلق المرتجع بلا استرداد مالي، بلا إعادة مخزون، وبلا تغيير لحالة الطلب أو إنشاء مرجع دفع.
+                          {t('adminUi.returnInspectionRejectedAll')}
                         </Text>
                       </View>
                     ) : (
                       <View style={s.infoBox}>
                         <Text style={s.infoText}>
-                          سيحسب الخادم قيمة البضاعة المقبولة بعد خصم حصتها من خصم الطلب وإضافة حصتها من الضريبة، دون رسوم التوصيل، ولن يتجاوز رصيد التسوية.
+                          {t('adminUi.returnRefundCalculationInfo')}
                         </Text>
                       </View>
                     )}
@@ -609,23 +611,23 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
                         value={externalReference}
                         onChangeText={setExternalReference}
                         style={s.input}
-                        placeholder="مرجع الاسترداد من بوابة الدفع (مطلوب)"
+                        placeholder={t('adminUi.returnRefundReferencePlaceholder')}
                         textAlign="right"
                       />
                     ) : action.bundle.items.reduce((total, item) => total + Number(item.accepted_quantity ?? 0), 0) > 0 ? (
-                      <Text style={s.mutedText}>سيُضاف المبلغ إلى محفظة العميل عند نجاح التسوية.</Text>
+                      <Text style={s.mutedText}>{t('adminUi.returnWalletRefundInfo')}</Text>
                     ) : null}
                   </>
                 ) : null}
 
                 {action.kind !== 'details' ? (
                   <>
-                    <SectionTitle title={action.kind === 'reject' ? 'سبب الرفض' : 'ملاحظات الإدارة'} />
+                    <SectionTitle title={action.kind === 'reject' ? t('adminUi.rejectionReasonRequired') : t('adminUi.adminNote')} />
                     <TextInput
                       value={notes}
                       onChangeText={setNotes}
                       style={[s.input, s.notesInput]}
-                      placeholder={action.kind === 'reject' ? 'سبب واضح ومحدد (مطلوب)' : 'ملاحظة اختيارية تظهر في سجل العملية'}
+                      placeholder={action.kind === 'reject' ? t('adminUi.returnClearReasonRequired') : t('adminUi.returnOptionalAdminNote')}
                       multiline
                       textAlignVertical="top"
                       textAlign="right"
@@ -635,19 +637,19 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
 
                 {action.kind === 'details' ? (
                   <>
-                    <SectionTitle title="التتبع" />
-                    {action.bundle.tracking.length === 0 ? <Text style={s.mutedText}>لا توجد أحداث.</Text> : action.bundle.tracking.map((event) => (
+                    <SectionTitle title={t('adminUi.tracking')} />
+                    {action.bundle.tracking.length === 0 ? <Text style={s.mutedText}>{t('adminUi.noEvents')}</Text> : action.bundle.tracking.map((event) => (
                       <View key={event.id} style={s.timelineRow}>
                         <View style={s.timelineDot} />
                         <View style={s.timelineCopy}>
-                          <Text style={s.timelineTitle}>{STATUS_META[event.status]?.label ?? event.status}</Text>
-                          <Text style={s.timelineMeta}>{formatDate(event.created_at)} · {event.actor_role || 'النظام'}</Text>
+                          <Text style={s.timelineTitle}>{STATUS_META[event.status] ? t(STATUS_META[event.status].labelKey) : event.status}</Text>
+                          <Text style={s.timelineMeta}>{formatDate(event.created_at)} · {event.actor_role || t('adminUi.system')}</Text>
                           {event.notes ? <Text style={s.timelineNotes}>{event.notes}</Text> : null}
                         </View>
                       </View>
                     ))}
-                    <Text style={s.mutedText}>إثباتات عهدة المندوب: {action.bundle.proofs.length}</Text>
-                    {action.bundle.refund ? <Text style={s.mutedText}>تم ربط سجل الاسترداد المالي بهذا الإرجاع.</Text> : null}
+                    <Text style={s.mutedText}>{t('adminUi.returnCourierCustodyProofs')}: {action.bundle.proofs.length}</Text>
+                    {action.bundle.refund ? <Text style={s.mutedText}>{t('adminUi.returnRefundLinked')}</Text> : null}
                   </>
                 ) : null}
               </ScrollView>
@@ -656,19 +658,19 @@ export default function AdminPhysicalReturnsScreen({ navigation }: any) {
             {action?.kind !== 'details' ? (
               <View style={s.modalFooter}>
                 <TouchableOpacity style={s.cancelButton} onPress={closeAction} disabled={!!processingId}>
-                  <Text style={s.cancelButtonText}>تراجع</Text>
+                  <Text style={s.cancelButtonText}>{t('adminUi.undo')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[s.submitButton, action?.kind === 'reject' && { backgroundColor: UI.danger }]}
                   onPress={() => void submitAction()}
                   disabled={!!processingId}
                 >
-                  {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.submitButtonText}>تأكيد الإجراء</Text>}
+                  {processingId ? <ActivityIndicator color="#FFF" /> : <Text style={s.submitButtonText}>{t('adminUi.confirmAction')}</Text>}
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={s.modalFooter}>
-                <TouchableOpacity style={s.submitButton} onPress={closeAction}><Text style={s.submitButtonText}>إغلاق</Text></TouchableOpacity>
+                <TouchableOpacity style={s.submitButton} onPress={closeAction}><Text style={s.submitButtonText}>{t('adminUi.close')}</Text></TouchableOpacity>
               </View>
             )}
           </View>
