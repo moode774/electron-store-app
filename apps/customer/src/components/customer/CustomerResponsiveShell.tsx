@@ -7,6 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { BREAKPOINTS } from '@marketplace/shared-utils';
+import { directional } from '../../i18n/directionalStyles';
 
 const MAX_CONTENT_WIDTH = 1320;
 
@@ -70,9 +71,9 @@ export function CustomerResponsiveShell({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   shell: {
     width: '100%',
     alignSelf: 'center',
   },
-});
+}), 'ltr');

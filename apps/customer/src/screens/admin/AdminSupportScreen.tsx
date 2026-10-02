@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   getAdminSupportTickets, getAdminSupportTicketThread, replyToSupportTicket,
   updateSupportTicketStatus, SupportMessage,
@@ -189,7 +190,7 @@ export default function AdminSupportScreen({ navigation }: any) {
         <View style={[s.headerContent, { width: contentWidth }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-              <Ionicons name="arrow-forward" size={24} color={UI.text} />
+              <DirectionalIcon name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
             <Text style={s.headerTitle}>{t('adminUi.technicalSupport')}</Text>
           </View>

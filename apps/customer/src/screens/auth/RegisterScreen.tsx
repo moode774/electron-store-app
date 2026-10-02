@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS, USER_ROLES, type UserRole } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
@@ -118,7 +119,7 @@ export default function RegisterScreen(): React.JSX.Element {
         </View>
 
         <TouchableOpacity style={[styles.backBtn, { zIndex: 10 }]} onPress={step === 2 ? () => setStep(1) : () => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
 
@@ -177,7 +178,7 @@ export default function RegisterScreen(): React.JSX.Element {
                             <Image source={opt.image} style={styles.roleImage} />
                           ) : (
                             <Ionicons
-                              name={opt.icon ?? 'person'}
+                              name={(('icon' in opt && opt.icon) || 'person') as keyof typeof Ionicons.glyphMap}
                               size={30}
                               color={isActive ? '#111827' : '#4B5563'}
                             />

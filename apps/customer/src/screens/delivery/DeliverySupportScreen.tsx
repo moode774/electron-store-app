@@ -3,10 +3,11 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const UI = {
   primary: '#111827',
@@ -102,7 +103,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
 
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.back')}>
-          <Ionicons name="arrow-forward" size={24} color={UI.textDark} />
+          <DirectionalIcon name="arrow-forward" size={24} color={UI.textDark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('delivery.helpCenter')}</Text>
         <View style={{ width: 40 }} />
@@ -203,16 +204,16 @@ export default function DeliverySupportScreen({ navigation }: any) {
         {tickets.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>{t('delivery.previousTickets')}</Text>
-            {tickets.map((t, i) => {
-              const st = TICKET_STATUS[ticket.status] || { label: ticket.status, color: UI.textGrey };
+            {tickets.map((ticket, i) => {
+              const st = TICKET_STATUS[ticket.status] || { labelKey: ticket.status, color: UI.textGrey };
               return (
                 <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`${t('delivery.openTicketA11y')} ${ticket.subject}`}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ticketSubject}>{ticket.subject}</Text>
-                    <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString('ar-SA')}</Text>
+                    <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString(appLocale())}</Text>
                   </View>
                   <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
-                    <Text style={[styles.ticketStatusText, { color: st.color }]}>{st.label}</Text>
+                    <Text style={[styles.ticketStatusText, { color: st.color }]}>{t(st.labelKey)}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -232,7 +233,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
                   onPress={() => setExpandedId(isOpen ? null : faq.id)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel={faq.q}
+                  accessibilityLabel={t(faq.qKey)}
                   accessibilityState={{ expanded: isOpen }}
                 >
                   <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={UI.textMuted} />

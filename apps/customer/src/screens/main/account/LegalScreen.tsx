@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const CONTENT_KEYS = {
   privacy: {
@@ -41,7 +43,7 @@ export default function LegalScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t(content.title)}</Text>
           <View style={styles.headerSpacer} />
@@ -62,7 +64,7 @@ export default function LegalScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
   headerInner: { width: '100%', maxWidth: 820, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -74,4 +76,4 @@ const styles = StyleSheet.create({
   section: { marginBottom: 22 },
   sectionTitle: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.textPrimary, marginBottom: 8 },
   sectionBody: { fontSize: 13.5, fontFamily: FONTS.regular, color: COLORS.textSecondary, lineHeight: 23, textAlign: 'right' },
-});
+}), 'ltr');

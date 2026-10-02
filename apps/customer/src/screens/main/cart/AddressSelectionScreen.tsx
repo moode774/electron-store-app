@@ -12,6 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { SERVICE_AREAS, COLORS, FONTS } from '@marketplace/shared-utils';
 import {
   Address,
@@ -23,6 +24,7 @@ import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
 
 import * as Location from 'expo-location';
+import { directional } from '../../../i18n/directionalStyles';
 
 const AREA_LABEL_KEYS: Record<string, string> = {
   [SERVICE_AREAS.SANAA]: 'customer.sanaa',
@@ -235,7 +237,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>{t('customer.addressSelectionTitle')}</Text>
@@ -536,7 +538,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <View style={styles.continueBtnInner}>
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <DirectionalIcon name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.continueBtnText}>{t('customer.addressContinuePayment')}</Text>
             </View>
           )}
@@ -546,7 +548,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -1001,4 +1003,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
+import { directional } from '../../i18n/directionalStyles';
 
 type Props = {
   title: string;
@@ -31,14 +33,14 @@ export function CustomerSectionHeader({
           accessibilityLabel={actionLabel}
         >
           <Text style={styles.actionText}>{actionLabel}</Text>
-          <Ionicons name="arrow-back" size={15} color={COLORS.primary} />
+          <DirectionalIcon name="arrow-back" size={15} color={COLORS.primary} />
         </TouchableOpacity>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     minHeight: 48,
     flexDirection: 'row-reverse',
@@ -79,4 +81,4 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 12,
   },
-});
+}), 'rtl');

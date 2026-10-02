@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getWishlist, removeFromWishlist, useAuthStore, WishlistItem } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
@@ -16,9 +17,10 @@ import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { CustomerResponsiveShell, useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
-export default function FavoritesScreen({
-  const { t } = useTranslation(); navigation }: any): React.JSX.Element {
+export default function FavoritesScreen({ navigation }: any): React.JSX.Element {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const layout = useCustomerLayout();
   const columns = layout.width < 680 ? 1 : layout.width < 980 ? 2 : layout.width < 1320 ? 3 : 4;
@@ -71,7 +73,7 @@ export default function FavoritesScreen({
             accessibilityRole="button"
             accessibilityLabel={t('merchant.back')}
           >
-            <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={21} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCopy}>
             <Text style={styles.headerTitle}>{t('customer.favorites')}</Text>
@@ -155,7 +157,7 @@ export default function FavoritesScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -294,4 +296,4 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   removeButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-});
+}), 'rtl');

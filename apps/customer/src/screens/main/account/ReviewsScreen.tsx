@@ -5,10 +5,11 @@ import { COLORS, SPACING, FONT_SIZE, RADIUS, FONTS } from '@marketplace/shared-u
 import { Card } from '@marketplace/shared-ui';
 import { useAuthStore, getMyReviews, Review } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, appLocale } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
-export default function ReviewsScreen({
-  const { t } = useTranslation(); navigation }: any) {
+export default function ReviewsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(1040);
   const columns = layout.desktop ? 2 : 1;
   const gap = layout.compact ? 12 : 16;
@@ -40,7 +41,7 @@ export default function ReviewsScreen({
           <Text style={styles.reviewIcon}>{isDriver(item.target_type) ? '🛵' : '🏪'}</Text>
           <Text style={styles.reviewTarget}>{isDriver(item.target_type) ? t('customer.deliveryCourier') : t('customer.store')}</Text>
         </View>
-        <Text style={styles.reviewDate}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+        <Text style={styles.reviewDate}>{new Date(item.created_at).toLocaleDateString(appLocale())}</Text>
       </View>
 
       <View style={styles.starsRow}>
@@ -121,7 +122,7 @@ export default function ReviewsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingTop: 48, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   headerInner: { width: '100%', maxWidth: 1040, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -152,4 +153,4 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 16, color: COLORS.textMuted },
   retryBtn: { minHeight: 44, marginTop: 14, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 18, paddingVertical: 10, justifyContent: 'center' },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-});
+}), 'ltr');

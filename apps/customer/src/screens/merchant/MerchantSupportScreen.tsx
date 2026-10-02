@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { ScreenHeader } from './merchantUi';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -143,16 +143,16 @@ export default function MerchantSupportScreen({ navigation }: any) {
               {tickets.length > 0 && (
                 <View style={[styles.card, isCompact && styles.cardCompact]}>
                   <Text style={styles.sectionTitle}>{t('merchant.previousTickets')}</Text>
-                  {tickets.map((t, i) => {
-                    const st = TICKET_STATUS[t.status] || { label: t.status, color: UI.textGrey };
+                  {tickets.map((ticket, i) => {
+                    const st = TICKET_STATUS[ticket.status] || { labelKey: ticket.status, color: UI.textGrey };
                     return (
-                      <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`${t('customer.openTicketA11y')} ${t.subject}`}>
+                      <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`${t('customer.openTicketA11y')} ${ticket.subject}`}>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.ticketSubject}>{t.subject}</Text>
-                          <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
+                          <Text style={styles.ticketSubject}>{ticket.subject}</Text>
+                          <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString(appLocale())}</Text>
                         </View>
                         <View style={[styles.ticketStatusBadge, { backgroundColor: `${st.color}15` }]}>
-                          <Text style={[styles.ticketStatusText, { color: st.color }]}>{st.label}</Text>
+                          <Text style={[styles.ticketStatusText, { color: st.color }]}>{t(st.labelKey)}</Text>
                         </View>
                       </TouchableOpacity>
                     );

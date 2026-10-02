@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getPaymentMethods, PaymentMethod } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const METHODS = [
   { id: 'cod', titleKey: 'customer.codMethodTitle', subKey: 'customer.codMethodSub', icon: 'cash-outline', color: '#059669', available: true },
@@ -43,7 +45,7 @@ export default function PaymentMethodsScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.paymentMethodsTitle')}</Text>
           <View style={styles.headerSpacer} />
@@ -119,7 +121,7 @@ export default function PaymentMethodsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
   headerInner: { width: '100%', maxWidth: 820, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -152,4 +154,4 @@ const styles = StyleSheet.create({
   loadErrorText: { color: '#991B1B', textAlign: 'center' },
   retryButton: { minHeight: 44, borderRadius: 10, backgroundColor: COLORS.primary, justifyContent: 'center', paddingHorizontal: 16 },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-});
+}), 'ltr');

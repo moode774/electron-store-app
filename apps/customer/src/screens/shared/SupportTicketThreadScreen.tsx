@@ -4,8 +4,9 @@ import {
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 import {
   getSupportTicketThread, replyToSupportTicket, SupportMessage, SupportTicket,
   supabase, useAuthStore,
@@ -100,7 +101,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
       <View style={[styles.threadShell, layout.desktop && styles.threadShellDesktop]}>
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('shared.back')}>
-          <Ionicons name="arrow-forward" size={23} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={23} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={styles.title} numberOfLines={1}>{ticket?.subject ?? t('shared.supportTicketFallback')}</Text>
@@ -143,7 +144,7 @@ export default function SupportTicketThreadScreen({ navigation, route }: any) {
                   <View style={[styles.messageBubble, mine ? styles.mineBubble : styles.otherBubble]}>
                     {!mine ? <Text style={styles.senderName}>{item.users?.full_name ?? t('shared.supportTeam')}</Text> : null}
                     <Text style={[styles.messageText, mine && styles.mineText]}>{item.message}</Text>
-                    <Text style={[styles.messageTime, mine && styles.mineTime]}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+                    <Text style={[styles.messageTime, mine && styles.mineTime]}>{new Date(item.created_at).toLocaleString(appLocale())}</Text>
                   </View>
                 </View>
               );

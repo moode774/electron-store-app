@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation, translate } from '../../../i18n';
+import { useTranslation, translate, appLocale } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const CATEGORIES = [
   { value: 'technical', label: translate('customer.helpTechnical') },
@@ -71,7 +73,7 @@ export default function HelpCenterScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.help')}</Text>
           <View style={styles.headerSpacer} />
@@ -102,14 +104,14 @@ export default function HelpCenterScreen({ navigation }: any) {
           <>
             <Text style={styles.sectionTitle}>{t('customer.myTickets')}</Text>
             <View style={styles.faqContainer}>
-              {tickets.map((t, i) => (
-                <TouchableOpacity key={t.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: t.id })} accessibilityRole="button" accessibilityLabel={`${t('customer.openTicketA11y')} ${t.subject}`}>
+              {tickets.map((ticket, i) => (
+                <TouchableOpacity key={ticket.id} style={[styles.ticketRow, i === tickets.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('SupportTicket', { ticketId: ticket.id })} accessibilityRole="button" accessibilityLabel={`${t('customer.openTicketA11y')} ${ticket.subject}`}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.ticketSubject}>{t.subject}</Text>
-                    <Text style={styles.ticketDate}>{new Date(t.created_at).toLocaleDateString('ar-SA')}</Text>
+                    <Text style={styles.ticketSubject}>{ticket.subject}</Text>
+                    <Text style={styles.ticketDate}>{new Date(ticket.created_at).toLocaleDateString(appLocale())}</Text>
                   </View>
                   <View style={styles.ticketStatusBadge}>
-                    <Text style={styles.ticketStatusText}>{TICKET_STATUS[t.status] ?? t.status}</Text>
+                    <Text style={styles.ticketStatusText}>{TICKET_STATUS[ticket.status] ?? ticket.status}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -147,7 +149,7 @@ export default function HelpCenterScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { paddingTop: Platform.OS === 'ios' ? 48 : 32, backgroundColor: COLORS.background },
   headerInner: { width: '100%', maxWidth: 920, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -180,4 +182,4 @@ const styles = StyleSheet.create({
   faqHeader: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
   faqQuestion: { flex: 1, fontSize: 14, fontWeight: '700', color: '#111827', marginLeft: 8 },
   faqAnswer: { fontSize: 13, color: '#6B7280', lineHeight: 21, paddingBottom: 16 },
-});
+}), 'ltr');

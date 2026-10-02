@@ -13,6 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import {
   Address,
@@ -29,6 +30,7 @@ import {
 } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 // السيرفر (place_order_group) يقبل الدفع نقداً فقط حالياً ويرفض غيره بـ
 // PAYMENT_METHOD_UNAVAILABLE، لذا تُعرض الطرق الأخرى معطّلة كـ«قريباً» بدل
@@ -337,7 +339,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AddressSelection')}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>{t('customer.payment')}</Text>
@@ -551,8 +553,8 @@ export default function CheckoutScreen({ navigation, route }: any) {
 
                   {/* Middle: Method Info (RTL) */}
                   <View style={styles.pmInfoCol}>
-                    <Text style={styles.pmNameText}>{method.name}</Text>
-                    <Text style={styles.pmSubText}>{method.subtitle}</Text>
+                    <Text style={styles.pmNameText}>{t(method.nameKey)}</Text>
+                    <Text style={styles.pmSubText}>{t(method.subtitleKey)}</Text>
                   </View>
 
                   {/* Right Side: Radio Check */}
@@ -761,7 +763,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -1406,4 +1408,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

@@ -11,7 +11,7 @@ import {
 import { Alert } from '../../components/appAlert';
 import { ScreenHeader } from './merchantUi';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const STATUS: Record<string, { labelKey: string; color: string; bg: string }> = {
   pending: { labelKey: 'merchant.refundPending', color: '#B45309', bg: '#FFFBEB' },
@@ -124,7 +124,7 @@ export default function MerchantRefundsScreen({ navigation }: any) {
                   <View style={[styles.badge, { backgroundColor: meta.bg }]}><Text style={[styles.badgeText, { color: meta.color }]}>{meta.labelKey ? t(meta.labelKey) : item.status}</Text></View>
                   <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     <Text style={styles.orderNumber}>{t('customer.order')} #{item.orders?.order_number ?? item.order_id?.slice?.(0, 8)}</Text>
-                    <Text style={styles.date}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+                    <Text style={styles.date}>{new Date(item.created_at).toLocaleString(appLocale())}</Text>
                   </View>
                 </View>
                 <View style={[styles.amountRow, isCompact && styles.amountRowCompact]}>

@@ -40,9 +40,9 @@ export const timeAgo = (iso: string | null | undefined) => {
   if (!iso) return '';
   const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   if (minutes < 1) return translate('merchant.now');
-  if (minutes < 60) return `${translate('merchant.minutesAgo')} ${minutes}m`;
+  if (minutes < 60) return translate('merchant.minutesAgo').replace('{n}', String(minutes));
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${translate('merchant.hoursAgo')} ${hours}h`;
+  if (hours < 24) return translate('merchant.hoursAgo').replace('{n}', String(hours));
   return formatDate(iso);
 };
 

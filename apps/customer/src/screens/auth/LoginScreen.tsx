@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 import { useNavigation } from '@react-navigation/native';
@@ -116,14 +117,13 @@ export default function LoginScreen(): React.JSX.Element {
               <View style={styles.verticalDivider} />
 
               <TextInput
-                style={styles.input}
+                style={[styles.input, { textAlign }]}
                 placeholder={t('auth.phone')}
                 placeholderTextColor="#9CA3AF"
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
                 maxLength={10}
-                textAlign={textAlign}
                 returnKeyType="done"
                 onSubmitEditing={handleSendOtp}
               />
@@ -153,7 +153,7 @@ export default function LoginScreen(): React.JSX.Element {
               ) : (
                 <>
                   <Text style={styles.loginButtonText}>{t('auth.sendCode')}</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={[styles.loginArrow, isRTL ? { left: 20, right: undefined } : { right: 20, left: undefined }]} />
+                  <DirectionalIcon name="arrow-back" size={20} color="#FFFFFF" style={[styles.loginArrow, isRTL ? { left: 20, right: undefined } : { right: 20, left: undefined }]} />
                 </>
               )}
             </TouchableOpacity>
@@ -293,8 +293,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#111827',
     height: '100%',
-    textAlign: 'right',
-    marginRight: 12,
+    marginHorizontal: 12,
   },
   registerLink: {
     alignItems: 'center',

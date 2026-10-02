@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -10,6 +11,7 @@ import { Alert } from '../../../components/appAlert';
 import { CustomerProductCard } from '../../../components/customer/CustomerProductCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'StoreDetails'>;
 type ScreenRouteProp = RouteProp<HomeStackParamList, 'StoreDetails'>;
@@ -198,7 +200,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         {/* Cover & Header */}
         <View style={[styles.cover, layout.desktop && styles.coverDesktop, { backgroundColor: STORE.coverColor }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+            <DirectionalIcon name="arrow-forward" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.coverContent}>
             <Ionicons name={STORE.iconName as any} size={80} color="rgba(255,255,255,0.2)" />
@@ -372,7 +374,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#F9FAFB' 
@@ -584,4 +586,4 @@ const styles = StyleSheet.create({
   reviewRow: { marginTop: 8 },
   reviewStars: { fontSize: 14, color: '#FBBF24' },
   reviewComment: { fontSize: 12.5, color: '#6B7280', marginTop: 2, lineHeight: 18 },
-});
+}), 'ltr');

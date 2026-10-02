@@ -10,10 +10,11 @@ import { Alert } from '../../components/appAlert';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect, Line } from 'react-native-svg';
 import { getAdminStats, AdminStats, useAuthStore, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 // Admin semantic aliases keep the operational data contract separate from presentation.
 const UI = {
@@ -120,6 +121,7 @@ function BarChart({ w, h, points, color }: { w: number; h: number; points: numbe
 }
 
 export default function AdminDashboardScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -219,14 +221,14 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // ── Chart data ──
   const chartPoints = stats?.chartData?.map(d => d.count) ?? [];
   const chartLabels = stats?.chartData?.map(d =>
-    new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString('ar-SA', { weekday: 'short' })
+    new Date(`${d.date}T12:00:00+03:00`).toLocaleDateString(appLocale(), { weekday: 'short' })
   ) ?? [];
   const chartTotal = chartPoints.reduce((s, v) => s + v, 0);
 
   // ── Order row render ──
   const renderOrderRow = (item: any, index: number) => {
     const statusMeta = ORDER_STATUS_META[item.status] ?? { labelKey: '', color: UI.textMuted };
-    const statusLabel = statusMeta.label;
+    const statusLabel = t(statusMeta.labelKey);
     const statusColor = statusMeta.color;
     const d = new Date(item.created_at);
     return (
@@ -310,7 +312,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             </TouchableOpacity>
             <View style={styles.datePicker}>
               <Ionicons name="calendar-outline" size={16} color={UI.textDark} />
-              <Text style={styles.dateText}>{new Date().toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+              <Text style={styles.dateText}>{new Date().toLocaleDateString(appLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
             </View>
           </View>
         </View>
@@ -339,7 +341,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
               ].map(action => <TouchableOpacity key={action.route} style={[styles.quickAction, !isDesktop && styles.quickActionMobile, isMid && styles.quickActionMid, isTablet && styles.quickActionTablet]} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
                 <View style={styles.quickActionIcon}><Ionicons name={action.icon as any} size={20} color={UI.primary} /></View>
                 <Text style={styles.quickActionText}>{action.title}</Text>
-                <Ionicons name="chevron-back" size={15} color={UI.textMuted} />
+                <DirectionalIcon name="chevron-back" size={15} color={UI.textMuted} />
               </TouchableOpacity>)}
             </View>
             {/* ===== Top Widgets Grid ===== */}
@@ -584,7 +586,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: UI.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: UI.border },
   limeCard: { backgroundColor: UI.card, borderColor: UI.border },
   mintCard: { backgroundColor: UI.card, borderColor: UI.border },
-  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primaryDark, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.02, shadowRadius: 24, elevation: 1 },
+  heroCard: { minHeight: 224, backgroundColor: UI.primary, padding: 24, overflow: 'hidden', borderColor: UI.primary, shadowColor: UI.primary, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.02, shadowRadius: 24, elevation: 1 },
   heroContent: { zIndex: 2 },
   heroOrbLime: { position: 'absolute', width: 132, height: 132, borderRadius: 66, backgroundColor: UI.lime, left: -45, top: -52, opacity: 0.92 },
   heroOrbCoral: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: UI.coral, right: -24, bottom: -24, opacity: 0.85 },

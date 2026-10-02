@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
 
@@ -77,7 +78,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }, layout.desktop && styles.headerDesktop]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerCopy}><Text style={styles.headerTitle}>{t('shared.notifications')}</Text><Text style={styles.headerSubtitle}>{t('shared.importantUpdates')}</Text></View>
         <TouchableOpacity style={styles.settingsBtn} onPress={() => navigation.navigate('NotificationSettings')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('shared.notificationSettings')}>
@@ -125,7 +126,7 @@ export default function RoleNotificationsScreen({ navigation, route }: any) {
                   {!item.is_read && <View style={styles.unreadDot} />}
                 </View>
                 <Text style={styles.body} numberOfLines={2}>{item.body}</Text>
-                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString(appLocale())}</Text>
               </View>
             </TouchableOpacity>
           )}

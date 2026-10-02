@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
+import { directional } from '../../i18n/directionalStyles';
 
 const ITEMS: Record<string, { labelKey: string; active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
   Cart: { labelKey: 'common.cart', active: 'bag-handle', idle: 'bag-handle-outline' },
@@ -64,7 +65,7 @@ export function CustomerTabBar({ state, navigation, insets }: BottomTabBarProps)
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   shell: {
     paddingTop: 6,
     paddingHorizontal: 10,
@@ -146,4 +147,4 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: 8,
   },
-});
+}), 'ltr');

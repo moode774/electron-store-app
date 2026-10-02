@@ -411,6 +411,7 @@ const softShadow = {
 };
 
 function DesktopTopHeader() {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
   const showFullNavigation = width >= BREAKPOINTS.wide;

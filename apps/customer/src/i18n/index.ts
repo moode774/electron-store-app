@@ -41,15 +41,18 @@ type LanguageState = {
   setLanguage: (language: AppLanguage) => Promise<void>;
 };
 
+// Layout direction is handled by the app's own styles (row-reverse, textAlign,
+// rowDirection), so the platform must stay LTR. Letting the document or
+// I18nManager flip to RTL mirrors those styles a second time.
 function applyDirection(language: AppLanguage) {
-  const rtl = language === 'ar';
-  I18nManager.allowRTL(true);
-  I18nManager.forceRTL(rtl);
+  I18nManager.allowRTL(false);
+  I18nManager.forceRTL(false);
 
-  if (Platform.OS === 'web' && typeof document !== 'undefined') {
-    document.documentElement.lang = language;
-    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
-    document.body?.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+  const doc = (globalThis as any).document;
+  if (Platform.OS === 'web' && doc) {
+    doc.documentElement.lang = language;
+    doc.documentElement.dir = 'ltr';
+    doc.body?.removeAttribute('dir');
   }
 }
 
@@ -85,4 +88,14 @@ export function useTranslation() {
 
 export function translate(key: string): string {
   return getPath(useLanguageStore.getState().language, key);
+}
+
+// Picks the database field matching the active language, falling back to the other one.
+export function localized(ar?: string | null, en?: string | null): string {
+  const language = useLanguageStore.getState().language;
+  return (language === 'en' ? en || ar : ar || en) ?? '';
+}
+
+export function appLocale(): string {
+  return useLanguageStore.getState().language === 'ar' ? 'ar-SA' : 'en-US';
 }

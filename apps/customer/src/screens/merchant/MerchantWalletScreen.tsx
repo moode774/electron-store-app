@@ -217,7 +217,7 @@ export default function MerchantWalletScreen({ navigation }: any) {
                           <Text style={styles.withdrawalAmount}>{formatMoney(request.amount)} {t('merchant.currencyYER')}</Text>
                           <Text style={ui.muted}>{formatDate(request.created_at)}</Text>
                         </View>
-                        <StatusPill label={statusInfo.label} color={statusInfo.color} background={statusInfo.backgroundColor} />
+                        <StatusPill label={t(statusInfo.labelKey)} color={statusInfo.color} background={statusInfo.backgroundColor} />
                       </View>
                     );
                   })}

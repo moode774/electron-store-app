@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   createIdempotencyKey,
   getAdminLegacyFinancialReconciliationQueue,
@@ -23,7 +24,7 @@ import {
   reconcileLegacyDeliveredOrder,
 } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const C = {
   primary: COLORS.primary,
@@ -226,7 +227,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
           </View>
           <View style={s.orderTitleWrap}>
             <Text style={s.orderNumber}>{t('adminUi.order')} {item.order_number}</Text>
-            <Text style={s.meta}>{new Date(item.created_at).toLocaleString('ar-SA')}</Text>
+            <Text style={s.meta}>{new Date(item.created_at).toLocaleString(appLocale())}</Text>
           </View>
         </View>
 
@@ -290,7 +291,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backButton} accessibilityRole="button">
-          <Ionicons name="arrow-forward" size={24} color={C.text} />
+          <DirectionalIcon name="arrow-forward" size={24} color={C.text} />
         </TouchableOpacity>
         <View style={s.headerText}>
           <Text style={s.title}>{t('adminUi.reconTitle')}</Text>

@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore, updateUserProfile, uploadImageToStorage } from '@marketplace/shared-hooks';
 import { Input } from '@marketplace/shared-ui';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
-export default function EditProfileScreen({
-  const { t } = useTranslation(); navigation }: any) {
+export default function EditProfileScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const layout = useCustomerLayout(720);
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
@@ -78,7 +80,7 @@ export default function EditProfileScreen({
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.editProfile')}</Text>
           <View style={styles.headerSpacer} />
@@ -140,7 +142,7 @@ export default function EditProfileScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { paddingTop: Platform.OS === 'ios' ? 48 : 32 },
   headerInner: { width: '100%', maxWidth: 720, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -173,4 +175,4 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
   saveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-});
+}), 'ltr');

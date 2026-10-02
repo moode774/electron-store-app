@@ -12,25 +12,26 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { Category, getCategories, getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { CustomerSearchField } from '../../../components/customer/CustomerSearchField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from '../../../i18n';
-import { resources } from '../../../i18n/translations';
+import { useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 // ألوان محايدة لشعارات المتاجر التي لا صورة لها (عرض فقط — ليست بيانات)
 const STORE_LOGO_COLORS = ['#EEF2FF', '#ECFDF5', '#FEF3C7', '#FCE7F3', '#E0F2FE', '#F1F5F9'];
 
 function categoryIcon(name: string): keyof typeof Ionicons.glyphMap {
   const label = name.toLowerCase();
-  if (label.includes(resources.ar.customer.categoryElectronicsToken) || label.includes('elect')) return 'hardware-chip-outline';
-  if (label.includes(resources.ar.customer.categoryFashionToken) || label.includes(resources.ar.customer.categoryClothesToken) || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
-  if (label.includes(resources.ar.customer.categoryBeautyToken) || label.includes('beauty') || label.includes(resources.ar.customer.categoryPerfumeToken)) return 'sparkles-outline';
-  if (label.includes(resources.ar.customer.categoryHomeToken) || label.includes('home')) return 'home-outline';
-  if (label.includes(resources.ar.customer.categorySportsToken) || label.includes('sport')) return 'barbell-outline';
+  if (label.includes('إلكتر') || label.includes('elect')) return 'hardware-chip-outline';
+  if (label.includes('أزياء') || label.includes('ملابس') || label.includes('fashion') || label.includes('cloth')) return 'shirt-outline';
+  if (label.includes('جمال') || label.includes('beauty') || label.includes('عطر')) return 'sparkles-outline';
+  if (label.includes('منزل') || label.includes('home')) return 'home-outline';
+  if (label.includes('رياض') || label.includes('sport')) return 'barbell-outline';
   return 'grid-outline';
 }
 
@@ -233,7 +234,7 @@ export default function StoresListScreen({ navigation, route }: any) {
             <Text style={[styles.chipText, !activeCategory && styles.chipTextActive]}>{t('merchant.all')}</Text>
           </TouchableOpacity>
           {categories.map((category) => {
-            const label = category.name_ar ?? category.name;
+            const label = localized(category.name_ar, category.name);
             const isActive = activeCategory === category.id;
             return (
               <TouchableOpacity
@@ -288,7 +289,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                   activeOpacity={0.88}
                 >
                   <Text style={styles.heroCtaText}>{t(card.btnKey)}</Text>
-                  <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
+                  <DirectionalIcon name="arrow-back" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
 
@@ -346,7 +347,7 @@ export default function StoresListScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -708,4 +709,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}), 'rtl');

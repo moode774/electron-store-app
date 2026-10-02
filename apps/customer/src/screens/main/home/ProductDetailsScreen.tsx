@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image, Share } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList } from '../../../navigation/types';
 import { useCartStore, useAuthStore, getProductById, isInWishlist, addToWishlist, removeFromWishlist, getReviews, ProductDetail } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type Variant = NonNullable<ProductDetail['product_variants']>[number];
 
@@ -105,7 +107,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   const variantAdd = selectedVariant?.price_modifier ?? 0;
   const PRODUCT = {
     id: product?.id ?? productId,
-    name: product?.name ?? t('customer.productFallback'),
+    name: localized((product as any)?.name_ar, product?.name) || t('customer.productFallback'),
     price: basePrice + variantAdd,
     oldPrice: product?.sale_price ? product.base_price + variantAdd : null,
     description: product?.description ?? '',
@@ -136,7 +138,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         {/* Header Options */}
         <View style={[styles.header, layout.desktop && styles.headerDesktop]}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={24} color="#111827" />
+            <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ${t('merchant.currencyYER')}`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel={t('merchant.shareProduct')}>
@@ -321,7 +323,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#FFFFFF' 
@@ -644,4 +646,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-});
+}), 'ltr');

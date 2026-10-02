@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   getAdminCodCollections,
   getCodRemittanceProofLinks,
@@ -240,10 +241,10 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           ? t('adminUi.codSuccessApproved')
           : action.decision === 'rejected'
             ? t('adminUi.codSuccessRejected')
-            : t('adminUi.codSuccessDisputed'),
+            : t('adminUi.codSuccessDisputed')
         : action.disputed
           ? t('adminUi.codCollectionDisputed')
-          : t('adminUi.codDisputeClosed'),;
+          : t('adminUi.codDisputeClosed');
       closeDetails();
       await load();
       Alert.alert(t('adminUi.codDecisionSaved'), successMessage);
@@ -275,7 +276,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
             accessibilityRole="button"
             accessibilityState={{ selected: filter === item.value }}
           >
-            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{item.label}</Text>
+            <Text style={[s.filterText, filter === item.value && s.filterTextActive]}>{t(item.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -326,7 +327,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           </View>
           <View style={s.detailsLink}>
             <Text style={s.detailsLinkText}>{t('adminUi.codDetailsReview')}</Text>
-            <Ionicons name="chevron-back" size={17} color={UI.primary} />
+            <DirectionalIcon name="chevron-back" size={17} color={UI.primary} />
           </View>
         </View>
       </TouchableOpacity>
@@ -341,7 +342,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           <Text style={s.subtitle}>{t('adminUi.codCollectionsSubtitle')}</Text>
         </View>
         <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()} accessibilityLabel={t('adminUi.back')}>
-          <Ionicons name="arrow-forward" size={22} color={UI.text} />
+          <DirectionalIcon name="arrow-forward" size={22} color={UI.text} />
         </TouchableOpacity>
       </View>
 
@@ -444,7 +445,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
                     <View key={submission.id} style={s.submissionCard}>
                       <View style={s.submissionHeader}>
                         <View style={[s.statusBadge, { backgroundColor: submissionMeta.background }]}>
-                          <Text style={[s.statusBadgeText, { color: submissionMeta.color }]}>{submissionMeta.label}</Text>
+                          <Text style={[s.statusBadgeText, { color: submissionMeta.color }]}>{t(submissionMeta.labelKey)}</Text>
                         </View>
                         <View style={s.submissionAmountWrap}>
                           <Text style={s.submissionAmount}>{money(submission.amount)}</Text>
@@ -570,6 +571,7 @@ function InfoLine({ label, value, selectable = false }: { label: string; value: 
 }
 
 function CollectionOverview({ collection }: { collection: CodCollection }) {
+  const { t } = useTranslation();
   const meta = COLLECTION_STATUS[collection.status];
   return (
     <View style={s.overviewCard}>

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import {
   useAuthStore,
   getAccountStats,
@@ -23,6 +24,7 @@ import { AccountStackParamList } from '../../../navigation/types';
 import { Alert } from '../../../components/appAlert';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
 import { useTranslation, translate } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 type AccountScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'AccountMain'>;
 
@@ -271,7 +273,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       </View>
                       <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                     </View>
-                    <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                    <DirectionalIcon name="chevron-back" size={18} color="#94A3B8" />
                   </TouchableOpacity>
                   {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
                 </React.Fragment>
@@ -286,7 +288,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 </View>
                 <Text style={[styles.logoutText, { color: COLORS.primary }]}>{t('common.signOut')}</Text>
               </View>
-              <Ionicons name="chevron-back" size={18} color={COLORS.primary} />
+              <DirectionalIcon name="chevron-back" size={18} color={COLORS.primary} />
             </TouchableOpacity>
 
             {/* Delete Account */}
@@ -321,7 +323,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 </View>
                 <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('merchant.deleteAccount')}</Text>
               </View>
-              <Ionicons name="chevron-back" size={18} color="#EF4444" />
+              <DirectionalIcon name="chevron-back" size={18} color="#EF4444" />
             </TouchableOpacity>
           </View>
         </View>
@@ -331,7 +333,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background, // #FFFFFF
@@ -753,4 +755,4 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-});
+}), 'rtl');

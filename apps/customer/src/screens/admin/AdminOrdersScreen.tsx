@@ -6,9 +6,10 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { adminRequeueFailedDelivery, cancelOrder, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 
 const UI = {
   primary: COLORS.primary,
@@ -141,7 +142,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
     const statusInfo = STATUS_LABELS[item.status] ?? { labelKey: '', color: UI.textMuted, bg: '#F1F5F9' };
     const merchant = item.merchant_profiles;
     const address = item.addresses;
-    const date = new Date(item.created_at).toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const date = new Date(item.created_at).toLocaleDateString(appLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     return (
       <View style={[s.card, !desktop && { padding: 14, borderRadius: 16, shadowOpacity: 0, elevation: 0 }]}>
@@ -177,7 +178,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
           </View>
           <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)} accessibilityRole="button" accessibilityLabel={`${t('adminUi.orderDetails')} ${item.order_number ?? item.id}`}>
              <Text style={s.viewDetailsText}>{t('adminUi.details')}</Text>
-             <Ionicons name="chevron-back" size={14} color={UI.primary} />
+             <DirectionalIcon name="chevron-back" size={14} color={UI.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -191,7 +192,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
       <View style={[s.headerContent, { width: contentWidth, paddingHorizontal: 0 }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-              <Ionicons name="arrow-forward" size={24} color={UI.text} />
+              <DirectionalIcon name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
             <Text style={s.headerTitle}>{t('adminUi.orders')}</Text>
           </View>
@@ -221,7 +222,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
               onPress={() => setFilter(f.key)}
               activeOpacity={0.8}
             >
-              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{t(f.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -267,7 +268,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
             {selected && (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingBottom: 20 }}>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.status')}</Text>
-                  <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{STATUS_LABELS[selected.status]?.label ?? selected.status}</Text>
+                  <Text style={[s.detailVal, { color: STATUS_LABELS[selected.status]?.color ?? UI.textMuted }]}>{STATUS_LABELS[selected.status] ? t(STATUS_LABELS[selected.status].labelKey) : selected.status}</Text>
                 </View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.store')}</Text><Text style={s.detailVal}>{selected.merchant_profiles?.store_name ?? '—'}</Text></View>
                 <View style={s.detailBlock}><Text style={s.detailLbl}>{t('adminUi.customer')}</Text><Text style={s.detailVal}>{selected.customer?.full_name ?? selected.users?.full_name ?? '—'}</Text></View>
@@ -297,8 +298,8 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
                     <Text style={s.sectionTitle}>{t('adminUi.statusHistory')}</Text>
                     {selected.order_tracking.map((entry: any) => (
                       <View key={entry.id} style={s.trackingRow}>
-                        <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString('ar-SA')}</Text>
-                        <Text style={s.trackingStatus}>{STATUS_LABELS[entry.status]?.label ?? entry.status}</Text>
+                        <Text style={s.trackingDate}>{new Date(entry.created_at).toLocaleString(appLocale())}</Text>
+                        <Text style={s.trackingStatus}>{STATUS_LABELS[entry.status] ? t(STATUS_LABELS[entry.status].labelKey) : entry.status}</Text>
                       </View>
                     ))}
                   </View>

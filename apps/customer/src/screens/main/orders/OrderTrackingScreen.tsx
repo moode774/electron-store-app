@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
 import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 import {
   useAuthStore,
   getOrderById,
@@ -374,7 +376,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
     color: '#475569', background: '#F8FAFC', border: '#CBD5E1',
   }) : null;
   const refundReason = refundRequest
-    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.labelKey ? t(REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)!.labelKey) : undefined ?? refundRequest.reason)
+    ? (REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)?.labelKey ? t(REFUND_REASONS.find((reason) => reason.value === refundRequest.reason)!.labelKey) : refundRequest.reason)
     : '';
 
   if (loading) {
@@ -420,7 +422,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </View>
 
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
         </View>
       </View>
@@ -533,7 +535,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                           isCurrent && styles.stepTitleCurrent,
                         ]}
                       >
-                        {step.label}
+                        {t(step.labelKey)}
                       </Text>
                       {isCurrent && (
                         <View style={styles.currentStatusBadge}>
@@ -684,7 +686,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   }
                 >
                   <Text style={styles.optionText}>{r.reason_text_ar}</Text>
-                  <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                  <DirectionalIcon name="chevron-back" size={18} color="#94A3B8" />
                 </TouchableOpacity>
               ))
             )}
@@ -746,7 +748,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                 >
-                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{r.label}</Text>
+                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{t(r.labelKey)}</Text>
                   <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? COLORS.primary : '#94A3B8'} />
                 </TouchableOpacity>
               );
@@ -840,7 +842,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -1464,4 +1466,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

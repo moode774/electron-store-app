@@ -16,6 +16,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 import CustomAlert from '../../components/CustomAlert';
@@ -32,7 +33,7 @@ interface OtpScreenProps {
 }
 
 export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(OTP_RESEND_SECONDS);
@@ -130,7 +131,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
       {/* Static Header with Back Button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
 
@@ -192,7 +193,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
               ) : (
                 <>
                   <Text style={styles.verifyBtnText}>{t('onboarding.verifyCode')}</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.verifyArrow} />
+                  <DirectionalIcon name="arrow-back" size={20} color="#FFFFFF" style={[styles.verifyArrow, isRTL ? { left: 20 } : { right: 20 }]} />
                 </>
               )}
             </TouchableOpacity>
@@ -348,7 +349,6 @@ const styles = StyleSheet.create({
   },
   verifyArrow: {
     position: 'absolute',
-    right: 20,
   },
   resendWrapper: {
     alignItems: 'center',

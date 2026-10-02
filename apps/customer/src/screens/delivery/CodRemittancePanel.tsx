@@ -12,13 +12,14 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase, useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 
 import { Alert } from '../../components/appAlert';
-import { useTranslation } from '../../i18n';
+import { useTranslation, appLocale } from '../../i18n';
 import {
   availableCodRemittanceAmount,
   CodCollection,
@@ -84,7 +85,7 @@ interface PendingAttempt {
 }
 
 function money(value: number): string {
-  return value.toLocaleString('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return value.toLocaleString(appLocale(), { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function dateLabel(value: string | null | undefined): string {
@@ -618,7 +619,7 @@ export default function CodRemittancePanel() {
                       : t('delivery.codMax10mb')}
                   </Text>
                 </View>
-                <Ionicons name="chevron-back" size={18} color="#9CA3AF" />
+                <DirectionalIcon name="chevron-back" size={18} color="#9CA3AF" />
               </TouchableOpacity>
 
               {formError ? (

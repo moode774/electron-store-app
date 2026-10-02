@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { getActiveCoupons, Coupon } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
+import { useTranslation } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 const CARD_COLORS = [COLORS.primary, '#059669', '#7C3AED', '#D97706'];
 
 export default function OffersScreen({ navigation }: any) {
+  const { t, language } = useTranslation();
   const layout = useCustomerLayout();
   const columns = layout.wide ? 3 : layout.tablet ? 2 : 1;
   const gap = layout.compact ? 12 : 16;
@@ -48,7 +52,7 @@ export default function OffersScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('merchant.offersCoupons')}</Text>
           <View style={styles.headerSpacer} />
@@ -122,7 +126,7 @@ export default function OffersScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
   errorText: { color: '#991B1B', textAlign: 'center' },
@@ -160,4 +164,4 @@ const styles = StyleSheet.create({
   copyBtnText: { fontSize: 11.5, fontWeight: '700', color: COLORS.primary },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 14, color: '#9CA3AF' },
-});
+}), 'ltr');

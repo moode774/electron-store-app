@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { broadcastNotification, createIdempotencyKey } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
@@ -82,7 +83,7 @@ export default function AdminBroadcastScreen({ navigation }: any) {
       <View style={s.header}>
         <View style={[s.headerContent, { width: contentWidth }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-            <Ionicons name="arrow-forward" size={24} color={UI.text} />
+            <DirectionalIcon name="arrow-forward" size={24} color={UI.text} />
           </TouchableOpacity>
           <Text style={s.headerTitle}>{t('adminUi.campaignsTitle')}</Text>
         </View>

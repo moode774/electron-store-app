@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import {
   addToWishlist,
   getFeaturedProducts,
@@ -22,7 +23,8 @@ import {
 } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { translate, useTranslation, localized } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 // اقتراح "قد يعجبك أيضاً" من منتجات حقيقية (الأكثر مبيعاً من متاجر معتمدة ومفتوحة)
 interface Recommendation {
@@ -37,7 +39,7 @@ interface Recommendation {
 
 const toRecommendation = (p: ProductSummary): Recommendation => ({
   id: p.id,
-  name: p.name_ar || p.name,
+  name: localized(p.name_ar, p.name),
   price: Number(p.sale_price ?? p.base_price),
   oldPrice: p.sale_price ? Number(p.base_price) : null,
   image:
@@ -46,7 +48,7 @@ const toRecommendation = (p: ProductSummary): Recommendation => ({
     p.og_image_url ??
     null,
   storeId: p.merchant_id,
-  storeName: (p as any).merchant_profiles?.store_name ?? t('customer.store'),
+  storeName: (p as any).merchant_profiles?.store_name ?? translate('customer.store'),
 });
 
 export default function CartScreen({ navigation }: any) {
@@ -137,7 +139,7 @@ export default function CartScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
 
           <View style={styles.headerCenterRow}>
@@ -358,7 +360,7 @@ export default function CartScreen({ navigation }: any) {
             activeOpacity={0.88}
           >
             <View style={styles.checkoutBtnInner}>
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <DirectionalIcon name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.checkoutBtnText}>
                 {activeCartItems.length === 0 ? t('customer.selectProductContinue') : t('customer.checkout')}
               </Text>
@@ -370,7 +372,7 @@ export default function CartScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -911,4 +913,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
   },
-});
+}), 'rtl');

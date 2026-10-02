@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   AdminProductReview,
   getAdminProducts,
@@ -117,7 +118,7 @@ export default function AdminProductsScreen({ navigation }: any) {
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel={t('adminUi.back')}>
-          <Ionicons name="arrow-forward" size={22} color="#0F172A" />
+          <DirectionalIcon name="arrow-forward" size={22} color="#0F172A" />
         </TouchableOpacity>
         <View style={s.headerCopy}>
           <Text style={s.title}>{t('adminUi.productReviewTitle')}</Text>
@@ -290,7 +291,7 @@ const s = StyleSheet.create({
   input: { minHeight: 88, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 11, padding: 11, color: '#0F172A', textAlignVertical: 'top', backgroundColor: '#FFFFFF' },
   actions: { flexDirection: 'row-reverse', gap: 9 },
   actionButton: { flex: 1, minHeight: 44, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center' },
-  approveButton: { backgroundColor: UI.primary },
+  approveButton: { backgroundColor: COLORS.primary },
   approveButtonText: { color: '#FFFFFF', fontWeight: '900' },
   outlineRejectButton: { borderWidth: 1, borderColor: '#DC2626', backgroundColor: '#FFFFFF' },
   outlineRejectText: { color: '#B91C1C', fontWeight: '900' },

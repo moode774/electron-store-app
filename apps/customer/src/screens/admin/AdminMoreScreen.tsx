@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -56,14 +57,14 @@ export default function AdminMoreScreen() {
     </View>
     <Text style={s.subtitle}>{matches.length} {t('adminUi.adminTools')}</Text>
     {GROUPS.map(group => {
-      const items = matches.filter(item => group.screens.includes(item.screen));
+      const items = matches.filter(item => (group.screens as readonly string[]).includes(item.screen));
       if (!items.length) return null;
       return <View key={group.titleKey} style={s.section}>
         <Text style={s.sectionTitle}>{t(group.titleKey)}</Text>
         <View style={s.grid}>{items.map(item => <TouchableOpacity key={item.screen} accessibilityRole="button" accessibilityLabel={t(item.titleKey)} onPress={() => navigation.navigate(item.screen)} style={[s.card, desktop && s.desktopCard]} activeOpacity={0.7}>
           <View style={s.icon}><Ionicons name={item.icon as any} size={22} color={COLORS.primary} /></View>
           <View style={s.copy}><Text style={s.cardTitle}>{t(item.titleKey)}</Text><Text style={s.description}>{t(item.descriptionKey)}</Text></View>
-          <Ionicons name="chevron-back" size={16} color={COLORS.textMuted} />
+          <DirectionalIcon name="chevron-back" size={16} color={COLORS.textMuted} />
         </TouchableOpacity>)}</View>
       </View>;
     })}

@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getNotifications, markNotificationRead, Notification, supabase } from '@marketplace/shared-hooks';
 import { NotificationPreferencesCard } from '../../../components/NotificationPreferencesCard';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
-import { useTranslation } from '../../../i18n';
+import { useTranslation, appLocale } from '../../../i18n';
+import { directional } from '../../../i18n/directionalStyles';
 
 export default function NotificationsScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -66,7 +68,7 @@ export default function NotificationsScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('common.notifications')}</Text>
           <View style={styles.headerSpacer} />
@@ -115,7 +117,7 @@ export default function NotificationsScreen({ navigation }: any) {
                   {!item.is_read && <View style={styles.unreadDot} />}
                 </View>
                 <Text style={styles.body} numberOfLines={2}>{item.body}</Text>
-                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString('ar-SA')}</Text>
+                <Text style={styles.time}>{new Date(item.created_at).toLocaleDateString(appLocale())}</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -125,7 +127,7 @@ export default function NotificationsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = directional(StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { paddingTop: Platform.OS === 'ios' ? 48 : 32, backgroundColor: COLORS.background },
   headerInner: { width: '100%', maxWidth: 1120, minHeight: 64, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -150,4 +152,4 @@ const styles = StyleSheet.create({
   errorText: { color: '#991B1B', textAlign: 'center' },
   retryButton: { minHeight: 44, backgroundColor: COLORS.primary, borderRadius: 11, paddingHorizontal: 17, paddingVertical: 10, justifyContent: 'center' },
   retryText: { color: '#FFFFFF', fontWeight: '800' },
-});
+}), 'ltr');
