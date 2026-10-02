@@ -1,3 +1,4 @@
+import { translate } from '../../i18n';
 import { supabase } from '@marketplace/shared-hooks';
 
 import { createDeliveryIdempotencyKey } from './deliveryProofValidation';
@@ -183,7 +184,7 @@ function resolveProofFormat(proof: CodRemittanceProofFile): { extension: 'jpg' |
     return { extension: 'jpg', contentType: 'image/jpeg' };
   }
 
-  throw new Error('صيغة الإثبات غير مدعومة. اختر صورة JPEG أو PNG.');
+  throw new Error(translate('codRemittance.unsupportedProof'));
 }
 
 function friendlyRpcError(error: { code?: string; message?: string; details?: string }): Error {
@@ -191,28 +192,28 @@ function friendlyRpcError(error: { code?: string; message?: string; details?: st
   const lower = raw.toLowerCase();
 
   if (error.code === 'PGRST202' || /schema cache|could not find the function/.test(lower)) {
-    return new Error('ميزة تسليم التحصيل النقدي لم تُفعّل على الخادم بعد.');
+    return new Error(translate('codRemittance.featureUnavailable'));
   }
   if (/cod collection is disputed/.test(lower)) {
-    return new Error('هذا التحصيل موقوف بسبب نزاع. انتظر مراجعة الإدارة قبل إرسال مبلغ جديد.');
+    return new Error(translate('codRemittance.collectionDisputed'));
   }
   if (/already remitted/.test(lower)) {
-    return new Error('تم تسليم هذا التحصيل كاملًا بالفعل.');
+    return new Error(translate('codRemittance.alreadyRemitted'));
   }
   if (/exceeds the unremitted|would exceed collected cash/.test(lower)) {
-    return new Error('المبلغ أكبر من الرصيد المتاح للتسليم بعد احتساب الطلبات قيد المراجعة.');
+    return new Error(translate('codRemittance.amountExceedsAvailable'));
   }
   if (/proof object was not found|invalid cod remittance proof/.test(lower)) {
-    return new Error('لم يتحقق الخادم من ملف الإثبات. أعد اختيار الصورة ثم حاول مجددًا.');
+    return new Error(translate('codRemittance.proofNotVerified'));
   }
   if (/actor_not_active|blocked/.test(lower)) {
-    return new Error('حساب المندوب موقوف حاليًا ولا يمكنه إرسال تحصيلات.');
+    return new Error(translate('codRemittance.courierSuspended'));
   }
   if (/duplicate active remittance reference/.test(lower)) {
-    return new Error('رقم مرجع الحوالة مستخدم في طلب قائم لهذا التحصيل.');
+    return new Error(translate('codRemittance.duplicateReference'));
   }
 
-  return new Error(raw || 'تعذّر تنفيذ عملية التحصيل النقدي.');
+  return new Error(raw || translate('codRemittance.operationFailed'));
 }
 
 export function availableCodRemittanceAmount(collection: CodCollection): number {
@@ -247,10 +248,10 @@ export async function uploadCodRemittanceProof({
   const body = await response.arrayBuffer();
 
   if (body.byteLength < 1) {
-    throw new Error('تعذّرت قراءة صورة الإثبات. اختر صورة جديدة وحاول مجددًا.');
+    throw new Error(translate('codRemittance.readProofFailed'));
   }
   if (body.byteLength > COD_REMITTANCE_PROOF_MAX_BYTES) {
-    throw new Error('حجم صورة الإثبات أكبر من 10 ميجابايت.');
+    throw new Error(translate('codRemittance.proofTooLarge'));
   }
 
   const { error } = await supabase.storage
