@@ -212,6 +212,12 @@ DECLARE
 $json$;
   store jsonb; prod jsonb; v jsonb;
   m uuid; c uuid; p uuid; i int; total int;
+  legacy_variants boolean := EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'product_variants' AND column_name = 'name');
+  tags_jsonb boolean := EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'tags' AND data_type = 'jsonb');
 BEGIN
   FOR store IN SELECT * FROM jsonb_array_elements(data) LOOP
     SELECT id INTO m FROM public.merchant_profiles WHERE user_id = (store->>'uid')::uuid;
@@ -231,17 +237,24 @@ BEGIN
 
       INSERT INTO public.products (
         merchant_id, category_id, name, name_ar, description, description_ar,
-        base_price, sale_price, sku, stock_quantity, weight, tags, rating,
+        base_price, sale_price, sku, stock_quantity, weight, rating,
         is_active, is_featured, is_approved, approval_status, approved_at,
         og_image_url, meta_title, meta_description
       ) VALUES (
         m, c, prod->>'name', prod->>'name_ar', prod->>'desc', prod->>'desc_ar',
         (prod->>'price')::numeric, NULLIF(prod->>'sale', '')::numeric, prod->>'sku', total,
-        (prod->>'weight')::numeric, ARRAY(SELECT jsonb_array_elements_text(prod->'tags')), 4.5 + random() * 0.5,
+        (prod->>'weight')::numeric, 4.5 + random() * 0.5,
         true, (prod->>'featured')::boolean, true, 'approved', now(),
         'https://images.unsplash.com/' || (prod->'images'->>0) || '?w=1200',
         prod->>'name_ar', left(prod->>'desc_ar', 150)
       ) RETURNING id INTO p;
+
+      -- tags is text[] in older schemas and jsonb on the live project.
+      IF tags_jsonb THEN
+        UPDATE public.products SET tags = prod->'tags' WHERE id = p;
+      ELSE
+        UPDATE public.products SET tags = ARRAY(SELECT jsonb_array_elements_text(prod->'tags')) WHERE id = p;
+      END IF;
 
       i := 0;
       FOR v IN SELECT * FROM jsonb_array_elements(prod->'images') LOOP
@@ -253,14 +266,26 @@ BEGIN
       i := 0;
       FOR v IN SELECT * FROM jsonb_array_elements(prod->'variants') LOOP
         i := i + 1;
-        INSERT INTO public.product_variants (
-          product_id, name, name_ar, size, color, color_hex, sku,
-          stock_quantity, stock_qty, price_modifier, additional_price, is_active
-        ) VALUES (
-          p, v->>'label', v->>'label', v->>'label', v->>'color', v->>'hex',
-          (prod->>'sku') || '-' || i,
-          (v->>'stock')::int, (v->>'stock')::int, (v->>'mod')::numeric, (v->>'mod')::numeric, true
-        );
+        -- Older schemas also carry name/stock_quantity; the live schema uses size/stock_qty only.
+        IF legacy_variants THEN
+          INSERT INTO public.product_variants (
+            product_id, name, name_ar, size, color, color_hex, sku,
+            stock_quantity, stock_qty, price_modifier, additional_price, is_active
+          ) VALUES (
+            p, v->>'label', v->>'label', v->>'label', v->>'color', v->>'hex',
+            (prod->>'sku') || '-' || i,
+            (v->>'stock')::int, (v->>'stock')::int, (v->>'mod')::numeric, (v->>'mod')::numeric, true
+          );
+        ELSE
+          INSERT INTO public.product_variants (
+            product_id, name_ar, size, color, color_hex, sku,
+            stock_qty, price_modifier, additional_price, is_active
+          ) VALUES (
+            p, v->>'label', v->>'label', v->>'color', v->>'hex',
+            (prod->>'sku') || '-' || i,
+            (v->>'stock')::int, (v->>'mod')::numeric, (v->>'mod')::numeric, true
+          );
+        END IF;
       END LOOP;
     END LOOP;
 
