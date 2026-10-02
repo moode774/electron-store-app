@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+// Production deploy trigger: customer home visual refresh
 import {
   ActivityIndicator,
   Image,
