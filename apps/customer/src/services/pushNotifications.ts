@@ -1,3 +1,4 @@
+import { translate } from '../i18n';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
@@ -10,12 +11,12 @@ export type PushRegistrationResult =
 
 export async function configurePushNotifications(requestPermission: boolean): Promise<PushRegistrationResult> {
   if (Platform.OS === 'web' || !Device.isDevice) {
-    return { status: 'unsupported', message: 'إشعارات الجهاز تحتاج نسخة iOS أو Android على جهاز حقيقي.' };
+    return { status: 'unsupported', message: translate('pushNotifications.unsupported') };
   }
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'إشعارات الطلبات',
+      name: translate('pushNotifications.channelName'),
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#2563EB',
@@ -27,7 +28,7 @@ export async function configurePushNotifications(requestPermission: boolean): Pr
     permission = await Notifications.requestPermissionsAsync();
   }
   if (permission.status !== 'granted') {
-    return { status: 'permission_denied', message: 'لم يتم منح إذن إشعارات الجهاز.' };
+    return { status: 'permission_denied', message: translate('pushNotifications.permissionDenied') };
   }
 
   const projectId = Constants.easConfig?.projectId
@@ -35,7 +36,7 @@ export async function configurePushNotifications(requestPermission: boolean): Pr
   if (!projectId) {
     return {
       status: 'missing_project_id',
-      message: 'يلزم ضبط EXPO_PUBLIC_EAS_PROJECT_ID في إعدادات البناء لتفعيل Push.',
+      message: translate('pushNotifications.projectIdMissing'),
     };
   }
 
