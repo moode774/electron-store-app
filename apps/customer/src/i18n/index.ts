@@ -41,16 +41,18 @@ type LanguageState = {
   setLanguage: (language: AppLanguage) => Promise<void>;
 };
 
+// Layout direction is handled by the app's own styles (row-reverse, textAlign,
+// rowDirection), so the platform must stay LTR. Letting the document or
+// I18nManager flip to RTL mirrors those styles a second time.
 function applyDirection(language: AppLanguage) {
-  const rtl = language === 'ar';
-  I18nManager.allowRTL(true);
-  I18nManager.forceRTL(rtl);
+  I18nManager.allowRTL(false);
+  I18nManager.forceRTL(false);
 
   const doc = (globalThis as any).document;
   if (Platform.OS === 'web' && doc) {
     doc.documentElement.lang = language;
-    doc.documentElement.dir = rtl ? 'rtl' : 'ltr';
-    doc.body?.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    doc.documentElement.dir = 'ltr';
+    doc.body?.removeAttribute('dir');
   }
 }
 

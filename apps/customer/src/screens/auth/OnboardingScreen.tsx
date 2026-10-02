@@ -28,7 +28,7 @@ interface OnboardingScreenProps {
 }
 
 export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
-  const { t } = useTranslation();
+  const { t, isRTL, rowDirection } = useTranslation();
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
   const isLast = index === SLIDES.length - 1;
@@ -56,7 +56,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
       <View style={styles.overlay} />
 
       {/* Top Bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
         <TouchableOpacity
           onPress={onFinish}
           activeOpacity={0.7}
@@ -89,15 +89,15 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
 
       {/* Footer Area */}
       <View style={styles.footer}>
-        <View style={styles.dotsRow}>
+        <View style={[styles.dotsRow, { flexDirection: rowDirection }]}>
           {SLIDES.map((_, i) => (
             <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
 
-        <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.9}>
+        <TouchableOpacity style={[styles.nextBtn, { flexDirection: rowDirection }]} onPress={goNext} activeOpacity={0.9}>
           <Text style={styles.nextBtnText}>{isLast ? t('onboarding.startExperience') : t('onboarding.next')}</Text>
-          <DirectionalIcon name="arrow-back" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+          <DirectionalIcon name="arrow-back" size={20} color="#FFFFFF" style={isRTL ? { marginRight: 8 } : { marginLeft: 8 }} />
         </TouchableOpacity>
       </View>
     </View>
