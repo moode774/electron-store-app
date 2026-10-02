@@ -33,8 +33,10 @@ function errorMessage(error: unknown): string {
     : translate('shared.saveSettingFailed');
 }
 
-export function NotificationPreferencesCard({ embedded = false }: { embedded?: boolean }) {
+export function NotificationPreferencesCard({ embedded = false, collapsible = false }: { embedded?: boolean; collapsible?: boolean }) {
   const { t } = useTranslation();
+  // In the notifications list the settings stay folded until the user asks for them.
+  const [open, setOpen] = useState(!collapsible);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loadError, setLoadError] = useState('');
   const [savingKey, setSavingKey] = useState<PreferenceKey | 'device' | null>(null);
@@ -99,7 +101,15 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
 
   return (
     <View style={[styles.card, embedded && styles.cardEmbedded]} accessibilityRole="summary">
-      <View style={styles.headingRow}>
+      <TouchableOpacity
+        style={styles.headingRow}
+        disabled={!collapsible}
+        onPress={() => setOpen((value) => !value)}
+        activeOpacity={0.7}
+        accessibilityRole={collapsible ? 'button' : undefined}
+        accessibilityState={collapsible ? { expanded: open } : undefined}
+        accessibilityLabel={t('shared.notificationSettings')}
+      >
         <View style={styles.iconWrap}>
           <Ionicons name="options-outline" size={20} color={COLORS.primary} />
         </View>
@@ -107,9 +117,12 @@ export function NotificationPreferencesCard({ embedded = false }: { embedded?: b
           <Text style={styles.title}>{t('shared.notificationSettings')}</Text>
           <Text style={styles.subtitle}>{t('shared.settingsSavedAllDevices')}</Text>
         </View>
-      </View>
+        {collapsible ? (
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color="#6B7280" />
+        ) : null}
+      </TouchableOpacity>
 
-      {!preferences && !loadError ? (
+      {!open ? null : !preferences && !loadError ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={COLORS.primary} />
           <Text style={styles.muted}>{t('shared.loadingSettings')}</Text>
