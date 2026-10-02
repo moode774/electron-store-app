@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, getMerchantProfile, getMerchantStats } from '@marketplace/shared-hooks';
@@ -134,7 +135,7 @@ function MerchantMoreScreen({ navigation }: any) {
           </View>
           <View style={more.storeAction}>
             <Text style={more.storeActionText}>{t('merchant.storeData')}</Text>
-            <Ionicons name="chevron-back" size={14} color={COLORS.surface} />
+            <DirectionalIcon name="chevron-back" size={14} color={COLORS.surface} />
           </View>
         </TouchableOpacity>
 
@@ -158,7 +159,7 @@ function MerchantMoreScreen({ navigation }: any) {
                     <Text style={more.rowTitle}>{t(item.titleKey)}</Text>
                     <Text style={more.rowSubtitle}>{t(item.subtitleKey)}</Text>
                   </View>
-                  <Ionicons name="chevron-back" size={18} color={COLORS.inkTertiary} />
+                  <DirectionalIcon name="chevron-back" size={18} color={COLORS.inkTertiary} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -343,7 +344,7 @@ function MerchantAccountDesktop({ navigation }: any) {
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
                   <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                 </View>
-                <Ionicons name="chevron-back" size={20} color="#9CA3AF" />
+                <DirectionalIcon name="chevron-back" size={20} color="#9CA3AF" />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>

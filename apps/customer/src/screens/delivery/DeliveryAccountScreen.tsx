@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, getDeliveryEarnings } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
@@ -130,7 +131,7 @@ export default function DeliveryAccountScreen({ navigation }: any) {
                   <Ionicons name={item.icon as any} size={22} color="#4B5563" style={styles.menuItemIcon} />
                   <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                 </View>
-                <Ionicons name="chevron-back" size={20} color="#9CA3AF" />
+                <DirectionalIcon name="chevron-back" size={20} color="#9CA3AF" />
               </TouchableOpacity>
               {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>

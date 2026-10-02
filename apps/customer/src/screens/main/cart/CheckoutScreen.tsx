@@ -13,6 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import {
   Address,
@@ -337,7 +338,7 @@ export default function CheckoutScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('AddressSelection')}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>{t('customer.payment')}</Text>

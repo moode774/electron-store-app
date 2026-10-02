@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -198,7 +199,7 @@ export default function StoreDetailsScreen({ navigation, route }: Props) {
         {/* Cover & Header */}
         <View style={[styles.cover, layout.desktop && styles.coverDesktop, { backgroundColor: STORE.coverColor }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+            <DirectionalIcon name="arrow-forward" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.coverContent}>
             <Ionicons name={STORE.iconName as any} size={80} color="rgba(255,255,255,0.2)" />

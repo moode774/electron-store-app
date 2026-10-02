@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import type { ImageStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -578,7 +579,7 @@ export default function ActiveDeliveryScreen({ navigation, route }: any) {
           accessibilityRole="button"
           accessibilityLabel={t('delivery.back')}
         >
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('delivery.activeTitle')}</Text>
         <View style={{ width: 40 }} />

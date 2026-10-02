@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from '../../i18n';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { NotificationPreferencesCard } from '../../components/NotificationPreferencesCard';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
@@ -14,7 +15,7 @@ export default function NotificationSettingsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('shared.back')}>
-          <Ionicons name="arrow-forward" size={23} color={COLORS.ink} />
+          <DirectionalIcon name="arrow-forward" size={23} color={COLORS.ink} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>
           <Text style={styles.title}>{t('shared.notificationSettings')}</Text>

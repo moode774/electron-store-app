@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { useAuthStore, getDeliveryEarnings, getWalletTransactions, WalletTransaction } from '@marketplace/shared-hooks';
@@ -47,7 +48,7 @@ export default function DeliveryWalletScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.canvas} />
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.back')}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerCopy}><Text style={styles.headerTitle}>{t('delivery.myMoney')}</Text><Text style={styles.headerSubtitle}>{t('delivery.walletSubtitle')}</Text></View>
         <View style={{ width: 40 }} />

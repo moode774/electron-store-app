@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../components/DirectionalIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../i18n';
@@ -147,7 +148,7 @@ function DesktopDeliverySidebar() {
           <Text style={styles.desktopOnlineTitle}>{t('navigation.receiveOrders')}</Text>
           <Text style={styles.desktopOnlineSubtitle}>{t('navigation.onlineControl')}</Text>
         </View>
-        <Ionicons name="chevron-back" size={18} color={COLORS.textMuted} />
+        <DirectionalIcon name="chevron-back" size={18} color={COLORS.textMuted} />
       </TouchableOpacity>
     </View>
   );

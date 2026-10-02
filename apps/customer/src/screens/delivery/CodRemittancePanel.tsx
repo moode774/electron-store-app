@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase, useAuthStore } from '@marketplace/shared-hooks';
@@ -618,7 +619,7 @@ export default function CodRemittancePanel() {
                       : t('delivery.codMax10mb')}
                   </Text>
                 </View>
-                <Ionicons name="chevron-back" size={18} color="#9CA3AF" />
+                <DirectionalIcon name="chevron-back" size={18} color="#9CA3AF" />
               </TouchableOpacity>
 
               {formError ? (

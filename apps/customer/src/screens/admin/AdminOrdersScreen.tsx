@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { adminRequeueFailedDelivery, cancelOrder, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
@@ -177,7 +178,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
           </View>
           <TouchableOpacity style={s.viewDetailsBtn} activeOpacity={0.8} onPress={() => setSelected(item)} accessibilityRole="button" accessibilityLabel={`${t('adminUi.orderDetails')} ${item.order_number ?? item.id}`}>
              <Text style={s.viewDetailsText}>{t('adminUi.details')}</Text>
-             <Ionicons name="chevron-back" size={14} color={UI.primary} />
+             <DirectionalIcon name="chevron-back" size={14} color={UI.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -191,7 +192,7 @@ export default function AdminOrdersScreen({ navigation, route }: any) {
       <View style={[s.headerContent, { width: contentWidth, paddingHorizontal: 0 }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-              <Ionicons name="arrow-forward" size={24} color={UI.text} />
+              <DirectionalIcon name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
             <Text style={s.headerTitle}>{t('adminUi.orders')}</Text>
           </View>

@@ -10,6 +10,7 @@ import { Alert } from '../../components/appAlert';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Rect, Line } from 'react-native-svg';
 import { getAdminStats, AdminStats, useAuthStore, getAdminOrders } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
@@ -339,7 +340,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
               ].map(action => <TouchableOpacity key={action.route} style={[styles.quickAction, !isDesktop && styles.quickActionMobile, isMid && styles.quickActionMid, isTablet && styles.quickActionTablet]} accessibilityRole="button" accessibilityLabel={action.title} onPress={() => action.route === 'AdminMore' ? navigation.navigate('AdminMore', { screen: 'AdminMoreMain' }) : navigation.navigate(action.route)}>
                 <View style={styles.quickActionIcon}><Ionicons name={action.icon as any} size={20} color={UI.primary} /></View>
                 <Text style={styles.quickActionText}>{action.title}</Text>
-                <Ionicons name="chevron-back" size={15} color={UI.textMuted} />
+                <DirectionalIcon name="chevron-back" size={15} color={UI.textMuted} />
               </TouchableOpacity>)}
             </View>
             {/* ===== Top Widgets Grid ===== */}

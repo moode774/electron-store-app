@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   createIdempotencyKey,
   getAdminLegacyFinancialReconciliationQueue,
@@ -290,7 +291,7 @@ export default function AdminFinancialReconciliationScreen({ navigation }: any) 
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backButton} accessibilityRole="button">
-          <Ionicons name="arrow-forward" size={24} color={C.text} />
+          <DirectionalIcon name="arrow-forward" size={24} color={C.text} />
         </TouchableOpacity>
         <View style={s.headerText}>
           <Text style={s.title}>{t('adminUi.reconTitle')}</Text>

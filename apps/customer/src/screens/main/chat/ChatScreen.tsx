@@ -4,6 +4,7 @@ import {
   StatusBar, Platform, KeyboardAvoidingView, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getMessages, sendMessage, markConversationRead, ChatMessage, supabase } from '@marketplace/shared-hooks';
 import { Alert } from '../../../components/appAlert';
@@ -103,7 +104,7 @@ export default function ChatScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
           <View style={styles.headerSpacer} />

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platfo
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useCustomerLayout } from '../../../components/customer/CustomerResponsiveShell';
@@ -71,7 +72,7 @@ export default function HelpCenterScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.help')}</Text>
           <View style={styles.headerSpacer} />

@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   getAdminCodCollections,
   getCodRemittanceProofLinks,
@@ -326,7 +327,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           </View>
           <View style={s.detailsLink}>
             <Text style={s.detailsLinkText}>{t('adminUi.codDetailsReview')}</Text>
-            <Ionicons name="chevron-back" size={17} color={UI.primary} />
+            <DirectionalIcon name="chevron-back" size={17} color={UI.primary} />
           </View>
         </View>
       </TouchableOpacity>
@@ -341,7 +342,7 @@ export default function AdminCodCollectionsScreen({ navigation }: any) {
           <Text style={s.subtitle}>{t('adminUi.codCollectionsSubtitle')}</Text>
         </View>
         <TouchableOpacity style={s.backButton} onPress={() => navigation.goBack()} accessibilityLabel={t('adminUi.back')}>
-          <Ionicons name="arrow-forward" size={22} color={UI.text} />
+          <DirectionalIcon name="arrow-forward" size={22} color={UI.text} />
         </TouchableOpacity>
       </View>
 

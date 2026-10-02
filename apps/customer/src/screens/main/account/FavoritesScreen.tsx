@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getWishlist, removeFromWishlist, useAuthStore, WishlistItem } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
@@ -71,7 +72,7 @@ export default function FavoritesScreen({
             accessibilityRole="button"
             accessibilityLabel={t('merchant.back')}
           >
-            <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={21} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCopy}>
             <Text style={styles.headerTitle}>{t('customer.favorites')}</Text>

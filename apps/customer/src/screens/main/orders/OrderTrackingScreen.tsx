@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { Alert } from '../../../components/appAlert';
 import CustomerPhysicalReturnPanel from './CustomerPhysicalReturnPanel';
 import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
@@ -420,7 +421,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
           </View>
 
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
         </View>
       </View>
@@ -684,7 +685,7 @@ export default function OrderTrackingScreen({ navigation, route }: any) {
                   }
                 >
                   <Text style={styles.optionText}>{r.reason_text_ar}</Text>
-                  <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                  <DirectionalIcon name="chevron-back" size={18} color="#94A3B8" />
                 </TouchableOpacity>
               ))
             )}

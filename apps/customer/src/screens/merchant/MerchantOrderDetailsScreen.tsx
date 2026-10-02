@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Linkin
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, ORDER_STATUS, RADIUS } from '@marketplace/shared-utils';
 import { getOrderById, updateOrderStatus, cancelOrder, getCancellationReasons, getOrderPickupCode, CancellationReason, OrderDetail, supabase } from '@marketplace/shared-hooks';
@@ -237,7 +238,7 @@ export default function MerchantOrderDetailsScreen({ navigation, route }: any) {
       ).map((r) => (
         <TouchableOpacity key={r.key} style={styles.reason} onPress={() => void doCancel(r.label)} disabled={cancelling} accessibilityRole="button" accessibilityLabel={r.label}>
           <Text style={styles.reasonText}>{r.label}</Text>
-          {cancelling ? <ActivityIndicator size="small" color={COLORS.error} /> : <Ionicons name="chevron-back" size={16} color={COLORS.inkTertiary} />}
+          {cancelling ? <ActivityIndicator size="small" color={COLORS.error} /> : <DirectionalIcon name="chevron-back" size={16} color={COLORS.inkTertiary} />}
         </TouchableOpacity>
       ))}
       <TouchableOpacity onPress={() => setShowCancel(false)} disabled={cancelling} style={styles.reasonBack} accessibilityRole="button" accessibilityLabel={t('merchant.undo')}>

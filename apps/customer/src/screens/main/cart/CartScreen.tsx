@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import {
   addToWishlist,
   getFeaturedProducts,
@@ -137,7 +138,7 @@ export default function CartScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
 
           <View style={styles.headerCenterRow}>
@@ -358,7 +359,7 @@ export default function CartScreen({ navigation }: any) {
             activeOpacity={0.88}
           >
             <View style={styles.checkoutBtnInner}>
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <DirectionalIcon name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.checkoutBtnText}>
                 {activeCartItems.length === 0 ? t('customer.selectProductContinue') : t('customer.checkout')}
               </Text>

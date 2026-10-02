@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, ActivityIndicator } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore, createSupportTicket, getSupportTickets, SupportTicket, supabase } from '@marketplace/shared-hooks';
 import { useResponsiveLayout } from '../../components/ResponsiveLayout';
@@ -102,7 +103,7 @@ export default function DeliverySupportScreen({ navigation }: any) {
 
       <View style={[styles.header, { paddingHorizontal: layout.gutter }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('delivery.back')}>
-          <Ionicons name="arrow-forward" size={24} color={UI.textDark} />
+          <DirectionalIcon name="arrow-forward" size={24} color={UI.textDark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('delivery.helpCenter')}</Text>
         <View style={{ width: 40 }} />

@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useAuthStore, getPaymentMethods, PaymentMethod } from '@marketplace/shared-hooks';
@@ -43,7 +44,7 @@ export default function PaymentMethodsScreen({ navigation }: any) {
       <View style={styles.header}>
         <View style={[styles.headerInner, { paddingHorizontal: layout.gutter }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={22} color={COLORS.textPrimary} />
+            <DirectionalIcon name="arrow-forward" size={22} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('customer.paymentMethodsTitle')}</Text>
           <View style={styles.headerSpacer} />

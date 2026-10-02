@@ -12,6 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { SERVICE_AREAS, COLORS, FONTS } from '@marketplace/shared-utils';
 import {
   Address,
@@ -235,7 +236,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+            <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
           </TouchableOpacity>
           <View style={styles.headerCenterCol}>
             <Text style={styles.headerTitle}>{t('customer.addressSelectionTitle')}</Text>
@@ -536,7 +537,7 @@ export default function AddressSelectionScreen({ navigation, route }: any) {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <View style={styles.continueBtnInner}>
-              <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+              <DirectionalIcon name="arrow-back" size={18} color="#FFFFFF" />
               <Text style={styles.continueBtnText}>{t('customer.addressContinuePayment')}</Text>
             </View>
           )}

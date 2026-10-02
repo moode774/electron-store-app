@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import {
@@ -411,7 +412,7 @@ export default function DeliveryOffersScreen({ navigation }: any) {
                 accessibilityLabel={t('delivery.details')}
               >
                 <Text style={styles.detailsText}>{t('delivery.details')}</Text>
-                <Ionicons name="chevron-back" size={16} color="rgba(255,255,255,0.8)" />
+                <DirectionalIcon name="chevron-back" size={16} color="rgba(255,255,255,0.8)" />
               </TouchableOpacity>
             </View>
             {initialLoading ? (

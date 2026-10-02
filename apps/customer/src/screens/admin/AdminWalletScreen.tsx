@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { getAdminWithdrawals, processWithdrawal, AdminWithdrawal, type WithdrawalDecisionStatus } from '@marketplace/shared-hooks';
 import { BREAKPOINTS, COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
@@ -265,7 +266,7 @@ export default function AdminWalletScreen({ navigation }: any) {
         <View style={[s.headerContent, { width: contentWidth }]}>
           <View style={{flexDirection: 'row-reverse', alignItems: 'center', gap: 12}}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-              <Ionicons name="arrow-forward" size={24} color={UI.text} />
+              <DirectionalIcon name="arrow-forward" size={24} color={UI.text} />
             </TouchableOpacity>
             <View style={s.headerCopy}><Text style={s.headerEyebrow}>{t('adminUi.payments')}</Text><Text style={s.headerTitle}>{t('adminUi.withdrawals')}</Text><Text style={s.headerSubtitle}>{t('adminUi.withdrawalsSubtitle')}</Text></View>
           </View>

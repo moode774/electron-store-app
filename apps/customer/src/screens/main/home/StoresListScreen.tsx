@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS } from '@marketplace/shared-utils';
 import { Category, getCategories, getStores, StoreSummary, supabase } from '@marketplace/shared-hooks';
 import { useFocusEffect } from '@react-navigation/native';
@@ -288,7 +289,7 @@ export default function StoresListScreen({ navigation, route }: any) {
                   activeOpacity={0.88}
                 >
                   <Text style={styles.heroCtaText}>{t(card.btnKey)}</Text>
-                  <Ionicons name="arrow-back" size={14} color="#FFFFFF" />
+                  <DirectionalIcon name="arrow-back" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
 

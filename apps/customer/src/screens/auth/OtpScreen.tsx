@@ -16,6 +16,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { useAuthStore } from '@marketplace/shared-hooks';
 import { COLORS } from '@marketplace/shared-utils';
 import CustomAlert from '../../components/CustomAlert';
@@ -130,7 +131,7 @@ export default function OtpScreen({ phone, onBack }: OtpScreenProps): React.JSX.
       {/* Static Header with Back Button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-          <Ionicons name="arrow-forward" size={24} color="#111827" />
+          <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
 

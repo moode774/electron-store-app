@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, ORDER_STATUS } from '@marketplace/shared-utils';
 import {
   useAuthStore,
@@ -285,7 +286,7 @@ export default function OrdersListScreen({ navigation }: any) {
         </View>
 
         <View style={styles.cardChevron}>
-          <Ionicons name="chevron-back" size={16} color="#172554" />
+          <DirectionalIcon name="chevron-back" size={16} color="#172554" />
         </View>
       </TouchableOpacity>
     );
@@ -314,7 +315,7 @@ export default function OrdersListScreen({ navigation }: any) {
 
           {navigation.canGoBack() ? (
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-forward" size={20} color="#0F172A" />
+              <DirectionalIcon name="arrow-forward" size={20} color="#0F172A" />
             </TouchableOpacity>
           ) : (
             <View style={{ width: 42 }} />

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Category, getCategories, ProductSummary, searchProducts } from '@marketplace/shared-hooks';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
@@ -86,7 +87,7 @@ export default function SearchScreen({ navigation, route }: any): React.JSX.Elem
               accessibilityRole="button"
               accessibilityLabel={t('merchant.back')}
             >
-              <Ionicons name="arrow-forward" size={21} color={COLORS.textPrimary} />
+              <DirectionalIcon name="arrow-forward" size={21} color={COLORS.textPrimary} />
             </TouchableOpacity>
             <View style={styles.titleCopy}>
               <Text style={styles.title}>{t('customer.discoverFits')}</Text>

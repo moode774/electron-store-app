@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import {
   useAuthStore,
   getAccountStats,
@@ -271,7 +272,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                       </View>
                       <Text style={styles.menuItemText}>{t(item.titleKey)}</Text>
                     </View>
-                    <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+                    <DirectionalIcon name="chevron-back" size={18} color="#94A3B8" />
                   </TouchableOpacity>
                   {index < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
                 </React.Fragment>
@@ -286,7 +287,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 </View>
                 <Text style={[styles.logoutText, { color: COLORS.primary }]}>{t('common.signOut')}</Text>
               </View>
-              <Ionicons name="chevron-back" size={18} color={COLORS.primary} />
+              <DirectionalIcon name="chevron-back" size={18} color={COLORS.primary} />
             </TouchableOpacity>
 
             {/* Delete Account */}
@@ -321,7 +322,7 @@ export default function AccountScreen({ navigation }: Props): React.JSX.Element 
                 </View>
                 <Text style={[styles.logoutText, { color: '#EF4444' }]}>{t('merchant.deleteAccount')}</Text>
               </View>
-              <Ionicons name="chevron-back" size={18} color="#EF4444" />
+              <DirectionalIcon name="chevron-back" size={18} color="#EF4444" />
             </TouchableOpacity>
           </View>
         </View>

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import {
   AdminProductReview,
   getAdminProducts,
@@ -117,7 +118,7 @@ export default function AdminProductsScreen({ navigation }: any) {
     <View style={s.root}>
       <View style={[s.header, { paddingHorizontal: pagePadding + Math.max((width - contentWidth) / 2, 0) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.headerButton} accessibilityLabel={t('adminUi.back')}>
-          <Ionicons name="arrow-forward" size={22} color="#0F172A" />
+          <DirectionalIcon name="arrow-forward" size={22} color="#0F172A" />
         </TouchableOpacity>
         <View style={s.headerCopy}>
           <Text style={s.title}>{t('adminUi.productReviewTitle')}</Text>

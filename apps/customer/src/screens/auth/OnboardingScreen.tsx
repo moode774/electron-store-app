@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import { COLORS } from '@marketplace/shared-utils';
 import { useTranslation } from '../../i18n';
 
@@ -96,7 +97,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
 
         <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.9}>
           <Text style={styles.nextBtnText}>{isLast ? t('onboarding.startExperience') : t('onboarding.next')}</Text>
-          <Ionicons name="arrow-back" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+          <DirectionalIcon name="arrow-back" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </View>
     </View>

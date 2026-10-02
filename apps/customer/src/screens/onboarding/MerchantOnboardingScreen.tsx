@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Alert } from '../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../components/DirectionalIcon';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import {
@@ -532,7 +533,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
             <View style={s.desktopBottomBar}>
               {step > 1 && (
                 <TouchableOpacity style={s.backBtn} onPress={() => setStep((s) => s - 1)} activeOpacity={0.7}>
-                  <Ionicons name="arrow-forward" size={18} color={UI.textDark} />
+                  <DirectionalIcon name="arrow-forward" size={18} color={UI.textDark} />
                   <Text style={s.backBtnText}>{t('merchantOnboarding.previous')}</Text>
                 </TouchableOpacity>
               )}
@@ -540,7 +541,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
               {step < TOTAL_STEPS ? (
                 <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
                   <Text style={s.nextBtnText}>{t('merchantOnboarding.next')}</Text>
-                  <Ionicons name="arrow-back" size={18} color={UI.white} />
+                  <DirectionalIcon name="arrow-back" size={18} color={UI.white} />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity style={[s.nextBtn, (saving || !agreedToTerms) && s.btnDisabled]} onPress={submitProfile} disabled={saving || !agreedToTerms} activeOpacity={0.85}>
@@ -568,7 +569,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
       <View style={[s.mobileHeader, { paddingHorizontal: pageGutter }]}>
         {step > 1 ? (
           <TouchableOpacity style={s.mobileBackBtn} onPress={() => setStep((s) => s - 1)} activeOpacity={0.7}>
-            <Ionicons name="arrow-forward" size={22} color={UI.textDark} />
+            <DirectionalIcon name="arrow-forward" size={22} color={UI.textDark} />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={[s.mobileBackBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => useAuthStore.getState().signOut()} activeOpacity={0.7}>
@@ -594,7 +595,7 @@ export default function MerchantOnboardingScreen({ onComplete }: Props) {
           {step < TOTAL_STEPS ? (
             <TouchableOpacity style={s.nextBtn} onPress={nextStep} activeOpacity={0.85}>
               <Text style={s.nextBtnText}>{t('merchantOnboarding.next')}</Text>
-              <Ionicons name="arrow-back" size={18} color={UI.white} />
+              <DirectionalIcon name="arrow-back" size={18} color={UI.white} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[s.nextBtn, (saving || !agreedToTerms) && s.btnDisabled]} onPress={submitProfile} disabled={saving || !agreedToTerms} activeOpacity={0.85}>

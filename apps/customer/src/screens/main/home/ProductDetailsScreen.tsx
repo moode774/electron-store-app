@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator, Image, Share } from 'react-native';
 import { Alert } from '../../../components/appAlert';
 import { Ionicons } from '@expo/vector-icons';
+import { DirectionalIcon } from '../../../components/DirectionalIcon';
 import { COLORS, FONTS, RADIUS } from '@marketplace/shared-utils';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -136,7 +137,7 @@ export default function ProductDetailsScreen({ navigation, route }: Props) {
         {/* Header Options */}
         <View style={[styles.header, layout.desktop && styles.headerDesktop]}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={t('merchant.back')}>
-            <Ionicons name="arrow-forward" size={24} color="#111827" />
+            <DirectionalIcon name="arrow-forward" size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => Share.share({ message: `${PRODUCT.name} - ${PRODUCT.price} ${t('merchant.currencyYER')}`, title: PRODUCT.name })} accessibilityRole="button" accessibilityLabel={t('merchant.shareProduct')}>
